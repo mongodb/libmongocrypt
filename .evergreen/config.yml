@@ -148,20 +148,6 @@ functions:
           BUILD_VARIANT: ${build_variant}
           NODE_LTS_VERSION: ${node_lts_version|16}
 
-  "build and test node no peer dependencies":
-    - command: "subprocess.exec"
-      params:
-        binary: bash
-        working_dir: "./libmongocrypt/bindings/node"
-        args:
-          - "./.evergreen/test.sh"
-        env:
-          PROJECT_DIRECTORY: ${project_directory}
-          NODE_GITHUB_TOKEN: ${node_github_token}
-          DISTRO_ID: ${distro_id}
-          BUILD_VARIANT: ${build_variant}
-          OMIT_PEER_DEPS: "true"
-          NODE_LTS_VERSION: ${node_lts_version|18}
 
   "build and publish node":
     - command: "subprocess.exec"
@@ -374,6 +360,30 @@ functions:
         shell: bash
         working_dir: ${working_dir|libmongocrypt}
         script: bash ${workdir}/libmongocrypt/.evergreen/earthly.sh ${args}
+
+  lint-node-cpp:
+    - command: "subprocess.exec"
+      params:
+        binary: bash
+        working_dir: "./libmongocrypt/bindings/node"
+        args:
+          - ".evergreen/check-lint.sh"
+        env:
+          PROJECT_DIRECTORY: ${project_directory}
+          NODE_LTS_VERSION: ${node_lts_version|16}
+          LINT_TARGET: cpp
+
+  lint-node-typescript:
+    - command: "subprocess.exec"
+      params:
+        binary: bash
+        working_dir: "./libmongocrypt/bindings/node"
+        args:
+          - ".evergreen/check-lint.sh"
+        env:
+          PROJECT_DIRECTORY: ${project_directory}
+          NODE_LTS_VERSION: ${node_lts_version|16}
+          LINT_TARGET: typescript
 
 tasks:
 - name: build-and-test-and-upload
@@ -945,6 +955,20 @@ tasks:
     - func: earthly
       vars:
         args: +check-format
+
+- name: check-lint-node-cpp
+  tags: [misc]
+  run_on: *docker-distros
+  commands:
+    - func: fetch source
+    - func: lint-node-cpp
+
+- name: check-lint-node-typescript
+  tags: [misc]
+  run_on: *docker-distros
+  commands:
+    - func: fetch source
+    - func: lint-node-typescript
 
 pre:
   # Update the evergreen expansion to dynamically set the ${libmongocrypt_s3_suffix} and ${libmongocrypt_s3_suffix_copy} expansions.

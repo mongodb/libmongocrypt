@@ -18,8 +18,9 @@
   "scripts": {
     "install": "prebuild-install --runtime napi --tag-prefix node-v || node-gyp rebuild",
     "build:ts": "tsc",
-    "check:lint": "eslint src test",
-    "docs": "jsdoc2md --template etc/README.hbs --plugin dmd-clear --files 'lib/**/*.js' > README.md",
+    "clang-format": "clang-format --style=file:../../.clang-format --Werror -i addon/*",
+    "check:eslint": "eslint src test",
+    "check:clang-format": "clang-format --style=file:../../.clang-format --dry-run --Werror addon/*",
     "test": "mocha test",
     "prepare": "node etc/prepare.js",
     "rebuild": "prebuild --compile",

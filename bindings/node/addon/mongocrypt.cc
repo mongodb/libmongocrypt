@@ -18,16 +18,16 @@ struct InstanceData {
 };
 
 struct MongoCryptStatusDeleter {
-    void operator()(mongocrypt_status_t* status) {
+    void operator()(mongocrypt_status_t *status) {
         mongocrypt_status_destroy(status);
     }
 };
 
-Object ExtractStatus(Env env, mongocrypt_status_t* status) {
+Object ExtractStatus(Env env, mongocrypt_status_t *status) {
     Object result = Object::New(env);
     result["type"] = Number::New(env, mongocrypt_status_type(status));
     result["code"] = Number::New(env, mongocrypt_status_code(status));
-    const char* message = mongocrypt_status_message(status, nullptr);
+    const char *message = mongocrypt_status_message(status, nullptr);
     if (message != nullptr) {
         result["message"] = String::New(env, message);
     }
@@ -35,39 +35,38 @@ Object ExtractStatus(Env env, mongocrypt_status_t* status) {
     return result;
 }
 
-std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter>
-BufferToBinary(Uint8Array node_buffer) {
-    uint8_t* buffer = node_buffer.Data();
+std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> BufferToBinary(Uint8Array node_buffer) {
+    uint8_t *buffer = node_buffer.Data();
     size_t buffer_len = node_buffer.ByteLength();
     return std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter>(
         mongocrypt_binary_new_from_data(buffer, buffer_len));
 }
 
-Uint8Array BufferFromBinary(Env env, mongocrypt_binary_t* binary) {
-    const uint8_t* data = mongocrypt_binary_data(binary);
+Uint8Array BufferFromBinary(Env env, mongocrypt_binary_t *binary) {
+    const uint8_t *data = mongocrypt_binary_data(binary);
     size_t len = mongocrypt_binary_len(binary);
     return Buffer<uint8_t>::Copy(env, data, len);
 }
 
-Uint8Array BufferWithLengthOf(Env env, mongocrypt_binary_t* binary) {
+Uint8Array BufferWithLengthOf(Env env, mongocrypt_binary_t *binary) {
     size_t len = mongocrypt_binary_len(binary);
     return Buffer<uint8_t>::New(env, len);
 }
 
-void CopyBufferData(mongocrypt_binary_t* out, Uint8Array buffer, size_t count) {
+void CopyBufferData(mongocrypt_binary_t *out, Uint8Array buffer, size_t count) {
     assert(count <= mongocrypt_binary_len(out));
     assert(count <= buffer.ByteLength());
     memcpy(mongocrypt_binary_data(out), buffer.Data(), count);
 }
 
-void CopyBufferData(mongocrypt_binary_t* out, Uint8Array buffer) {
+void CopyBufferData(mongocrypt_binary_t *out, Uint8Array buffer) {
     CopyBufferData(out, buffer, mongocrypt_binary_len(out));
 }
 
-std::string errorStringFromStatus(mongocrypt_t* crypt) {
+std::string errorStringFromStatus(mongocrypt_t *crypt) {
     std::unique_ptr<mongocrypt_status_t, MongoCryptStatusDeleter> status(mongocrypt_status_new());
     mongocrypt_status(crypt, status.get());
-    const char* errorMessage = mongocrypt_status_message(status.get(), nullptr);
+    const char *errorMessage = mongocrypt_status_message(status.get(), nullptr);
     if (!errorMessage) {
         return "Operation failed";
     }
@@ -75,10 +74,10 @@ std::string errorStringFromStatus(mongocrypt_t* crypt) {
     return errorMessage;
 }
 
-std::string errorStringFromStatus(mongocrypt_ctx_t* context) {
+std::string errorStringFromStatus(mongocrypt_ctx_t *context) {
     std::unique_ptr<mongocrypt_status_t, MongoCryptStatusDeleter> status(mongocrypt_status_new());
     mongocrypt_ctx_status(context, status.get());
-    const char* errorMessage = mongocrypt_status_message(status.get(), nullptr);
+    const char *errorMessage = mongocrypt_status_message(status.get(), nullptr);
     if (!errorMessage) {
         return "Operation failed";
     }
@@ -86,45 +85,37 @@ std::string errorStringFromStatus(mongocrypt_ctx_t* context) {
     return errorMessage;
 }
 
-template<typename E>
-E strToEnumValue(
-    Env env,
-    const std::string& str,
-    const char* option_name,
-    const std::initializer_list<std::pair<const char*, E>>& values) {
-    for (const auto& candidate : values) {
+template <typename E>
+E strToEnumValue(Env env,
+                 const std::string &str,
+                 const char *option_name,
+                 const std::initializer_list<std::pair<const char *, E>> &values) {
+    for (const auto &candidate : values) {
         if (candidate.first == str) {
             return candidate.second;
         }
     }
-    throw Error::New(env,
-        std::string("invalid enum value: '") + str + "' for " + option_name);
+    throw Error::New(env, std::string("invalid enum value: '") + str + "' for " + option_name);
 }
 
-}  // anonymous namespace
+} // anonymous namespace
 
 Function MongoCrypt::Init(Napi::Env env) {
-  return
-      DefineClass(env,
-                  "MongoCrypt",
-                  {
-                    InstanceMethod("makeEncryptionContext", &MongoCrypt::MakeEncryptionContext),
-                    InstanceMethod("makeExplicitEncryptionContext", &MongoCrypt::MakeExplicitEncryptionContext),
-                    InstanceMethod("makeDecryptionContext", &MongoCrypt::MakeDecryptionContext),
-                    InstanceMethod("makeExplicitDecryptionContext", &MongoCrypt::MakeExplicitDecryptionContext),
-                    InstanceMethod("makeDataKeyContext", &MongoCrypt::MakeDataKeyContext),
-                    InstanceMethod("makeRewrapManyDataKeyContext", &MongoCrypt::MakeRewrapManyDataKeyContext),
-                    InstanceAccessor("status", &MongoCrypt::Status, nullptr),
-                    InstanceAccessor("cryptSharedLibVersionInfo", &MongoCrypt::CryptSharedLibVersionInfo, nullptr),
-                    StaticValue("libmongocryptVersion", String::New(env, mongocrypt_version(nullptr)))
-                  });
+    return DefineClass(env,
+                       "MongoCrypt",
+                       {InstanceMethod("makeEncryptionContext", &MongoCrypt::MakeEncryptionContext),
+                        InstanceMethod("makeExplicitEncryptionContext", &MongoCrypt::MakeExplicitEncryptionContext),
+                        InstanceMethod("makeDecryptionContext", &MongoCrypt::MakeDecryptionContext),
+                        InstanceMethod("makeExplicitDecryptionContext", &MongoCrypt::MakeExplicitDecryptionContext),
+                        InstanceMethod("makeDataKeyContext", &MongoCrypt::MakeDataKeyContext),
+                        InstanceMethod("makeRewrapManyDataKeyContext", &MongoCrypt::MakeRewrapManyDataKeyContext),
+                        InstanceAccessor("status", &MongoCrypt::Status, nullptr),
+                        InstanceAccessor("cryptSharedLibVersionInfo", &MongoCrypt::CryptSharedLibVersionInfo, nullptr),
+                        StaticValue("libmongocryptVersion", String::New(env, mongocrypt_version(nullptr)))});
 }
 
-void MongoCrypt::logHandler(mongocrypt_log_level_t level,
-                            const char* message,
-                            uint32_t message_len,
-                            void* ctx) {
-    MongoCrypt* mongoCrypt = static_cast<MongoCrypt*>(ctx);
+void MongoCrypt::logHandler(mongocrypt_log_level_t level, const char *message, uint32_t message_len, void *ctx) {
+    MongoCrypt *mongoCrypt = static_cast<MongoCrypt *>(ctx);
     if (!mongoCrypt) {
         fprintf(stderr, "Log handler called without `MongoCrypt` instance\n");
         return;
@@ -140,15 +131,13 @@ void MongoCrypt::logHandler(mongocrypt_log_level_t level,
     }
 
     try {
-        logger.Call(std::initializer_list<napi_value>
-            { Number::New(env, level), String::New(env, message, message_len) });
-    } catch (const std::exception& ex) {
+        logger.Call(std::initializer_list<napi_value>{Number::New(env, level), String::New(env, message, message_len)});
+    } catch (const std::exception &ex) {
         fprintf(stderr, "Uncaught exception in logger callback: %s\n", ex.what());
     } catch (...) {
         fprintf(stderr, "Uncaught exception in logger callback\n");
     }
 }
-
 
 static void MaybeSetCryptoHookErrorStatus(Value result, mongocrypt_status_t *status) {
     if (!result.IsObject()) {
@@ -159,16 +148,17 @@ static void MaybeSetCryptoHookErrorStatus(Value result, mongocrypt_status_t *sta
         return;
     }
     std::string errorMessage = hookError.Get("message").ToString();
-    mongocrypt_status_set(
-        status,
-        MONGOCRYPT_STATUS_ERROR_CLIENT,
-        1,
-        errorMessage.c_str(),
-        errorMessage.length() + 1
-    );
+    mongocrypt_status_set(status, MONGOCRYPT_STATUS_ERROR_CLIENT, 1, errorMessage.c_str(), errorMessage.length() + 1);
 }
 
-static bool aes_256_generic_hook (MongoCrypt* mongoCrypt, mongocrypt_binary_t *key, mongocrypt_binary_t *iv, mongocrypt_binary_t *in, mongocrypt_binary_t *out, uint32_t *bytes_written, mongocrypt_status_t *status, Function hook) {
+static bool aes_256_generic_hook(MongoCrypt *mongoCrypt,
+                                 mongocrypt_binary_t *key,
+                                 mongocrypt_binary_t *iv,
+                                 mongocrypt_binary_t *in,
+                                 mongocrypt_binary_t *out,
+                                 uint32_t *bytes_written,
+                                 mongocrypt_status_t *status,
+                                 Function hook) {
     Env env = mongoCrypt->Env();
     HandleScope scope(env);
 
@@ -179,8 +169,7 @@ static bool aes_256_generic_hook (MongoCrypt* mongoCrypt, mongocrypt_binary_t *k
 
     Value result;
     try {
-        result = hook.Call(std::initializer_list<napi_value>
-            { keyBuffer, ivBuffer, inBuffer, outBuffer });
+        result = hook.Call(std::initializer_list<napi_value>{keyBuffer, ivBuffer, inBuffer, outBuffer});
     } catch (...) {
         return false;
     }
@@ -196,174 +185,225 @@ static bool aes_256_generic_hook (MongoCrypt* mongoCrypt, mongocrypt_binary_t *k
 }
 
 bool MongoCrypt::setupCryptoHooks() {
-    auto aes_256_cbc_encrypt =
-        [](void *ctx, mongocrypt_binary_t *key, mongocrypt_binary_t *iv, mongocrypt_binary_t *in, mongocrypt_binary_t *out, uint32_t *bytes_written, mongocrypt_status_t *status) -> bool {
-        MongoCrypt* mc = static_cast<MongoCrypt*>(ctx);
-        return aes_256_generic_hook(mc, key, iv, in, out, bytes_written, status, mc->GetCallback("aes256CbcEncryptHook"));
+    auto aes_256_cbc_encrypt = [](void *ctx,
+                                  mongocrypt_binary_t *key,
+                                  mongocrypt_binary_t *iv,
+                                  mongocrypt_binary_t *in,
+                                  mongocrypt_binary_t *out,
+                                  uint32_t *bytes_written,
+                                  mongocrypt_status_t *status) -> bool {
+        MongoCrypt *mc = static_cast<MongoCrypt *>(ctx);
+        return aes_256_generic_hook(mc,
+                                    key,
+                                    iv,
+                                    in,
+                                    out,
+                                    bytes_written,
+                                    status,
+                                    mc->GetCallback("aes256CbcEncryptHook"));
     };
 
-    auto aes_256_cbc_decrypt =
-        [](void *ctx, mongocrypt_binary_t *key, mongocrypt_binary_t *iv, mongocrypt_binary_t *in, mongocrypt_binary_t *out, uint32_t *bytes_written, mongocrypt_status_t *status) -> bool {
-        MongoCrypt* mc = static_cast<MongoCrypt*>(ctx);
-        return aes_256_generic_hook(mc, key, iv, in, out, bytes_written, status, mc->GetCallback("aes256CbcDecryptHook"));
+    auto aes_256_cbc_decrypt = [](void *ctx,
+                                  mongocrypt_binary_t *key,
+                                  mongocrypt_binary_t *iv,
+                                  mongocrypt_binary_t *in,
+                                  mongocrypt_binary_t *out,
+                                  uint32_t *bytes_written,
+                                  mongocrypt_status_t *status) -> bool {
+        MongoCrypt *mc = static_cast<MongoCrypt *>(ctx);
+        return aes_256_generic_hook(mc,
+                                    key,
+                                    iv,
+                                    in,
+                                    out,
+                                    bytes_written,
+                                    status,
+                                    mc->GetCallback("aes256CbcDecryptHook"));
     };
 
-    auto aes_256_ctr_encrypt =
-        [](void *ctx, mongocrypt_binary_t *key, mongocrypt_binary_t *iv, mongocrypt_binary_t *in, mongocrypt_binary_t *out, uint32_t *bytes_written, mongocrypt_status_t *status) -> bool {
-        MongoCrypt* mc = static_cast<MongoCrypt*>(ctx);
-        return aes_256_generic_hook(mc, key, iv, in, out, bytes_written, status, mc->GetCallback("aes256CtrEncryptHook"));
+    auto aes_256_ctr_encrypt = [](void *ctx,
+                                  mongocrypt_binary_t *key,
+                                  mongocrypt_binary_t *iv,
+                                  mongocrypt_binary_t *in,
+                                  mongocrypt_binary_t *out,
+                                  uint32_t *bytes_written,
+                                  mongocrypt_status_t *status) -> bool {
+        MongoCrypt *mc = static_cast<MongoCrypt *>(ctx);
+        return aes_256_generic_hook(mc,
+                                    key,
+                                    iv,
+                                    in,
+                                    out,
+                                    bytes_written,
+                                    status,
+                                    mc->GetCallback("aes256CtrEncryptHook"));
     };
 
-    auto aes_256_ctr_decrypt =
-        [](void *ctx, mongocrypt_binary_t *key, mongocrypt_binary_t *iv, mongocrypt_binary_t *in, mongocrypt_binary_t *out, uint32_t *bytes_written, mongocrypt_status_t *status) -> bool {
-        MongoCrypt* mc = static_cast<MongoCrypt*>(ctx);
-        return aes_256_generic_hook(mc, key, iv, in, out, bytes_written, status, mc->GetCallback("aes256CtrDecryptHook"));
+    auto aes_256_ctr_decrypt = [](void *ctx,
+                                  mongocrypt_binary_t *key,
+                                  mongocrypt_binary_t *iv,
+                                  mongocrypt_binary_t *in,
+                                  mongocrypt_binary_t *out,
+                                  uint32_t *bytes_written,
+                                  mongocrypt_status_t *status) -> bool {
+        MongoCrypt *mc = static_cast<MongoCrypt *>(ctx);
+        return aes_256_generic_hook(mc,
+                                    key,
+                                    iv,
+                                    in,
+                                    out,
+                                    bytes_written,
+                                    status,
+                                    mc->GetCallback("aes256CtrDecryptHook"));
     };
 
-    auto random =
-        [](void *ctx, mongocrypt_binary_t *out, uint32_t count, mongocrypt_status_t *status) -> bool {
-            MongoCrypt* mongoCrypt = static_cast<MongoCrypt*>(ctx);
-            Napi::Env env = mongoCrypt->Env();
-            HandleScope scope(env);
-            Function hook = mongoCrypt->GetCallback("randomHook");
+    auto random = [](void *ctx, mongocrypt_binary_t *out, uint32_t count, mongocrypt_status_t *status) -> bool {
+        MongoCrypt *mongoCrypt = static_cast<MongoCrypt *>(ctx);
+        Napi::Env env = mongoCrypt->Env();
+        HandleScope scope(env);
+        Function hook = mongoCrypt->GetCallback("randomHook");
 
-            Uint8Array outBuffer = BufferWithLengthOf(env, out);
-            Napi::Value result;
-            try {
-                result = hook.Call(std::initializer_list<napi_value>
-                    { outBuffer, Number::New(env, count) });
-            } catch (...) {
-                return false;
-            }
+        Uint8Array outBuffer = BufferWithLengthOf(env, out);
+        Napi::Value result;
+        try {
+            result = hook.Call(std::initializer_list<napi_value>{outBuffer, Number::New(env, count)});
+        } catch (...) {
+            return false;
+        }
 
-            if (!result.IsNumber()) {
-                MaybeSetCryptoHookErrorStatus(result, status);
-                return false;
-            }
+        if (!result.IsNumber()) {
+            MaybeSetCryptoHookErrorStatus(result, status);
+            return false;
+        }
 
-            CopyBufferData(out, outBuffer);
-            return true;
-        };
+        CopyBufferData(out, outBuffer);
+        return true;
+    };
 
-    auto hmac_sha_512 =
-        [](void *ctx, mongocrypt_binary_t *key, mongocrypt_binary_t *in, mongocrypt_binary_t *out, mongocrypt_status_t *status) -> bool {
-            MongoCrypt* mongoCrypt = static_cast<MongoCrypt*>(ctx);
-            Napi::Env env = mongoCrypt->Env();
-            HandleScope scope(env);
-            Function hook = mongoCrypt->GetCallback("hmacSha512Hook");
+    auto hmac_sha_512 = [](void *ctx,
+                           mongocrypt_binary_t *key,
+                           mongocrypt_binary_t *in,
+                           mongocrypt_binary_t *out,
+                           mongocrypt_status_t *status) -> bool {
+        MongoCrypt *mongoCrypt = static_cast<MongoCrypt *>(ctx);
+        Napi::Env env = mongoCrypt->Env();
+        HandleScope scope(env);
+        Function hook = mongoCrypt->GetCallback("hmacSha512Hook");
 
-            Uint8Array keyBuffer = BufferFromBinary(env, key);
-            Uint8Array inputBuffer = BufferFromBinary(env, in);
-            Uint8Array outputBuffer = BufferWithLengthOf(env, out);
+        Uint8Array keyBuffer = BufferFromBinary(env, key);
+        Uint8Array inputBuffer = BufferFromBinary(env, in);
+        Uint8Array outputBuffer = BufferWithLengthOf(env, out);
 
-            Napi::Value result;
-            try {
-                result = hook.Call(std::initializer_list<napi_value>
-                    { keyBuffer, inputBuffer, outputBuffer });
-            } catch (...) {
-                return false;
-            }
+        Napi::Value result;
+        try {
+            result = hook.Call(std::initializer_list<napi_value>{keyBuffer, inputBuffer, outputBuffer});
+        } catch (...) {
+            return false;
+        }
 
-            if (!result.IsNumber()) {
-                MaybeSetCryptoHookErrorStatus(result, status);
-                return false;
-            }
+        if (!result.IsNumber()) {
+            MaybeSetCryptoHookErrorStatus(result, status);
+            return false;
+        }
 
-            CopyBufferData(out, outputBuffer);
-            return true;
-        };
+        CopyBufferData(out, outputBuffer);
+        return true;
+    };
 
-    auto hmac_sha_256 =
-        [](void *ctx, mongocrypt_binary_t *key, mongocrypt_binary_t *in, mongocrypt_binary_t *out, mongocrypt_status_t *status) -> bool {
-            MongoCrypt* mongoCrypt = static_cast<MongoCrypt*>(ctx);
-            Napi::Env env = mongoCrypt->Env();
-            HandleScope scope(env);
-            Function hook = mongoCrypt->GetCallback("hmacSha256Hook");
+    auto hmac_sha_256 = [](void *ctx,
+                           mongocrypt_binary_t *key,
+                           mongocrypt_binary_t *in,
+                           mongocrypt_binary_t *out,
+                           mongocrypt_status_t *status) -> bool {
+        MongoCrypt *mongoCrypt = static_cast<MongoCrypt *>(ctx);
+        Napi::Env env = mongoCrypt->Env();
+        HandleScope scope(env);
+        Function hook = mongoCrypt->GetCallback("hmacSha256Hook");
 
-            Uint8Array keyBuffer = BufferFromBinary(env, key);
-            Uint8Array inputBuffer = BufferFromBinary(env, in);
-            Uint8Array outputBuffer = BufferWithLengthOf(env, out);
+        Uint8Array keyBuffer = BufferFromBinary(env, key);
+        Uint8Array inputBuffer = BufferFromBinary(env, in);
+        Uint8Array outputBuffer = BufferWithLengthOf(env, out);
 
-            Napi::Value result;
-            try {
-                result = hook.Call(std::initializer_list<napi_value>
-                    { keyBuffer, inputBuffer, outputBuffer });
-            } catch (...) {
-                return false;
-            }
+        Napi::Value result;
+        try {
+            result = hook.Call(std::initializer_list<napi_value>{keyBuffer, inputBuffer, outputBuffer});
+        } catch (...) {
+            return false;
+        }
 
-            if (!result.IsNumber()) {
-                MaybeSetCryptoHookErrorStatus(result, status);
-                return false;
-            }
+        if (!result.IsNumber()) {
+            MaybeSetCryptoHookErrorStatus(result, status);
+            return false;
+        }
 
-            CopyBufferData(out, outputBuffer);
-            return true;
-        };
+        CopyBufferData(out, outputBuffer);
+        return true;
+    };
 
     auto sha_256 =
         [](void *ctx, mongocrypt_binary_t *in, mongocrypt_binary_t *out, mongocrypt_status_t *status) -> bool {
-            MongoCrypt* mongoCrypt = static_cast<MongoCrypt*>(ctx);
-            Napi::Env env = mongoCrypt->Env();
-            HandleScope scope(env);
-            Function hook = mongoCrypt->GetCallback("sha256Hook");
+        MongoCrypt *mongoCrypt = static_cast<MongoCrypt *>(ctx);
+        Napi::Env env = mongoCrypt->Env();
+        HandleScope scope(env);
+        Function hook = mongoCrypt->GetCallback("sha256Hook");
 
-            Uint8Array inputBuffer = BufferFromBinary(env, in);
-            Uint8Array outputBuffer = BufferWithLengthOf(env, out);
+        Uint8Array inputBuffer = BufferFromBinary(env, in);
+        Uint8Array outputBuffer = BufferWithLengthOf(env, out);
 
-            Napi::Value result;
-            try {
-                result = hook.Call(std::initializer_list<napi_value>
-                    { inputBuffer, outputBuffer });
-            } catch (...) {
-                return false;
-            }
+        Napi::Value result;
+        try {
+            result = hook.Call(std::initializer_list<napi_value>{inputBuffer, outputBuffer});
+        } catch (...) {
+            return false;
+        }
 
-            if (!result.IsNumber()) {
-                MaybeSetCryptoHookErrorStatus(result, status);
-                return false;
-            }
+        if (!result.IsNumber()) {
+            MaybeSetCryptoHookErrorStatus(result, status);
+            return false;
+        }
 
-            CopyBufferData(out, outputBuffer);
-            return true;
-        };
+        CopyBufferData(out, outputBuffer);
+        return true;
+    };
 
-    auto sign_rsa_sha256 =
-        [](void *ctx, mongocrypt_binary_t *key, mongocrypt_binary_t *in, mongocrypt_binary_t *out, mongocrypt_status_t *status) -> bool {
-            MongoCrypt* mongoCrypt = static_cast<MongoCrypt*>(ctx);
-            Napi::Env env = mongoCrypt->Env();
-            HandleScope scope(env);
-            Function hook = mongoCrypt->GetCallback("signRsaSha256Hook");
+    auto sign_rsa_sha256 = [](void *ctx,
+                              mongocrypt_binary_t *key,
+                              mongocrypt_binary_t *in,
+                              mongocrypt_binary_t *out,
+                              mongocrypt_status_t *status) -> bool {
+        MongoCrypt *mongoCrypt = static_cast<MongoCrypt *>(ctx);
+        Napi::Env env = mongoCrypt->Env();
+        HandleScope scope(env);
+        Function hook = mongoCrypt->GetCallback("signRsaSha256Hook");
 
-            Uint8Array keyBuffer = BufferFromBinary(env, key);
-            Uint8Array inputBuffer = BufferFromBinary(env, in);
-            Uint8Array outputBuffer = BufferWithLengthOf(env, out);
+        Uint8Array keyBuffer = BufferFromBinary(env, key);
+        Uint8Array inputBuffer = BufferFromBinary(env, in);
+        Uint8Array outputBuffer = BufferWithLengthOf(env, out);
 
-            Napi::Value result;
-            try {
-                result = hook.Call(std::initializer_list<napi_value>
-                    { keyBuffer, inputBuffer, outputBuffer });
-            } catch (...) {
-                return false;
-            }
+        Napi::Value result;
+        try {
+            result = hook.Call(std::initializer_list<napi_value>{keyBuffer, inputBuffer, outputBuffer});
+        } catch (...) {
+            return false;
+        }
 
-            if (!result.IsNumber()) {
-                MaybeSetCryptoHookErrorStatus(result, status);
-                return false;
-            }
+        if (!result.IsNumber()) {
+            MaybeSetCryptoHookErrorStatus(result, status);
+            return false;
+        }
 
-            CopyBufferData(out, outputBuffer);
-            return true;
-        };
+        CopyBufferData(out, outputBuffer);
+        return true;
+    };
 
     if (!mongocrypt_setopt_crypto_hooks(_mongo_crypt.get(),
-        aes_256_cbc_encrypt,
-        aes_256_cbc_decrypt,
-        random,
-        hmac_sha_512,
-        hmac_sha_256,
-        sha_256,
-        this)) {
+                                        aes_256_cbc_encrypt,
+                                        aes_256_cbc_decrypt,
+                                        random,
+                                        hmac_sha_512,
+                                        hmac_sha_256,
+                                        sha_256,
+                                        this)) {
         return false;
     }
 
@@ -379,8 +419,7 @@ bool MongoCrypt::setupCryptoHooks() {
     return true;
 }
 
-MongoCrypt::MongoCrypt(const CallbackInfo& info)
-    : ObjectWrap(info), _mongo_crypt(mongocrypt_new()) {
+MongoCrypt::MongoCrypt(const CallbackInfo &info) : ObjectWrap(info), _mongo_crypt(mongocrypt_new()) {
     if (info.Length() < 1 || !info[0].IsObject()) {
         throw TypeError::New(Env(), "First parameter must be an object");
     }
@@ -431,8 +470,7 @@ MongoCrypt::MongoCrypt(const CallbackInfo& info)
 
     if (options.Has("logger")) {
         SetCallback("logger", options["logger"]);
-        if (!mongocrypt_setopt_log_handler(
-                _mongo_crypt.get(), MongoCrypt::logHandler, this)) {
+        if (!mongocrypt_setopt_log_handler(_mongo_crypt.get(), MongoCrypt::logHandler, this)) {
             throw TypeError::New(Env(), errorStringFromStatus(_mongo_crypt.get()));
         }
     }
@@ -462,9 +500,8 @@ MongoCrypt::MongoCrypt(const CallbackInfo& info)
         }
         Array search_paths = search_paths_v.As<Array>();
         for (uint32_t i = 0; i < search_paths.Length(); i++) {
-            mongocrypt_setopt_append_crypt_shared_lib_search_path(
-                _mongo_crypt.get(),
-                search_paths.Get(i).ToString().Utf8Value().c_str());
+            mongocrypt_setopt_append_crypt_shared_lib_search_path(_mongo_crypt.get(),
+                                                                  search_paths.Get(i).ToString().Utf8Value().c_str());
         }
     }
 
@@ -486,9 +523,9 @@ MongoCrypt::MongoCrypt(const CallbackInfo& info)
     }
 }
 
-Value MongoCrypt::CryptSharedLibVersionInfo(const CallbackInfo& info) {
+Value MongoCrypt::CryptSharedLibVersionInfo(const CallbackInfo &info) {
     uint64_t version_numeric = mongocrypt_crypt_shared_lib_version(_mongo_crypt.get());
-    const char* version_string = mongocrypt_crypt_shared_lib_version_string(_mongo_crypt.get(), nullptr);
+    const char *version_string = mongocrypt_crypt_shared_lib_version_string(_mongo_crypt.get(), nullptr);
     if (version_string == nullptr) {
         return Env().Null();
     }
@@ -499,34 +536,32 @@ Value MongoCrypt::CryptSharedLibVersionInfo(const CallbackInfo& info) {
     return ret;
 }
 
-Value MongoCrypt::Status(const CallbackInfo& info) {
+Value MongoCrypt::Status(const CallbackInfo &info) {
     std::unique_ptr<mongocrypt_status_t, MongoCryptStatusDeleter> status(mongocrypt_status_new());
     mongocrypt_status(_mongo_crypt.get(), status.get());
     return ExtractStatus(Env(), status.get());
 }
 
-Value MongoCrypt::MakeEncryptionContext(const CallbackInfo& info) {
+Value MongoCrypt::MakeEncryptionContext(const CallbackInfo &info) {
     std::string ns = info[0].ToString();
-    std::unique_ptr<mongocrypt_ctx_t, MongoCryptContextDeleter> context(
-        mongocrypt_ctx_new(_mongo_crypt.get()));
+    std::unique_ptr<mongocrypt_ctx_t, MongoCryptContextDeleter> context(mongocrypt_ctx_new(_mongo_crypt.get()));
 
     Napi::Value commandBuffer = info[1];
     if (!commandBuffer.IsBuffer()) {
         throw TypeError::New(Env(), "Parameter `command` must be a Buffer");
     }
 
-    std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binaryCommand(BufferToBinary(commandBuffer.As<Uint8Array>()));
-    if (!mongocrypt_ctx_encrypt_init(
-            context.get(), ns.c_str(), ns.size(), binaryCommand.get())) {
+    std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binaryCommand(
+        BufferToBinary(commandBuffer.As<Uint8Array>()));
+    if (!mongocrypt_ctx_encrypt_init(context.get(), ns.c_str(), ns.size(), binaryCommand.get())) {
         throw TypeError::New(Env(), errorStringFromStatus(context.get()));
     }
 
     return MongoCryptContext::NewInstance(Env(), std::move(context));
 }
 
-Value MongoCrypt::MakeExplicitEncryptionContext(const CallbackInfo& info) {
-    std::unique_ptr<mongocrypt_ctx_t, MongoCryptContextDeleter> context(
-        mongocrypt_ctx_new(_mongo_crypt.get()));
+Value MongoCrypt::MakeExplicitEncryptionContext(const CallbackInfo &info) {
+    std::unique_ptr<mongocrypt_ctx_t, MongoCryptContextDeleter> context(mongocrypt_ctx_new(_mongo_crypt.get()));
 
     Napi::Value valueBuffer = info[0];
     if (!valueBuffer.IsBuffer()) {
@@ -564,8 +599,7 @@ Value MongoCrypt::MakeExplicitEncryptionContext(const CallbackInfo& info) {
 
     if (options.Has("algorithm")) {
         std::string algorithm = options.Get("algorithm").ToString();
-        if (!mongocrypt_ctx_setopt_algorithm(
-                    context.get(), algorithm.c_str(), algorithm.size())) {
+        if (!mongocrypt_ctx_setopt_algorithm(context.get(), algorithm.c_str(), algorithm.size())) {
             throw TypeError::New(Env(), errorStringFromStatus(context.get()));
         }
 
@@ -580,7 +614,8 @@ Value MongoCrypt::MakeExplicitEncryptionContext(const CallbackInfo& info) {
                 throw TypeError::New(Env(), "`rangeOptions` must be a Buffer");
             }
 
-            std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binary(BufferToBinary(rangeOptions.As<Uint8Array>()));
+            std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binary(
+                BufferToBinary(rangeOptions.As<Uint8Array>()));
             if (!mongocrypt_ctx_setopt_algorithm_range(context.get(), binary.get())) {
                 throw TypeError::New(Env(), errorStringFromStatus(context.get()));
             }
@@ -589,9 +624,9 @@ Value MongoCrypt::MakeExplicitEncryptionContext(const CallbackInfo& info) {
 
     if (options.Has("contentionFactor")) {
         Napi::Value contention_factor_value = options["contentionFactor"];
-        int64_t contention_factor = contention_factor_value.IsBigInt() ?
-            contention_factor_value.As<BigInt>().Int64Value(nullptr) :
-            contention_factor_value.ToNumber().Int64Value();
+        int64_t contention_factor = contention_factor_value.IsBigInt()
+                                      ? contention_factor_value.As<BigInt>().Int64Value(nullptr)
+                                      : contention_factor_value.ToNumber().Int64Value();
         if (!mongocrypt_ctx_setopt_contention_factor(context.get(), contention_factor)) {
             throw TypeError::New(Env(), errorStringFromStatus(context.get()));
         }
@@ -604,13 +639,14 @@ Value MongoCrypt::MakeExplicitEncryptionContext(const CallbackInfo& info) {
         }
     }
 
-    std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binaryValue(BufferToBinary(valueBuffer.As<Uint8Array>()));
+    std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binaryValue(
+        BufferToBinary(valueBuffer.As<Uint8Array>()));
 
     const bool isExpressionMode = options.Get("expressionMode").ToBoolean();
 
     const bool status = isExpressionMode
-                        ? mongocrypt_ctx_explicit_encrypt_expression_init(context.get(), binaryValue.get())
-                        : mongocrypt_ctx_explicit_encrypt_init(context.get(), binaryValue.get());
+                          ? mongocrypt_ctx_explicit_encrypt_expression_init(context.get(), binaryValue.get())
+                          : mongocrypt_ctx_explicit_encrypt_init(context.get(), binaryValue.get());
 
     if (!status) {
         throw TypeError::New(Env(), errorStringFromStatus(context.get()));
@@ -619,15 +655,13 @@ Value MongoCrypt::MakeExplicitEncryptionContext(const CallbackInfo& info) {
     return MongoCryptContext::NewInstance(Env(), std::move(context));
 }
 
-Value MongoCrypt::MakeDecryptionContext(const CallbackInfo& info) {
+Value MongoCrypt::MakeDecryptionContext(const CallbackInfo &info) {
     if (!info[0].IsBuffer()) {
         throw TypeError::New(Env(), "First parameter must be a Buffer");
     }
 
-    std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binary(
-        BufferToBinary(info[0].As<Uint8Array>()));
-    std::unique_ptr<mongocrypt_ctx_t, MongoCryptContextDeleter> context(
-        mongocrypt_ctx_new(_mongo_crypt.get()));
+    std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binary(BufferToBinary(info[0].As<Uint8Array>()));
+    std::unique_ptr<mongocrypt_ctx_t, MongoCryptContextDeleter> context(mongocrypt_ctx_new(_mongo_crypt.get()));
 
     if (!mongocrypt_ctx_decrypt_init(context.get(), binary.get())) {
         throw TypeError::New(Env(), errorStringFromStatus(context.get()));
@@ -636,15 +670,13 @@ Value MongoCrypt::MakeDecryptionContext(const CallbackInfo& info) {
     return MongoCryptContext::NewInstance(Env(), std::move(context));
 }
 
-Value MongoCrypt::MakeExplicitDecryptionContext(const CallbackInfo& info) {
+Value MongoCrypt::MakeExplicitDecryptionContext(const CallbackInfo &info) {
     if (!info[0].IsBuffer()) {
         throw TypeError::New(Env(), "First parameter must be a Buffer");
     }
 
-    std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binary(
-        BufferToBinary(info[0].As<Uint8Array>()));
-    std::unique_ptr<mongocrypt_ctx_t, MongoCryptContextDeleter> context(
-        mongocrypt_ctx_new(_mongo_crypt.get()));
+    std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binary(BufferToBinary(info[0].As<Uint8Array>()));
+    std::unique_ptr<mongocrypt_ctx_t, MongoCryptContextDeleter> context(mongocrypt_ctx_new(_mongo_crypt.get()));
 
     if (!mongocrypt_ctx_explicit_decrypt_init(context.get(), binary.get())) {
         throw TypeError::New(Env(), errorStringFromStatus(context.get()));
@@ -653,14 +685,13 @@ Value MongoCrypt::MakeExplicitDecryptionContext(const CallbackInfo& info) {
     return MongoCryptContext::NewInstance(Env(), std::move(context));
 }
 
-Value MongoCrypt::MakeDataKeyContext(const CallbackInfo& info) {
+Value MongoCrypt::MakeDataKeyContext(const CallbackInfo &info) {
     Napi::Value optionsBuffer = info[0];
     if (!optionsBuffer.IsBuffer()) {
         throw TypeError::New(Env(), "Parameter `options` must be a Buffer");
     }
 
-    std::unique_ptr<mongocrypt_ctx_t, MongoCryptContextDeleter> context(
-        mongocrypt_ctx_new(_mongo_crypt.get()));
+    std::unique_ptr<mongocrypt_ctx_t, MongoCryptContextDeleter> context(mongocrypt_ctx_new(_mongo_crypt.get()));
     std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binary(
         BufferToBinary(optionsBuffer.As<Uint8Array>()));
 
@@ -717,14 +748,13 @@ Value MongoCrypt::MakeDataKeyContext(const CallbackInfo& info) {
     return MongoCryptContext::NewInstance(Env(), std::move(context));
 }
 
-Value MongoCrypt::MakeRewrapManyDataKeyContext(const CallbackInfo& info) {
+Value MongoCrypt::MakeRewrapManyDataKeyContext(const CallbackInfo &info) {
     Napi::Value filter_buffer = info[0];
     if (!filter_buffer.IsBuffer()) {
         throw TypeError::New(Env(), "Parameter `options` must be a Buffer");
     }
 
-    std::unique_ptr<mongocrypt_ctx_t, MongoCryptContextDeleter> context(
-        mongocrypt_ctx_new(_mongo_crypt.get()));
+    std::unique_ptr<mongocrypt_ctx_t, MongoCryptContextDeleter> context(mongocrypt_ctx_new(_mongo_crypt.get()));
 
     Napi::Value key_encryption_key = info[1];
     if (key_encryption_key.IsBuffer()) {
@@ -747,7 +777,7 @@ Value MongoCrypt::MakeRewrapManyDataKeyContext(const CallbackInfo& info) {
 // Store callbacks as nested properties on the MongoCrypt binding object
 // itself, and use these helpers to do so. Storing them as JS engine
 // References is a big memory leak footgun.
-Function MongoCrypt::GetCallback(const char* name) {
+Function MongoCrypt::GetCallback(const char *name) {
     Napi::Value storage = Value().Get("__callbackStorage");
     if (!storage.IsObject()) {
         throw Error::New(Env(), "Cannot get callbacks becauses none were registered");
@@ -759,7 +789,7 @@ Function MongoCrypt::GetCallback(const char* name) {
     return entry.As<Function>();
 }
 
-void MongoCrypt::SetCallback(const char* name, Napi::Value fn) {
+void MongoCrypt::SetCallback(const char *name, Napi::Value fn) {
     if (!fn.IsFunction()) {
         throw Error::New(Env(), std::string("Storing non-function as callback ") + name);
     }
@@ -773,50 +803,48 @@ void MongoCrypt::SetCallback(const char* name, Napi::Value fn) {
 }
 
 Function MongoCryptContext::Init(Napi::Env env) {
-  return
-      DefineClass(env,
-                  "MongoCryptContext",
-                  {
-                    InstanceMethod("nextMongoOperation", &MongoCryptContext::NextMongoOperation),
-                    InstanceMethod("addMongoOperationResponse", &MongoCryptContext::AddMongoOperationResponse),
-                    InstanceMethod("finishMongoOperation", &MongoCryptContext::FinishMongoOperation),
-                    InstanceMethod("nextKMSRequest", &MongoCryptContext::NextKMSRequest),
-                    InstanceMethod("provideKMSProviders", &MongoCryptContext::ProvideKMSProviders),
-                    InstanceMethod("finishKMSRequests", &MongoCryptContext::FinishKMSRequests),
-                    InstanceMethod("finalize", &MongoCryptContext::FinalizeContext),
-                    InstanceAccessor("status", &MongoCryptContext::Status, nullptr),
-                    InstanceAccessor("state", &MongoCryptContext::State, nullptr)
-                  });
+    return DefineClass(env,
+                       "MongoCryptContext",
+                       {InstanceMethod("nextMongoOperation", &MongoCryptContext::NextMongoOperation),
+                        InstanceMethod("addMongoOperationResponse", &MongoCryptContext::AddMongoOperationResponse),
+                        InstanceMethod("finishMongoOperation", &MongoCryptContext::FinishMongoOperation),
+                        InstanceMethod("nextKMSRequest", &MongoCryptContext::NextKMSRequest),
+                        InstanceMethod("provideKMSProviders", &MongoCryptContext::ProvideKMSProviders),
+                        InstanceMethod("finishKMSRequests", &MongoCryptContext::FinishKMSRequests),
+                        InstanceMethod("finalize", &MongoCryptContext::FinalizeContext),
+                        InstanceAccessor("status", &MongoCryptContext::Status, nullptr),
+                        InstanceAccessor("state", &MongoCryptContext::State, nullptr)});
 }
 
-Object MongoCryptContext::NewInstance(Napi::Env env, std::unique_ptr<mongocrypt_ctx_t, MongoCryptContextDeleter> context) {
-    InstanceData* instance_data = env.GetInstanceData<InstanceData>();
+Object MongoCryptContext::NewInstance(Napi::Env env,
+                                      std::unique_ptr<mongocrypt_ctx_t, MongoCryptContextDeleter> context) {
+    InstanceData *instance_data = env.GetInstanceData<InstanceData>();
     Object obj = instance_data->MongoCryptContextCtor.Value().New({});
-    MongoCryptContext* instance = MongoCryptContext::Unwrap(obj);
+    MongoCryptContext *instance = MongoCryptContext::Unwrap(obj);
     instance->_context = std::move(context);
     return obj;
 }
 
-MongoCryptContext::MongoCryptContext(const CallbackInfo& info)
-    : ObjectWrap(info) {}
+MongoCryptContext::MongoCryptContext(const CallbackInfo &info) : ObjectWrap(info) {
+}
 
-Value MongoCryptContext::Status(const CallbackInfo& info) {
+Value MongoCryptContext::Status(const CallbackInfo &info) {
     std::unique_ptr<mongocrypt_status_t, MongoCryptStatusDeleter> status(mongocrypt_status_new());
     mongocrypt_ctx_status(_context.get(), status.get());
     return ExtractStatus(Env(), status.get());
 }
 
-Value MongoCryptContext::State(const CallbackInfo& info) {
+Value MongoCryptContext::State(const CallbackInfo &info) {
     return Number::New(Env(), mongocrypt_ctx_state(_context.get()));
 }
 
-Value MongoCryptContext::NextMongoOperation(const CallbackInfo& info) {
+Value MongoCryptContext::NextMongoOperation(const CallbackInfo &info) {
     std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> op_bson(mongocrypt_binary_new());
     mongocrypt_ctx_mongo_op(_context.get(), op_bson.get());
     return BufferFromBinary(Env(), op_bson.get());
 }
 
-void MongoCryptContext::AddMongoOperationResponse(const CallbackInfo& info) {
+void MongoCryptContext::AddMongoOperationResponse(const CallbackInfo &info) {
     if (info.Length() != 1 || !info[0].IsObject()) {
         throw TypeError::New(Env(), "Missing required parameter `buffer`");
     }
@@ -825,17 +853,16 @@ void MongoCryptContext::AddMongoOperationResponse(const CallbackInfo& info) {
         throw TypeError::New(Env(), "First parameter must be a Buffer");
     }
 
-    std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> reply_bson(
-        BufferToBinary(info[0].As<Uint8Array>()));
+    std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> reply_bson(BufferToBinary(info[0].As<Uint8Array>()));
     mongocrypt_ctx_mongo_feed(_context.get(), reply_bson.get());
     // return value
 }
 
-void MongoCryptContext::FinishMongoOperation(const CallbackInfo& info) {
+void MongoCryptContext::FinishMongoOperation(const CallbackInfo &info) {
     mongocrypt_ctx_mongo_done(_context.get());
 }
 
-void MongoCryptContext::ProvideKMSProviders(const CallbackInfo& info) {
+void MongoCryptContext::ProvideKMSProviders(const CallbackInfo &info) {
     if (info.Length() != 1 || !info[0].IsObject()) {
         throw TypeError::New(Env(), "Missing required parameter `buffer`");
     }
@@ -844,13 +871,12 @@ void MongoCryptContext::ProvideKMSProviders(const CallbackInfo& info) {
         throw TypeError::New(Env(), "First parameter must be a Buffer");
     }
 
-    std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> kms_bson(
-        BufferToBinary(info[0].As<Uint8Array>()));
+    std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> kms_bson(BufferToBinary(info[0].As<Uint8Array>()));
     mongocrypt_ctx_provide_kms_providers(_context.get(), kms_bson.get());
 }
 
-Value MongoCryptContext::NextKMSRequest(const CallbackInfo& info) {
-    mongocrypt_kms_ctx_t* kms_context = mongocrypt_ctx_next_kms_ctx(_context.get());
+Value MongoCryptContext::NextKMSRequest(const CallbackInfo &info) {
+    mongocrypt_kms_ctx_t *kms_context = mongocrypt_ctx_next_kms_ctx(_context.get());
     if (kms_context == nullptr) {
         return Env().Null();
     } else {
@@ -864,76 +890,72 @@ Value MongoCryptContext::NextKMSRequest(const CallbackInfo& info) {
     }
 }
 
-void MongoCryptContext::FinishKMSRequests(const CallbackInfo& info) {
+void MongoCryptContext::FinishKMSRequests(const CallbackInfo &info) {
     mongocrypt_ctx_kms_done(_context.get());
 }
 
-Value MongoCryptContext::FinalizeContext(const CallbackInfo& info) {
+Value MongoCryptContext::FinalizeContext(const CallbackInfo &info) {
     std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> output(mongocrypt_binary_new());
     mongocrypt_ctx_finalize(_context.get(), output.get());
     return BufferFromBinary(Env(), output.get());
 }
 
 Function MongoCryptKMSRequest::Init(Napi::Env env) {
-  return
-      DefineClass(env,
-                  "MongoCryptKMSRequest",
-                  {
-                    InstanceMethod("addResponse", &MongoCryptKMSRequest::AddResponse),
-                    InstanceAccessor("status", &MongoCryptKMSRequest::Status, nullptr),
-                    InstanceAccessor("bytesNeeded", &MongoCryptKMSRequest::BytesNeeded, nullptr),
-                    InstanceAccessor("kmsProvider", &MongoCryptKMSRequest::KMSProvider, nullptr),
-                    InstanceAccessor("endpoint", &MongoCryptKMSRequest::Endpoint, nullptr),
-                    InstanceAccessor("message", &MongoCryptKMSRequest::Message, nullptr)
-                  });
+    return DefineClass(env,
+                       "MongoCryptKMSRequest",
+                       {InstanceMethod("addResponse", &MongoCryptKMSRequest::AddResponse),
+                        InstanceAccessor("status", &MongoCryptKMSRequest::Status, nullptr),
+                        InstanceAccessor("bytesNeeded", &MongoCryptKMSRequest::BytesNeeded, nullptr),
+                        InstanceAccessor("kmsProvider", &MongoCryptKMSRequest::KMSProvider, nullptr),
+                        InstanceAccessor("endpoint", &MongoCryptKMSRequest::Endpoint, nullptr),
+                        InstanceAccessor("message", &MongoCryptKMSRequest::Message, nullptr)});
 }
 
-Object MongoCryptKMSRequest::NewInstance(Napi::Env env, mongocrypt_kms_ctx_t* kms_context) {
-    InstanceData* instance_data = env.GetInstanceData<InstanceData>();
+Object MongoCryptKMSRequest::NewInstance(Napi::Env env, mongocrypt_kms_ctx_t *kms_context) {
+    InstanceData *instance_data = env.GetInstanceData<InstanceData>();
     Object obj = instance_data->MongoCryptKMSRequestCtor.Value().New({});
-    MongoCryptKMSRequest* instance = MongoCryptKMSRequest::Unwrap(obj);
+    MongoCryptKMSRequest *instance = MongoCryptKMSRequest::Unwrap(obj);
     instance->_kms_context = kms_context;
     return obj;
 }
 
-MongoCryptKMSRequest::MongoCryptKMSRequest(const CallbackInfo& info)
-    : ObjectWrap(info), _kms_context(nullptr) {}
+MongoCryptKMSRequest::MongoCryptKMSRequest(const CallbackInfo &info) : ObjectWrap(info), _kms_context(nullptr) {
+}
 
-Value MongoCryptKMSRequest::Status(const CallbackInfo& info) {
+Value MongoCryptKMSRequest::Status(const CallbackInfo &info) {
     std::unique_ptr<mongocrypt_status_t, MongoCryptStatusDeleter> status(mongocrypt_status_new());
     mongocrypt_kms_ctx_status(_kms_context, status.get());
     return ExtractStatus(Env(), status.get());
 }
 
-Value MongoCryptKMSRequest::BytesNeeded(const CallbackInfo& info) {
+Value MongoCryptKMSRequest::BytesNeeded(const CallbackInfo &info) {
     return Number::New(Env(), mongocrypt_kms_ctx_bytes_needed(_kms_context));
 }
 
-Value MongoCryptKMSRequest::KMSProvider(const CallbackInfo& info) {
+Value MongoCryptKMSRequest::KMSProvider(const CallbackInfo &info) {
     return String::New(Env(), mongocrypt_kms_ctx_get_kms_provider(_kms_context, nullptr));
 }
 
-Value MongoCryptKMSRequest::Message(const CallbackInfo& info) {
+Value MongoCryptKMSRequest::Message(const CallbackInfo &info) {
     std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> message(mongocrypt_binary_new());
     mongocrypt_kms_ctx_message(_kms_context, message.get());
     return BufferFromBinary(Env(), message.get());
 }
 
-Value MongoCryptKMSRequest::Endpoint(const CallbackInfo& info) {
+Value MongoCryptKMSRequest::Endpoint(const CallbackInfo &info) {
     std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> message(mongocrypt_binary_new());
 
-    const char* endpoint;
+    const char *endpoint;
     mongocrypt_kms_ctx_endpoint(_kms_context, &endpoint);
     return String::New(Env(), endpoint);
 }
 
-void MongoCryptKMSRequest::AddResponse(const CallbackInfo& info) {
+void MongoCryptKMSRequest::AddResponse(const CallbackInfo &info) {
     if (!info[0].IsBuffer()) {
         throw TypeError::New(Env(), "First parameter must be of type Buffer");
     }
 
-    std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> reply_bytes(
-        BufferToBinary(info[0].As<Uint8Array>()));
+    std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> reply_bytes(BufferToBinary(info[0].As<Uint8Array>()));
     mongocrypt_kms_ctx_feed(_kms_context, reply_bytes.get());
 }
 
@@ -944,10 +966,8 @@ static Object Init(Env env, Object exports) {
     exports["MongoCrypt"] = MongoCryptCtor;
     exports["MongoCryptContextCtor"] = MongoCryptContextCtor;
     exports["MongoCryptKMSRequestCtor"] = MongoCryptKMSRequestCtor;
-    env.SetInstanceData(new InstanceData {
-        Reference<Function>::New(MongoCryptContextCtor, 1),
-        Reference<Function>::New(MongoCryptKMSRequestCtor, 1)
-    });
+    env.SetInstanceData(new InstanceData{Reference<Function>::New(MongoCryptContextCtor, 1),
+                                         Reference<Function>::New(MongoCryptKMSRequestCtor, 1)});
     return exports;
 }
 
