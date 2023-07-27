@@ -2,6 +2,8 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [6.0.0-alpha.1](https://github.com/mongodb/libmongocrypt/compare/node-v2.9.0...node-v6.0.0-alpha.1) (2023-07-27)
+
 ## [6.0.0-alpha.0](https://github.com/mongodb/libmongocrypt/compare/node-v2.9.0...node-v6.0.0-alpha.0) (2023-07-13)
 
 ## [2.9.0](https://github.com/mongodb/libmongocrypt/compare/node-v2.8.0...node-v2.9.0) (2023-07-12)
