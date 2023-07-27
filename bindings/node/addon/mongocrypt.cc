@@ -751,7 +751,7 @@ Value MongoCrypt::MakeDataKeyContext(const CallbackInfo &info) {
 Value MongoCrypt::MakeRewrapManyDataKeyContext(const CallbackInfo &info) {
     Napi::Value filter_buffer = info[0];
     if (!filter_buffer.IsBuffer()) {
-        throw TypeError::New(Env(), "Parameter `options` must be a Buffer");
+        throw TypeError::New(Env(), "Parameter `filter` must be a Buffer");
     }
 
     std::unique_ptr<mongocrypt_ctx_t, MongoCryptContextDeleter> context(mongocrypt_ctx_new(_mongo_crypt.get()));
