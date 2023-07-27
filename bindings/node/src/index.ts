@@ -81,6 +81,8 @@ export type ExplicitEncryptionContextOptions = NonNullable<
   Parameters<MongoCrypt['makeExplicitEncryptionContext']>[1]
 >;
 
+export type DataKeyContextOptions = NonNullable<Parameters<MongoCrypt['makeDataKeyContext']>[1]>;
+
 export const MongoCrypt: MongoCryptConstructor = mc.MongoCrypt;
 
 /** exported for testing only. */
