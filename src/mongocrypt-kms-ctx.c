@@ -464,6 +464,10 @@ static bool _ctx_done_aws(mongocrypt_kms_ctx_t *kms, const char *json_field) {
     /* Parse out the {en|de}crypted result. */
     http_status = kms_response_parser_status(kms->parser);
     response = kms_response_parser_get_response(kms->parser);
+    if (!response) {
+        CLIENT_ERR("Failed to get response from parser: %s", kms_response_parser_error(kms->parser));
+        goto fail;
+    }
     body = kms_response_get_body(response, &body_len);
 
     if (http_status != 200) {
@@ -541,6 +545,10 @@ static bool _ctx_done_oauth(mongocrypt_kms_ctx_t *kms) {
     /* Parse out the oauth token result (or error). */
     http_status = kms_response_parser_status(kms->parser);
     response = kms_response_parser_get_response(kms->parser);
+    if (!response) {
+        CLIENT_ERR("Failed to get response from parser: %s", kms_response_parser_error(kms->parser));
+        goto fail;
+    }
     body = kms_response_get_body(response, &body_len);
 
     if (body_len == 0) {
@@ -614,6 +622,10 @@ static bool _ctx_done_azure_wrapkey_unwrapkey(mongocrypt_kms_ctx_t *kms) {
     /* Parse out the oauth token result (or error). */
     http_status = kms_response_parser_status(kms->parser);
     response = kms_response_parser_get_response(kms->parser);
+    if (!response) {
+        CLIENT_ERR("Failed to get response from parser: %s", kms_response_parser_error(kms->parser));
+        goto fail;
+    }
     body = kms_response_get_body(response, &body_len);
 
     if (body_len == 0) {
@@ -704,6 +716,10 @@ static bool _ctx_done_gcp(mongocrypt_kms_ctx_t *kms, const char *json_field) {
     /* Parse out the {en|de}crypted result. */
     http_status = kms_response_parser_status(kms->parser);
     response = kms_response_parser_get_response(kms->parser);
+    if (!response) {
+        CLIENT_ERR("Failed to get response from parser: %s", kms_response_parser_error(kms->parser));
+        goto fail;
+    }
     body = kms_response_get_body(response, &body_len);
 
     if (http_status != 200) {
