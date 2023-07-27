@@ -120,6 +120,7 @@ static bool _decrypt_with_cipher(const EVP_CIPHER *cipher, aes_256_args_t args) 
     mongocrypt_status_t *status = args.status;
 
     ctx = EVP_CIPHER_CTX_new();
+    BSON_ASSERT(ctx);
 
     BSON_ASSERT_PARAM(cipher);
     BSON_ASSERT(args.iv);
