@@ -17,10 +17,6 @@ export interface MongoCryptStatus {
   message?: string;
 }
 
-interface MongoCryptContextCtor {
-  new (...args: unknown[]): MongoCryptContext;
-}
-
 export interface MongoCryptContext {
   nextMongoOperation(): Buffer;
   addMongoOperationResponse(response: Uint8Array): void;
@@ -35,7 +31,16 @@ export interface MongoCryptContext {
 }
 
 export interface MongoCryptConstructor {
-  new (options: Record<string, unknown>): MongoCrypt;
+  new (options: {
+    kmsProviders?: Buffer;
+    schemaMap?: Buffer;
+    encryptedFieldsMap?: Buffer;
+    logger?: unknown;
+    cryptoCallbacks?: Record<string, unknown>;
+    cryptSharedLibSearchPaths?: string[];
+    cryptSharedLibPath?: string;
+    bypassQueryAnalysis?: boolean;
+  }): MongoCrypt;
   libmongocryptVersion: string;
 }
 
@@ -80,10 +85,13 @@ export interface MongoCrypt {
 export type ExplicitEncryptionContextOptions = NonNullable<
   Parameters<MongoCrypt['makeExplicitEncryptionContext']>[1]
 >;
-
 export type DataKeyContextOptions = NonNullable<Parameters<MongoCrypt['makeDataKeyContext']>[1]>;
+export type MongoCryptOptions = NonNullable<ConstructorParameters<MongoCryptConstructor>[0]>;
 
 export const MongoCrypt: MongoCryptConstructor = mc.MongoCrypt;
 
 /** exported for testing only. */
+interface MongoCryptContextCtor {
+  new (): MongoCryptContext;
+}
 export const MongoCryptContextCtor: MongoCryptContextCtor = mc.MongoCryptContextCtor;
