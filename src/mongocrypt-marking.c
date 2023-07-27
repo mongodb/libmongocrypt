@@ -378,6 +378,7 @@ static bool _fle2_derive_encrypted_token(_mongocrypt_crypto_t *crypto,
     if (!ecocToken) {
         return false;
     }
+    bool ok = false;
 
     _mongocrypt_buffer_t tmp;
     _mongocrypt_buffer_init(&tmp);
@@ -388,10 +389,18 @@ static bool _fle2_derive_encrypted_token(_mongocrypt_crypto_t *crypto,
     } else {
         // FLE2v1
         const _mongocrypt_buffer_t tokens[] = {*escDerivedToken, *eccDerivedToken};
-        _mongocrypt_buffer_concat(&tmp, tokens, 2);
+        if (!_mongocrypt_buffer_concat(&tmp, tokens, 2)) {
+            CLIENT_ERR("failed to allocate buffer");
+            goto fail;
+        }
     }
 
-    const bool ok = _fle2_placeholder_aes_ctr_encrypt(crypto, mc_ECOCToken_get(ecocToken), p, out, status);
+    if (!_fle2_placeholder_aes_ctr_encrypt(crypto, mc_ECOCToken_get(ecocToken), p, out, status)) {
+        goto fail;
+    }
+
+    ok = true;
+fail:
     _mongocrypt_buffer_cleanup(&tmp);
     mc_ECOCToken_destroy(ecocToken);
     return ok;
