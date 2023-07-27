@@ -3,7 +3,7 @@
   "version": "6.0.0-alpha.0",
   "description": "Official client encryption module for the MongoDB Node.js driver",
   "main": "lib/index.js",
-  "types": "index.d.ts",
+  "types": "src/index",
   "files": [
     "README.md",
     "CHANGELOG.md",

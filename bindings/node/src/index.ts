@@ -2,7 +2,7 @@ import bindings = require('bindings');
 
 const mc = bindings('mongocrypt');
 
-interface MongoCryptKMSRequest {
+export interface MongoCryptKMSRequest {
   addResponse(response: Buffer): void;
   readonly status: MongoCryptStatus;
   readonly bytesNeeded: number;
@@ -11,18 +11,22 @@ interface MongoCryptKMSRequest {
   readonly message: Buffer;
 }
 
-interface MongoCryptStatus {
+export interface MongoCryptStatus {
   type: number;
   code: number;
   message?: string;
 }
 
-interface MongoCryptContext {
+interface MongoCryptContextCtor {
+  new (...args: unknown[]): MongoCryptContext;
+}
+
+export interface MongoCryptContext {
   nextMongoOperation(): Buffer;
-  addMongoOperationResponse(response: Buffer): void;
+  addMongoOperationResponse(response: Uint8Array): void;
   finishMongoOperation(): void;
   nextKMSRequest(): MongoCryptKMSRequest | null;
-  provideKMSProviders(providers: Buffer): void;
+  provideKMSProviders(providers: Uint8Array): void;
   finishKMSRequests(): void;
   finalize(): Buffer;
 
@@ -31,19 +35,19 @@ interface MongoCryptContext {
 }
 
 export interface MongoCryptConstructor {
-  new (): MongoCrypt;
+  new (options: Record<string, unknown>): MongoCrypt;
   libmongocryptVersion: string;
 }
 
 export interface MongoCrypt {
-  makeEncryptionContext(ns: string, command: Buffer): MongoCryptContext;
+  makeEncryptionContext(ns: string, command: Uint8Array): MongoCryptContext;
   makeExplicitEncryptionContext(
-    value: Buffer,
+    value: Uint8Array,
     options?: {
-      keyId?: Buffer;
-      keyAltName?: Buffer;
+      keyId?: Uint8Array;
+      keyAltName?: Uint8Array;
       algorithm?: string;
-      rangeOptions?: Buffer;
+      rangeOptions?: Uint8Array;
       contentionFactor?: bigint | number;
       queryType?: string;
 
@@ -56,16 +60,16 @@ export interface MongoCrypt {
       expressionMode: boolean;
     }
   ): MongoCryptContext;
-  makeDecryptionContext(buffer: Buffer): MongoCryptContext;
-  makeExplicitDecryptionContext(buffer: Buffer): MongoCryptContext;
+  makeDecryptionContext(buffer: Uint8Array): MongoCryptContext;
+  makeExplicitDecryptionContext(buffer: Uint8Array): MongoCryptContext;
   makeDataKeyContext(
-    optionsBuffer: Buffer,
+    optionsBuffer: Uint8Array,
     options: {
-      keyAltNames: Buffer[];
-      keyMaterial: Buffer;
+      keyAltNames?: Uint8Array[];
+      keyMaterial?: Uint8Array;
     }
-  ): void;
-  makeRewrapManyDataKeyContext(filter: Buffer, encryptionKey: Buffer): void;
+  ): MongoCryptContext;
+  makeRewrapManyDataKeyContext(filter: Uint8Array, encryptionKey?: Uint8Array): MongoCryptContext;
   readonly status: MongoCryptStatus;
   readonly cryptSharedLibVersionInfo: {
     version: bigint;
@@ -73,4 +77,11 @@ export interface MongoCrypt {
   } | null;
 }
 
+export type ExplicitEncryptionContextOptions = NonNullable<
+  Parameters<MongoCrypt['makeExplicitEncryptionContext']>[1]
+>;
+
 export const MongoCrypt: MongoCryptConstructor = mc.MongoCrypt;
+
+/** exported for testing only. */
+export const MongoCryptContextCtor: MongoCryptContextCtor = mc.MongoCryptContextCtor;
