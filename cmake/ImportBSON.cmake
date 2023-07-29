@@ -105,9 +105,12 @@ if (NOT DEFINED MONGOCRYPT_MONGOC_DIR)
    include (FetchMongoC)
    # The FetchMongoC module defines a MONGOCRYPT_MONGOC_DIR for us to use
 endif ()
+if (ENABLE_ONLINE_TESTS AND (MONGOCRYPT_MONGOC_DIR STREQUAL "USE-SYSTEM" OR USE_SHARED_LIBBSON))
+   message (FATAL_ERROR "Online tests requires static local build of libbson")
+endif ()
 
 function (_import_bson)
-   if (MONGOCRYPT_MONGOC_DIR STREQUAL "USE-SYSTEM" AND USE_SHARED_LIBBSON AND NOT ENABLE_ONLINE_TESTS)
+   if (MONGOCRYPT_MONGOC_DIR STREQUAL "USE-SYSTEM" AND USE_SHARED_LIBBSON)
       message (STATUS "NOTE: Using system-wide libbson library. This is intended only for package maintainers.")
       find_library (_MONGOCRYPT_SYSTEM_LIBBSON_SHARED "${CMAKE_SHARED_LIBRARY_PREFIX}bson-1.0${CMAKE_SHARED_LIBRARY_SUFFIX}")
       find_library (_MONGOCRYPT_SYSTEM_LIBBSON_STATIC "${CMAKE_STATIC_LIBRARY_PREFIX}bson-static-1.0${CMAKE_STATIC_LIBRARY_SUFFIX}")
