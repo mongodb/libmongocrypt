@@ -134,10 +134,13 @@ function (_import_system_libbson target library_type library_name)
 endfunction ()
 
 function (_import_bson)
-   if (MONGOCRYPT_MONGOC_DIR STREQUAL "USE-SYSTEM" AND USE_SHARED_LIBBSON)
+   if (MONGOCRYPT_MONGOC_DIR STREQUAL "USE-SYSTEM")
       message (STATUS "NOTE: Using system-wide libbson library. This is intended only for package maintainers.")
-      _import_system_libbson(bson_shared SHARED "${CMAKE_SHARED_LIBRARY_PREFIX}bson-1.0${CMAKE_SHARED_LIBRARY_SUFFIX}")
-      _import_system_libbson(bson_static STATIC "${CMAKE_STATIC_LIBRARY_PREFIX}bson-static-1.0${CMAKE_STATIC_LIBRARY_SUFFIX}")
+      if (USE_SHARED_LIBBSON)
+         _import_system_libbson (bson_shared SHARED "${CMAKE_SHARED_LIBRARY_PREFIX}bson-1.0${CMAKE_SHARED_LIBRARY_SUFFIX}")
+      else ()
+         _import_system_libbson (bson_static STATIC "${CMAKE_STATIC_LIBRARY_PREFIX}bson-static-1.0${CMAKE_STATIC_LIBRARY_SUFFIX}")
+      endif ()
    else ()
       message (STATUS "Using [${MONGOCRYPT_MONGOC_DIR}] as a sub-project for libbson")
       # Disable AWS_AUTH, to prevent it from building the kms-message symbols, which we build ourselves
@@ -211,11 +214,11 @@ install (
 # users during find_package()
 if (USE_SHARED_LIBBSON)
    target_link_libraries (_mongocrypt-libbson_for_shared INTERFACE $<BUILD_INTERFACE:bson_shared>)
+   target_link_libraries (_mongocrypt-libbson_for_static INTERFACE $<BUILD_INTERFACE:bson_shared>)
 else ()
    target_link_libraries (_mongocrypt-libbson_for_shared INTERFACE $<BUILD_INTERFACE:bson_static>)
+   target_link_libraries (_mongocrypt-libbson_for_static INTERFACE $<BUILD_INTERFACE:bson_static>)
 endif ()
-# libbson_for_static always links to the static libbson:
-target_link_libraries (_mongocrypt-libbson_for_static INTERFACE $<BUILD_INTERFACE:bson_static>)
 
 if (TARGET mongoc_static)
    # And an alias to the mongoc target for use in some test cases
