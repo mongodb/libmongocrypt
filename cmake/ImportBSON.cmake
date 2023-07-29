@@ -109,26 +109,35 @@ if (ENABLE_ONLINE_TESTS AND (MONGOCRYPT_MONGOC_DIR STREQUAL "USE-SYSTEM" OR USE_
    message (FATAL_ERROR "Online tests requires static local build of libbson")
 endif ()
 
+function (_import_system_libbson target library_type library_name)
+   # import a system libbson
+   # target: target to add library under
+   # library_type: STATIC or SHARED
+   # library_name: filename to seek
+
+   set (lib "_MONGOCRYPT_SYSTEM_LIBBSON_${library_type}")
+
+   find_library (${lib} ${library_name})
+   if (${${lib}} STREQUAL "${lib}-NOTFOUND")
+      message (FATAL_ERROR "system ${library_name} not found")
+   endif ()
+   find_path (_MONGOCRYPT_SYSTEM_LIBBSON_INCLUDE_DIR bson/bson.h PATH_SUFFIXES libbson-1.0)
+
+   add_library (${target} ${library_type} IMPORTED)
+
+   set_target_properties (${target} PROPERTIES
+      IMPORTED_CONFIGURATIONS "Release"
+      INTERFACE_INCLUDE_DIRECTORIES "${_MONGOCRYPT_SYSTEM_LIBBSON_INCLUDE_DIR}"
+      IMPORTED_LOCATION "${${lib}}"
+   )
+   set_property (CACHE ${lib} _MONGOCRYPT_SYSTEM_LIBBSON_INCLUDE_DIR PROPERTY ADVANCED TRUE)
+endfunction ()
+
 function (_import_bson)
    if (MONGOCRYPT_MONGOC_DIR STREQUAL "USE-SYSTEM" AND USE_SHARED_LIBBSON)
       message (STATUS "NOTE: Using system-wide libbson library. This is intended only for package maintainers.")
-      find_library (_MONGOCRYPT_SYSTEM_LIBBSON_SHARED "${CMAKE_SHARED_LIBRARY_PREFIX}bson-1.0${CMAKE_SHARED_LIBRARY_SUFFIX}")
-      find_library (_MONGOCRYPT_SYSTEM_LIBBSON_STATIC "${CMAKE_STATIC_LIBRARY_PREFIX}bson-static-1.0${CMAKE_STATIC_LIBRARY_SUFFIX}")
-      find_path (_MONGOCRYPT_SYSTEM_LIBBSON_INCLUDE_DIR bson/bson.h PATH_SUFFIXES libbson-1.0)
-      add_library (bson_shared SHARED IMPORTED)
-      add_library (bson_static STATIC IMPORTED)
-      set_target_properties (bson_shared bson_static PROPERTIES
-         IMPORTED_CONFIGURATIONS "Release"
-         INTERFACE_INCLUDE_DIRECTORIES "${_MONGOCRYPT_SYSTEM_LIBBSON_INCLUDE_DIR}"
-         )
-      set_property (TARGET bson_shared PROPERTY IMPORTED_LOCATION "${_MONGOCRYPT_SYSTEM_LIBBSON_SHARED}")
-      set_property (TARGET bson_static PROPERTY IMPORTED_LOCATION "${_MONGOCRYPT_SYSTEM_LIBBSON_STATIC}")
-      set_property (
-         CACHE _MONGOCRYPT_SYSTEM_LIBBSON_SHARED
-               _MONGOCRYPT_SYSTEM_LIBBSON_INCLUDE_DIR
-         PROPERTY ADVANCED
-         TRUE
-      )
+      _import_system_libbson(bson_shared SHARED "${CMAKE_SHARED_LIBRARY_PREFIX}bson-1.0${CMAKE_SHARED_LIBRARY_SUFFIX}")
+      _import_system_libbson(bson_static STATIC "${CMAKE_STATIC_LIBRARY_PREFIX}bson-static-1.0${CMAKE_STATIC_LIBRARY_SUFFIX}")
    else ()
       message (STATUS "Using [${MONGOCRYPT_MONGOC_DIR}] as a sub-project for libbson")
       # Disable AWS_AUTH, to prevent it from building the kms-message symbols, which we build ourselves
