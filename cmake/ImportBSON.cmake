@@ -161,6 +161,26 @@ function (_import_bson)
       else ()
          add_subdirectory ("${MONGOCRYPT_MONGOC_DIR}" _mongo-c-driver EXCLUDE_FROM_ALL)
       endif ()
+
+      # Put the libbson dynamic library into the current binary directory (plus possible config suffix).
+      # This ensures that libbson DLL will resolve on Windows when it searches during tests
+      set_property (TARGET bson_shared PROPERTY RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+
+      if (ENABLE_STATIC)
+         # We are going to build a static libmongocrypt. Enable the static library as
+         # part of "all", and install the archive alongside the rest of our static libraries.
+         # (Useful for some users for convenience of static-linking libmongocrypt: CDRIVER-3187)
+         set_target_properties (bson_static PROPERTIES
+            EXCLUDE_FROM_ALL FALSE
+            OUTPUT_NAME bson-static-for-libmongocrypt
+            )
+         install (
+            FILES $<TARGET_FILE:bson_static>
+            DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+            RENAME ${CMAKE_STATIC_LIBRARY_PREFIX}bson-static-for-libmongocrypt${CMAKE_STATIC_LIBRARY_SUFFIX}
+            )
+      endif ()
+
       if (TARGET mongoc_static)
          # Workaround: Embedded mongoc_static does not set its INCLUDE_DIRECTORIES for user targets
          target_include_directories (mongoc_static
@@ -200,24 +220,4 @@ target_link_libraries (_mongocrypt-libbson_for_static INTERFACE $<BUILD_INTERFAC
 if (TARGET mongoc_static)
    # And an alias to the mongoc target for use in some test cases
    add_library (_mongocrypt::mongoc ALIAS mongoc_static)
-endif ()
-
-# Put the libbson dynamic library into the current binary directory (plus possible config suffix).
-# This ensures that libbson DLL will resolve on Windows when it searches during tests
-set_property (TARGET bson_shared PROPERTY RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
-
-if (ENABLE_STATIC)
-   # We are going to build a static libmongocrypt.
-   # We want the static libbson target from the embedded mongoc. Enable the static library as
-   # part of "all", and install the archive alongside the rest of our static libraries.
-   # (Useful for some users for convenience of static-linking libmongocrypt: CDRIVER-3187)
-   set_target_properties (bson_static PROPERTIES
-      EXCLUDE_FROM_ALL FALSE
-      OUTPUT_NAME bson-static-for-libmongocrypt
-      )
-   install (
-      FILES $<TARGET_FILE:bson_static>
-      DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-      RENAME ${CMAKE_STATIC_LIBRARY_PREFIX}bson-static-for-libmongocrypt${CMAKE_STATIC_LIBRARY_SUFFIX}
-      )
 endif ()
