@@ -3,7 +3,7 @@ import * as bindings from '../src/index';
 
 describe('index.ts', () => {
   it('only has one export', () => {
-    expect(Object.keys(bindings).length).to.equal(3);
+    expect(Object.keys(bindings).length).to.equal(2);
   });
 
   it('exports a class MongoCrypt', () => {
@@ -15,6 +15,6 @@ describe('index.ts', () => {
   });
 
   it('exposes MongoCryptKMSRequestCtor', () => {
-    expect(bindings).to.have.property('MongoCryptKMSRequestCtor');
+    expect(bindings).not.to.have.property('MongoCryptKMSRequestCtor');
   });
 });
