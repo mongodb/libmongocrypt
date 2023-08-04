@@ -3,7 +3,7 @@ import bindings = require('bindings');
 const mc = bindings('mongocrypt');
 
 export interface MongoCryptKMSRequest {
-  addResponse(response: Buffer): void;
+  addResponse(response: Uint8Array): void;
   readonly status: MongoCryptStatus;
   readonly bytesNeeded: number;
   readonly kmsProvider: string;
@@ -32,9 +32,9 @@ export interface MongoCryptContext {
 
 export interface MongoCryptConstructor {
   new (options: {
-    kmsProviders?: Buffer;
-    schemaMap?: Buffer;
-    encryptedFieldsMap?: Buffer;
+    kmsProviders?: Uint8Array;
+    schemaMap?: Uint8Array;
+    encryptedFieldsMap?: Uint8Array;
     logger?: unknown;
     cryptoCallbacks?: Record<string, unknown>;
     cryptSharedLibSearchPaths?: string[];

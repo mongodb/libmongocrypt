@@ -1,5 +1,6 @@
 #include "mongocrypt.h"
 #include <cassert>
+#include <sstream>
 
 #ifdef _MSC_VER
 #define strncasecmp _strnicmp
@@ -35,7 +36,7 @@ Object ExtractStatus(Env env, mongocrypt_status_t *status) {
     return result;
 }
 
-std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> BufferToBinary(Uint8Array node_buffer) {
+std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> Uint8ArrayToBinary(Uint8Array node_buffer) {
     uint8_t *buffer = node_buffer.Data();
     size_t buffer_len = node_buffer.ByteLength();
     return std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter>(
@@ -51,6 +52,14 @@ Uint8Array BufferFromBinary(Env env, mongocrypt_binary_t *binary) {
 Uint8Array BufferWithLengthOf(Env env, mongocrypt_binary_t *binary) {
     size_t len = mongocrypt_binary_len(binary);
     return Buffer<uint8_t>::New(env, len);
+}
+
+Uint8Array Uint8ArrayFromValue(Napi::Value v, std::string argument_name) {
+    if (!v.IsTypedArray()) {
+        std::string error_message = "Parameter `" + argument_name + "` must be a Uint8Array.";
+        throw TypeError::New(v.Env(), error_message);
+    }
+    return v.As<Uint8Array>();
 }
 
 void CopyBufferData(mongocrypt_binary_t *out, Uint8Array buffer, size_t count) {
@@ -427,42 +436,31 @@ MongoCrypt::MongoCrypt(const CallbackInfo &info) : ObjectWrap(info), _mongo_cryp
     Object options = info[0].ToObject();
 
     if (options.Has("kmsProviders")) {
-        Napi::Value kmsProvidersOptions = options["kmsProviders"];
-
-        if (!kmsProvidersOptions.IsBuffer()) {
-            throw TypeError::New(Env(), "Option `kmsProviders` must be a Buffer");
-        }
+        Uint8Array kmsProvidersOptions = Uint8ArrayFromValue(options["kmsProviders"], "options.kmsProviders");
 
         std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> kmsProvidersBinary(
-            BufferToBinary(kmsProvidersOptions.As<Uint8Array>()));
+            Uint8ArrayToBinary(kmsProvidersOptions));
         if (!mongocrypt_setopt_kms_providers(_mongo_crypt.get(), kmsProvidersBinary.get())) {
             throw TypeError::New(Env(), errorStringFromStatus(_mongo_crypt.get()));
         }
     }
 
     if (options.Has("schemaMap")) {
-        Napi::Value schemaMapBuffer = options["schemaMap"];
-
-        if (!schemaMapBuffer.IsBuffer()) {
-            throw TypeError::New(Env(), "Option `schemaMap` must be a Buffer");
-        }
+        Uint8Array schemaMapBuffer = Uint8ArrayFromValue(options["schemaMap"], "options.schemaMap");
 
         std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> schemaMapBinary(
-            BufferToBinary(schemaMapBuffer.As<Uint8Array>()));
+            Uint8ArrayToBinary(schemaMapBuffer));
         if (!mongocrypt_setopt_schema_map(_mongo_crypt.get(), schemaMapBinary.get())) {
             throw TypeError::New(Env(), errorStringFromStatus(_mongo_crypt.get()));
         }
     }
 
     if (options.Has("encryptedFieldsMap")) {
-        Napi::Value encryptedFieldsMapBuffer = options["encryptedFieldsMap"];
-
-        if (!encryptedFieldsMapBuffer.IsBuffer()) {
-            throw TypeError::New(Env(), "Option `encryptedFieldsMap` must be a Buffer");
-        }
+        Uint8Array encryptedFieldsMapBuffer =
+            Uint8ArrayFromValue(options["encryptedFieldsMap"], "options.encryptedFieldsMap");
 
         std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> encryptedFieldsMapBinary(
-            BufferToBinary(encryptedFieldsMapBuffer.As<Uint8Array>()));
+            Uint8ArrayToBinary(encryptedFieldsMapBuffer));
         if (!mongocrypt_setopt_encrypted_field_config_map(_mongo_crypt.get(), encryptedFieldsMapBinary.get())) {
             throw TypeError::New(Env(), errorStringFromStatus(_mongo_crypt.get()));
         }
@@ -546,13 +544,9 @@ Value MongoCrypt::MakeEncryptionContext(const CallbackInfo &info) {
     std::string ns = info[0].ToString();
     std::unique_ptr<mongocrypt_ctx_t, MongoCryptContextDeleter> context(mongocrypt_ctx_new(_mongo_crypt.get()));
 
-    Napi::Value commandBuffer = info[1];
-    if (!commandBuffer.IsBuffer()) {
-        throw TypeError::New(Env(), "Parameter `command` must be a Buffer");
-    }
+    Uint8Array commandBuffer = Uint8ArrayFromValue(info[1], "command");
 
-    std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binaryCommand(
-        BufferToBinary(commandBuffer.As<Uint8Array>()));
+    std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binaryCommand(Uint8ArrayToBinary(commandBuffer));
     if (!mongocrypt_ctx_encrypt_init(context.get(), ns.c_str(), ns.size(), binaryCommand.get())) {
         throw TypeError::New(Env(), errorStringFromStatus(context.get()));
     }
@@ -563,35 +557,23 @@ Value MongoCrypt::MakeEncryptionContext(const CallbackInfo &info) {
 Value MongoCrypt::MakeExplicitEncryptionContext(const CallbackInfo &info) {
     std::unique_ptr<mongocrypt_ctx_t, MongoCryptContextDeleter> context(mongocrypt_ctx_new(_mongo_crypt.get()));
 
-    Napi::Value valueBuffer = info[0];
-    if (!valueBuffer.IsBuffer()) {
-        throw TypeError::New(Env(), "Parameter `value` must be a Buffer");
-    }
+    Uint8Array valueBuffer = Uint8ArrayFromValue(info[0], "value");
 
     Object options = info.Length() > 1 ? info[1].ToObject() : Object::New(info.Env());
 
     if (options.Has("keyId")) {
-        Napi::Value keyId = options["keyId"];
+        Uint8Array keyId = Uint8ArrayFromValue(options["keyId"], "keyId");
 
-        if (!keyId.IsBuffer()) {
-            throw TypeError::New(Env(), "`keyId` must be a Buffer");
-        }
-
-        std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binary(BufferToBinary(keyId.As<Uint8Array>()));
+        std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binary(Uint8ArrayToBinary(keyId));
         if (!mongocrypt_ctx_setopt_key_id(context.get(), binary.get())) {
             throw TypeError::New(Env(), errorStringFromStatus(context.get()));
         }
     }
 
     if (options.Has("keyAltName")) {
-        Napi::Value keyAltName = options["keyAltName"];
+        Uint8Array keyAltName = Uint8ArrayFromValue(options["keyAltName"], "keyAltName");
 
-        if (!keyAltName.IsBuffer()) {
-            throw TypeError::New(Env(), "`keyAltName` must be a Buffer");
-        }
-
-        std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binary(
-            BufferToBinary(keyAltName.As<Uint8Array>()));
+        std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binary(Uint8ArrayToBinary(keyAltName));
         if (!mongocrypt_ctx_setopt_key_alt_name(context.get(), binary.get())) {
             throw TypeError::New(Env(), errorStringFromStatus(context.get()));
         }
@@ -608,14 +590,9 @@ Value MongoCrypt::MakeExplicitEncryptionContext(const CallbackInfo &info) {
                 throw TypeError::New(Env(), "`rangeOptions` must be provided if `algorithm` is set to RangePreview");
             }
 
-            Napi::Value rangeOptions = options["rangeOptions"];
+            Uint8Array rangeOptions = Uint8ArrayFromValue(options["rangeOptions"], "rangeOptions");
 
-            if (!rangeOptions.IsBuffer()) {
-                throw TypeError::New(Env(), "`rangeOptions` must be a Buffer");
-            }
-
-            std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binary(
-                BufferToBinary(rangeOptions.As<Uint8Array>()));
+            std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binary(Uint8ArrayToBinary(rangeOptions));
             if (!mongocrypt_ctx_setopt_algorithm_range(context.get(), binary.get())) {
                 throw TypeError::New(Env(), errorStringFromStatus(context.get()));
             }
@@ -639,8 +616,7 @@ Value MongoCrypt::MakeExplicitEncryptionContext(const CallbackInfo &info) {
         }
     }
 
-    std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binaryValue(
-        BufferToBinary(valueBuffer.As<Uint8Array>()));
+    std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binaryValue(Uint8ArrayToBinary(valueBuffer));
 
     const bool isExpressionMode = options.Get("expressionMode").ToBoolean();
 
@@ -656,11 +632,9 @@ Value MongoCrypt::MakeExplicitEncryptionContext(const CallbackInfo &info) {
 }
 
 Value MongoCrypt::MakeDecryptionContext(const CallbackInfo &info) {
-    if (!info[0].IsBuffer()) {
-        throw TypeError::New(Env(), "First parameter must be a Buffer");
-    }
+    Uint8Array value = Uint8ArrayFromValue(info[0], "value");
 
-    std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binary(BufferToBinary(info[0].As<Uint8Array>()));
+    std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binary(Uint8ArrayToBinary(value));
     std::unique_ptr<mongocrypt_ctx_t, MongoCryptContextDeleter> context(mongocrypt_ctx_new(_mongo_crypt.get()));
 
     if (!mongocrypt_ctx_decrypt_init(context.get(), binary.get())) {
@@ -671,11 +645,9 @@ Value MongoCrypt::MakeDecryptionContext(const CallbackInfo &info) {
 }
 
 Value MongoCrypt::MakeExplicitDecryptionContext(const CallbackInfo &info) {
-    if (!info[0].IsBuffer()) {
-        throw TypeError::New(Env(), "First parameter must be a Buffer");
-    }
+    Uint8Array value = Uint8ArrayFromValue(info[0], "value");
 
-    std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binary(BufferToBinary(info[0].As<Uint8Array>()));
+    std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binary(Uint8ArrayToBinary(value));
     std::unique_ptr<mongocrypt_ctx_t, MongoCryptContextDeleter> context(mongocrypt_ctx_new(_mongo_crypt.get()));
 
     if (!mongocrypt_ctx_explicit_decrypt_init(context.get(), binary.get())) {
@@ -686,14 +658,10 @@ Value MongoCrypt::MakeExplicitDecryptionContext(const CallbackInfo &info) {
 }
 
 Value MongoCrypt::MakeDataKeyContext(const CallbackInfo &info) {
-    Napi::Value optionsBuffer = info[0];
-    if (!optionsBuffer.IsBuffer()) {
-        throw TypeError::New(Env(), "Parameter `options` must be a Buffer");
-    }
+    Uint8Array optionsBuffer = Uint8ArrayFromValue(info[0], "options");
 
     std::unique_ptr<mongocrypt_ctx_t, MongoCryptContextDeleter> context(mongocrypt_ctx_new(_mongo_crypt.get()));
-    std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binary(
-        BufferToBinary(optionsBuffer.As<Uint8Array>()));
+    std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binary(Uint8ArrayToBinary(optionsBuffer));
 
     if (!mongocrypt_ctx_setopt_key_encryption_key(context.get(), binary.get())) {
         throw TypeError::New(Env(), errorStringFromStatus(context.get()));
@@ -708,14 +676,10 @@ Value MongoCrypt::MakeDataKeyContext(const CallbackInfo &info) {
             uint32_t keyAltNamesLength = keyAltNamesArray.Length();
             for (uint32_t i = 0; i < keyAltNamesLength; i += 1) {
                 if (keyAltNamesArray.Has(i)) {
-                    Napi::Value keyAltName = keyAltNamesArray[i];
-                    if (!keyAltName.IsBuffer()) {
-                        // We should never get here
-                        throw TypeError::New(Env(), "Serialized keyAltName must be a Buffer");
-                    }
+                    Uint8Array keyAltName = Uint8ArrayFromValue(keyAltNamesArray[i], "options.keyAltName[]");
 
                     std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binary(
-                        BufferToBinary(keyAltName.As<Uint8Array>()));
+                        Uint8ArrayToBinary(keyAltName));
                     if (!mongocrypt_ctx_setopt_key_alt_name(context.get(), binary.get())) {
                         throw TypeError::New(Env(), errorStringFromStatus(context.get()));
                     }
@@ -725,19 +689,11 @@ Value MongoCrypt::MakeDataKeyContext(const CallbackInfo &info) {
     }
 
     if (options.Has("keyMaterial")) {
-        Napi::Value keyMaterial = options["keyMaterial"];
+        Uint8Array keyMaterial = Uint8ArrayFromValue(options["keyMaterial"], "options.keyMaterial");
 
-        if (!keyMaterial.IsUndefined()) {
-            if (!keyMaterial.IsBuffer()) {
-                // We should never get here
-                throw TypeError::New(Env(), "Serialized keyMaterial must be a Buffer");
-            }
-
-            std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binary(
-                BufferToBinary(keyMaterial.As<Uint8Array>()));
-            if (!mongocrypt_ctx_setopt_key_material(context.get(), binary.get())) {
-                throw TypeError::New(Env(), errorStringFromStatus(context.get()));
-            }
+        std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binary(Uint8ArrayToBinary(keyMaterial));
+        if (!mongocrypt_ctx_setopt_key_material(context.get(), binary.get())) {
+            throw TypeError::New(Env(), errorStringFromStatus(context.get()));
         }
     }
 
@@ -749,24 +705,20 @@ Value MongoCrypt::MakeDataKeyContext(const CallbackInfo &info) {
 }
 
 Value MongoCrypt::MakeRewrapManyDataKeyContext(const CallbackInfo &info) {
-    Napi::Value filter_buffer = info[0];
-    if (!filter_buffer.IsBuffer()) {
-        throw TypeError::New(Env(), "Parameter `filter` must be a Buffer");
-    }
+    Uint8Array filter_buffer = Uint8ArrayFromValue(info[0], "filter");
 
     std::unique_ptr<mongocrypt_ctx_t, MongoCryptContextDeleter> context(mongocrypt_ctx_new(_mongo_crypt.get()));
 
     Napi::Value key_encryption_key = info[1];
-    if (key_encryption_key.IsBuffer()) {
+    if (key_encryption_key.IsTypedArray()) {
         std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> key_binary(
-            BufferToBinary(key_encryption_key.As<Uint8Array>()));
+            Uint8ArrayToBinary(key_encryption_key.As<Uint8Array>()));
         if (!mongocrypt_ctx_setopt_key_encryption_key(context.get(), key_binary.get())) {
             throw TypeError::New(Env(), errorStringFromStatus(context.get()));
         }
     }
 
-    std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> filter_binary(
-        BufferToBinary(filter_buffer.As<Uint8Array>()));
+    std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> filter_binary(Uint8ArrayToBinary(filter_buffer));
     if (!mongocrypt_ctx_rewrap_many_datakey_init(context.get(), filter_binary.get())) {
         throw TypeError::New(Env(), errorStringFromStatus(context.get()));
     }
@@ -845,15 +797,9 @@ Value MongoCryptContext::NextMongoOperation(const CallbackInfo &info) {
 }
 
 void MongoCryptContext::AddMongoOperationResponse(const CallbackInfo &info) {
-    if (info.Length() != 1 || !info[0].IsObject()) {
-        throw TypeError::New(Env(), "Missing required parameter `buffer`");
-    }
+    Uint8Array buffer = Uint8ArrayFromValue(info[0], "buffer");
 
-    if (!info[0].IsBuffer()) {
-        throw TypeError::New(Env(), "First parameter must be a Buffer");
-    }
-
-    std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> reply_bson(BufferToBinary(info[0].As<Uint8Array>()));
+    std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> reply_bson(Uint8ArrayToBinary(buffer));
     mongocrypt_ctx_mongo_feed(_context.get(), reply_bson.get());
     // return value
 }
@@ -863,15 +809,9 @@ void MongoCryptContext::FinishMongoOperation(const CallbackInfo &info) {
 }
 
 void MongoCryptContext::ProvideKMSProviders(const CallbackInfo &info) {
-    if (info.Length() != 1 || !info[0].IsObject()) {
-        throw TypeError::New(Env(), "Missing required parameter `buffer`");
-    }
+    Uint8Array buffer = Uint8ArrayFromValue(info[0], "buffer");
 
-    if (!info[0].IsBuffer()) {
-        throw TypeError::New(Env(), "First parameter must be a Buffer");
-    }
-
-    std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> kms_bson(BufferToBinary(info[0].As<Uint8Array>()));
+    std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> kms_bson(Uint8ArrayToBinary(buffer));
     mongocrypt_ctx_provide_kms_providers(_context.get(), kms_bson.get());
 }
 
@@ -951,11 +891,8 @@ Value MongoCryptKMSRequest::Endpoint(const CallbackInfo &info) {
 }
 
 void MongoCryptKMSRequest::AddResponse(const CallbackInfo &info) {
-    if (!info[0].IsBuffer()) {
-        throw TypeError::New(Env(), "First parameter must be of type Buffer");
-    }
-
-    std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> reply_bytes(BufferToBinary(info[0].As<Uint8Array>()));
+    Uint8Array buffer = Uint8ArrayFromValue(info[0], "value");
+    std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> reply_bytes(Uint8ArrayToBinary(buffer));
     mongocrypt_kms_ctx_feed(_kms_context, reply_bytes.get());
 }
 

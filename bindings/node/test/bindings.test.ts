@@ -3,6 +3,9 @@ import { MongoCrypt, MongoCryptContextCtor } from '../src';
 import { serialize, Binary, Long } from 'bson';
 import * as crypto from 'crypto';
 
+// the `randomHook` is necessary for some tests, so we copy it in here.
+// if in the future we need more than just this crypto hook, we can
+// consider bringing the hooks back into libmongocrypt from the driver.
 export function randomHook(buffer: Buffer, count: number): number | Error {
   try {
     crypto.randomFillSync(buffer, 0, count);
@@ -13,6 +16,21 @@ export function randomHook(buffer: Buffer, count: number): number | Error {
 }
 
 describe('MongoCryptConstructor', () => {
+  const mc = new MongoCrypt({
+    kmsProviders: serialize({ aws: {} }),
+    cryptoCallbacks: {
+      aes256CbcEncryptHook: () => {},
+      aes256CbcDecryptHook: () => {},
+      aes256CtrEncryptHook: () => {},
+      aes256CtrDecryptHook: () => {},
+      randomHook,
+      hmacSha512Hook: () => {},
+      hmacSha256Hook: () => {},
+      sha256Hook: () => {},
+      signRsaSha256Hook: () => {}
+    }
+  });
+
   it('requires an options argument', () => {
     expect(() => new MongoCrypt()).to.throw(/First parameter must be an object/);
   });
@@ -47,7 +65,7 @@ describe('MongoCryptConstructor', () => {
 
   it('throws if kmsProviders are not a buffer', () => {
     expect(() => new MongoCrypt({ kmsProviders: 3 })).to.throw(
-      /Option `kmsProviders` must be a Buffer/
+      /Parameter `options.kmsProviders` must be a Uint8Array./
     );
   });
 
@@ -58,7 +76,7 @@ describe('MongoCryptConstructor', () => {
           kmsProviders: serialize({ aws: {} }),
           schemaMap: 3
         })
-    ).to.throw(/Option `schemaMap` must be a Buffer/);
+    ).to.throw(/Parameter `options.schemaMap` must be a Uint8Array./);
   });
 
   it('throws when `encryptedFieldsMap` is not a buffer', () => {
@@ -68,7 +86,7 @@ describe('MongoCryptConstructor', () => {
           kmsProviders: serialize({ aws: {} }),
           encryptedFieldsMap: 3
         })
-    ).to.throw(/Option `encryptedFieldsMap` must be a Buffer/);
+    ).to.throw(/Parameter `options.encryptedFieldsMap` must be a Uint8Array./);
   });
 
   it('throws when cryptSharedLibSearchPaths is not an array', () => {
@@ -87,25 +105,10 @@ describe('MongoCryptConstructor', () => {
     expect(mc).to.have.property('cryptSharedLibVersionInfo');
   });
 
-  const mc = new MongoCrypt({
-    kmsProviders: serialize({ aws: {} }),
-    cryptoCallbacks: {
-      aes256CbcEncryptHook: () => {},
-      aes256CbcDecryptHook: () => {},
-      aes256CtrEncryptHook: () => {},
-      aes256CtrDecryptHook: () => {},
-      randomHook,
-      hmacSha512Hook: () => {},
-      hmacSha256Hook: () => {},
-      sha256Hook: () => {},
-      signRsaSha256Hook: () => {}
-    }
-  });
-
   describe('.makeEncryptionContext()', () => {
     it('throws if `command` is not a buffer', () => {
       expect(() => mc.makeEncryptionContext('foo.bar', 'some non-buffer')).to.throw(
-        /Parameter `command` must be a Buffer/
+        /Parameter `command` must be a Uint8Array./
       );
     });
 
@@ -119,7 +122,7 @@ describe('MongoCryptConstructor', () => {
   describe('.makeDecryptionContext()', () => {
     it('throws if not provided a buffer', () => {
       expect(() => mc.makeDecryptionContext('foo.bar')).to.throw(
-        /First parameter must be a Buffer/
+        /Parameter `value` must be a Uint8Array./
       );
     });
 
@@ -133,7 +136,7 @@ describe('MongoCryptConstructor', () => {
   describe('.makeExplicitDecryptionContext()', () => {
     it('throws if not provided a buffer', () => {
       expect(() => mc.makeExplicitDecryptionContext('foo.bar')).to.throw(
-        /First parameter must be a Buffer/
+        /Parameter `value` must be a Uint8Array./
       );
     });
 
@@ -153,7 +156,7 @@ describe('MongoCryptConstructor', () => {
 
     it('throws when the filter is not a buffer', () => {
       expect(() => mc.makeRewrapManyDataKeyContext('foo.bar')).to.throw(
-        /Parameter `filter` must be a Buffer/
+        /Parameter `filter` must be a Uint8Array./
       );
     });
   });
@@ -174,7 +177,7 @@ describe('MongoCryptConstructor', () => {
 
     it('throws when the first parameter is not a buffer', () => {
       expect(() => mc.makeDataKeyContext('foo.bar', {})).to.throw(
-        /Parameter `options` must be a Buffer/
+        /Parameter `options` must be a Uint8Array./
       );
     });
 
@@ -191,7 +194,7 @@ describe('MongoCryptConstructor', () => {
           }
         )
       )
-        .to.throw(/Serialized keyAltName must be a Buffer/)
+        .to.throw(/Parameter `options.keyAltName\[\]` must be a Uint8Array./)
         .to.be.instanceOf(TypeError);
     });
 
@@ -208,7 +211,7 @@ describe('MongoCryptConstructor', () => {
           }
         )
       )
-        .to.throw(/Serialized keyMaterial must be a Buffer/)
+        .to.throw(/Parameter `options.keyMaterial` must be a Uint8Array./)
         .to.be.instanceOf(TypeError);
     });
   });
@@ -237,7 +240,7 @@ describe('MongoCryptConstructor', () => {
           algorithm: 'Unindexed'
         })
       )
-        .to.throw(/Parameter `value` must be a Buffer/)
+        .to.throw(/Parameter `value` must be a Uint8Array./)
         .to.be.instanceOf(TypeError);
     });
     it('throws a TypeError when `options.keyId` is not a Buffer', () => {
@@ -249,7 +252,7 @@ describe('MongoCryptConstructor', () => {
           algorithm: 'Unindexed'
         })
       )
-        .to.throw(/`keyId` must be a Buffer/)
+        .to.throw(/Parameter `keyId` must be a Uint8Array./)
         .to.be.instanceOf(TypeError);
     });
 
@@ -262,7 +265,7 @@ describe('MongoCryptConstructor', () => {
           algorithm: 'Unindexed'
         })
       )
-        .to.throw(/`keyAltName` must be a Buffer/)
+        .to.throw(/Parameter `keyAltName` must be a Uint8Array./)
         .to.be.instanceOf(TypeError);
     });
 
@@ -290,7 +293,7 @@ describe('MongoCryptConstructor', () => {
             rangeOptions: 'non-buffer'
           })
         )
-          .to.throw(/`rangeOptions` must be a Buffer/)
+          .to.throw(/Parameter `rangeOptions` must be a Uint8Array./)
           .to.be.instanceOf(TypeError);
       });
 
@@ -343,7 +346,7 @@ describe('MongoCryptContext', () => {
   describe('addMongoOperationResponse', () => {
     it('throws if called with a non-Uint8Array', () => {
       expect(() => context.addMongoOperationResponse({}))
-        .to.throw(/First parameter must be a Buffer/)
+        .to.throw(/Parameter `buffer` must be a Uint8Array./)
         .to.be.instanceOf(TypeError);
     });
 
