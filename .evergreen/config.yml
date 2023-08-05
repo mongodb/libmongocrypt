@@ -1122,7 +1122,7 @@ buildvariants:
     - rhel70-small
 - name: amazon2023
   display_name: "Amazon Linux 2023"
-  run_on: amazon2023.0-large
+  run_on: amazon2023.0-small
   expansions:
     has_packages: true
     packager_distro: amazon2023
@@ -1130,10 +1130,6 @@ buildvariants:
     node_lts_version: 16
   tasks:
   - build-and-test-and-upload
-  - build-and-test-shared-bson
-  - build-and-test-asan
-  - build-and-test-node
-  - test-java
   - name: publish-packages
     distros:
     - rhel70-small
