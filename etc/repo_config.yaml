@@ -106,6 +106,42 @@ repos:
       - yum/redhat/8/libmongocrypt
       - yum/redhat/8Server/libmongocrypt
 
+  - name: rhel81
+    type: rpm
+    edition: org
+    bucket: libmongocrypt
+    region: us-east-1
+    repos:
+      - yum/redhat/8/libmongocrypt
+      - yum/redhat/8Server/libmongocrypt
+
+  - name: rhel82
+    type: rpm
+    edition: org
+    bucket: libmongocrypt
+    region: us-east-1
+    repos:
+      - yum/redhat/8/libmongocrypt
+      - yum/redhat/8Server/libmongocrypt
+
+  - name: rhel83
+    type: rpm
+    edition: org
+    bucket: libmongocrypt
+    region: us-east-1
+    repos:
+      - yum/redhat/8/libmongocrypt
+      - yum/redhat/8Server/libmongocrypt
+
+  - name: rhel91
+    type: rpm
+    edition: org
+    bucket: libmongocrypt
+    region: us-east-1
+    repos:
+      - yum/redhat/9/libmongocrypt
+      - yum/redhat/9Server/libmongocrypt
+
   - name: amazon
     type: rpm
     edition: org
@@ -121,6 +157,14 @@ repos:
     region: us-east-1
     repos:
       - yum/amazon/2/libmongocrypt
+
+  - name: amazon2023
+    type: rpm
+    edition: org
+    bucket: libmongocrypt
+    region: us-east-1
+    repos:
+      - yum/amazon/2023/libmongocrypt
 
   - name: suse12
     type: rpm

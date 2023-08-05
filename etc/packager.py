@@ -5,13 +5,11 @@ This program makes Debian and RPM repositories for libmongocrypt,
 by downloading our tarballs and forming them into Linux packages.
 It must be run on a Debianoid, since Debian provides tools to make
 RPMs, but RPM-based systems don't provide debian packaging crud.
-This program is also based on the program of the same name in the
-MongoDB server repository.
 
 This program was adapted from the program of the same name in the
 MongoDB server repository:
 
-https://github.com/mongodb/mongo/blob/v4.2/buildscripts/packager.py
+https://github.com/mongodb/mongo/blob/master/buildscripts/packager.py
 
 Notes
 -----
@@ -33,6 +31,25 @@ prerequisites:
 apt-get install dpkg-dev rpm debhelper fakeroot ia32-libs createrepo git-core
 echo "Now put the dist gnupg signing keys in ~root/.gnupg"
 
+Differences from the server version of this script
+--------------------------------------------------
+
+* The version numbering scheme is a bit different, so the regexes in
+this script are modified to match the versioning of libmongocrypt.
+Naturally, instances of the package name 'mongodb' have been replaced
+with 'libmongocrypt', and since libmonogcrypt does not use the 'org'
+and 'enterprise' suffixes, those have been left out as well.
+
+* The server version of this script has been updated to generate the
+changelog based on Git history, while this version of the script
+continues to use the boilerplate changelog.
+
+* Other specific divergences, especially where care should be taken in
+order to not clobber when syncing changes from the server version of
+the script, are noted with explanatory comments as needed. These
+comments are prefixed 'MC:' to make them easily distinguished from
+other comments coming from the original source.
+
 """
 
 import argparse
@@ -48,10 +65,10 @@ import tempfile
 import time
 
 # The MongoDB names for the architectures we support.
-ARCH_CHOICES = ["x86_64", "arm64", "s390x", "ppc64le"]
+ARCH_CHOICES = ["x86_64", "arm64", "aarch64", "s390x", "ppc64le"]
 
 # Made up names for the flavors of distribution we package for.
-DISTROS = ["suse", "debian", "redhat", "ubuntu", "amazon", "amazon2"]
+DISTROS = ["suse", "debian", "redhat", "ubuntu", "amazon", "amazon2", "amazon2023"]
 
 
 class Spec(object):
@@ -63,7 +80,7 @@ class Spec(object):
         self.gitspec = gitspec
         self.rel = rel
 
-    # Commit-triggerd (nightly) version numbers can be in the form: 3.0.7-pre-, or 3.0.7-5-g3b67ac
+    # Commit-triggerd version numbers can be in the form: 3.0.7-pre-, or 3.0.7-5-g3b67ac
     # Patch builds version numbers are in the form: 3.5.5-64-g03945fa-patch-58debcdb3ff1223c9d00005b
     #
     def is_nightly(self):
@@ -79,6 +96,7 @@ class Spec(object):
         """Return True if rc."""
         return bool(re.search(r"-rc\d+(\+[0-9]{8}git[0-9a-f]+)?$", self.version()))
 
+    # MC: libmongocrypt also has beta releases
     def is_beta(self):
         """Return True if beta."""
         return bool(re.search(r"-beta\d+(\+[0-9]{8}git[0-9a-f]+)?$", self.version()))
@@ -105,6 +123,9 @@ class Spec(object):
         if self.gitspec:
             return self.gitspec
         return 'r' + self.version()
+
+    # MC: Leave out the version_better_than() and suffix() funtions, which are
+    # not used by libmongocrypt's packaging workflow
 
     def prelease(self):
         """Return pre-release verison suffix."""
@@ -192,7 +213,6 @@ class Distro(object):
         Power and x86 have different names for apt/yum (ppc64le/ppc64el
         and x86_64/amd64).
         """
-        # pylint: disable=too-many-return-statements
         if re.search("^(debian|ubuntu)", self.dname):
             if arch == "ppc64le":
                 return "ppc64el"
@@ -208,14 +228,15 @@ class Distro(object):
                 return "ppc64le"
             elif arch == "s390x":
                 return "s390x"
-            elif arch == "arm64":
-                return "aarch64"
             elif arch.endswith("86"):
                 return "i686"
+            elif arch == "arm64":
+                return "arm64"
+            elif arch == "aarch64":
+                return "aarch64"
             return "x86_64"
         else:
             raise Exception("BUG: unsupported platform?")
-        # pylint: enable=too-many-return-statements
 
     def repodir(self, arch, build_os, spec):  # noqa: D406,D407,D412,D413
         """Return the directory where we'll place the package files for (distro, distro_version).
@@ -267,6 +288,8 @@ class Distro(object):
 
         Example, "universe" for Ubuntu, "main" for debian.
         """
+        # MC: libmongocrypt uses the 'universe' section for Ubuntu, rather than
+        # 'multiverse' like the server
         if self.dname == 'ubuntu':
             return "universe"
         elif self.dname == 'debian':
@@ -274,13 +297,13 @@ class Distro(object):
         else:
             raise Exception("unsupported distro: %s" % self.dname)
 
-    def repo_os_version(self, build_os):  # pylint: disable=too-many-branches
+    def repo_os_version(self, build_os):
         """Return an OS version suitable for package repo directory naming.
 
         Example, 5, 6 or 7 for redhat/centos, "precise," "wheezy," etc.
         for Ubuntu/Debian, 11 for suse, "2013.03" for amazon.
         """
-        # pylint: disable=too-many-return-statements
+
         if self.dname == 'suse':
             return re.sub(r'^suse(\d+)$', r'\1', build_os)
         if self.dname == 'redhat':
@@ -289,6 +312,8 @@ class Distro(object):
             return "2013.03"
         elif self.dname == 'amazon2':
             return "2017.12"
+        elif self.dname == 'amazon2023':
+            return "2023.0"
         elif self.dname == 'ubuntu':
             if build_os == 'ubuntu1204':
                 return "precise"
@@ -317,7 +342,6 @@ class Distro(object):
                 raise Exception("unsupported build_os: %s" % build_os)
         else:
             raise Exception("unsupported distro: %s" % self.dname)
-        # pylint: enable=too-many-return-statements
 
     def make_pkg(self, build_os, arch, spec, srcdir):
         """Return the package."""
@@ -335,14 +359,26 @@ class Distro(object):
         "suse11" for suse, etc.
         """
         # Community builds only support amd64
-        if arch not in ['x86_64', 'ppc64le', 's390x', 'arm64']:
+        if arch not in ['x86_64', 'ppc64le', 's390x', 'arm64', 'aarch64']:
             raise Exception("BUG: unsupported architecture (%s)" % arch)
 
         if re.search("(suse)", self.dname):
             return ["suse11", "suse12", "suse15"]
         elif re.search("(redhat|fedora|centos)", self.dname):
-            return ["rhel80", "rhel70", "rhel71", "rhel72", "rhel62", "rhel55", "rhel67"]
-        elif self.dname in ['amazon', 'amazon2']:
+            return [
+                "rhel91",
+                "rhel83",
+                "rhel82",
+                "rhel81",
+                "rhel80",
+                "rhel70",
+                "rhel71",
+                "rhel72",
+                "rhel62",
+                "rhel55",
+                "rhel67"
+            ]
+        elif self.dname in ['amazon', 'amazon2', 'amazon2023']:
             return [self.dname]
         elif self.dname == 'ubuntu':
             return [
@@ -370,6 +406,8 @@ class Distro(object):
             return 'amzn1'
         elif self.dname == 'amazon2':
             return 'amzn2'
+        elif self.dname == 'amazon2023':
+            return 'amzn2023'
         return re.sub(r'^rh(el\d).*$', r'\1', build_os)
 
 
@@ -489,7 +527,7 @@ def setupdir(distro, build_os, arch, spec):
     # would be dst/x86_64/debian-sysvinit/wheezy/libmongocrypt/
     # or dst/x86_64/redhat/rhel55/libmongocrypt/
     return "dst/%s/%s/%s/%s-%s/" % (arch, distro.name(), build_os, distro.pkgbase(),
-                                      spec.pversion(distro))
+                                    spec.pversion(distro))
 
 
 def unpack_binaries_into(build_os, arch, spec, where):
@@ -504,7 +542,10 @@ def unpack_binaries_into(build_os, arch, spec, where):
     try:
         sysassert(["tar", "xvzf", rootdir + "/" + tarfile(build_os, arch, spec)])
         release_dir = glob('libmongocrypt-*')[0]
-        for releasefile in "lib", "lib64", "include":
+        for releasefile in "lib", "lib64", "include", "LICENSE", "README.md":
+            # MC: wrap print() and os.rename() in a conditional since as a library
+            # we have to consider that sometimes artifacts are in lib and other
+            # times they are in lib64
             if os.path.exists("%s/%s" % (release_dir, releasefile)):
                 print("moving file: %s/%s" % (release_dir, releasefile))
                 os.rename("%s/%s" % (release_dir, releasefile), releasefile)
@@ -524,16 +565,23 @@ def make_package(distro, build_os, arch, spec, srcdir):
 
     sdir = setupdir(distro, build_os, arch, spec)
     ensure_dir(sdir)
+    # Note that the RPM packages get their man pages from the debian
+    # directory, so the debian directory is needed in all cases (and
+    # innocuous in the debianoids' sdirs).
     for pkgdir in ["etc/debian", "etc/rpm"]:
         print("Copying packaging files from %s to %s" % ("%s/%s" % (srcdir, pkgdir), sdir))
+        # FIXME: sh-dash-cee is bad. See if tarfile can do this.
         sysassert([
             "sh", "-c",
+            # MC: we use --strip-components=1 since the 'debian/' and 'rpm/'
+            # dirs are under 'etc/' in the libmongocrypt repo
             "(cd \"%s\" && tar cf - %s ) | (cd \"%s\" && tar --strip-components=1 -xvf -)" % (srcdir, pkgdir, sdir)
         ])
     # Splat the binaries under sdir.  The "build" stages of the
     # packaging infrastructure will move the files to wherever they
     # need to go.
     unpack_binaries_into(build_os, arch, spec, sdir)
+
     return distro.make_pkg(build_os, arch, spec, srcdir)
 
 
@@ -549,6 +597,11 @@ def make_repo(repodir, distro, build_os):
 
 def make_deb(distro, build_os, arch, spec, srcdir):
     """Make the Debian script."""
+    # I can't remember the details anymore, but the initscript/upstart
+    # job files' names must match the package name in some way; and
+    # see also the --name flag to dh_installinit in the generated
+    # debian/rules file.
+    # MC: We leave out all the stuff that the server does related to init scripts
     sdir = setupdir(distro, build_os, arch, spec)
     # Rewrite the control and rules files
     write_debian_changelog(sdir + "debian/changelog", spec, srcdir, distro)
@@ -559,6 +612,9 @@ def make_deb(distro, build_os, arch, spec, srcdir):
     sysassert([
         "cp", "-v", srcdir + "etc/debian/rules", sdir + "debian/rules"
     ])
+
+    # MC: Skip some server-specific things, like variations of the controls and
+    # rules files, as well as maintainer scripts (i.e., postinst)
 
     # Do the packaging.
     oldcwd = os.getcwd()
@@ -621,7 +677,7 @@ Description: libmongocrypt packages
         os.chdir(oldpwd)
 
 
-def move_repos_into_place(src, dst):  # pylint: disable=too-many-branches
+def move_repos_into_place(src, dst):
     """Move the repos into place."""
     # Find all the stuff in src/*, move it to a freshly-created
     # directory beside dst, then play some games with symlinks so that
@@ -690,6 +746,8 @@ def write_debian_changelog(path, spec, srcdir, distro):
     """Write the debian changelog."""
     oldcwd = os.getcwd()
     os.chdir(srcdir)
+    # MC: Rather than using Git to generate the changelog (like the server), we
+    # just use a simple boilerplate changelog
     preamble = "libmongocrypt (%s-0) unstable; urgency=medium\n\n" % spec.pversion(distro)
     preamble += "  * Built from Evergreen.\n\n"
     preamble += " -- Roberto C. Sanchez <roberto@connexer.com>  "
@@ -701,72 +759,26 @@ def write_debian_changelog(path, spec, srcdir, distro):
         ]).decode('utf-8')
     finally:
         os.chdir(oldcwd)
+    # MC: No need to munge the version and rewrite the changelog
     with open(path, 'w') as fh:
         fh.write(sb)
 
 
-def make_rpm(distro, build_os, arch, spec, srcdir):  # pylint: disable=too-many-locals
+def make_rpm(distro, build_os, arch, spec, srcdir):
     """Create the RPM specfile."""
     sdir = setupdir(distro, build_os, arch, spec)
 
     specfile = srcdir + "etc/rpm/libmongocrypt.spec"
 
+    # No need to mess with init scripts and such like the server
+
     topdir = ensure_dir('%s/rpmbuild/%s/' % (os.getcwd(), build_os))
     for subdir in ["BUILD", "RPMS", "SOURCES", "SPECS", "SRPMS"]:
         ensure_dir("%s/%s/" % (topdir, subdir))
     distro_arch = distro.archname(arch)
-    # RPM tools take these macro files that define variables in
-    # RPMland.  Unfortunately, there's no way to tell RPM tools to use
-    # a given file *in addition* to the files that it would already
-    # load, so we have to figure out what it would normally load,
-    # augment that list, and tell RPM to use the augmented list.  To
-    # figure out what macrofiles ordinarily get loaded, older RPM
-    # versions had a parameter called "macrofiles" that could be
-    # extracted from "rpm --showrc".  But newer RPM versions don't
-    # have this.  To tell RPM what macros to use, older versions of
-    # RPM have a --macros option that doesn't work; on these versions,
-    # you can put a "macrofiles" parameter into an rpmrc file.  But
-    # that "macrofiles" setting doesn't do anything for newer RPM
-    # versions, where you have to use the --macros flag instead.  And
-    # all of this is to let us do our work with some guarantee that
-    # we're not clobbering anything that doesn't belong to us.
-    #
-    # On RHEL systems, --rcfile will generally be used and
-    # --macros will be used in Ubuntu.
-    #
-    macrofiles = [
-        l for l in backtick(["rpm", "--showrc"]).decode('utf-8').split("\n")
-        if l.startswith("macrofiles")
-    ]
-    flags = []
-    macropath = os.getcwd() + "/macros"
 
-    write_rpm_macros_file(macropath, topdir, distro.release_dist(build_os))
-    if macrofiles:
-        macrofiles = macrofiles[0] + ":" + macropath
-        rcfile = os.getcwd() + "/rpmrc"
-        write_rpmrc_file(rcfile, macrofiles)
-        flags = ["--rcfile", rcfile]
-    else:
-        # This hard-coded hooey came from some box running RPM
-        # 4.4.2.3.  It may not work over time, but RPM isn't sanely
-        # configurable.
-        flags = [
-            "--macros",
-            "/usr/lib/rpm/macros:/usr/lib/rpm/%s-linux/macros:/usr/lib/rpm/suse/macros:/etc/rpm/macros.*:/etc/rpm/macros:/etc/rpm/%s-linux/macros:~/.rpmmacros:%s"
-            % (distro_arch, distro_arch, macropath)
-        ]
-    # Put the specfile and the tar'd up binaries and stuff in
-    # place.
-    #
-    # The version of rpm and rpm tools in RHEL 5.5 can't interpolate the
-    # %{dynamic_version} macro, so do it manually
-    with open(specfile, "r") as spec_source:
-        with open(topdir + "SPECS/" + os.path.basename(specfile), "w") as spec_dest:
-            for line in spec_source:
-                line = line.replace('%{dynamic_version}', spec.pversion(distro))
-                line = line.replace('%{dynamic_release}', spec.prelease())
-                spec_dest.write(line)
+    # Places the RPM Spec file where it's expected for the rpmbuild execution later.
+    shutil.copy(specfile, topdir + "SPECS")
 
     oldcwd = os.getcwd()
     os.chdir(sdir + "/../")
@@ -780,10 +792,39 @@ def make_rpm(distro, build_os, arch, spec, srcdir):  # pylint: disable=too-many-
         os.chdir(oldcwd)
     # Do the build.
 
-    flags.extend([
-        "-D", "dynamic_version " + spec.pversion(distro), "-D",
-        "dynamic_release " + spec.prelease(), "-D", "_topdir " + topdir
-    ])
+    # MC: Dump the rpm config.
+    bt = backtick(["rpm", "--showrc"]).decode('utf-8')
+    print(bt)
+    #
+    # MC: Add some macro definitions to the rpmbuild invocation:
+    #
+    # _arch - it seems like this one ought to be defined by RPM, but it appears
+    # to not be and without it the build fails to find some artifacts
+    #
+    # _smp_build_ncpus - it seems that on some platforms xargs is invoked in
+    # such a way that if _smp_build_ncpus is not set (which it apparently is not
+    # on every platform) then the xargs invocation fails
+    #
+    # debug_package - tells rpmbuild that there is no package to build with
+    # debugging information/symbols; we don't generate them and since we are
+    # packaging a library rpmbuild expects to find them
+    #
+    flags = [
+        "-D",
+        "_smp_build_ncpus 1",
+        "-D",
+        "debug_package %{nil}",
+        "-D",
+        f"_arch {arch}",
+        "-D",
+        f"_topdir {topdir}",
+        "-D",
+        f"dist .{distro.release_dist(build_os)}",
+        "-D",
+        f"dynamic_version {spec.pversion(distro)}",
+        "-D",
+        f"dynamic_release {spec.prelease()}",
+    ]
 
     # Versions of RPM after 4.4 ignore our BuildRoot tag so we need to
     # specify it on the command line args to rpmbuild
@@ -812,20 +853,6 @@ def make_rpm_repo(repo):
         sysassert(["createrepo", "."])
     finally:
         os.chdir(oldpwd)
-
-
-def write_rpmrc_file(path, string):
-    """Write the RPM rc file."""
-    with open(path, 'w') as fh:
-        fh.write(string)
-
-
-def write_rpm_macros_file(path, topdir, release_dist):
-    """Write the RPM macros file."""
-    with open(path, 'w') as fh:
-        fh.write("%%_topdir	%s\n" % topdir)
-        fh.write("%%dist	.%s\n" % release_dist)
-        fh.write("%_use_internal_dependency_generator 0\n")
 
 
 def ensure_dir(filename):
