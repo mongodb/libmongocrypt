@@ -20,10 +20,10 @@ source ./.evergreen/install-dependencies.sh
 npm install --ignore-scripts
 
 if [ "$LINT_TARGET" == "typescript" ]; then
-	npm run check:eslint
+  npm run check:eslint
 elif [ "$LINT_TARGET" == "cpp" ]; then
-	npm run check:clang-format
+  npm run check:clang-format
 else
-	echo "unsupported value for LINT_TARGET: $LINT_TARGET"
-	exit 1
+  echo "unsupported value for LINT_TARGET: $LINT_TARGET"
+  exit 1
 fi
