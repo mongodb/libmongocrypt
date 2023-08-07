@@ -56,7 +56,7 @@ Uint8Array BufferWithLengthOf(Env env, mongocrypt_binary_t* binary) {
 }
 
 Uint8Array Uint8ArrayFromValue(Napi::Value v, std::string argument_name) {
-    if (!v.IsTypedArray()) {
+    if (!v.IsTypedArray() || v.As<TypedArray>().TypedArrayType() != napi_uint8_array) {
         std::string error_message = "Parameter `" + argument_name + "` must be a Uint8Array.";
         throw TypeError::New(v.Env(), error_message);
     }
