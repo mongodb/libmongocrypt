@@ -18,8 +18,9 @@
   "scripts": {
     "install": "prebuild-install --runtime napi --tag-prefix node-v || node-gyp rebuild",
     "build:ts": "tsc",
-    "check:lint": "eslint src test",
-    "docs": "jsdoc2md --template etc/README.hbs --plugin dmd-clear --files 'lib/**/*.js' > README.md",
+    "clang-format": "clang-format --style=file:.clang-format --Werror -i addon/*",
+    "check:eslint": "eslint src test",
+    "check:clang-format": "clang-format --style=file:.clang-format --dry-run --Werror addon/*",
     "test": "mocha test",
     "prepare": "node etc/prepare.js",
     "rebuild": "prebuild --compile",
@@ -46,6 +47,7 @@
     "@types/mocha": "^10.0.1",
     "@types/node": "^20.4.2",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "bson": "^5.4.0",
     "chai": "^4.3.7",
     "chai-subset": "^1.6.0",
     "clang-format": "^1.8.0",
@@ -53,7 +55,7 @@
     "eslint-config-prettier": "^8.8.0",
     "eslint-plugin-prettier": "^4.2.1",
     "mocha": "^10.2.0",
-    "node-gyp": "^9.3.1",
+    "node-gyp": "^9.4.0",
     "prebuild": "^11.0.4",
     "prettier": "^2.8.8",
     "sinon": "^15.2.0",
@@ -64,6 +66,11 @@
     "ts-node": "^10.9.1",
     "typescript": "^5.1.6",
     "typescript-cached-transpile": "^0.0.6"
+  },
+  "overrides": {
+    "prebuild": {
+      "node-gyp": "$node-gyp"
+    }
   },
   "engines": {
     "node": ">=16.20.1"

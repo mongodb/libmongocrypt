@@ -33,4 +33,8 @@ run_cmake --build . --target install --config RelWithDebInfo
 popd #./
 
 # build the `mongodb-client-encryption` addon
-env BUILD_TYPE=static npm install
+# `npm install` will install a pre-built binary by default (because we use prebuild-install).
+# instead, we want to build the addon from scratch.  so we install with `--ignore-scripts`
+# and then run the `rebuild` script to compile our bindings.
+npm install --ignore-scripts
+npm run rebuild

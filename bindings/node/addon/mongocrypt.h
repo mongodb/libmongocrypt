@@ -9,6 +9,7 @@
 #define NAPI_EXPERIMENTAL
 
 #include <napi.h>
+
 #include <memory>
 
 extern "C" {
@@ -69,7 +70,8 @@ class MongoCrypt : public Napi::ObjectWrap<MongoCrypt> {
 class MongoCryptContext : public Napi::ObjectWrap<MongoCryptContext> {
    public:
     static Napi::Function Init(Napi::Env env);
-    static Napi::Object NewInstance(Napi::Env env, std::unique_ptr<mongocrypt_ctx_t, MongoCryptContextDeleter> context);
+    static Napi::Object NewInstance(
+        Napi::Env env, std::unique_ptr<mongocrypt_ctx_t, MongoCryptContextDeleter> context);
 
    private:
     Napi::Value NextMongoOperation(const Napi::CallbackInfo& info);
@@ -84,7 +86,7 @@ class MongoCryptContext : public Napi::ObjectWrap<MongoCryptContext> {
     Napi::Value State(const Napi::CallbackInfo& info);
 
    private:
-   friend class Napi::ObjectWrap<MongoCryptContext>;
+    friend class Napi::ObjectWrap<MongoCryptContext>;
     explicit MongoCryptContext(const Napi::CallbackInfo& info);
     std::unique_ptr<mongocrypt_ctx_t, MongoCryptContextDeleter> _context;
 };
@@ -104,11 +106,11 @@ class MongoCryptKMSRequest : public Napi::ObjectWrap<MongoCryptKMSRequest> {
     Napi::Value Endpoint(const Napi::CallbackInfo& info);
 
    private:
-   friend class Napi::ObjectWrap<MongoCryptKMSRequest>;
+    friend class Napi::ObjectWrap<MongoCryptKMSRequest>;
     explicit MongoCryptKMSRequest(const Napi::CallbackInfo& info);
     mongocrypt_kms_ctx_t* _kms_context;
 };
 
-} // namespace node_mongocrypt
+}  // namespace node_mongocrypt
 
 #endif  // NODE_MONGOCRYPT_H
