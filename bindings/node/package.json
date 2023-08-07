@@ -55,7 +55,7 @@
     "eslint-config-prettier": "^8.8.0",
     "eslint-plugin-prettier": "^4.2.1",
     "mocha": "^10.2.0",
-    "node-gyp": "^9.3.1",
+    "node-gyp": "^9.4.0",
     "prebuild": "^11.0.4",
     "prettier": "^2.8.8",
     "sinon": "^15.2.0",
@@ -66,6 +66,11 @@
     "ts-node": "^10.9.1",
     "typescript": "^5.1.6",
     "typescript-cached-transpile": "^0.0.6"
+  },
+  "overrides": {
+    "prebuild": {
+      "node-gyp": "$node-gyp"
+    }
   },
   "engines": {
     "node": ">=16.20.1"
