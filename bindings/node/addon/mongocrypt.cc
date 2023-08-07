@@ -1,6 +1,5 @@
 #include "mongocrypt.h"
 #include <cassert>
-#include <sstream>
 
 #ifdef _MSC_VER
 #define strncasecmp _strnicmp
