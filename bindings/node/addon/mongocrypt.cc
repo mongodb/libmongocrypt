@@ -435,7 +435,7 @@ MongoCrypt::MongoCrypt(const CallbackInfo& info)
 
     Object options = info[0].ToObject();
 
-    if (options.Has("kmsProviders")) {
+    if (!options.Get("kmsProviders").IsUndefined()) {
         Uint8Array kmsProvidersOptions =
             Uint8ArrayFromValue(options["kmsProviders"], "options.kmsProviders");
 
@@ -446,7 +446,7 @@ MongoCrypt::MongoCrypt(const CallbackInfo& info)
         }
     }
 
-    if (options.Has("schemaMap")) {
+    if (!options.Get("schemaMap").IsUndefined()) {
         Uint8Array schemaMapBuffer = Uint8ArrayFromValue(options["schemaMap"], "options.schemaMap");
 
         std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> schemaMapBinary(
@@ -456,7 +456,7 @@ MongoCrypt::MongoCrypt(const CallbackInfo& info)
         }
     }
 
-    if (options.Has("encryptedFieldsMap")) {
+    if (!options.Get("encryptedFieldsMap").IsUndefined()) {
         Uint8Array encryptedFieldsMapBuffer =
             Uint8ArrayFromValue(options["encryptedFieldsMap"], "options.encryptedFieldsMap");
 
@@ -566,7 +566,7 @@ Value MongoCrypt::MakeExplicitEncryptionContext(const CallbackInfo& info) {
 
     Object options = info.Length() > 1 ? info[1].ToObject() : Object::New(info.Env());
 
-    if (options.Has("keyId")) {
+    if (!options.Get("keyId").IsUndefined()) {
         Uint8Array keyId = Uint8ArrayFromValue(options["keyId"], "keyId");
 
         std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binary(
@@ -576,7 +576,7 @@ Value MongoCrypt::MakeExplicitEncryptionContext(const CallbackInfo& info) {
         }
     }
 
-    if (options.Has("keyAltName")) {
+    if (!options.Get("keyAltName").IsUndefined()) {
         Uint8Array keyAltName = Uint8ArrayFromValue(options["keyAltName"], "keyAltName");
 
         std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binary(
@@ -704,7 +704,7 @@ Value MongoCrypt::MakeDataKeyContext(const CallbackInfo& info) {
         }
     }
 
-    if (options.Has("keyMaterial")) {
+    if (!options.Get("keyMaterial").IsUndefined()) {
         Uint8Array keyMaterial = Uint8ArrayFromValue(options["keyMaterial"], "options.keyMaterial");
 
         std::unique_ptr<mongocrypt_binary_t, MongoCryptBinaryDeleter> binary(
