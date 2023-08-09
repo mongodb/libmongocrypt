@@ -38,14 +38,14 @@
   "gypfile": true,
   "dependencies": {
     "bindings": "^1.5.0",
-    "node-addon-api": "^4.3.0",
+    "node-addon-api": "^7.0.0",
     "prebuild-install": "^7.1.1"
   },
   "devDependencies": {
     "@types/bindings": "^1.5.1",
     "@types/chai": "^4.3.5",
     "@types/mocha": "^10.0.1",
-    "@types/node": "^20.4.8",
+    "@types/node": "^20.4.9",
     "@typescript-eslint/eslint-plugin": "^6.3.0",
     "bson": "^5.4.0",
     "chai": "^4.3.7",
