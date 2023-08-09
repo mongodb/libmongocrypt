@@ -71,6 +71,14 @@ else()
          "KMS_MESSAGE_ENABLE_CRYPTO_LIBCRYPTO")
 endif()
 
+include (CheckSymbolExists)
+CHECK_SYMBOL_EXISTS (gmtime_r time.h KMS_MESSAGE_HAVE_GMTIME_R)
+if (KMS_MESSAGE_HAVE_GMTIME_R)
+   set (KMS_MESSAGE_DEFINITIONS
+         ${KMS_MESSAGE_DEFINITIONS}
+         "KMS_MESSAGE_HAVE_GMTIME_R")
+endif ()
+
 include (TestBigEndian)
 TEST_BIG_ENDIAN (KMS_BIG_ENDIAN)
 if (KMS_BIG_ENDIAN)
@@ -114,9 +122,9 @@ if (NOT DISABLE_NATIVE_CRYPTO)
    else()
       include (FindOpenSSL)
       target_link_libraries(kms_message "${OPENSSL_LIBRARIES}")
-      target_include_directories(kms_message PRIVATE "${OPENSSL_INCLUDE_DIR}")
+      target_include_directories(kms_message SYSTEM PRIVATE "${OPENSSL_INCLUDE_DIR}")
       target_link_libraries(kms_message_static "${OPENSSL_LIBRARIES}")
-      target_include_directories(kms_message_static PRIVATE "${OPENSSL_INCLUDE_DIR}")
+      target_include_directories(kms_message_static SYSTEM PRIVATE "${OPENSSL_INCLUDE_DIR}")
    endif()
 endif ()
 
@@ -259,7 +267,7 @@ if (NOT DISABLE_NATIVE_CRYPTO)
    else()
       include (FindOpenSSL)
       target_link_libraries(test_kms_request "${OPENSSL_LIBRARIES}")
-      target_include_directories(test_kms_request PRIVATE "${OPENSSL_INCLUDE_DIR}")
+      target_include_directories(test_kms_request SYSTEM PRIVATE "${OPENSSL_INCLUDE_DIR}")
    endif()
 
    add_test (
