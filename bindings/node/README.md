@@ -3,7 +3,18 @@ MongoDB Client Encryption
 
 The Node.js wrapper for [`libmongocrypt`](../../README.md)
 
-**Note** This library provides encryption functionality for the MongoDB Node.js driver but is **not intended** to be consumed in isolation.  The public API that uses the functionality in this library is available in the `mongodb` package.  We reserve the right to make breaking changes to `mongodb-client-encryption` that fall outside of semver.
+**Note** This library provides encryption functionality for the MongoDB Node.js driver but is **not intended** to be consumed in isolation. The public API that uses the functionality in this library is available in the `mongodb` package. We reserve the right to make breaking changes to `mongodb-client-encryption` that fall outside of semver.
+
+### MongoDB Node.js Driver Version Compatibility
+
+Only the following version combinations with the [MongoDB Node.js Driver](https://github.com/mongodb/node-mongodb-native) are considered stable.
+
+|               | `kerberos@1.x` | `kerberos@2.x` |
+| ------------- | -------------- | -------------- |
+| `mongodb@6.x` | N/A            | ✓              |
+| `mongodb@5.x` | ✓              | ✓              |
+| `mongodb@4.x` | ✓              | ✓              |
+| `mongodb@3.x` | ✓              | N/A            |
 
 ### Installation
 
