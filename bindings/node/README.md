@@ -32,4 +32,4 @@ To lint the Typescript, you can run `npm run check:eslint -- --fix`.  To lint th
 
 The unit tests require the binding to be built.  Run `npm run rebuild` to build the addon from the c++ source.  Then the tests can be run with `npm test`.
 
-Note: changes to c++ source are not automatically re-compiled.  you need to rebuild the bindings after each change.
+Note: changes to c++ source are not automatically re-compiled.  One needs to rebuild the bindings after each change.
