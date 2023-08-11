@@ -3,6 +3,8 @@ MongoDB Client Encryption
 
 The Node.js wrapper for [`libmongocrypt`](../../README.md)
 
+**Note** This library provides encryption functionality for the MongoDB Node.js driver but is **not intended** to be consumed in isolation.  The public API that uses the functionality in this library is available in the `mongodb` package.  We reserve the right to make breaking changes to `mongodb-client-encryption` that fall outside of semver.
+
 ### Installation
 
 You can install `mongodb-client-encryption` with the following:
@@ -28,18 +30,6 @@ To lint the Typescript, you can run `npm run check:eslint -- --fix`.  To lint th
 
 #### Testing
 
-Some tests require a standalone server to be running with authentication enabled.  Set up a single
-server running with the following conditions:
+The unit tests require the binding to be built.  Run `npm run rebuild` to build the addon from the c++ source.  Then the tests can be run with `npm test`.
 
-| param     | value     |
-|-----------|-----------|
-| host      | localhost |
-| port      | 27017     |
-
-This is the standard setup for a standalone server with no authentication.
-
-Run the test suite using:
-
-```bash
-npm test
-```
+Note: changes to c++ source are not automatically re-compiled.  One needs to rebuild the bindings after each change.
