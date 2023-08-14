@@ -8,12 +8,12 @@ The Node.js wrapper for [`libmongocrypt`](../../README.md)
 
 Only the following version combinations with the [MongoDB Node.js Driver](https://github.com/mongodb/node-mongodb-native) are considered stable.
 
-|               | `kerberos@1.x` | `kerberos@2.x` |
-| ------------- | -------------- | -------------- |
-| `mongodb@6.x` | N/A            | ✓              |
-| `mongodb@5.x` | ✓              | ✓              |
-| `mongodb@4.x` | ✓              | ✓              |
-| `mongodb@3.x` | ✓              | N/A            |
+|               | `mongodb-client-encryption@1.x` | `mongodb-client-encryption@2.x` | `mongodb-client-encryption@6.x` |
+| ------------- | ------------------------------- | ------------------------------- | ------------------------------- |
+| `mongodb@6.x` | N/A                             | N/A                             | ✓                               |
+| `mongodb@5.x` | N/A                             | ✓                               | N/A                             |
+| `mongodb@4.x` | ✓                               | ✓                               | N/A                             |
+| `mongodb@3.x` | ✓                               | N/A                             | N/A                             |
 
 ### Installation
 
