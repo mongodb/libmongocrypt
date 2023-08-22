@@ -1927,7 +1927,10 @@ static void _test_encrypt_fle2_encryption_placeholder(_mongocrypt_tester_t *test
     char pathbuf[2048];
 
 #define MAKE_PATH(mypath)                                                                                              \
-    ASSERT(snprintf(pathbuf, sizeof(pathbuf), "./test/data/%s/%s", data_path, mypath) < sizeof(pathbuf))
+    {                                                                                                                  \
+        int pathbuf_ret = snprintf(pathbuf, sizeof(pathbuf), "./test/data/%s/%s", data_path, mypath);                  \
+        ASSERT(pathbuf_ret >= 0 && (size_t)pathbuf_ret < sizeof(pathbuf));                                             \
+    }
 
     if (!_aes_ctr_is_supported_by_os) {
         printf("Common Crypto with no CTR support detected. Skipping.");

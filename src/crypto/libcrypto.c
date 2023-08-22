@@ -71,8 +71,8 @@ static bool _encrypt_with_cipher(const EVP_CIPHER *cipher, aes_256_args_t args) 
     BSON_ASSERT(args.out);
     BSON_ASSERT(ctx);
     BSON_ASSERT(cipher);
-    BSON_ASSERT(NULL == args.iv || EVP_CIPHER_iv_length(cipher) == args.iv->len);
-    BSON_ASSERT(EVP_CIPHER_key_length(cipher) == args.key->len);
+    BSON_ASSERT(NULL == args.iv || (uint32_t)EVP_CIPHER_iv_length(cipher) == args.iv->len);
+    BSON_ASSERT((uint32_t)EVP_CIPHER_key_length(cipher) == args.key->len);
     BSON_ASSERT(args.in->len <= INT_MAX);
 
     if (!EVP_EncryptInit_ex(ctx, cipher, NULL /* engine */, args.key->data, NULL == args.iv ? NULL : args.iv->data)) {
@@ -97,7 +97,7 @@ static bool _encrypt_with_cipher(const EVP_CIPHER *cipher, aes_256_args_t args) 
         goto done;
     }
 
-    BSON_ASSERT(UINT32_MAX - *args.bytes_written >= intermediate_bytes_written);
+    BSON_ASSERT(UINT32_MAX - *args.bytes_written >= (uint32_t)intermediate_bytes_written);
     *args.bytes_written += (uint32_t)intermediate_bytes_written;
 
     ret = true;
@@ -127,8 +127,8 @@ static bool _decrypt_with_cipher(const EVP_CIPHER *cipher, aes_256_args_t args) 
     BSON_ASSERT(args.key);
     BSON_ASSERT(args.in);
     BSON_ASSERT(args.out);
-    BSON_ASSERT(EVP_CIPHER_iv_length(cipher) == args.iv->len);
-    BSON_ASSERT(EVP_CIPHER_key_length(cipher) == args.key->len);
+    BSON_ASSERT((uint32_t)EVP_CIPHER_iv_length(cipher) == args.iv->len);
+    BSON_ASSERT((uint32_t)EVP_CIPHER_key_length(cipher) == args.key->len);
     BSON_ASSERT(args.in->len <= INT_MAX);
 
     if (!EVP_DecryptInit_ex(ctx, cipher, NULL /* engine */, args.key->data, args.iv->data)) {
@@ -154,7 +154,7 @@ static bool _decrypt_with_cipher(const EVP_CIPHER *cipher, aes_256_args_t args) 
         goto done;
     }
 
-    BSON_ASSERT(UINT32_MAX - *args.bytes_written >= intermediate_bytes_written);
+    BSON_ASSERT(UINT32_MAX - *args.bytes_written >= (uint32_t)intermediate_bytes_written);
     *args.bytes_written += (uint32_t)intermediate_bytes_written;
 
     ret = true;
