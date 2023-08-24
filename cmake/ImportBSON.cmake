@@ -144,15 +144,11 @@ function (_import_bson)
       set (ENABLE_CLIENT_SIDE_ENCRYPTION OFF CACHE BOOL "Disable client-side encryption for the libmongoc subproject")
       # Add the subdirectory as a project. EXCLUDE_FROM_ALL to inhibit building and installing of components unless requested
       # SYSTEM (on applicable CMake versions) to prevent warnings (particularly from -Wconversion/-Wsign-conversion) from the C driver code
-      # It is also necessary to prune -Werror, in the event it is present, regardless of CMake version
-      set(OLD_CMAKE_C_FLAGS ${CMAKE_C_FLAGS})
-      string(REPLACE "-Werror" "" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
       if (CMAKE_VERSION VERSION_GREATER 3.25)
          add_subdirectory ("${MONGOCRYPT_MONGOC_DIR}" _mongo-c-driver EXCLUDE_FROM_ALL SYSTEM)
       else ()
          add_subdirectory ("${MONGOCRYPT_MONGOC_DIR}" _mongo-c-driver EXCLUDE_FROM_ALL)
       endif ()
-      set(CMAKE_C_FLAGS ${OLD_CMAKE_C_FLAGS})
       if (TARGET mongoc_static)
          # Workaround: Embedded mongoc_static does not set its INCLUDE_DIRECTORIES for user targets
          target_include_directories (mongoc_static
