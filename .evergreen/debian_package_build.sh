@@ -83,3 +83,9 @@ sudo chroot ./unstable-chroot /bin/bash -c "(set -o xtrace && \
 [ -e ./unstable-chroot/tmp/libmongocrypt/example-state-machine ] || (echo "Example 'example-state-machine' was not built!" ; exit 1)
 (cd ./unstable-chroot/tmp/ ; tar zcvf ../../deb.tar.gz *.dsc *.orig.tar.gz *.debian.tar.xz *.build *.deb)
 
+# Build a second time, to ensure a "double build" works
+sudo chroot ./unstable-chroot /bin/bash -c "(\
+  cd /tmp/libmongocrypt && \
+  rm -f example-state-machine && \
+  git status --ignored && \
+  dpkg-buildpackage -b && dpkg-buildpackage -S )"
