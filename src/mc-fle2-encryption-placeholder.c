@@ -186,7 +186,7 @@ bool mc_validate_sparsity(int64_t sparsity, mongocrypt_status_t *status) {
         return false;
     }
     // mc_getEdgesInt expects a size_t sparsity.
-    if (sparsity >= SIZE_MAX) {
+    if ((uint64_t)sparsity >= SIZE_MAX) {
         CLIENT_ERR("sparsity must be < %zu, got: %" PRId64, SIZE_MAX, sparsity);
         return false;
     }
