@@ -36,5 +36,8 @@ override_dh_auto_configure:
 	$(DFP_CONFIG_OPTION) \
 	-DCMAKE_BUILD_TYPE=RelWithDebInfo
 
+override_dh_auto_test:
+	echo "Skip dh_auto_test because upstream CI already tests extensively"
+
 override_dh_missing:
 	dh_missing --fail-missing
