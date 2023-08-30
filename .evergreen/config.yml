@@ -977,6 +977,8 @@ tasks:
       params:
         binary: bash
         working_dir: "./libmongocrypt"
+        env:
+          GIT_REVISION: ${revision}
         args:
           - "./.evergreen/benchmark-java.sh"
     - command: "perf.send"
