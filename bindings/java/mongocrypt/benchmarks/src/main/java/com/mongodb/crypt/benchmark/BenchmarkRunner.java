@@ -33,8 +33,8 @@ import java.util.*;
 
 public class BenchmarkRunner {
     static final int NUM_FIELDS = 1500;
-    static int NUM_WARMUP_SECS = 2;
-    static int NUM_SECS = 10;
+    static final int NUM_WARMUP_SECS = 2;
+    static final int NUM_SECS = 10;
     static final byte[] LOCAL_MASTER_KEY = new byte[]{
             -99, -108, 75, 13, -109, -48, -59, 68, -91, 114, -3, 50, 27, -108, 48, -112, 35, 53,
             115, 124, -16, -10, -62, -12, -38, 35, 86, -25, -113, 4, -52, -6, -34, 117, -76, 81,
