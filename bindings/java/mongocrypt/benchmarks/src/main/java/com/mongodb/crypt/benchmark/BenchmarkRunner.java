@@ -25,6 +25,7 @@ import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -43,34 +44,20 @@ public class BenchmarkRunner {
             -27, -81
     };
 
-    private static String getFileAsString(final String fileName, String lineSeparator) {
+    private static String getFileAsString(final String fileName) {
         try {
             URL resource = BenchmarkRunner.class.getResource("/" + fileName);
             if (resource == null) {
                 throw new RuntimeException("Could not find file " + fileName);
             }
-            File file = new File(resource.toURI());
-            StringBuilder stringBuilder = new StringBuilder();
-            String line;
-            try (BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(Files.newInputStream(file.toPath()), StandardCharsets.UTF_8))) {
-                boolean first = true;
-                while ((line = reader.readLine()) != null) {
-                    if (!first) {
-                        stringBuilder.append(lineSeparator);
-                    }
-                    first = false;
-                    stringBuilder.append(line);
-                }
-            }
-            return stringBuilder.toString();
+            return Files.readString(Path.of(resource.toURI()));
         } catch (Throwable t) {
             throw new RuntimeException("Could not parse file " + fileName, t);
         }
     }
 
     private static BsonDocument getResourceAsDocument(final String fileName) {
-        return BsonDocument.parse(getFileAsString(fileName, System.getProperty("line.separator")));
+        return BsonDocument.parse(getFileAsString(fileName));
     }
 
     private static MongoCrypt createMongoCrypt() {
