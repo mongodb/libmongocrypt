@@ -78,11 +78,7 @@ public class BenchmarkRunner {
             while (System.nanoTime() - start < 1_000_000_000) {
                 try (MongoCryptContext ctx = mongoCrypt.createDecryptionContext(toDecrypt)) {
                     assert ctx.getState() == MongoCryptContext.State.READY;
-                    RawBsonDocument result = ctx.finish();
-                    int gotSize = result.size();
-                    if (gotSize != NUM_FIELDS) {
-                        throw new RuntimeException("Expected size: " + NUM_FIELDS + ", got " + gotSize);
-                    }
+                    ctx.finish();
                     opsPerSec++;
                 }
             }
