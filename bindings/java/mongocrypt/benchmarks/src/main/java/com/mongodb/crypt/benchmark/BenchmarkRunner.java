@@ -117,13 +117,13 @@ public class BenchmarkRunner {
                 }
             }
 
-            String created_at = ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
+            String createdAt = ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
             // Warm up benchmark and discard the result.
             measureMedianOpsPerSecOfDecrypt(mongoCrypt, encrypted, NUM_WARMUP_SECS);
             // Decrypt `encrypted` and measure ops/sec.
             long medianOpsPerSec = measureMedianOpsPerSecOfDecrypt(mongoCrypt, encrypted, NUM_SECS);
             System.out.printf("Decrypting 1500 fields median ops/sec : %d%n", medianOpsPerSec);
-            String completed_at = ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
+            String completedAt = ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
 
             // Print the results in JSON that can be accepted by the `perf.send` command.
             // See https://docs.devprod.prod.corp.mongodb.com/evergreen/Project-Configuration/Project-Commands#perfsend for the expected `perf.send` input.
@@ -131,8 +131,8 @@ public class BenchmarkRunner {
                     Arrays.asList(
                             new BsonDocument()
                                     .append("info", new BsonDocument().append("test_name", new BsonString("java_decrypt_1500")))
-                                    .append("created_at", new BsonString(created_at))
-                                    .append("completed_at", new BsonString(completed_at))
+                                    .append("created_at", new BsonString(createdAt))
+                                    .append("completed_at", new BsonString(completedAt))
                                     .append("artifacts", new BsonArray())
                                     .append("metrics", new BsonArray(Arrays.asList(
                                             new BsonDocument()
