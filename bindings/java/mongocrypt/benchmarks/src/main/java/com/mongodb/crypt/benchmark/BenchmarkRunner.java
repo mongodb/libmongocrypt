@@ -69,9 +69,9 @@ public class BenchmarkRunner {
                 .build());
     }
 
-    private static long measureMedianOpsPerSecOfDecrypt(MongoCrypt mongoCrypt, BsonDocument toDecrypt) {
-        ArrayList<Long> opsPerSecs = new ArrayList<Long>(NUM_SECS);
-        for (int i = 0; i < NUM_WARMUP_SECS + NUM_SECS; i++) {
+    private static long measureMedianOpsPerSecOfDecrypt(MongoCrypt mongoCrypt, BsonDocument toDecrypt, int numSecs) {
+        ArrayList<Long> opsPerSecs = new ArrayList<Long>(numSecs);
+        for (int i = 0; i < numSecs; i++) {
             long opsPerSec = 0;
             long start = System.nanoTime();
             // Run for one second.
@@ -86,12 +86,10 @@ public class BenchmarkRunner {
                     opsPerSec++;
                 }
             }
-            if (i > NUM_WARMUP_SECS) {
-                opsPerSecs.add(opsPerSec);
-            }
+            opsPerSecs.add(opsPerSec);
         }
         Collections.sort(opsPerSecs);
-        return opsPerSecs.get(NUM_SECS / 2);
+        return opsPerSecs.get(numSecs / 2);
     }
 
     public static void main(String[] args) throws IOException {
@@ -128,8 +126,10 @@ public class BenchmarkRunner {
             }
 
             String created_at = ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
+            // Warm up benchmark and discard the result.
+            measureMedianOpsPerSecOfDecrypt(mongoCrypt, encrypted, NUM_WARMUP_SECS);
             // Decrypt `encrypted` and measure ops/sec.
-            long medianOpsPerSec = measureMedianOpsPerSecOfDecrypt(mongoCrypt, encrypted);
+            long medianOpsPerSec = measureMedianOpsPerSecOfDecrypt(mongoCrypt, encrypted, NUM_SECS);
             System.out.printf("Decrypting 1500 fields median ops/sec : %d%n", medianOpsPerSec);
             String completed_at = ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
 
