@@ -17,8 +17,8 @@ run_cmake \
     -B"$build_dir"
 run_cmake --build "$build_dir" --target install
 
-# Run Java benchmarks.
-export JAVA_HOME=/opt/java/jdk8
+# Run Java benchmarks. Do not use JDK 8 to avoid hang in gradle observed in MONGOCRYPT-590.
+export JAVA_HOME=/opt/java/jdk17
 # Include path to installed libmongocrypt.so
 export LD_LIBRARY_PATH="$MONGOCRYPT_INSTALL_PREFIX/lib64"
 cd bindings/java/mongocrypt
