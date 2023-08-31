@@ -23,5 +23,4 @@ export JAVA_HOME=/opt/java/jdk8
 export LD_LIBRARY_PATH="$MONGOCRYPT_INSTALL_PREFIX/lib64"
 cd bindings/java/mongocrypt
 ./gradlew --version
-# `-DgitRevision=${GIT_REVISION}` is set to work around an observed hang noted in MONGOCRYPT-590.
-./gradlew clean benchmarks:run --info -DgitRevision=${GIT_REVISION}
+./gradlew clean benchmarks:run --info
