@@ -73,6 +73,22 @@ public class CAPI {
      * mongocrypt_binary_destroy.
      */
     public static class mongocrypt_binary_t extends PointerType {
+        // The `mongocrypt_binary_t` struct layout is part of libmongocrypt's ABI:
+        // typedef struct _mongocrypt_binary_t {
+        //     uint8_t *data;
+        //     uint32_t len;
+        // } mongocrypt_binary_t;
+        // To improve performance, fields are read directly using `getPointer` and `getInt`.
+        // This results in observed performance improvements over using of `mongocrypt_binary_data` and `mongocrypt_binary_len`. Refer: MONGOCRYPT-589.
+        public mongocrypt_binary_t() {
+            super();
+        }
+        public Pointer data() {
+            return this.getPointer().getPointer(0);
+        }
+        public int len() {
+            return this.getPointer().getInt(Native.POINTER_SIZE);
+        }
     }
 
     /**

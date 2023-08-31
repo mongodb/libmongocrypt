@@ -70,8 +70,8 @@ final class CAPIHelper {
     }
 
     static ByteBuffer toByteBuffer(final mongocrypt_binary_t binary) {
-        Pointer pointer = mongocrypt_binary_data(binary);
-        int length = mongocrypt_binary_len(binary);
+        Pointer pointer = binary.data();
+        int length = binary.len();
         return pointer.getByteBuffer(0, length);
     }
 
@@ -83,11 +83,11 @@ final class CAPIHelper {
     }
 
     static void writeByteArrayToBinary(final mongocrypt_binary_t binary, byte[] bytes) {
-        if (mongocrypt_binary_len(binary) < bytes.length) {
+        if (binary.len() < bytes.length) {
             throw new IllegalArgumentException(format("mongocrypt binary of length %d is not large enough to hold %d bytes",
-                    mongocrypt_binary_len(binary), bytes.length));
+                    binary.len(), bytes.length));
         }
-        Pointer outPointer = mongocrypt_binary_data(binary);
+        Pointer outPointer = binary.data();
         outPointer.write(0, bytes, 0, bytes.length);
     }
 
