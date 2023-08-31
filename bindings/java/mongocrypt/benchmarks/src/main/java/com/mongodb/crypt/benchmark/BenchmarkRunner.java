@@ -89,10 +89,6 @@ public class BenchmarkRunner {
     }
 
     public static void main(String[] args) throws IOException {
-        if (System.getenv("QUICK") != null && System.getenv("QUICK").equals("ON")) {
-            System.out.printf("QUICK=ON is set. Using NUM_SECS=3%n");
-            NUM_SECS = 3;
-        }
         System.out.printf("BenchmarkRunner is using libmongocrypt version=%s, NUM_WARMUP_SECS=%d, NUM_SECS=%d%n", CAPI.mongocrypt_version(null).toString(), NUM_WARMUP_SECS, NUM_SECS);
         // `keyDocument` is a Data Encryption Key (DEK) encrypted with the Key Encryption Key (KEK) `LOCAL_MASTER_KEY`.
         BsonDocument keyDocument = getResourceAsDocument("keyDocument.json");
