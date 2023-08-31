@@ -25,7 +25,7 @@ import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -50,7 +50,7 @@ public class BenchmarkRunner {
             if (resource == null) {
                 throw new RuntimeException("Could not find file " + fileName);
             }
-            return Files.readString(Path.of(resource.toURI()));
+            return new String(Files.readAllBytes(Paths.get(resource.toURI())));
         } catch (Throwable t) {
             throw new RuntimeException("Could not parse file " + fileName, t);
         }
