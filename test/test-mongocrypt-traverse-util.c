@@ -101,7 +101,6 @@ static void _assert_correct_fields(bson_t *bson,
                                    int num_binary,
                                    int num_other,
                                    _util_tester_t *tester) {
-    char name[36];
     bson_iter_t iter;
     bson_iter_t child;
     int i;
@@ -112,39 +111,37 @@ static void _assert_correct_fields(bson_t *bson,
     BSON_ASSERT(num_binary < 10);
     BSON_ASSERT(num_other < 10);
 
-    memset(name, 0, 36);
-
     if (tester->parent != NEST_IN_NONE) {
         for (i = 0; i < num_other; i++) {
-            /* use mod 10, since guaranteed < 10 and to silence -Wformat-truncation */
-            snprintf(name, 13, "other.field%d", i % 10);
+            char *key = bson_strdup_printf("other.field%d", i);
             bson_iter_init(&iter, bson);
-            BSON_ASSERT(bson_iter_find_descendant(&iter, name, &child));
+            BSON_ASSERT(bson_iter_find_descendant(&iter, key, &child));
+            bson_free(key);
         }
 
         for (i = 0; i < num_markings; i++) {
-            /* use mod 10, since guaranteed < 10 and to silence -Wformat-truncation */
-            snprintf(name, 18, "markings.marking%d", i % 10);
+            char *key = bson_strdup_printf("markings.marking%d", i);
             bson_iter_init(&iter, bson);
-            BSON_ASSERT(bson_iter_find_descendant(&iter, name, &child));
+            BSON_ASSERT(bson_iter_find_descendant(&iter, key, &child));
+            bson_free(key);
         }
         for (i = 0; i < num_random; i++) {
-            /* use mod 10, since guaranteed < 10 and to silence -Wformat-truncation */
-            snprintf(name, 15, "random.random%d", i % 10);
+            char *key = bson_strdup_printf("random.random%d", i);
             bson_iter_init(&iter, bson);
-            BSON_ASSERT(bson_iter_find_descendant(&iter, name, &child));
+            BSON_ASSERT(bson_iter_find_descendant(&iter, key, &child));
+            bson_free(key);
         }
         for (i = 0; i < num_deterministic; i++) {
-            /* use mod 10, since guaranteed < 10 and to silence -Wformat-truncation */
-            snprintf(name, 29, "deterministic.deterministic%d", i % 10);
+            char *key = bson_strdup_printf("deterministic.deterministic%d", i);
             bson_iter_init(&iter, bson);
-            BSON_ASSERT(bson_iter_find_descendant(&iter, name, &child));
+            BSON_ASSERT(bson_iter_find_descendant(&iter, key, &child));
+            bson_free(key);
         }
         for (i = 0; i < num_binary; i++) {
-            /* use mod 10, since guaranteed < 10 and to silence -Wformat-truncation */
-            snprintf(name, 15, "binary.binary%d", i % 10);
+            char *key = bson_strdup_printf("binary.binary%d", i);
             bson_iter_init(&iter, bson);
-            BSON_ASSERT(bson_iter_find_descendant(&iter, name, &child));
+            BSON_ASSERT(bson_iter_find_descendant(&iter, key, &child));
+            bson_free(key);
         }
 
     } else {
@@ -160,7 +157,6 @@ static bson_t *_assemble_bson(int num_markings,
                               int num_binary,
                               int num_other,
                               _util_tester_t *tester) {
-    char name[24];
     bson_t *parent = NULL;
     bson_t bson;
     int i;
@@ -171,8 +167,6 @@ static bson_t *_assemble_bson(int num_markings,
     BSON_ASSERT(num_random < 10);
     BSON_ASSERT(num_binary < 10);
     BSON_ASSERT(num_other < 10);
-
-    memset(name, 0, 24);
 
     /* If we have a nesting type, nest each kind of field inside one */
     if (tester->parent == NEST_IN_DOCUMENT) {
@@ -187,50 +181,50 @@ static bson_t *_assemble_bson(int num_markings,
 
     /* Append some other filler fields */
     for (i = 0; i < num_other; i++) {
-        /* use mod 10, since guaranteed < 10 and to silence -Wformat-truncation */
-        snprintf(name, 7, "field%d", i % 10);
-        BSON_ASSERT(bson_append_utf8(&bson, name, 6, "hi", -1));
+        char *key = bson_strdup_printf("field%d", i);
+        BSON_ASSERT(bson_append_utf8(&bson, key, 6, "hi", -1));
+        bson_free(key);
     }
 
     _reset_nesting(parent, &bson, tester->parent, "markings");
 
     /* Append some number of markings */
     for (i = 0; i < num_markings; i++) {
-        /* use mod 10, since guaranteed < 10 and to silence -Wformat-truncation */
-        snprintf(name, 9, "marking%d", i % 10);
-        _append_marking(&bson, name, 8);
+        char *key = bson_strdup_printf("marking%d", i);
+        _append_marking(&bson, key, 8);
+        bson_free(key);
     }
 
     _reset_nesting(parent, &bson, tester->parent, "random");
 
     /* Append some number of random ciphertexts */
     for (i = 0; i < num_random; i++) {
-        /* use mod 10, since guaranteed < 10 and to silence -Wformat-truncation */
-        snprintf(name, 8, "random%d", i % 10);
-        _append_ciphertext_with_subtype(&bson, name, 7, 6, MONGOCRYPT_ENCRYPTION_ALGORITHM_RANDOM, tester->tester);
+        char *key = bson_strdup_printf("random%d", i);
+        _append_ciphertext_with_subtype(&bson, key, 7, 6, MONGOCRYPT_ENCRYPTION_ALGORITHM_RANDOM, tester->tester);
+        bson_free(key);
     }
 
     _reset_nesting(parent, &bson, tester->parent, "deterministic");
 
     /* Append some number of deterministic ciphertexts */
     for (i = 0; i < num_deterministic; i++) {
-        /* use mod 10, since guaranteed < 10 and to silence -Wformat-truncation */
-        snprintf(name, 15, "deterministic%d", i % 10);
+        char *key = bson_strdup_printf("deterministic%d", i);
         _append_ciphertext_with_subtype(&bson,
-                                        name,
+                                        key,
                                         14,
                                         6,
                                         MONGOCRYPT_ENCRYPTION_ALGORITHM_DETERMINISTIC,
                                         tester->tester);
+        bson_free(key);
     }
 
     _reset_nesting(parent, &bson, tester->parent, "binary");
 
     /* Append some number of other bson subtype 6 fields */
     for (i = 0; i < num_binary; i++) {
-        /* use mod 10, since guaranteed < 10 and to silence -Wformat-truncation */
-        snprintf(name, 8, "binary%d", i % 10);
-        _append_ciphertext_with_subtype(&bson, name, 7, 5, MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE, tester->tester);
+        char *key = bson_strdup_printf("binary%d", i);
+        _append_ciphertext_with_subtype(&bson, key, 7, 5, MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE, tester->tester);
+        bson_free(key);
     }
 
     if (tester->parent == NEST_IN_DOCUMENT) {
