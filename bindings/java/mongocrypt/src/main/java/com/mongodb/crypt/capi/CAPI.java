@@ -87,7 +87,16 @@ public class CAPI {
             return this.getPointer().getPointer(0);
         }
         public int len() {
-            return this.getPointer().getInt(Native.POINTER_SIZE);
+            int len = this.getPointer().getInt(Native.POINTER_SIZE);
+            // mongocrypt_binary_t represents length as an unsigned `uint32_t`.
+            // Representing `uint32_t` values greater than INT32_MAX is represented as a negative `int`.
+            // Throw an exception. mongocrypt_binary_t is not expected to use lengths greater than INT32_MAX.
+            if (len < 0) {
+                throw new IllegalArgumentException(
+                        String.format("Expected mongocrypt_binary_t length to be non-negative, got: %d", len));
+            }
+            return len;
+
         }
     }
 
