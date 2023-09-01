@@ -116,28 +116,33 @@ static void _assert_correct_fields(bson_t *bson,
 
     if (tester->parent != NEST_IN_NONE) {
         for (i = 0; i < num_other; i++) {
-            snprintf(name, 13, "other.field%d", i);
+            /* use mod 10, since guaranteed < 10 and to silence -Wformat-truncation */
+            snprintf(name, 13, "other.field%d", i % 10);
             bson_iter_init(&iter, bson);
             BSON_ASSERT(bson_iter_find_descendant(&iter, name, &child));
         }
 
         for (i = 0; i < num_markings; i++) {
-            snprintf(name, 18, "markings.marking%d", i);
+            /* use mod 10, since guaranteed < 10 and to silence -Wformat-truncation */
+            snprintf(name, 18, "markings.marking%d", i % 10);
             bson_iter_init(&iter, bson);
             BSON_ASSERT(bson_iter_find_descendant(&iter, name, &child));
         }
         for (i = 0; i < num_random; i++) {
-            snprintf(name, 15, "random.random%d", i);
+            /* use mod 10, since guaranteed < 10 and to silence -Wformat-truncation */
+            snprintf(name, 15, "random.random%d", i % 10);
             bson_iter_init(&iter, bson);
             BSON_ASSERT(bson_iter_find_descendant(&iter, name, &child));
         }
         for (i = 0; i < num_deterministic; i++) {
-            snprintf(name, 29, "deterministic.deterministic%d", i);
+            /* use mod 10, since guaranteed < 10 and to silence -Wformat-truncation */
+            snprintf(name, 29, "deterministic.deterministic%d", i % 10);
             bson_iter_init(&iter, bson);
             BSON_ASSERT(bson_iter_find_descendant(&iter, name, &child));
         }
         for (i = 0; i < num_binary; i++) {
-            snprintf(name, 15, "binary.binary%d", i);
+            /* use mod 10, since guaranteed < 10 and to silence -Wformat-truncation */
+            snprintf(name, 15, "binary.binary%d", i % 10);
             bson_iter_init(&iter, bson);
             BSON_ASSERT(bson_iter_find_descendant(&iter, name, &child));
         }
@@ -182,7 +187,8 @@ static bson_t *_assemble_bson(int num_markings,
 
     /* Append some other filler fields */
     for (i = 0; i < num_other; i++) {
-        snprintf(name, 7, "field%d", i);
+        /* use mod 10, since guaranteed < 10 and to silence -Wformat-truncation */
+        snprintf(name, 7, "field%d", i % 10);
         BSON_ASSERT(bson_append_utf8(&bson, name, 6, "hi", -1));
     }
 
@@ -190,7 +196,8 @@ static bson_t *_assemble_bson(int num_markings,
 
     /* Append some number of markings */
     for (i = 0; i < num_markings; i++) {
-        snprintf(name, 9, "marking%d", i);
+        /* use mod 10, since guaranteed < 10 and to silence -Wformat-truncation */
+        snprintf(name, 9, "marking%d", i % 10);
         _append_marking(&bson, name, 8);
     }
 
@@ -198,7 +205,8 @@ static bson_t *_assemble_bson(int num_markings,
 
     /* Append some number of random ciphertexts */
     for (i = 0; i < num_random; i++) {
-        snprintf(name, 8, "random%d", i);
+        /* use mod 10, since guaranteed < 10 and to silence -Wformat-truncation */
+        snprintf(name, 8, "random%d", i % 10);
         _append_ciphertext_with_subtype(&bson, name, 7, 6, MONGOCRYPT_ENCRYPTION_ALGORITHM_RANDOM, tester->tester);
     }
 
@@ -206,7 +214,8 @@ static bson_t *_assemble_bson(int num_markings,
 
     /* Append some number of deterministic ciphertexts */
     for (i = 0; i < num_deterministic; i++) {
-        snprintf(name, 15, "deterministic%d", i);
+        /* use mod 10, since guaranteed < 10 and to silence -Wformat-truncation */
+        snprintf(name, 15, "deterministic%d", i % 10);
         _append_ciphertext_with_subtype(&bson,
                                         name,
                                         14,
@@ -219,7 +228,8 @@ static bson_t *_assemble_bson(int num_markings,
 
     /* Append some number of other bson subtype 6 fields */
     for (i = 0; i < num_binary; i++) {
-        snprintf(name, 8, "binary%d", i);
+        /* use mod 10, since guaranteed < 10 and to silence -Wformat-truncation */
+        snprintf(name, 8, "binary%d", i % 10);
         _append_ciphertext_with_subtype(&bson, name, 7, 5, MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE, tester->tester);
     }
 
