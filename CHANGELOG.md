@@ -1,4 +1,7 @@
 # ChangeLog
+## 1.8.2
+### Fixed
+- Fix possible leaks in Queryable Encryption in errors on malformed data.
 ## 1.8.1
 - Bypass search index management commands in automatic encryption
 ## 1.8.0
