@@ -74,7 +74,7 @@ const char *mongocrypt_version(uint32_t *len);
  * Consumers may rely on the struct layout.
  */
 typedef struct _mongocrypt_binary_t {
-    uint8_t *data;
+    void *data;
     uint32_t len;
 } mongocrypt_binary_t;
 
