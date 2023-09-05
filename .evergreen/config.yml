@@ -970,6 +970,19 @@ tasks:
     - func: fetch source
     - func: lint-node-typescript
 
+- name: benchmark-java
+  commands:
+    - func: "fetch source"
+    - command: "subprocess.exec"
+      params:
+        binary: bash
+        working_dir: "./libmongocrypt"
+        args:
+          - "./.evergreen/benchmark-java.sh"
+    - command: "perf.send"
+      params:
+        file: libmongocrypt/bindings/java/mongocrypt/benchmarks/results.json
+
 pre:
   # Update the evergreen expansion to dynamically set the ${libmongocrypt_s3_suffix} and ${libmongocrypt_s3_suffix_copy} expansions.
   - command: "shell.exec"
@@ -1546,3 +1559,10 @@ buildvariants:
     vs_target_arch: x86
   tasks:
   - build-and-test-and-upload
+
+- name: benchmark
+  display_name: "Benchmark"
+  # rhel90-dbx-perf-large is the dedicated performance distro referenced in DRIVERS-2666.
+  run_on: rhel90-dbx-perf-large
+  tasks:
+  - benchmark-java

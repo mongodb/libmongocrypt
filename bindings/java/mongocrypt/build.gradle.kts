@@ -37,9 +37,11 @@ plugins {
     id("biz.aQute.bnd.builder") version "6.2.0"
 }
 
-repositories {
-    mavenCentral()
-    google()
+allprojects {
+    repositories {
+        mavenCentral()
+        google()
+    }
 }
 
 group = "org.mongodb"
