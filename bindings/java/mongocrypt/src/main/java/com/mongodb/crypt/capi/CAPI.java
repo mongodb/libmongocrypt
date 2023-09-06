@@ -75,7 +75,7 @@ public class CAPI {
     public static class mongocrypt_binary_t extends PointerType {
         // The `mongocrypt_binary_t` struct layout is part of libmongocrypt's ABI:
         // typedef struct _mongocrypt_binary_t {
-        //     uint8_t *data;
+        //     void *data;
         //     uint32_t len;
         // } mongocrypt_binary_t;
         // To improve performance, fields are read directly using `getPointer` and `getInt`.
