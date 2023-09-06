@@ -92,7 +92,7 @@ public class CAPI {
             // Representing `uint32_t` values greater than INT32_MAX is represented as a negative `int`.
             // Throw an exception. mongocrypt_binary_t is not expected to use lengths greater than INT32_MAX.
             if (len < 0) {
-                throw new IllegalArgumentException(
+                throw new AssertionError(
                         String.format("Expected mongocrypt_binary_t length to be non-negative, got: %d", len));
             }
             return len;
