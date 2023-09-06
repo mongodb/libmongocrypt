@@ -1,4 +1,4 @@
-libmongocrypt (1.8.2-1) UNRELEASED; urgency=medium
+libmongocrypt (1.8.2-1) unstable; urgency=medium
 
   [ Roberto C. Sanchez ]
   * fix clean target (Closes: #1047944)
@@ -7,7 +7,7 @@ libmongocrypt (1.8.2-1) UNRELEASED; urgency=medium
   [ Kyle Kloberdanz ]
   * New upstream release.
 
- -- Kyle Kloberdanz <kyle.kloberdanz@mongodb.com>  Wed, 06 Sep 2023 13:06:08 +0000
+ -- Kyle Kloberdanz <kyle.kloberdanz@mongodb.com>  Wed, 06 Sep 2023 13:10:31 +0000
 
 libmongocrypt (1.7.2-1) unstable; urgency=medium
 
