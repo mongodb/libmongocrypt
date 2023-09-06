@@ -84,7 +84,7 @@ final class CAPIHelper {
 
     static void writeByteArrayToBinary(final mongocrypt_binary_t binary, byte[] bytes) {
         if (binary.len() < bytes.length) {
-            throw new AssertionError(format("mongocrypt binary of length %d is not large enough to hold %d bytes",
+            throw new IllegalArgumentException(format("mongocrypt binary of length %d is not large enough to hold %d bytes",
                     binary.len(), bytes.length));
         }
         Pointer outPointer = binary.data();
