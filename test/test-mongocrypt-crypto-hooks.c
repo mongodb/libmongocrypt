@@ -67,7 +67,8 @@ static bool _mock_aes_256_xxx_encrypt(void *ctx,
     }
     _append_bin("in", in);
     /* append it directly, don't encrypt. */
-    memcpy(out->data + *bytes_written, in->data, in->len);
+    uint8_t *out_u8 = out->data;
+    memcpy(out_u8 + *bytes_written, in->data, in->len);
     *bytes_written += in->len;
     bson_string_append_printf(call_history, "ret:%s\n", BSON_FUNC);
     if (0 == strcmp((char *)ctx, "error_on:aes_256_cbc_encrypt")
@@ -92,7 +93,8 @@ static bool _mock_aes_256_xxx_decrypt(void *ctx,
     _append_bin("iv", iv);
     _append_bin("in", in);
     /* append it directly, don't decrypt. */
-    memcpy(out->data + *bytes_written, in->data, in->len);
+    uint8_t *out_u8 = out->data;
+    memcpy(out_u8 + *bytes_written, in->data, in->len);
     *bytes_written += in->len;
     bson_string_append_printf(call_history, "ret:%s\n", BSON_FUNC);
     if (0 == strcmp((char *)ctx, "error_on:aes_256_cbc_decrypt")
