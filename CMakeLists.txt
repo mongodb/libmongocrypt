@@ -69,6 +69,7 @@ if (ENABLE_MORE_WARNINGS_AS_ERRORS)
       msvc:/W3 msvc:/WX msvc:/wd4996 msvc:/wd4359
       gnu-like:-Wall gnu-like:-Werror
       gnu-like:-Wswitch-enum gnu-like:-Wswitch-default
+      gnu-like:-Wsign-compare
       )
    add_link_options (
       # Enable link-time warnings. VS 2015 sees LNK4099 spuriously, but it is a
