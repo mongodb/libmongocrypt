@@ -4,6 +4,9 @@ set -o errexit  # Exit the script with error if any of the commands fail
 NODE_LTS_NAME=${NODE_LTS_NAME:-fermium}
 NODE_ARTIFACTS_PATH="${PROJECT_DIRECTORY:-$(pwd)}/node-artifacts"
 if [[ "$OS" = "Windows_NT" ]]; then NODE_ARTIFACTS_PATH=$(cygpath --unix "$NODE_ARTIFACTS_PATH"); fi
+# npm version can be defined in the environment for cases where we need to install
+# a version lower than latest to support EOL Node versions.
+NPM_VERSION=${NPM_VERSION:-9}
 
 CURL_FLAGS=(
   --fail          # Exit code 1 if request fails
@@ -98,8 +101,7 @@ prefix=$NODE_ARTIFACTS_PATH/npm_global
 EOT
 
 if [[ $operating_system != "win" ]]; then
-  # Update npm to latest when we can
-  npm install --global npm@latest
+  npm install --global npm@$NPM_VERSION
   hash -r
 fi
 

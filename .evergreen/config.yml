@@ -147,6 +147,7 @@ functions:
           DISTRO_ID: ${distro_id}
           BUILD_VARIANT: ${build_variant}
           NODE_NVM_USE_VERSION: ${nvm_use_version|18}
+          NPM_VERSION: "9"
 
   "build and test node no peer dependencies":
     - command: "subprocess.exec"
@@ -162,6 +163,7 @@ functions:
           BUILD_VARIANT: ${build_variant}
           OMIT_PEER_DEPS: "true"
           NODE_NVM_USE_VERSION: ${nvm_use_version|18}
+          NPM_VERSION: "9"
 
   "attach node xunit results":
     - command: attach.xunit_results
