@@ -78,7 +78,10 @@ static bool _crypto_aes_256_ctr_encrypt_decrypt_via_ecb(void *ctx,
 
         /* XOR resulting stream with original data */
         for (uint32_t i = 0; i < bytes_written && ptr < args.in->len; i++, ptr++) {
-            out_bin.data[ptr] = in_bin.data[ptr] ^ tmp_bin.data[i];
+            uint8_t *in_bin_u8 = in_bin.data;
+            uint8_t *out_bin_u8 = out_bin.data;
+            uint8_t *tmp_bin_u8 = tmp_bin.data;
+            out_bin_u8[ptr] = in_bin_u8[ptr] ^ tmp_bin_u8[i];
         }
 
         /* Increment value in CTR buffer */
@@ -86,9 +89,10 @@ static bool _crypto_aes_256_ctr_encrypt_decrypt_via_ecb(void *ctx,
         /* assert rather than return since this should never happen */
         BSON_ASSERT(ctr_bin.len == 0u || ctr_bin.len - 1u <= INT_MAX);
         for (int i = (int)ctr_bin.len - 1; i >= 0 && carry != 0; --i) {
-            uint32_t bpp = carry + ctr_bin.data[i];
+            uint8_t *ctr_bin_u8 = ctr_bin.data;
+            uint32_t bpp = carry + ctr_bin_u8[i];
             carry = bpp >> 8;
-            ctr_bin.data[i] = bpp & 0xFF;
+            ctr_bin_u8[i] = bpp & 0xFF;
         }
     }
 
