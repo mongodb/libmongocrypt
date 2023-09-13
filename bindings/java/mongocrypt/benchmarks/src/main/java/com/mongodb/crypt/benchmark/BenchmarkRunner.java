@@ -30,6 +30,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.*;
 
 public class BenchmarkRunner {
     static final int NUM_FIELDS = 1500;
@@ -88,7 +89,45 @@ public class BenchmarkRunner {
         return opsPerSecs.get(numSecs / 2);
     }
 
-    public static void main(String[] args) throws IOException {
+    // DecryptTask decrypts a document repeatedly for a specified number of seconds and records ops/sec.
+    private static class DecryptTask implements Runnable {
+        public DecryptTask (MongoCrypt mongoCrypt, BsonDocument toDecrypt, int numSecs, CountDownLatch doneSignal) {
+            this.mongoCrypt = mongoCrypt;
+            this.toDecrypt = toDecrypt;
+            this.opsPerSecs = new ArrayList<Long>(numSecs);
+            this.numSecs = numSecs;
+            this.doneSignal = doneSignal;
+        }
+        public void run() {
+            for (int i = 0; i < numSecs; i++) {
+                long opsPerSec = 0;
+                long start = System.nanoTime();
+                // Run for one second.
+                while (System.nanoTime() - start < 1_000_000_000) {
+                    try (MongoCryptContext ctx = mongoCrypt.createDecryptionContext(toDecrypt)) {
+                        assert ctx.getState() == MongoCryptContext.State.READY;
+                        ctx.finish();
+                        opsPerSec++;
+                    }
+                }
+                opsPerSecs.add(opsPerSec);
+            }
+            doneSignal.countDown();
+        }
+        public long getMedianOpsPerSecs () {
+            if (opsPerSecs.size() == 0) {
+                throw new IllegalStateException("opsPerSecs is empty. Was `run` called?");
+            }
+            Collections.sort(opsPerSecs);
+            return opsPerSecs.get(numSecs / 2);
+        }
+        private MongoCrypt mongoCrypt;
+        private BsonDocument toDecrypt;
+        private ArrayList<Long> opsPerSecs;
+        private int numSecs;
+        private CountDownLatch doneSignal;
+    }
+    public static void main(String[] args) throws IOException, InterruptedException, ExecutionException {
         System.out.printf("BenchmarkRunner is using libmongocrypt version=%s, NUM_WARMUP_SECS=%d, NUM_SECS=%d%n", CAPI.mongocrypt_version(null).toString(), NUM_WARMUP_SECS, NUM_SECS);
         // `keyDocument` is a Data Encryption Key (DEK) encrypted with the Key Encryption Key (KEK) `LOCAL_MASTER_KEY`.
         BsonDocument keyDocument = getResourceAsDocument("keyDocument.json");
@@ -117,32 +156,74 @@ public class BenchmarkRunner {
                 }
             }
 
-            String createdAt = ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
             // Warm up benchmark and discard the result.
             measureMedianOpsPerSecOfDecrypt(mongoCrypt, encrypted, NUM_WARMUP_SECS);
             // Decrypt `encrypted` and measure ops/sec.
             long medianOpsPerSec = measureMedianOpsPerSecOfDecrypt(mongoCrypt, encrypted, NUM_SECS);
             System.out.printf("Decrypting 1500 fields median ops/sec : %d%n", medianOpsPerSec);
-            String completedAt = ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
+
+            // Decrypt `encrypted` and measure ops/sec.
+            // Check with varying thread counts to measure impact of a shared pool of Cipher instances.
+            int[] threadCounts = {1,2,8,64};
+            ArrayList<Long> totalMedianOpsPerSecs = new ArrayList<Long>(threadCounts.length);
+            ArrayList<String> createdAts = new ArrayList<String>(threadCounts.length);
+            ArrayList<String> completedAts = new ArrayList<String>(threadCounts.length);
+
+            for (int threadCount : threadCounts) {
+                ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
+                CountDownLatch doneSignal = new CountDownLatch(threadCount);
+                ArrayList<DecryptTask> decryptTasks = new ArrayList<DecryptTask>(threadCount);
+                createdAts.add(ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT));
+
+                for (int i = 0; i < threadCount; i++) {
+                    DecryptTask decryptTask = new DecryptTask(mongoCrypt, encrypted, NUM_SECS, doneSignal);
+                    decryptTasks.add(decryptTask);
+                    executorService.submit(decryptTask);
+                }
+
+                // Await completion of all tasks. Tasks are expected to complete shortly after NUM_SECS. Time out `await` if time exceeds 2 * NUM_SECS.
+                boolean ok = doneSignal.await(NUM_SECS * 2, TimeUnit.SECONDS);
+                assert ok;
+                completedAts.add(ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT));
+                // Sum the median ops/secs of all tasks to get total throughput.
+                long totalMedianOpsPerSec = 0;
+                for (DecryptTask decryptTask : decryptTasks) {
+                    totalMedianOpsPerSec += decryptTask.getMedianOpsPerSecs();
+                }
+                System.out.printf("threadCount=%d. Decrypting 1500 fields median ops/sec : %d%n", threadCount, totalMedianOpsPerSec);
+                totalMedianOpsPerSecs.add(totalMedianOpsPerSec);
+                executorService.shutdown();
+                ok = executorService.awaitTermination(NUM_SECS * 2, TimeUnit.SECONDS);
+                assert ok;
+            }
 
             // Print the results in JSON that can be accepted by the `perf.send` command.
             // See https://docs.devprod.prod.corp.mongodb.com/evergreen/Project-Configuration/Project-Commands#perfsend for the expected `perf.send` input.
-            BsonDocument results = new BsonDocument().append("results", new BsonArray(
-                    Arrays.asList(
+            ArrayList<BsonDocument> resultsArray = new ArrayList<BsonDocument>(threadCounts.length);
+            for (int i = 0; i < threadCounts.length; i++) {
+                int threadCount = threadCounts[i];
+                long totalMedianOpsPerSec = totalMedianOpsPerSecs.get(i);
+                String createdAt = createdAts.get(i);
+                String completedAt = completedAts.get(i);
+
+                resultsArray.add(new BsonDocument()
+                    .append("info", new BsonDocument()
+                            .append("test_name", new BsonString("java_decrypt_1500"))
+                            .append("args", new BsonDocument()
+                                .append("threadCount", new BsonInt32(threadCount))))
+                    .append("created_at", new BsonString(createdAt))
+                    .append("completed_at", new BsonString(completedAt))
+                    .append("artifacts", new BsonArray())
+                    .append("metrics", new BsonArray(Arrays.asList(
                             new BsonDocument()
-                                    .append("info", new BsonDocument().append("test_name", new BsonString("java_decrypt_1500")))
-                                    .append("created_at", new BsonString(createdAt))
-                                    .append("completed_at", new BsonString(completedAt))
-                                    .append("artifacts", new BsonArray())
-                                    .append("metrics", new BsonArray(Arrays.asList(
-                                            new BsonDocument()
-                                                    .append("name", new BsonString("medianOpsPerSec"))
-                                                    .append("type", new BsonString("THROUGHPUT"))
-                                                    .append("value", new BsonInt64(medianOpsPerSec))
-                                    )))
-                                    .append("sub_tests", new BsonArray())
-                    )
-            ));
+                                    .append("name", new BsonString("medianOpsPerSec"))
+                                    .append("type", new BsonString("THROUGHPUT"))
+                                    .append("value", new BsonInt64(totalMedianOpsPerSec))
+                    )))
+                    .append("sub_tests", new BsonArray()));
+            }
+
+            BsonDocument results = new BsonDocument().append("results", new BsonArray(resultsArray));
             String resultsString = results.toJson();
             // Remove the prefix and suffix when writing to a file so only the [ ... ] array is included.
             resultsString = resultsString.substring("{\"results\": ".length(), resultsString.length() - 1);
