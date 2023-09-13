@@ -70,25 +70,6 @@ public class BenchmarkRunner {
                 .build());
     }
 
-    private static long measureMedianOpsPerSecOfDecrypt(MongoCrypt mongoCrypt, BsonDocument toDecrypt, int numSecs) {
-        ArrayList<Long> opsPerSecs = new ArrayList<Long>(numSecs);
-        for (int i = 0; i < numSecs; i++) {
-            long opsPerSec = 0;
-            long start = System.nanoTime();
-            // Run for one second.
-            while (System.nanoTime() - start < 1_000_000_000) {
-                try (MongoCryptContext ctx = mongoCrypt.createDecryptionContext(toDecrypt)) {
-                    assert ctx.getState() == MongoCryptContext.State.READY;
-                    ctx.finish();
-                    opsPerSec++;
-                }
-            }
-            opsPerSecs.add(opsPerSec);
-        }
-        Collections.sort(opsPerSecs);
-        return opsPerSecs.get(numSecs / 2);
-    }
-
     // DecryptTask decrypts a document repeatedly for a specified number of seconds and records ops/sec.
     private static class DecryptTask implements Runnable {
         public DecryptTask (MongoCrypt mongoCrypt, BsonDocument toDecrypt, int numSecs, CountDownLatch doneSignal) {
@@ -157,10 +138,8 @@ public class BenchmarkRunner {
             }
 
             // Warm up benchmark and discard the result.
-            measureMedianOpsPerSecOfDecrypt(mongoCrypt, encrypted, NUM_WARMUP_SECS);
-            // Decrypt `encrypted` and measure ops/sec.
-            long medianOpsPerSec = measureMedianOpsPerSecOfDecrypt(mongoCrypt, encrypted, NUM_SECS);
-            System.out.printf("Decrypting 1500 fields median ops/sec : %d%n", medianOpsPerSec);
+            DecryptTask warmup = new DecryptTask(mongoCrypt, encrypted, NUM_WARMUP_SECS, new CountDownLatch(1));
+            warmup.run();
 
             // Decrypt `encrypted` and measure ops/sec.
             // Check with varying thread counts to measure impact of a shared pool of Cipher instances.
