@@ -35,5 +35,5 @@ local.properties
 .java-version
 
 # bin
-./bin
+/bin
 
