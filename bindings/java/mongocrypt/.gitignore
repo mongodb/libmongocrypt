@@ -36,4 +36,4 @@ local.properties
 
 # bin
 /bin
-
+/benchmarks/bin
