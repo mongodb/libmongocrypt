@@ -27,10 +27,7 @@ import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-
 import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
 import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_STATUS_ERROR_CLIENT;
@@ -42,29 +39,19 @@ class CipherCallback implements mongocrypt_crypto_fn {
     private final String algorithm;
     private final String transformation;
     private final int mode;
-
-    // `cipherPoolMap` is a map from a String transformation (e.g. "AES/CBC/NoPadding") to a pool of Cipher instances.
-    // `cipherPoolMap` is shared by all instances of CipherCallback and is not synchronized.
-    // `cipherPoolMap` is written in a static initializer and later only read.
-    private static final Map<String, CipherPool> cipherPoolMap = new HashMap<>();
-    static {
-        cipherPoolMap.put("AES/CBC/NoPadding", new CipherPool("AES/CBC/NoPadding"));
-        cipherPoolMap.put("AES/CTR/NoPadding", new CipherPool("AES/CTR/NoPadding"));
-    }
+    private final CipherPool cipherPool;
 
     CipherCallback(final String algorithm, final String transformation, final int mode) {
-        assert cipherPoolMap.containsKey(transformation) : "pool missing for '" + transformation + "'. Missing entry?";
         this.algorithm = algorithm;
         this.transformation = transformation;
         this.mode = mode;
+        this.cipherPool = new CipherPool();
     }
 
     @Override
     public boolean crypt(final Pointer ctx, final mongocrypt_binary_t key, final mongocrypt_binary_t iv,
                          final mongocrypt_binary_t in, final mongocrypt_binary_t out,
                          final Pointer bytesWritten, final mongocrypt_status_t status) {
-        CipherPool cipherPool = cipherPoolMap.get(transformation);
-        assert cipherPool != null;
         Cipher cipher = null;
         try {
             IvParameterSpec ivParameterSpec = new IvParameterSpec(toByteArray(iv));
@@ -86,26 +73,20 @@ class CipherCallback implements mongocrypt_crypto_fn {
             }
         }
     }
-}
 
-class CipherPool {
-    private final ConcurrentLinkedDeque<Cipher> available = new ConcurrentLinkedDeque<>();
+    private class CipherPool {
+        private final ConcurrentLinkedDeque<Cipher> available = new ConcurrentLinkedDeque<>();
 
-    CipherPool(String transformation) {
-        this.transformation = transformation;
-    }
-
-    Cipher get() throws NoSuchAlgorithmException, NoSuchPaddingException {
-        Cipher cipher = available.pollLast();
-        if (cipher != null) {
-            return cipher;
+        Cipher get() throws NoSuchAlgorithmException, NoSuchPaddingException {
+            Cipher cipher = available.pollLast();
+            if (cipher != null) {
+                return cipher;
+            }
+            return Cipher.getInstance(transformation);
         }
-        return Cipher.getInstance(transformation);
-    }
 
-    void release(final Cipher cipher) {
-        available.addLast(cipher);
+        void release(final Cipher cipher) {
+            available.addLast(cipher);
+        }
     }
-
-    String transformation;
 }
