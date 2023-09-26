@@ -24,8 +24,11 @@ import com.mongodb.crypt.capi.CAPI.mongocrypt_status_t;
 import com.sun.jna.Pointer;
 
 import javax.crypto.Cipher;
+import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.security.NoSuchAlgorithmException;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_STATUS_ERROR_CLIENT;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_status_set;
@@ -36,21 +39,24 @@ class CipherCallback implements mongocrypt_crypto_fn {
     private final String algorithm;
     private final String transformation;
     private final int mode;
+    private final CipherPool cipherPool;
 
     CipherCallback(final String algorithm, final String transformation, final int mode) {
         this.algorithm = algorithm;
         this.transformation = transformation;
         this.mode = mode;
+        this.cipherPool = new CipherPool();
     }
 
     @Override
     public boolean crypt(final Pointer ctx, final mongocrypt_binary_t key, final mongocrypt_binary_t iv,
                          final mongocrypt_binary_t in, final mongocrypt_binary_t out,
                          final Pointer bytesWritten, final mongocrypt_status_t status) {
+        Cipher cipher = null;
         try {
             IvParameterSpec ivParameterSpec = new IvParameterSpec(toByteArray(iv));
             SecretKeySpec secretKeySpec = new SecretKeySpec(toByteArray(key), algorithm);
-            Cipher cipher = Cipher.getInstance(transformation);
+            cipher = cipherPool.get();
             cipher.init(mode, secretKeySpec, ivParameterSpec);
 
             byte[] result = cipher.doFinal(toByteArray(in));
@@ -61,6 +67,26 @@ class CipherCallback implements mongocrypt_crypto_fn {
         } catch (Exception e) {
             mongocrypt_status_set(status, MONGOCRYPT_STATUS_ERROR_CLIENT, 0, new cstring(e.toString()), -1);
             return false;
+        } finally {
+            if (cipher != null) {
+                cipherPool.release(cipher);
+            }
+        }
+    }
+
+    private class CipherPool {
+        private final ConcurrentLinkedDeque<Cipher> available = new ConcurrentLinkedDeque<>();
+
+        Cipher get() throws NoSuchAlgorithmException, NoSuchPaddingException {
+            Cipher cipher = available.pollLast();
+            if (cipher != null) {
+                return cipher;
+            }
+            return Cipher.getInstance(transformation);
+        }
+
+        void release(final Cipher cipher) {
+            available.addLast(cipher);
         }
     }
 }
