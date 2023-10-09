@@ -93,11 +93,13 @@ else
   mv "${NODE_ARTIFACTS_PATH}/${node_directory}" "${NODE_ARTIFACTS_PATH}/nodejs"
 fi
 
-if [[ $operating_system != "win" ]]; then
-  # Update npm to latest when we can
-  npm install --global npm@latest
-  hash -r
-fi
+# Most of `mongodb-client-encryption`'s builds use Node16, so we can't upgrade `npm` to latest
+# because npm 10 is not compatible with Node16
+# if [[ $operating_system != "win" ]]; then
+#   # Update npm to latest when we can
+#   npm install --global npm@latest
+#   hash -r
+# fi
 
 echo "npm location: $(which npm)"
 echo "npm version: $(npm -v)"
