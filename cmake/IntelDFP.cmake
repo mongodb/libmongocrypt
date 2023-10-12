@@ -20,12 +20,14 @@ endif ()
 
 # Make the PATCH_COMMAND a no-op if it was disabled
 set (patch_command)
+set (patch_input_opt)
 if (NOT INTEL_DFP_LIBRARY_PATCH_ENABLED)
     set (patch_command "${CMAKE_COMMAND}" -E true)
 elseif (GIT_EXECUTABLE)
     set (patch_command "${GIT_EXECUTABLE}" --work-tree=<SOURCE_DIR> apply)
 else ()
     set (patch_command "${PATCH_EXECUTABLE}" --dir=<SOURCE_DIR>)
+    set (patch_input_opt -i)
 endif ()
 
 # NOTE: The applying of the patch expects the correct input directly from the
@@ -40,9 +42,9 @@ FetchContent_Declare (
     PATCH_COMMAND
         ${patch_command}
             -p 4 # Strip four path components
-            "${PROJECT_SOURCE_DIR}/etc/mongo-inteldfp-s390x.patch"
-            "${PROJECT_SOURCE_DIR}/etc/mongo-inteldfp-MONGOCRYPT-571.patch"
-            "${PROJECT_SOURCE_DIR}/etc/mongo-inteldfp-libmongocrypt-pr-625.patch"
+            ${patch_input_opt} "${PROJECT_SOURCE_DIR}/etc/mongo-inteldfp-s390x.patch"
+            ${patch_input_opt} "${PROJECT_SOURCE_DIR}/etc/mongo-inteldfp-MONGOCRYPT-571.patch"
+            ${patch_input_opt} "${PROJECT_SOURCE_DIR}/etc/mongo-inteldfp-libmongocrypt-pr-625.patch"
             --verbose
     )
 
