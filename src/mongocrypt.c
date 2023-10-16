@@ -552,6 +552,14 @@ static bool _validate_csfle_singleton(mongocrypt_t *crypt, _loaded_csfle found) 
 
     BSON_ASSERT_PARAM(crypt);
 
+    if (!mcr_dll_path_supported()) {
+        _mongocrypt_log(&crypt->log,
+                        MONGOCRYPT_LOG_LEVEL_WARNING,
+                        "Cannot get path of loaded library on this platform. Skipping validation to ensure "
+                        "exactly one csfle library is loaded.");
+        return true;
+    }
+
     status = crypt->status;
 
     // Path to the existing loaded csfle:
