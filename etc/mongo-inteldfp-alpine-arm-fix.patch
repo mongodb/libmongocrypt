@@ -1,0 +1,17 @@
+diff --git a/cmake-build/_deps/intel_dfp-src/LIBRARY/src/bid_functions.h b/cmake-build/_deps/intel_dfp-src/LIBRARY/src/bid_functions.h
+index 7042eed..e55f59e 100755
+--- a/cmake-build/_deps/intel_dfp-src/LIBRARY/src/bid_functions.h
++++ b/cmake-build/_deps/intel_dfp-src/LIBRARY/src/bid_functions.h
+@@ -41,12 +41,6 @@
+ #endif
+ #include <ctype.h>
+ 
+-// Fix system header issue on Sun solaris and define required type by ourselves
+-#if !defined(_WCHAR_T) && !defined(_WCHAR_T_DEFINED) && !defined(__QNX__) && !defined(__cplusplus)
+-typedef int   wchar_t;
+-#endif
+-
+-
+ #ifdef IN_LIBGCC2
+ // When we are built as the part of the gcc runtime library, libgcc,
+ // we will use gcc types defined in bid_gcc_intrinsics.h.
