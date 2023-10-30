@@ -95,6 +95,10 @@ mcr_dll_path_result mcr_dll_path(mcr_dll dll) {
     return (mcr_dll_path_result){.error_string = mstr_copy_cstr("Handle not found in loaded modules")};
 }
 
+bool mcr_dll_path_supported(void) {
+    return true;
+}
+
 #elif defined(__linux__) || defined(__FreeBSD__)
 
 #include <link.h>
@@ -109,12 +113,23 @@ mcr_dll_path_result mcr_dll_path(mcr_dll dll) {
     }
 }
 
+bool mcr_dll_path_supported(void) {
+    return true;
+}
+
 #elif defined(_WIN32)
 
 // Handled in os_win/os_dll.c
 
 #else
 
-#error "Don't know how to do mcr_dll_path() on this platform"
+mcr_dll_path_result mcr_dll_path(mcr_dll dll) {
+    return (mcr_dll_path_result){.error_string =
+                                     mstr_copy_cstr("Don't know how to do mcr_dll_path() on this platform")};
+}
+
+bool mcr_dll_path_supported(void) {
+    return false;
+}
 
 #endif
