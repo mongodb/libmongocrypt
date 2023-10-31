@@ -45,6 +45,7 @@ FetchContent_Declare (
             ${patch_input_opt} "${PROJECT_SOURCE_DIR}/etc/mongo-inteldfp-s390x.patch"
             ${patch_input_opt} "${PROJECT_SOURCE_DIR}/etc/mongo-inteldfp-MONGOCRYPT-571.patch"
             ${patch_input_opt} "${PROJECT_SOURCE_DIR}/etc/mongo-inteldfp-libmongocrypt-pr-625.patch"
+            ${patch_input_opt} "${PROJECT_SOURCE_DIR}/etc/mongo-inteldfp-alpine-arm-fix.patch"
             --verbose
     )
 
