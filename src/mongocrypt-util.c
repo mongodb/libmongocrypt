@@ -90,7 +90,8 @@ current_module_result current_module_path(void) {
         ret_str = mstr_copy_cstr(info.dli_fname);
     }
 #else
-    return (current_module_result){.path = NULL, .error = ENOSYS};
+   // Not supported on this system.
+   ret_error = ENOSYS;
 #endif
     return (current_module_result){.path = ret_str, .error = ret_error};
 }
