@@ -216,6 +216,8 @@ publishing {
         create<MavenPublication>("mavenJava") {
             artifactId = "mongodb-crypt"
             from(components["java"])
+            suppressPomMetadataWarningsFor("loggingSupportApiElements")
+            suppressPomMetadataWarningsFor("loggingSupportRuntimeElements")
 
             artifact(tasks["sourcesJar"])
             artifact(tasks["javadocJar"])
