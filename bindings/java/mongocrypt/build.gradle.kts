@@ -51,13 +51,18 @@ description = "MongoDB client-side crypto support"
 java {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
+
+    registerFeature("loggingSupport") {
+        usingSourceSet(sourceSets["main"])
+    }
 }
+
 
 val bsonRangeVersion = "[3.10,5.0)"
 dependencies {
     api("org.mongodb:bson:$bsonRangeVersion")
     api("net.java.dev.jna:jna:5.11.0")
-    implementation("org.slf4j:slf4j-api:1.7.36")
+    "loggingSupportImplementation"("org.slf4j:slf4j-api:1.7.36")
 
     // Tests
     testImplementation(platform("org.junit:junit-bom:5.8.2"))
@@ -211,6 +216,8 @@ publishing {
         create<MavenPublication>("mavenJava") {
             artifactId = "mongodb-crypt"
             from(components["java"])
+            suppressPomMetadataWarningsFor("loggingSupportApiElements")
+            suppressPomMetadataWarningsFor("loggingSupportRuntimeElements")
 
             artifact(tasks["sourcesJar"])
             artifact(tasks["javadocJar"])
