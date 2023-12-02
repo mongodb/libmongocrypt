@@ -15,13 +15,12 @@
 """Benchmark pymongocrypt performance."""
 from __future__ import annotations
 
-import functools
 import os
 import sys
 import time
 import unittest
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, List
+from typing import List
 
 try:
     import simplejson as json
@@ -34,20 +33,21 @@ from bson import json_util
 sys.path[0:0] = [""]
 
 
+from test.test_mongocrypt import MockCallback
+
 from pymongocrypt.binding import lib
 from pymongocrypt.explicit_encrypter import ExplicitEncrypter, ExplicitEncryptOpts
 from pymongocrypt.mongocrypt import MongoCrypt, MongoCryptOptions
-from test.test_mongocrypt import MockCallback
-
 
 NUM_ITERATIONS = 1
 MAX_TIME = 1
 NUM_FIELDS = 1500
 LOCAL_MASTER_KEY = (
-    b'\x9d\x94K\r\x93\xd0\xc5D\xa5r\xfd2\x1b\x940\x90#5s|\xf0\xf6\xc2\xf4\xda#V\xe7\x8f\x04'
-    b'\xcc\xfa\xdeu\xb4Q\x87\xf3\x8b\x97\xd7KD;\xac9\xa2\xc6M\x91\x00>\xd1\xfaJ0\xc1\xd2'
-    b'\xc6^\xfb\xacA\xf2H\x13<\x9bP\xfc\xa7$z.\x02c\xa3\xc6\x16%QPx>\x0f\xd8n\x84\xa6\xec'
-    b'\x8d-$G\xe5\xaf')
+    b"\x9d\x94K\r\x93\xd0\xc5D\xa5r\xfd2\x1b\x940\x90#5s|\xf0\xf6\xc2\xf4\xda#V\xe7\x8f\x04"
+    b"\xcc\xfa\xdeu\xb4Q\x87\xf3\x8b\x97\xd7KD;\xac9\xa2\xc6M\x91\x00>\xd1\xfaJ0\xc1\xd2"
+    b"\xc6^\xfb\xacA\xf2H\x13<\x9bP\xfc\xa7$z.\x02c\xa3\xc6\x16%QPx>\x0f\xd8n\x84\xa6\xec"
+    b"\x8d-$G\xe5\xaf"
+)
 
 OUTPUT_FILE = os.environ.get("OUTPUT_FILE")
 
@@ -78,8 +78,8 @@ def tearDownModule():
 
 class TestBulkDecryption(unittest.TestCase):
     def setUp(self):
-        opts = MongoCryptOptions({'local': {'key': LOCAL_MASTER_KEY}})
-        callback = MockCallback(key_docs=[bson_data('keyDocument.json')])
+        opts = MongoCryptOptions({"local": {"key": LOCAL_MASTER_KEY}})
+        callback = MockCallback(key_docs=[bson_data("keyDocument.json")])
         self.mongocrypt = MongoCrypt(opts, callback)
         self.encrypter = ExplicitEncrypter(callback, opts)
         self.addCleanup(self.mongocrypt.close)
@@ -105,10 +105,12 @@ class TestBulkDecryption(unittest.TestCase):
 
     def runTest(self):
         doc = {}
-        key_id = json_data('keyDocument.json')['_id']
+        key_id = json_data("keyDocument.json")["_id"]
         for i in range(NUM_FIELDS):
             val = bson.encode({"v": f"value {i:04}"})
-            doc[f"key{i:04}"] = self.encrypter.encrypt(val, "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic", key_id=key_id)
+            doc[f"key{i:04}"] = self.encrypter.encrypt(
+                val, "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic", key_id=key_id
+            )
         encrypted = bson.encode(doc)
         # Warm up benchmark and discard the result.
         self.do_task(encrypted, duration=2)
@@ -122,7 +124,9 @@ class TestBulkDecryption(unittest.TestCase):
                     self.results.append(sum(thread_results))
             interval = time.monotonic() - start
             median = self.percentile(50) / interval
-            print(f"Finished {self.__class__.__name__}, threads={n_threads}. MEDIAN ops_per_second={median}")
+            print(
+                f"Finished {self.__class__.__name__}, threads={n_threads}. MEDIAN ops_per_second={median}"
+            )
             # Remove "Test" so that TestBulkDecryption is reported as "BulkDecryption".
             name = self.__class__.__name__[4:]
             result_data.append(
