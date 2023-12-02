@@ -987,6 +987,19 @@ tasks:
       params:
         file: libmongocrypt/bindings/java/mongocrypt/benchmarks/results.json
 
+- name: benchmark-python
+  commands:
+    - func: "fetch source"
+    - command: "subprocess.exec"
+      params:
+        binary: bash
+        working_dir: "./libmongocrypt"
+        args:
+          - "./.evergreen/benchmark-python.sh"
+    - command: "perf.send"
+      params:
+        file: libmongocrypt/bindings/python/results.json
+
 pre:
   # Update the evergreen expansion to dynamically set the ${libmongocrypt_s3_suffix} and ${libmongocrypt_s3_suffix_copy} expansions.
   - command: "shell.exec"
