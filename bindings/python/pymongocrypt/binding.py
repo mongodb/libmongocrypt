@@ -84,8 +84,14 @@ const char *mongocrypt_version(uint32_t *len);
  * mongocrypt_ctx_mongo_op guarantees that the viewed data of
  * mongocrypt_binary_t is valid until the parent ctx is destroyed with @ref
  * mongocrypt_ctx_destroy.
+ *
+ * The `mongocrypt_binary_t` struct definition is public.
+ * Consumers may rely on the struct layout.
  */
-typedef struct _mongocrypt_binary_t mongocrypt_binary_t;
+typedef struct _mongocrypt_binary_t {
+    void *data;
+    uint32_t len;
+} mongocrypt_binary_t;
 
 /**
  * Create a new non-owning view of a buffer (data + length).
