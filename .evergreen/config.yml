@@ -1584,3 +1584,4 @@ buildvariants:
   run_on: rhel90-dbx-perf-large
   tasks:
   - benchmark-java
+  - benchmark-python
