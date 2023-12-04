@@ -1057,6 +1057,18 @@ buildvariants:
   - build-and-test-csharp
   - test-python
   - test-java
+- name: macos_x86_64_11
+  display_name: "macOS (x86_64) 11.0"
+  run_on: macos-1100
+  tasks:
+  - build-and-test-and-upload
+  - build-and-test-shared-bson
+  - build-and-test-asan-mac
+  - build-and-test-node
+  - build-and-publish-node
+  - build-and-test-csharp
+  - test-python
+  - test-java
 - name: rhel72-zseries-test
   display_name: "RHEL 7.2 on zSeries"
   run_on: rhel72-zseries-test
