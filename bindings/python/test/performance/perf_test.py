@@ -139,7 +139,7 @@ class TestBulkDecryption(unittest.TestCase):
             interval = time.monotonic() - start
             median = self.percentile(50) / interval
             print(
-                f"Finished {self.__class__.__name__}, threads={n_threads}. MEDIAN ops_per_second={median}"
+                f"Finished {self.__class__.__name__}, threads={n_threads}. MEDIAN ops_per_second={median:.2f}"
             )
             # Remove "Test" so that TestBulkDecryption is reported as "BulkDecryption".
             name = self.__class__.__name__[4:]
