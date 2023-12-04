@@ -39,7 +39,7 @@ from pymongocrypt.binding import lib
 from pymongocrypt.explicit_encrypter import ExplicitEncrypter, ExplicitEncryptOpts
 from pymongocrypt.mongocrypt import MongoCrypt, MongoCryptOptions
 
-NUM_ITERATIONS = 1
+NUM_ITERATIONS = 10
 MAX_TIME = 1
 NUM_FIELDS = 1500
 LOCAL_MASTER_KEY = (
@@ -85,9 +85,6 @@ class TestBulkDecryption(unittest.TestCase):
         self.addCleanup(self.mongocrypt.close)
         self.addCleanup(self.encrypter.close)
 
-    def tearDown(self):
-        self.mongocrypt.close()
-
     def do_task(self, encrypted, duration=MAX_TIME):
         start = time.monotonic()
         ops = 0
@@ -130,14 +127,14 @@ class TestBulkDecryption(unittest.TestCase):
         self.do_task(encrypted, duration=2)
 
         for n_threads in [1, 2, 8, 64]:
-            start = time.monotonic()
             with ThreadPoolExecutor(max_workers=n_threads) as executor:
                 self.results = []
                 for _ in range(NUM_ITERATIONS):
+                    start = time.monotonic()
                     thread_results = list(executor.map(self.do_task, [encrypted] * n_threads))
-                    self.results.append(sum(thread_results))
-            interval = time.monotonic() - start
-            median = self.percentile(50) / interval
+                    interval = time.monotonic() - start
+                    self.results.append(sum(thread_results) / interval)
+            median = self.percentile(50)
             print(
                 f"Finished {self.__class__.__name__}, threads={n_threads}. MEDIAN ops_per_second={median:.2f}"
             )
