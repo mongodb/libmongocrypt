@@ -93,9 +93,18 @@ class TestBulkDecryption(unittest.TestCase):
         ops = 0
         while time.monotonic() - start < duration:
             with self.mongocrypt.decryption_context(encrypted) as ctx:
+                if ctx.state == lib.MONGOCRYPT_CTX_NEED_MONGO_KEYS:
+                    # Key is requested on the first operation, then expected to be cached for one minute.
+                    ctx.add_mongo_operation_result(bson_data("keyDocument.json"))
+                    ctx.complete_mongo_operation()
                 self.assertEqual(ctx.state, lib.MONGOCRYPT_CTX_READY)
-                _ = ctx.finish()
+                decrypted = ctx.finish()
             ops += 1
+        # Assert that decryption actually occurred.
+        self.assertGreater(ops, 0)
+        doc = bson.decode(decrypted)
+        for val in doc.values():
+            self.assertIsInstance(val, str)
         return ops
 
     def percentile(self, percentile):
@@ -107,10 +116,15 @@ class TestBulkDecryption(unittest.TestCase):
         doc = {}
         key_id = json_data("keyDocument.json")["_id"]
         for i in range(NUM_FIELDS):
-            val = bson.encode({"v": f"value {i:04}"})
-            doc[f"key{i:04}"] = self.encrypter.encrypt(
-                val, "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic", key_id=key_id
-            )
+            val = f"value {i:04}"
+            val_encrypted = bson.decode(
+                self.encrypter.encrypt(
+                    bson.encode({"v": val}),
+                    "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic",
+                    key_id=key_id,
+                )
+            )["v"]
+            doc[f"key{i:04}"] = val_encrypted
         encrypted = bson.encode(doc)
         # Warm up benchmark and discard the result.
         self.do_task(encrypted, duration=2)
