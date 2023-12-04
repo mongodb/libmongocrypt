@@ -90,7 +90,8 @@ current_module_result current_module_path(void) {
         ret_str = mstr_copy_cstr(info.dli_fname);
     }
 #else
-#error "Don't know how to get the module path on this platform"
+    // Not supported on this system.
+    ret_error = ENOSYS;
 #endif
     return (current_module_result){.path = ret_str, .error = ret_error};
 }
