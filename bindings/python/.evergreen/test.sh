@@ -26,7 +26,7 @@ if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
       --version latest --out ../crypt_shared/
 elif [ "Darwin" = "$(uname -s)" ]; then
     export PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/nocrypto/lib/libmongocrypt.dylib
-    MACOS_VER=$(sw_vers --ProductVersion)
+    MACOS_VER=$(sw_vers -ProductVersion)
     if [ $MACOS_VER == "10.14" ]; then
       PYTHONS=("python3"  # Python 3 from brew
                "/Library/Frameworks/Python.framework/Versions/3.7/bin/python3")
