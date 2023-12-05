@@ -145,6 +145,7 @@ bool _mongocrypt_kms_ctx_init_aws_decrypt(mongocrypt_kms_ctx_t *kms,
     BSON_ASSERT_PARAM(kms_providers);
     BSON_ASSERT_PARAM(crypto);
 
+    //zz delegates encryption to AWS
     kms_request_opt_t *opt;
     mongocrypt_status_t *status;
     ctx_with_status_t ctx_with_status;
@@ -277,6 +278,8 @@ bool _mongocrypt_kms_ctx_init_aws_encrypt(mongocrypt_kms_ctx_t *kms,
     BSON_ASSERT_PARAM(kms_providers);
     BSON_ASSERT_PARAM(crypto);
     BSON_ASSERT_PARAM(plaintext_key_material);
+
+    //zz delegates encryption to the KMS; what KMIP delegated will do
 
     kms_request_opt_t *opt;
     mongocrypt_status_t *status;
@@ -1446,6 +1449,8 @@ fail:
     bson_free(payload);
     return ret;
 }
+
+//zz need new ctx_init_kmip_{encrypt,decrypt} functions
 
 bool _mongocrypt_kms_ctx_init_kmip_register(mongocrypt_kms_ctx_t *kms_ctx,
                                             const _mongocrypt_endpoint_t *endpoint,
