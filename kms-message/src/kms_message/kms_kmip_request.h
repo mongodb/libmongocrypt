@@ -51,6 +51,8 @@ kms_kmip_request_activate_new (void *reserved, const char *unique_identifier);
 KMS_MSG_EXPORT (kms_request_t *)
 kms_kmip_request_get_new (void *reserved, const char *unique_identifier);
 
+//zz KMIP Encrypt and Decrypt requests
+
 #ifdef __cplusplus
 }
 #endif

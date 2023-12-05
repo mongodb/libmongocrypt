@@ -945,6 +945,7 @@ bool _mongocrypt_key_broker_kms_done(_mongocrypt_key_broker_t *kb, _mongocrypt_o
                 return _key_broker_fail(kb);
             }
 
+            //zz where KMIP decrypts the keys locally
             if (!_mongocrypt_unwrap_key(kb->crypt->crypto,
                                         &kek,
                                         &key_returned->doc->key_material,

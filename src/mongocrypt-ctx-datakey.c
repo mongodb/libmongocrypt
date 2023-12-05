@@ -87,6 +87,15 @@ static bool _kms_kmip_start(mongocrypt_ctx_t *ctx, const mc_kms_creds_t *kc) {
      * If the user set a 'keyId' to use, the flow begins at step 3.
      */
 
+    /* //zz KMIP delegated version: 
+       1. Create a new DEK
+       2. Send a KMIP Create request (symmetric key) (returns keyId)
+       3. Send a KMIP Activate request with that UUID
+       4. Send a KMIP Encrypt request with the DEK
+
+       Steps 2 and 3 are skipped if the user provided a keyId
+    */
+
     if (user_supplied_keyid && !dkctx->kmip_unique_identifier) {
         /* User set a 'keyId'. */
         dkctx->kmip_unique_identifier = bson_strdup(user_supplied_keyid);
@@ -285,6 +294,7 @@ static bool _kms_start(mongocrypt_ctx_t *ctx) {
         if (!_kms_kmip_start(ctx, &kc)) {
             goto done;
         }
+        //zz new one for kmip_delegated
     } else {
         _mongocrypt_ctx_fail_w_msg(ctx, "unsupported KMS provider");
         goto done;
