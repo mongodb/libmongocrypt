@@ -20,20 +20,20 @@ from pymongocrypt.errors import MongoCryptError
 
 def _to_bytes(mongocrypt_binary):
     """Returns this mongocrypt_binary_t as bytes."""
-    data = lib.mongocrypt_binary_data(mongocrypt_binary)
+    data = mongocrypt_binary.data
     if data == ffi.NULL:
-        raise MongoCryptError('mongocrypt_binary_data returned NULL')
-    data_len = lib.mongocrypt_binary_len(mongocrypt_binary)
-    return ffi.unpack(ffi.cast("char*", data), data_len)
+        raise MongoCryptError('mongocrypt_binary_t.data returned NULL')
+    return ffi.unpack(ffi.cast("char*", data), mongocrypt_binary.len)
 
 
 def _write_bytes(mongocrypt_binary, data):
     """Writes the given data to a mongocrypt_binary_t."""
-    buf = lib.mongocrypt_binary_data(mongocrypt_binary)
+    buf = mongocrypt_binary.data
     if buf == ffi.NULL:
-        raise MongoCryptError('mongocrypt_binary_data returned NULL')
+        raise MongoCryptError('mongocrypt_binary_t.data returned NULL')
 
     ffi.memmove(buf, data, len(data))
+    mongocrypt_binary.len = len(data)
 
 
 class _MongoCryptBinary(object):
@@ -60,11 +60,10 @@ class _MongoCryptBinary(object):
 
     def to_bytes(self):
         """Returns this mongocrypt_binary_t as bytes."""
-        data = lib.mongocrypt_binary_data(self.bin)
+        data = self.bin.data
         if data == ffi.NULL:
             return b''
-        data_len = lib.mongocrypt_binary_len(self.bin)
-        return ffi.unpack(ffi.cast("char*", data), data_len)
+        return ffi.unpack(ffi.cast("char*", data), self.bin.len)
 
 
 class MongoCryptBinaryOut(_MongoCryptBinary):

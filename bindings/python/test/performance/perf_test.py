@@ -35,9 +35,10 @@ sys.path[0:0] = [""]
 
 from test.test_mongocrypt import MockCallback
 
-from pymongocrypt.binding import lib
-from pymongocrypt.explicit_encrypter import ExplicitEncrypter, ExplicitEncryptOpts
+from pymongocrypt.binding import lib, libmongocrypt_version
+from pymongocrypt.explicit_encrypter import ExplicitEncrypter
 from pymongocrypt.mongocrypt import MongoCrypt, MongoCryptOptions
+from pymongocrypt.version import __version__
 
 NUM_ITERATIONS = 10
 MAX_TIME = 1
@@ -136,7 +137,7 @@ class TestBulkDecryption(unittest.TestCase):
                     self.results.append(sum(thread_results) / interval)
             median = self.percentile(50)
             print(
-                f"Finished {self.__class__.__name__}, threads={n_threads}. MEDIAN ops_per_second={median:.2f}"
+                f"Finished {self.__class__.__name__}, threads={n_threads}, median ops_per_second={median:.2f}"
             )
             # Remove "Test" so that TestBulkDecryption is reported as "BulkDecryption".
             name = self.__class__.__name__[4:]
@@ -156,4 +157,5 @@ class TestBulkDecryption(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    print(f"Running benchmark with pymongocrypt: {__version__} libmongocrypt: {libmongocrypt_version()}")
     unittest.main()
