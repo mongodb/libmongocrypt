@@ -42,7 +42,7 @@ typedef enum {
     MONGOCRYPT_KMS_PROVIDER_LOCAL = 1 << 1,
     MONGOCRYPT_KMS_PROVIDER_AZURE = 1 << 2,
     MONGOCRYPT_KMS_PROVIDER_GCP = 1 << 3,
-    MONGOCRYPT_KMS_PROVIDER_KMIP = 1 << 4
+    MONGOCRYPT_KMS_PROVIDER_KMIP = 1 << 4,
 } _mongocrypt_kms_provider_t;
 
 typedef struct {
@@ -69,6 +69,7 @@ typedef struct {
 typedef struct {
     char *key_id;                     /* optional on parsing, required on appending. */
     _mongocrypt_endpoint_t *endpoint; /* optional. */
+    bool delegated;
 } _mongocrypt_kmip_kek_t;
 
 typedef struct {

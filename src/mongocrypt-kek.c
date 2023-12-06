@@ -146,8 +146,8 @@ bool _mongocrypt_kek_parse_owned(const bson_t *bson, _mongocrypt_kek_t *kek, mon
                                               "keyVersion")) {
             goto done;
         }
-    } else if (0 == strcmp(kms_provider, "kmip")) {
-        kek->kms_provider = MONGOCRYPT_KMS_PROVIDER_KMIP;
+    } else if (0 == strcmp(kms_provider, "kmip") || 0 == strcmp(kms_provider, "kmip-delegated")) {
+        kek->provider.kmip.delegated = 0 == strcmp(kms_provider, "kmip-delegated");
         _mongocrypt_endpoint_parse_opts_t opts = {0};
 
         opts.allow_empty_subdomain = true;
