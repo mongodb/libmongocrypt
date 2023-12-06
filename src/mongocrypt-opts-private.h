@@ -57,8 +57,6 @@ typedef struct {
 } _mongocrypt_opts_kms_provider_kmip_t;
 
 typedef struct {
-    char *kmsid;
-
     // `type` identifies the set field in `value`.
     _mongocrypt_kms_provider_t type;
 
@@ -81,8 +79,9 @@ typedef struct {
     _mongocrypt_opts_kms_provider_kmip_t kmip;
 } _mongocrypt_opts_kms_providers_t;
 
-const mc_kms_creds_t *_mongocrypt_opts_kms_providers_lookup(const _mongocrypt_opts_kms_providers_t *kms_providers,
-                                                            const char *kmsid);
+bool _mongocrypt_opts_kms_providers_lookup(const _mongocrypt_opts_kms_providers_t *kms_providers,
+                                           const char *kmsid,
+                                           mc_kms_creds_t *out);
 
 typedef struct {
     mongocrypt_log_fn_t log_fn;

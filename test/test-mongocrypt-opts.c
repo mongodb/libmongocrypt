@@ -18,8 +18,23 @@
 
 #include <test-mongocrypt.h>
 
-static void test_mongocrypt_opts_kms_providers_lookup (_mongocrypt_tester_t *tester) {
-    TEST_ERROR ("Not yet implemented");
+#define BSON_STR(...) #__VA_ARGS__
+
+static void test_mongocrypt_opts_kms_providers_lookup(_mongocrypt_tester_t *tester) {
+    mongocrypt_binary_t *bson = TEST_BSON(BSON_STR({"azure" : {"accessToken" : "bar"}}));
+
+    mongocrypt_t *crypt = mongocrypt_new();
+    ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, bson), crypt);
+    ASSERT_OK(mongocrypt_init(crypt), crypt);
+
+    mc_kms_creds_t got;
+    ASSERT(_mongocrypt_opts_kms_providers_lookup(&crypt->opts.kms_providers, "azure", &got));
+    ASSERT(got.type == MONGOCRYPT_KMS_PROVIDER_AZURE);
+
+    ASSERT(!_mongocrypt_opts_kms_providers_lookup(&crypt->opts.kms_providers, "local", &got));
+    ASSERT(got.type == MONGOCRYPT_KMS_PROVIDER_NONE);
+
+    mongocrypt_destroy(crypt);
 }
 
 void _mongocrypt_tester_install_opts(_mongocrypt_tester_t *tester) {

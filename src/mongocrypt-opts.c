@@ -223,6 +223,44 @@ bool _mongocrypt_opts_validate(_mongocrypt_opts_t *opts, mongocrypt_status_t *st
     return _mongocrypt_opts_kms_providers_validate(opts, &opts->kms_providers, status);
 }
 
+bool _mongocrypt_opts_kms_providers_lookup(const _mongocrypt_opts_kms_providers_t *kms_providers,
+                                           const char *kmsid,
+                                           mc_kms_creds_t *out) {
+    *out = (mc_kms_creds_t){0};
+    if (0 != (kms_providers->configured_providers & MONGOCRYPT_KMS_PROVIDER_AWS) && 0 == strcmp(kmsid, "aws")) {
+        out->type = MONGOCRYPT_KMS_PROVIDER_AWS;
+        out->value.aws = kms_providers->aws;
+        return true;
+    }
+    if (0 != (kms_providers->configured_providers & MONGOCRYPT_KMS_PROVIDER_AZURE) && 0 == strcmp(kmsid, "azure")) {
+        out->type = MONGOCRYPT_KMS_PROVIDER_AZURE;
+        out->value.azure = kms_providers->azure;
+        return true;
+    }
+
+    if (0 != (kms_providers->configured_providers & MONGOCRYPT_KMS_PROVIDER_GCP) && 0 == strcmp(kmsid, "gcp")) {
+        out->type = MONGOCRYPT_KMS_PROVIDER_GCP;
+        out->value.gcp = kms_providers->gcp;
+        return true;
+    }
+
+    if (0 != (kms_providers->configured_providers & MONGOCRYPT_KMS_PROVIDER_LOCAL) && 0 == strcmp(kmsid, "local")) {
+        out->type = MONGOCRYPT_KMS_PROVIDER_LOCAL;
+        out->value.local = kms_providers->local;
+        return true;
+    }
+
+    if (0 != (kms_providers->configured_providers & MONGOCRYPT_KMS_PROVIDER_KMIP) && 0 == strcmp(kmsid, "kmip")) {
+        out->type = MONGOCRYPT_KMS_PROVIDER_KMIP;
+        out->value.kmip = kms_providers->kmip;
+        return true;
+    }
+
+    // TODO: MONGOCRYPT-605: check for KMS providers with a name.
+
+    return false;
+}
+
 bool _mongocrypt_parse_optional_utf8(const bson_t *bson, const char *dotkey, char **out, mongocrypt_status_t *status) {
     bson_iter_t iter;
     bson_iter_t child;
