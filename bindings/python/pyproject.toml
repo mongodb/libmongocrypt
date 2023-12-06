@@ -59,7 +59,7 @@ include = ["pymongocrypt"]
 pymongocrypt=['*.dll', '*.so', '*.dylib']
 
 [tool.cibuildwheel]
-skip = "pp* *-musllinux*"
+skip = "pp* *-musllinux* *i686*"
 build-frontend = "build"
 before-build = "bash {project}/get-libmongocrypt.sh"
 test-command = "python -c 'from pymongocrypt.binding import libmongocrypt_version, lib'"
