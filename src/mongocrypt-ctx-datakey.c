@@ -62,6 +62,7 @@ static bool _kms_kmip_start(mongocrypt_ctx_t *ctx, const mc_kms_creds_t *kc) {
         CLIENT_ERR("KMS provider is not KMIP");
         goto fail;
     }
+    const bool delegated = ctx->opts.kek.provider.kmip.delegated;
 
     user_supplied_keyid = ctx->opts.kek.provider.kmip.key_id;
 
@@ -87,7 +88,7 @@ static bool _kms_kmip_start(mongocrypt_ctx_t *ctx, const mc_kms_creds_t *kc) {
      * If the user set a 'keyId' to use, the flow begins at step 3.
      */
 
-    /* //zz KMIP delegated version: 
+    /* //zz KMIP delegated version:
        1. Create a new DEK
        2. Send a KMIP Create request (symmetric key) (returns keyId)
        3. Send a KMIP Activate request with that UUID
@@ -104,21 +105,26 @@ static bool _kms_kmip_start(mongocrypt_ctx_t *ctx, const mc_kms_creds_t *kc) {
     }
 
     if (!dkctx->kmip_unique_identifier) {
-        /* User did not set a 'keyId'. */
-        /* Step 1. Send a KMIP Register request with a new 96 byte SecretData. */
-        _mongocrypt_buffer_init(&secretdata);
-        _mongocrypt_buffer_resize(&secretdata, MONGOCRYPT_KEY_LEN);
-        if (!_mongocrypt_random(ctx->crypt->crypto, &secretdata, MONGOCRYPT_KEY_LEN, ctx->status)) {
-            goto fail;
-        }
+        if (delegated) {
+            ;
+            // zz KMIP Create request
+        } else {
+            /* User did not set a 'keyId'. */
+            /* Step 1. Send a KMIP Register request with a new 96 byte SecretData. */
+            _mongocrypt_buffer_init(&secretdata);
+            _mongocrypt_buffer_resize(&secretdata, MONGOCRYPT_KEY_LEN);
+            if (!_mongocrypt_random(ctx->crypt->crypto, &secretdata, MONGOCRYPT_KEY_LEN, ctx->status)) {
+                goto fail;
+            }
 
-        if (!_mongocrypt_kms_ctx_init_kmip_register(&dkctx->kms,
-                                                    endpoint,
-                                                    secretdata.data,
-                                                    secretdata.len,
-                                                    &ctx->crypt->log)) {
-            mongocrypt_kms_ctx_status(&dkctx->kms, ctx->status);
-            goto fail;
+            if (!_mongocrypt_kms_ctx_init_kmip_register(&dkctx->kms,
+                                                        endpoint,
+                                                        secretdata.data,
+                                                        secretdata.len,
+                                                        &ctx->crypt->log)) {
+                mongocrypt_kms_ctx_status(&dkctx->kms, ctx->status);
+                goto fail;
+            }
         }
         ctx->state = MONGOCRYPT_CTX_NEED_KMS;
 
@@ -127,6 +133,7 @@ static bool _kms_kmip_start(mongocrypt_ctx_t *ctx, const mc_kms_creds_t *kc) {
 
     if (!dkctx->kmip_activated) {
         /* Step 2. Send a KMIP Activate request. */
+        // zz no changes for kmip_delegated
         if (!_mongocrypt_kms_ctx_init_kmip_activate(&dkctx->kms,
                                                     endpoint,
                                                     dkctx->kmip_unique_identifier,
@@ -138,7 +145,7 @@ static bool _kms_kmip_start(mongocrypt_ctx_t *ctx, const mc_kms_creds_t *kc) {
         goto success;
     }
 
-    if (!dkctx->kmip_secretdata.data) {
+    if (!delegated && !dkctx->kmip_secretdata.data) {
         /* Step 3. Send a KMIP Get request with the Unique Identifier. */
         if (!_mongocrypt_kms_ctx_init_kmip_get(&dkctx->kms,
                                                endpoint,
@@ -151,18 +158,23 @@ static bool _kms_kmip_start(mongocrypt_ctx_t *ctx, const mc_kms_creds_t *kc) {
         goto success;
     }
 
-    /* Step 4. Use the 96 byte SecretData to encrypt a new DEK. */
-    if (!_mongocrypt_wrap_key(ctx->crypt->crypto,
-                              &dkctx->kmip_secretdata,
-                              &dkctx->plaintext_key_material,
-                              &dkctx->encrypted_key_material,
-                              ctx->status)) {
-        goto fail;
+    if (delegated) {
+        // zz use UniqueIdentifier to encrypt a new DEK
+    } else {
+        /* Step 4. Use the 96 byte SecretData to encrypt a new DEK. */
+        if (!_mongocrypt_wrap_key(ctx->crypt->crypto,
+                                  &dkctx->kmip_secretdata,
+                                  &dkctx->plaintext_key_material,
+                                  &dkctx->encrypted_key_material,
+                                  ctx->status)) {
+            goto fail;
+        }
     }
 
     if (!ctx->opts.kek.provider.kmip.key_id) {
         /* If there was no user supplied key_id, set it from the
          * UniqueIdentifer of the newly registered SecretData. */
+        // zz set instead to the UniqueIdentifier of the newly created key
         ctx->opts.kek.provider.kmip.key_id = bson_strdup(dkctx->kmip_unique_identifier);
     }
     ctx->state = MONGOCRYPT_CTX_READY;
@@ -294,7 +306,7 @@ static bool _kms_start(mongocrypt_ctx_t *ctx) {
         if (!_kms_kmip_start(ctx, &kc)) {
             goto done;
         }
-        //zz new one for kmip_delegated
+        // zz new one for kmip_delegated
     } else {
         _mongocrypt_ctx_fail_w_msg(ctx, "unsupported KMS provider");
         goto done;
