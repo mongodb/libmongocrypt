@@ -218,18 +218,18 @@ class MongoCrypt(object):
         if self.__opts.bypass_query_analysis:
             lib.mongocrypt_setopt_bypass_query_analysis(self.__crypt)
 
-        if not lib.mongocrypt_setopt_crypto_hooks(
-                self.__crypt, aes_256_cbc_encrypt, aes_256_cbc_decrypt,
-                secure_random, hmac_sha_512, hmac_sha_256, sha_256, ffi.NULL):
-            self.__raise_from_status()
-
-        if not lib.mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5(
-                self.__crypt, sign_rsaes_pkcs1_v1_5, ffi.NULL):
-            self.__raise_from_status()
-
-        if not lib.mongocrypt_setopt_aes_256_ctr(
-                self.__crypt, aes_256_ctr_encrypt, aes_256_ctr_decrypt, ffi.NULL):
-            self.__raise_from_status()
+        # if not lib.mongocrypt_setopt_crypto_hooks(
+        #         self.__crypt, aes_256_cbc_encrypt, aes_256_cbc_decrypt,
+        #         secure_random, hmac_sha_512, hmac_sha_256, sha_256, ffi.NULL):
+        #     self.__raise_from_status()
+        #
+        # if not lib.mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5(
+        #         self.__crypt, sign_rsaes_pkcs1_v1_5, ffi.NULL):
+        #     self.__raise_from_status()
+        #
+        # if not lib.mongocrypt_setopt_aes_256_ctr(
+        #         self.__crypt, aes_256_ctr_encrypt, aes_256_ctr_decrypt, ffi.NULL):
+        #     self.__raise_from_status()
 
         if self.__opts.crypt_shared_lib_path is not None:
             lib.mongocrypt_setopt_set_crypt_shared_lib_path_override(
