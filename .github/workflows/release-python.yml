@@ -34,7 +34,6 @@ jobs:
         - [ubuntu-20.04, manylinux_aarch64, cp38]
         - [ubuntu-20.04, manylinux_ppc64le, cp38]
         - [ubuntu-20.04, manylinux_s390x, cp38]
-        - [ubuntu-20.04, manylinux_i686, cp38]
         - [macos-11, macosx_x86_64, cp37]
         - [macos-11, macosx_universal2, cp38]
         - [windows-2019, win32, cp38]
@@ -45,9 +44,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Ensure we have all the tags
+      - name: Ensure we have all the tags  # TODO: remove before mergin
         run: |
-          git fetch origin --tags
+          git remote add upstream https://github.com/mongodb/libmongocrypt
+          git fetch upstream --tags
 
       - name: Set up python version
         run: |
