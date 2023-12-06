@@ -254,3 +254,20 @@ kms_kmip_request_get_new (void *reserved, const char *unique_identifer)
    kmip_writer_destroy (writer);
    return req;
 }
+
+kms_request_t *
+kms_kmip_request_create_new (void *reserved) {
+   //zz create a new symmetric key with the `NeverExtractable` attribute set
+   return NULL;
+}
+
+kms_request_t *
+kms_kmip_request_encrypt_new (void *reserved, const char* unique_identifer, const uint8_t *data, size_t len) {
+   return NULL;
+}
+
+kms_request_t *
+kms_kmip_request_decrypt_new (void *reserved, const char* unique_identifer, const uint8_t *data, size_t len) {
+   return NULL;
+}
+
