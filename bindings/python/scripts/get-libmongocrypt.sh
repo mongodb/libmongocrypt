@@ -8,7 +8,7 @@ BRANCH="r1.8"
 VERSION="1.8.1"
 
 # The libmongocrypt git revision release to embed in our wheels.
-REVISION=$(git rev-list -n 1 $VERSION || "")
+REVISION=$(git rev-list -n 1 $VERSION) || ""
 if [ -z "$REVISION" ]; then
     git fetch origin $BRANCH
     git fetch origin $BRANCH --tags
