@@ -45,6 +45,10 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Ensure we have all the tags
+        run: |
+          git fetch origin
+
       - name: Set up python version
         run: |
           export PYTHON_VERSION=$(sed 's/^cp3/3./' <<< ${{ matrix.buildplat[2] }} )
