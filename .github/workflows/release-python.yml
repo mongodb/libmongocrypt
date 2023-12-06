@@ -44,11 +44,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Ensure we have all the tags  # TODO: remove before mergin
-        run: |
-          git remote add upstream https://github.com/mongodb/libmongocrypt
-          git fetch upstream --tags
-
       - name: Set up python version
         run: |
           export PYTHON_VERSION=$(sed 's/^cp3/3./' <<< ${{ matrix.buildplat[2] }} )
