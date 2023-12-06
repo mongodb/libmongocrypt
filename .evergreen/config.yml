@@ -1214,7 +1214,7 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
-  # - test-java - Fails with `JAVA_HOME is set to an invalid directory`. Unskip once MONGOCRYPT-593 is resolved.
+  - test-java
   - name: publish-packages
     distros:
     - ubuntu2004-small
@@ -1498,7 +1498,6 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
-  # - test-java - Fails with `JAVA_HOME is set to an invalid directory`. Unskip once MONGOCRYPT-593 is resolved.
   - name: publish-packages
     distros:
     - ubuntu2004-small
@@ -1535,7 +1534,6 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
-  # - test-java - Fails with `JAVA_HOME is set to an invalid directory`. Unskip once MONGOCRYPT-593 is resolved.
   - name: publish-packages
     distros:
     - ubuntu2004-small
