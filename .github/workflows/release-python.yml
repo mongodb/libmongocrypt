@@ -20,7 +20,7 @@ defaults:
 
 jobs:
   build_wheels:
-    name: Build wheel for ${{ matrix.python }}-${{ matrix.buildplat[1] }}
+    name: Build wheel for ${{ matrix.buildplat[1] }}-${{ matrix.buildplat[2] }}
     runs-on: ${{ matrix.buildplat[0] }}
     strategy:
       # Ensure that a wheel builder finishes even if another fails
@@ -29,15 +29,14 @@ jobs:
         # Github Actions doesn't support pairing matrix values together, let's improvise
         # https://github.com/github/feedback/discussions/7835#discussioncomment-1769026
         buildplat:
-        - [ubuntu-20.04, manylinux_x86_64]
-        - [ubuntu-20.04, manylinux_aarch64]
-        - [ubuntu-20.04, manylinux_ppc64le]
-        - [ubuntu-20.04, manylinux_s390x]
-        - [ubuntu-20.04, manylinux_i686]
-        - [macos-11, macosx_*]
-        - [windows-2019, win_amd64]
-        - [windows-2019, win32]
-        python: ["cp37", "cp38", "cp39", "cp310", "cp311", "cp312"]
+        - [ubuntu-20.04, manylinux_x86_64, cp38]
+        - [ubuntu-20.04, manylinux_aarch64, cp38]
+        - [ubuntu-20.04, manylinux_ppc64le, cp38]
+        - [ubuntu-20.04, manylinux_s390x, cp38]
+        - [ubuntu-20.04, manylinux_i686, cp38]
+        - [macos-11, macosx_x86_64, cp37]
+        - [macos-11, macosx_x86_64, cp38]
+        - [windows-2019, win32, cp38]
 
     steps:
       - name: Checkout libmongocrypt
@@ -47,7 +46,7 @@ jobs:
 
       - name: Set up python version
         run: |
-          export PYTHON_VERSION=$(sed 's/^cp3/3./' <<< ${{ matrix.python }} )
+          export PYTHON_VERSION=$(sed 's/^cp3/3./' <<< ${{ matrix.buildplat[2] }} )
           echo "PYTHON_VERSION=$PYTHON_VERSION" >> $GITHUB_ENV
 
       - uses: actions/setup-python@v4
@@ -69,22 +68,21 @@ jobs:
       - name: Build MacOS Py37 Wheel
         # Universal wheels are not supported with Python 3.7, so we explicitly
         # produce an x86_64 wheel for Python 3.7 on MacOS.
-        if: ${{ matrix.python == 'cp37' && matrix.buildplat[0] == 'macos-11' }}
+        if: ${{ matrix.buildplat[1] == "macosx_x86_64" }}
         env:
           CIBW_BUILD: cp37-macosx_x86_64
           CIBW_ARCHS: x86_64
-          CIBW_TEST_COMMAND: "python {project}/tools/fail_if_no_c.py"
         run: python -m cibuildwheel --output-dir wheelhouse
 
       - name: Build wheels
-        if: ${{ matrix.python != 'cp37' || matrix.buildplat[0] != 'macos-11' }}
+        if: ${{ matrix.buildplat[1] != 'macosx_x86_64' }}
         env:
-          CIBW_BUILD: ${{ matrix.python }}-${{ matrix.buildplat[1] }}
+          CIBW_BUILD: ${{ matrix.buildplat[2] }}-${{ matrix.buildplat[1] }}
         run: python -m cibuildwheel --output-dir wheelhouse
 
       - uses: actions/upload-artifact@v3
         with:
-          name: wheel-${{ matrix.python }}-${{ startsWith(matrix.buildplat[1], 'macosx') && 'macosx' || matrix.buildplat[1] }}
+          name: wheel-${{ matrix.buildplat[2] }}-${{ matrix.buildplat[1]}}
           path: ./wheelhouse/*.whl
           if-no-files-found: error
 
@@ -111,7 +109,7 @@ jobs:
         run: |
           python -m pip install dist/*.gz
           cd ..
-          python -c "from pymongo import has_c; assert has_c()"
+          python -c 'from pymongocrypt.binding import libmongocrypt_version, lib'
 
       - uses: actions/upload-artifact@v3
         with:
