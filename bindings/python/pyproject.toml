@@ -67,6 +67,8 @@ test-command = "python -c \"from pymongocrypt.binding import libmongocrypt_versi
 archs = "x86_64 aarch64 ppc64le s390x"
 manylinux-x86_64-image = "manylinux_2_28"
 repair-wheel-command = "cp {wheel} {dest_dir}"
+before-build = "curl -sSf https://sh.rustup.rs | sh -s -- -y"
+environment = "PATH=$HOME/.cargo/bin:$PATH"
 
 [tool.cibuildwheel.macos]
 archs = "universal2"
