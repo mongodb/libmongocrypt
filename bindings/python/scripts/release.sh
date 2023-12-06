@@ -17,6 +17,7 @@ set -o errexit  # Exit the script with error if any of the commands fail
 HERE="$(dirname "${BASH_SOURCE[0]}")"
 cd $HERE
 . ./get-libmongocrypt.sh
+cd ..
 
 if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
     rm -rf venv37
