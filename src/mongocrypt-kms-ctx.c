@@ -150,7 +150,7 @@ bool _mongocrypt_kms_ctx_init_aws_decrypt(mongocrypt_kms_ctx_t *kms,
     BSON_ASSERT_PARAM(kms_providers);
     BSON_ASSERT_PARAM(crypto);
 
-    //zz delegates encryption to AWS
+    // zz delegates encryption to AWS
     kms_request_opt_t *opt;
     mongocrypt_status_t *status;
     ctx_with_status_t ctx_with_status;
@@ -287,7 +287,7 @@ bool _mongocrypt_kms_ctx_init_aws_encrypt(mongocrypt_kms_ctx_t *kms,
     BSON_ASSERT_PARAM(crypto);
     BSON_ASSERT_PARAM(plaintext_key_material);
 
-    //zz delegates encryption to the KMS; what KMIP delegated will do
+    // zz delegates encryption to the KMS; what KMIP delegated will do
 
     kms_request_opt_t *opt;
     mongocrypt_status_t *status;
@@ -1471,7 +1471,7 @@ fail:
     return ret;
 }
 
-//zz need new ctx_init_kmip_{encrypt,decrypt} functions
+// zz need new ctx_init_kmip_{encrypt,decrypt} functions
 
 bool _mongocrypt_kms_ctx_init_kmip_register(mongocrypt_kms_ctx_t *kms_ctx,
                                             const _mongocrypt_endpoint_t *endpoint,
@@ -1583,6 +1583,20 @@ bool _mongocrypt_kms_ctx_init_kmip_get(mongocrypt_kms_ctx_t *kms_ctx,
     ret = true;
 done:
     return ret;
+}
+
+bool _mongocrypt_kms_ctx_init_kmip_encrypt(mongocrypt_kms_ctx_t *kms,
+                                           _mongocrypt_opts_kms_providers_t *kms_providers,
+                                           _mongocrypt_key_doc_t *key,
+                                           _mongocrypt_log_t *log) {
+    return false;
+}
+
+bool _mongocrypt_kms_ctx_init_kmip_decrypt(mongocrypt_kms_ctx_t *kms,
+                                           _mongocrypt_opts_kms_providers_t *kms_providers,
+                                           _mongocrypt_key_doc_t *key,
+                                           _mongocrypt_log_t *log) {
+    return false;
 }
 
 static const char *set_and_ret(const char *what, uint32_t *len) {
