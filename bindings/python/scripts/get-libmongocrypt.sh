@@ -23,7 +23,7 @@ elif [ "Darwin" = "$(uname -s)" ]; then
     else
         TARGET="macos"
     fi
-    NOCRYPTO_SO=libmongocrypt/nocrypto/bin/mongocrypt.dylib
+    NOCRYPTO_SO=libmongocrypt/nocrypto/bin/libmongocrypt.dylib
 else
     if [ "$PYTHON_ARCH" ==  "x86_64" ]; then 
         TARGET="rhel-70-64-bit"
@@ -36,7 +36,7 @@ else
     else 
         echo "Unsupported PYTHON_ARCH: $PYTHON_ARCH for Linux"
     fi
-    NOCRYPTO_SO=libmongocrypt/nocrypto/bin/mongocrypt.so
+    NOCRYPTO_SO=libmongocrypt/nocrypto/bin/libmongocrypt.so
 fi
 
 cd $(dirname $HERE)

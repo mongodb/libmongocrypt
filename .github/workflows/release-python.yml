@@ -65,6 +65,9 @@ jobs:
       - name: Install cibuildwheel
         run: python -m pip install "cibuildwheel>=2.4,<3"
 
+      - name: Get libmongocrypt
+        run: bash ./scripts/get-libmongocrypt.sh
+
       - name: Build MacOS Py37 Wheel
         # Universal wheels are not supported with Python 3.7, so we explicitly
         # produce an x86_64 wheel for Python 3.7 on MacOS.
