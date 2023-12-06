@@ -66,7 +66,7 @@ test-command = "python -c \"from pymongocrypt.binding import libmongocrypt_versi
 [tool.cibuildwheel.linux]
 archs = "x86_64 aarch64 ppc64le s390x"
 manylinux-x86_64-image = "manylinux_2_28"
-repair-wheel-command = "bash ./scripts/repair-linux-wheel.sh {wheel} {dest_dir}"
+repair-wheel-command = "echo 'nothing to repair'"
 
 [tool.cibuildwheel.macos]
 archs = "universal2"
