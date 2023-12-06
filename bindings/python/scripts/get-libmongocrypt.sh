@@ -10,6 +10,7 @@ BRANCH="r1.8"
 REVISION=$(git rev-list -n 1 1.8.1)
 
 PYTHON_ARCH="${PYTHON_ARCH:-x86_64}"
+HERE="$(dirname "${BASH_SOURCE[0]}")"
 TARGET=""
 
 if [ "Windows_NT" = "$OS" ]; then 
@@ -35,6 +36,7 @@ else
     fi
 fi
 
+cd $(dirname $HERE)
 rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
 curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt-release/$TARGET/${BRANCH}/${REVISION}/libmongocrypt.tar.gz
 mkdir libmongocrypt
