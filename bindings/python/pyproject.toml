@@ -1,0 +1,73 @@
+[build-system]
+requires = ["setuptools>=63.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pymongocrypt"
+dynamic = ["version"]
+description = "Python bindings for libmongocrypt"
+readme = "README.rst"
+license = "Apache License, Version 2.0"
+requires-python = ">=3.7"
+authors = [
+    { name = "Shane Harvey", email = "mongodb-user@googlegroups.com" },
+]
+keywords = [
+    "bson",
+    "mongo",
+    "mongocrypt",
+    "mongodb",
+    "pymongo",
+    "pymongocrypt",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Database",
+]
+dependencies = [
+    "cffi>=1.12.0,<2",
+    "cryptography>=40",
+    "packaging>=21.0",
+    "requests<3.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/mongodb/libmongocrypt/tree/master/bindings/python"
+
+[tool.setuptools.dynamic]
+version = {attr = "pymongocrypt/version.__version__"}
+
+[tool.setuptools.packages.find]
+include = ["pymongocrypt"]
+
+[tool.setuptools.package-data]
+pymongocrypt=['*.dll', '*.so', '*.dylib']
+
+[tool.cibuildwheel]
+skip = "pp* *-musllinux*"
+build-frontend = "build"
+before-build = "bash {project}/get-libmongocrypt.sh"
+test-command = "python -c 'from pymongocrypt.binding import libmongocrypt_version, lib'"
+
+[tool.cibuildwheel.linux]
+archs = "x86_64 aarch64 ppc64le s390x"
+manylinux-x86_64-image = "manylinux_2_28"
+
+[tool.cibuildwheel.macos]
+archs = "universal2"
+test-skip = "*-macosx_universal2:arm64"
