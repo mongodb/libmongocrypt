@@ -16,6 +16,7 @@ concurrency:
 
 defaults:
   run:
+    working-directory: ./bindings/python
     shell: bash -eux {0}
 
 jobs:
@@ -53,7 +54,7 @@ jobs:
         with:
           python-version: ${{env.PYTHON_VERSION}}
           cache: 'pip'
-          cache-dependency-path: 'binds/python/pyproject.toml'
+          cache-dependency-path: 'bindings/python/pyproject.toml'
           allow-prereleases: true
 
       - name: Set up QEMU
