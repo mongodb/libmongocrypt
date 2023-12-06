@@ -35,7 +35,7 @@ jobs:
         - [ubuntu-20.04, manylinux_s390x, cp38]
         - [ubuntu-20.04, manylinux_i686, cp38]
         - [macos-11, macosx_x86_64, cp37]
-        - [macos-11, macosx_x86_64, cp38]
+        - [macos-11, macosx_universal2, cp38]
         - [windows-2019, win32, cp38]
 
     steps:
@@ -68,7 +68,7 @@ jobs:
       - name: Build MacOS Py37 Wheel
         # Universal wheels are not supported with Python 3.7, so we explicitly
         # produce an x86_64 wheel for Python 3.7 on MacOS.
-        if: ${{ matrix.buildplat[1] == "macosx_x86_64" }}
+        if: ${{ matrix.buildplat[1] == 'macosx_x86_64' }}
         env:
           CIBW_BUILD: cp37-macosx_x86_64
           CIBW_ARCHS: x86_64
