@@ -57,6 +57,21 @@ typedef struct {
 } _mongocrypt_opts_kms_provider_kmip_t;
 
 typedef struct {
+    char *kmsid;
+
+    // `type` identifies the set field in `value`.
+    _mongocrypt_kms_provider_t type;
+
+    union {
+        _mongocrypt_opts_kms_provider_local_t local;
+        _mongocrypt_opts_kms_provider_aws_t aws;
+        _mongocrypt_opts_kms_provider_azure_t azure;
+        _mongocrypt_opts_kms_provider_gcp_t gcp;
+        _mongocrypt_opts_kms_provider_kmip_t kmip;
+    } value;
+} mc_kms_creds_t;
+
+typedef struct {
     int configured_providers; /* A bit set of _mongocrypt_kms_provider_t */
     int need_credentials;     /* A bit set of _mongocrypt_kms_provider_t */
     _mongocrypt_opts_kms_provider_local_t local;
@@ -65,6 +80,9 @@ typedef struct {
     _mongocrypt_opts_kms_provider_gcp_t gcp;
     _mongocrypt_opts_kms_provider_kmip_t kmip;
 } _mongocrypt_opts_kms_providers_t;
+
+const mc_kms_creds_t *_mongocrypt_opts_kms_providers_lookup(const _mongocrypt_opts_kms_providers_t *kms_providers,
+                                                            const char *kmsid);
 
 typedef struct {
     mongocrypt_log_fn_t log_fn;
