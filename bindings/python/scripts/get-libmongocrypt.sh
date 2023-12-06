@@ -5,13 +5,9 @@ set -o errexit  # Exit the script with error if any of the commands fail
 
 # The libmongocrypt release branch.
 BRANCH="r1.8"
-VERSION="1.8.1"
-REMOTE=${REMOTE:-origin}
 
 # The libmongocrypt git revision release to embed in our wheels.
-git fetch $REMOTE $BRANCH || true
-git fetch $REMOTE $BRANCH --tags || true
-REVISION=$(git rev-list -n 1 $VERSION)
+REVISION=$(git rev-list -n 1 1.8.1)
 
 PYTHON_ARCH="${PYTHON_ARCH:-x86_64}"
 TARGET=""

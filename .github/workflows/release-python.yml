@@ -47,7 +47,7 @@ jobs:
 
       - name: Ensure we have all the tags
         run: |
-          git fetch origin
+          git fetch origin --tags
 
       - name: Set up python version
         run: |
