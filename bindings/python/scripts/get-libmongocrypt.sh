@@ -15,6 +15,7 @@ TARGET=""
 
 if [ "Windows_NT" = "$OS" ]; then 
     TARGET="windows-test"
+    NOCRYPTO_SO=libmongocrypt/nocrypto/bin/mongocrypt.dll
 
 elif [ "Darwin" = "$(uname -s)" ]; then
     if [ "$PYTHON_ARCH" ==  "x86_64" ]; then 
@@ -22,6 +23,7 @@ elif [ "Darwin" = "$(uname -s)" ]; then
     else
         TARGET="macos"
     fi
+    NOCRYPTO_SO=libmongocrypt/nocrypto/bin/mongocrypt.dylib
 else
     if [ "$PYTHON_ARCH" ==  "x86_64" ]; then 
         TARGET="rhel-70-64-bit"
@@ -34,6 +36,7 @@ else
     else 
         echo "Unsupported PYTHON_ARCH: $PYTHON_ARCH for Linux"
     fi
+    NOCRYPTO_SO=libmongocrypt/nocrypto/bin/mongocrypt.so
 fi
 
 cd $(dirname $HERE)
@@ -41,7 +44,6 @@ rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.d
 curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt-release/$TARGET/${BRANCH}/${REVISION}/libmongocrypt.tar.gz
 mkdir libmongocrypt
 tar xzf libmongocrypt.tar.gz -C ./libmongocrypt
-NOCRYPTO_SO=libmongocrypt/nocrypto/bin/mongocrypt.dll
 chmod +x ${NOCRYPTO_SO}
 cp ${NOCRYPTO_SO} pymongocrypt/
 rm -rf ./libmongocrypt libmongocrypt.tar.gz
