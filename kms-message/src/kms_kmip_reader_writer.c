@@ -393,6 +393,15 @@ kmip_reader_read_enumeration (kmip_reader_t *reader, uint32_t *enum_value)
 }
 
 bool
+kmip_reader_read_bool (kmip_reader_t *reader, bool *value)
+{
+   uint64_t u64;
+   CHECK_AND_RET (kmip_reader_read_u64 (reader, &u64));
+   *value = (bool) u64;
+   return true;
+}
+
+bool
 kmip_reader_read_integer (kmip_reader_t *reader, int32_t *value)
 {
    CHECK_AND_RET (kmip_reader_read_u32 (reader, (uint32_t*) value));

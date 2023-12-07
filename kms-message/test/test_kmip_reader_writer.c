@@ -88,7 +88,13 @@ kms_kmip_writer_test (void)
       "An Enumeration with value 255");
    kmip_writer_destroy (writer);
 
-   /* Boolean is not implemented. */
+   writer = kmip_writer_new ();
+   kmip_writer_write_bool (writer, KMIP_TAG_CompromiseDate, true);
+   kms_kmip_writer_test_evaluate (
+      writer,
+      "42 00 20 | 06 | 00 00 00 08 | 00 00 00 00 00 00 00 01",
+      "An boolean containing the value true");
+   kmip_writer_destroy (writer);
 
    writer = kmip_writer_new ();
    kmip_writer_write_string (
@@ -132,8 +138,6 @@ kms_kmip_writer_test (void)
       "A Structure containing an Enumeration, value 254, followed by an "
       "Integer, value 255, having tags 420004 and 420005 respectively");
    kmip_writer_destroy (writer);
-
-   // zz bool writer test
 }
 
 void
@@ -203,7 +207,8 @@ kms_kmip_reader_test (void)
    kmip_reader_destroy (reader);
    free (data);
 
-   data = hex_to_data ("42 00 20 | 06 | 00 00 00 08 | 01 00 00 00 00 00 00 00",
+   /* A boolean with value true */
+   data = hex_to_data ("42 00 20 | 06 | 00 00 00 08 | 00 00 00 00 00 00 00 01",
                        &datalen);
    reader = kmip_reader_new (data, datalen);
    ASSERT (kmip_reader_read_tag (reader, &tag));
