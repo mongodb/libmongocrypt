@@ -61,7 +61,7 @@ function test_dist() {
 
 
 if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
-    virtualenv -p C:\\python\\Python37\\python.exe venv 
+    python -m venv .venv
     . ./.venv/Scripts/activate
 
     get_libmongocrypt windows-test libmongocrypt/nocrypto/bin/mongocrypt.dll
