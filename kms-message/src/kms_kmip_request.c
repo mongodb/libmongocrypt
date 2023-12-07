@@ -298,15 +298,58 @@ kms_kmip_request_create_new (void *reserved) {
    return req;
 }
 
-kms_request_t *
-kms_kmip_request_encrypt_new (void *reserved, const char* unique_identifer, const uint8_t *data, size_t len) {
-   // zz
-   return NULL;
+static kms_request_t *
+kmip_encrypt_decrypt (const char* unique_identifer, const uint8_t *data, size_t len, bool encrypt) {
+   kmip_writer_t *writer;
+   kms_request_t *req;
+
+   req = calloc (1, sizeof (kms_request_t));
+   req->provider = KMS_REQUEST_PROVIDER_KMIP;
+
+   writer = kmip_writer_new();
+   kmip_writer_begin_struct(writer, KMIP_TAG_RequestMessage);
+
+   kmip_writer_begin_struct (writer, KMIP_TAG_RequestHeader);
+   kmip_writer_begin_struct (writer, KMIP_TAG_ProtocolVersion);
+   kmip_writer_write_integer (writer, KMIP_TAG_ProtocolVersionMajor, 2);
+   kmip_writer_write_integer (writer, KMIP_TAG_ProtocolVersionMinor, 0);
+   kmip_writer_close_struct (writer); /* KMIP_TAG_ProtocolVersion */
+   kmip_writer_write_integer (writer, KMIP_TAG_BatchCount, 1);
+   kmip_writer_close_struct (writer); /* KMIP_TAG_RequestHeader */
+
+   kmip_writer_begin_struct (writer, KMIP_TAG_BatchItem);
+   if (encrypt) {
+      /* 0x1F == Encrypt */
+      kmip_writer_write_enumeration (writer, KMIP_TAG_Operation, 0x1F);
+   } else {
+      /* 0x20 == Encrypt */
+      kmip_writer_write_enumeration (writer, KMIP_TAG_Operation, 0x20);
+   }
+
+   kmip_writer_begin_struct (writer, KMIP_TAG_RequestPayload);
+   kmip_writer_write_string (writer,
+                             KMIP_TAG_UniqueIdentifier,
+                             unique_identifer,
+                             strlen (unique_identifer));
+   kmip_writer_write_bytes(writer, KMIP_TAG_Data, (char *) data, len);
+
+   kmip_writer_close_struct (writer); /* KMIP_TAG_RequestPayload */
+   kmip_writer_close_struct (writer); /* KMIP_TAG_BatchItem */
+   kmip_writer_close_struct (writer); /* KMIP_TAG_RequestMessage */
+
+   /* Copy the KMIP writer buffer to a KMIP request. */
+   copy_writer_buffer (req, writer);
+   kmip_writer_destroy (writer);
+   return req;
 }
 
 kms_request_t *
-kms_kmip_request_decrypt_new (void *reserved, const char* unique_identifer, const uint8_t *data, size_t len) {
-   // zz
-   return NULL;
+kms_kmip_request_encrypt_new (void *reserved, const char* unique_identifer, const uint8_t *plaintext, size_t len) {
+   return kmip_encrypt_decrypt(unique_identifer, plaintext, len, true);
+}
+
+kms_request_t *
+kms_kmip_request_decrypt_new (void *reserved, const char* unique_identifer, const uint8_t *ciphertext, size_t len) {
+   return kmip_encrypt_decrypt(unique_identifer, ciphertext, len, false);
 }
 

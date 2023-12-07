@@ -57,13 +57,13 @@ kms_kmip_request_create_new (void *reserved);
 KMS_MSG_EXPORT (kms_request_t *)
 kms_kmip_request_encrypt_new (void *reserved,
                           const char *unique_identifier,
-                          const uint8_t *data,
+                          const uint8_t *plaintext,
                           size_t len);
 
 KMS_MSG_EXPORT (kms_request_t *)
 kms_kmip_request_decrypt_new (void *reserved,
                           const char *unique_identifier,
-                          const uint8_t *data,
+                          const uint8_t *ciphertext,
                           size_t len);
 
 //zz KMIP Encrypt and Decrypt requests
