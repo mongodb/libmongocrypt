@@ -105,7 +105,7 @@ if [ $(command -v docker) ]; then
 
     # Build the manylinux2014 x86_64 wheel.
     # When we drop 
-    get_libmongocrypt ubuntu2004-64 libmongocrypt/nocrypto/lib64/libmongocrypt.so
+    get_libmongocrypt ubuntu2004-64 libmongocrypt/nocrypto/lib/libmongocrypt.so
     build_manylinux_wheel quay.io/pypa/manylinux2014_x86_64:2023-12-05-e9f0345
     if [ "Linux" = "$(uname -s)" ]; then
         test_dist dist/*.whl
