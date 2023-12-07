@@ -89,7 +89,6 @@ elif [ "Darwin" = "$(uname -s)" ]; then
     test_dist dist/*.tar.gz
 fi
 
-exit 0
 if [ $(command -v docker) ]; then
     # Set up qemu support using the method used in docker/setup-qemu-action
     # https://github.com/docker/setup-qemu-action/blob/2b82ce82d56a2a04d2637cd93a637ae1b359c0a7/README.md?plain=1#L46
