@@ -257,17 +257,56 @@ kms_kmip_request_get_new (void *reserved, const char *unique_identifer)
 
 kms_request_t *
 kms_kmip_request_create_new (void *reserved) {
-   //zz create a new symmetric key with the `NeverExtractable` attribute set
-   return NULL;
+   kmip_writer_t *writer;
+   kms_request_t *req;
+
+   req = calloc (1, sizeof (kms_request_t));
+   req->provider = KMS_REQUEST_PROVIDER_KMIP;
+
+   writer = kmip_writer_new();
+   kmip_writer_begin_struct(writer, KMIP_TAG_RequestMessage);
+
+   kmip_writer_begin_struct (writer, KMIP_TAG_RequestHeader);
+   kmip_writer_begin_struct (writer, KMIP_TAG_ProtocolVersion);
+   kmip_writer_write_integer (writer, KMIP_TAG_ProtocolVersionMajor, 2);
+   kmip_writer_write_integer (writer, KMIP_TAG_ProtocolVersionMinor, 0);
+   kmip_writer_close_struct (writer); /* KMIP_TAG_ProtocolVersion */
+   kmip_writer_write_integer (writer, KMIP_TAG_BatchCount, 1);
+   kmip_writer_close_struct (writer); /* KMIP_TAG_RequestHeader */
+
+   kmip_writer_begin_struct (writer, KMIP_TAG_BatchItem);
+   /* 0x01 == Create */
+   kmip_writer_write_enumeration (writer, KMIP_TAG_Operation, 0x01);
+   kmip_writer_begin_struct (writer, KMIP_TAG_RequestPayload);
+   /* 0x02 == symmetric key */
+   kmip_writer_write_enumeration(writer, KMIP_TAG_ObjectType, 0x02);
+   kmip_writer_begin_struct(writer, KMIP_TAG_Attribute);
+
+   const char* extractable_attr = "Extractable";
+   kmip_writer_write_string(writer, KMIP_TAG_AttributeName, extractable_attr,
+      strlen(extractable_attr));
+   kmip_writer_write_bool(writer, KMIP_TAG_AttributeValue, false);
+
+   kmip_writer_close_struct (writer); /* KMIP_TAG_Attribute */
+   kmip_writer_close_struct (writer); /* KMIP_TAG_RequestPayload */
+   kmip_writer_close_struct (writer); /* KMIP_TAG_BatchItem */
+   kmip_writer_close_struct (writer); /* KMIP_TAG_RequestMessage */
+
+   /* Copy the KMIP writer buffer to a KMIP request. */
+   copy_writer_buffer (req, writer);
+   kmip_writer_destroy (writer);
+   return req;
 }
 
 kms_request_t *
 kms_kmip_request_encrypt_new (void *reserved, const char* unique_identifer, const uint8_t *data, size_t len) {
+   // zz
    return NULL;
 }
 
 kms_request_t *
 kms_kmip_request_decrypt_new (void *reserved, const char* unique_identifer, const uint8_t *data, size_t len) {
+   // zz
    return NULL;
 }
 
