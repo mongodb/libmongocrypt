@@ -3,7 +3,7 @@
 # This script should be run on macOS and Cygwin on Windows.
 # On macOS it will create the following distributions
 # pymongocrypt-<version>.tar.gz
-# pymongocrypt-<version>-py3-none-macosx_11_0_arm64.whl
+# pymongocrypt-<version>-py3-none-macosx_11_0_universal2.whl
 # pymongocrypt-<version>-py3-none-macosx_10_14_intel.whl
 #
 # On Windows it will create the following distribution:
@@ -36,19 +36,16 @@ function get_libmongocrypt() {
 }
 
 function build_wheel() {
-    WHEEL_NAME=$1
-
-    # Ensure updated deps.
     python -m pip install --upgrade pip build
-
-    # Build the wheel, and add the platform name.
     python -m build --wheel
-    old_file=$(echo dist/*-none-any.whl)
-    new_file=$(echo $old_file | sed -E "s/(.*)-any.whl/\1-$WHEEL_NAME.whl/")
-    mv $old_file $new_file
-
     rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
-    ls dist
+}
+
+function build_manylinux_wheel() {
+    docker pull $1
+    docker run --rm -v `pwd`:/python $1 /python/build-manylinux-wheel.sh
+    # Sudo is needed to remove the files created by docker.
+    sudo rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
 }
 
 function test_dist() {
@@ -59,29 +56,33 @@ function test_dist() {
     popd
 }
 
-
+# Handle Windows dist.
 if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
     python -m venv .venv
     . ./.venv/Scripts/activate
 
     get_libmongocrypt windows-test libmongocrypt/nocrypto/bin/mongocrypt.dll
-    build_wheel win_amd64
+    build_wheel
     test_dist dist/*.whl
+fi 
 
-elif [ "Darwin" = "$(uname -s)" ]; then
+# Handle MacOS dists.
+if [ "Darwin" = "$(uname -s)" ]; then
     python -m venv .venv
     . .venv/bin/activate
 
+    # Build intel wheel for Python 3.7.
     get_libmongocrypt macos_x86_64 libmongocrypt/nocrypto/lib/libmongocrypt.dylib
-    build_wheel macosx_10_14_intel
+    build_wheel
     if [ "$(uname -m)" != "arm64" ]; then
         test_dist dist/*.whl
     fi
     
+    # Build universal2 wheel.
     get_libmongocrypt macos libmongocrypt/nocrypto/lib/libmongocrypt.dylib
-    build_wheel macosx_11_0_arm64
+    build_wheel
     if [ "$(uname -m)" == "arm64" ]; then
-        test_dist dist/*arm64.whl
+        test_dist dist/*universal2.whl
     fi
 
     # Build and test sdist.
@@ -89,10 +90,11 @@ elif [ "Darwin" = "$(uname -s)" ]; then
     test_dist dist/*.tar.gz
 fi
 
+# Handle manylinux dists.
 if [ $(command -v docker) ]; then
     if [ "Windows_NT" = "$OS" ]; then
         # docker: Error response from daemon: Windows does not support privileged mode
-        # would be raised by the qemu support command.
+        # would be raised by the qemu command below.
         echo "Not supported on Windows"
         exit 0
     fi
@@ -101,28 +103,17 @@ if [ $(command -v docker) ]; then
     # https://github.com/docker/setup-qemu-action/blob/2b82ce82d56a2a04d2637cd93a637ae1b359c0a7/README.md?plain=1#L46
     docker run --rm --privileged tonistiigi/binfmt:latest --install all
 
-    # Build the manylinux2014 x86_64 wheels.
-    get_libmongocrypt rhel-70-64-bit libmongocrypt/nocrypto/lib64/libmongocrypt.so
-    image=quay.io/pypa/manylinux2014_x86_64:2023-12-05-e9f0345
-    docker pull $image
-    docker run --rm -v `pwd`:/python $image /python/build-manylinux-wheel.sh
-
-    # Sudo is needed to remove the files created by docker.
-    sudo rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
-
+    # Build the manylinux2014 x86_64 wheel.
+    get_libmongocrypt rhel-80-64-bit libmongocrypt/nocrypto/lib64/libmongocrypt.so
+    build_manylinux_wheel quay.io/pypa/manylinux2014_x86_64:2023-12-05-e9f0345
     if [ "Linux" = "$(uname -s)" ]; then
         test_dist dist/*.whl
     fi
 
     # TODO: requires adding rhel-82-arm64 to the "upload-all" task.
-    # Build the manylinux2014 aarch64 wheels.
+    # Build the manylinux2014 aarch64 wheel.
     # get_libmongocrypt rhel-82-arm64 libmongocrypt/nocrypto/lib/libmongocrypt.so
-    # image=quay.io/pypa/manylinux2014_aarch64:2023-12-05-e9f0345
-    # docker pull $image
-    # docker run --rm -v `pwd`:/python $image /python/build-manylinux-wheel.sh
-
-    # # Remove the temp files.
-    # sudo rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
+    # build_manylinux_wheel quay.io/pypa/manylinux2014_aarch64:2023-12-05-e9f0345
 fi
 
 ls -ltr dist
