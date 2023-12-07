@@ -1138,12 +1138,12 @@ bool _mongocrypt_parse_kms_providers(mongocrypt_binary_t *kms_providers_definiti
 
             if (!_mongocrypt_parse_optional_utf8(&as_bson,
                                                  "azure.accessToken",
-                                                 &kms_providers->azure.access_token,
+                                                 &kms_providers->azure_mut.access_token,
                                                  status)) {
                 return false;
             }
 
-            if (kms_providers->azure.access_token) {
+            if (kms_providers->azure_mut.access_token) {
                 // Caller provides an accessToken directly
                 if (!_mongocrypt_check_allowed_fields(&as_bson, "azure", status, "accessToken")) {
                     return false;
@@ -1155,24 +1155,30 @@ bool _mongocrypt_parse_kms_providers(mongocrypt_binary_t *kms_providers_definiti
             // No accessToken given, so we'll need to look one up on our own later
             // using the Azure API
 
-            if (!_mongocrypt_parse_required_utf8(&as_bson, "azure.tenantId", &kms_providers->azure.tenant_id, status)) {
+            if (!_mongocrypt_parse_required_utf8(&as_bson,
+                                                 "azure.tenantId",
+                                                 &kms_providers->azure_mut.tenant_id,
+                                                 status)) {
                 return false;
             }
 
-            if (!_mongocrypt_parse_required_utf8(&as_bson, "azure.clientId", &kms_providers->azure.client_id, status)) {
+            if (!_mongocrypt_parse_required_utf8(&as_bson,
+                                                 "azure.clientId",
+                                                 &kms_providers->azure_mut.client_id,
+                                                 status)) {
                 return false;
             }
 
             if (!_mongocrypt_parse_required_utf8(&as_bson,
                                                  "azure.clientSecret",
-                                                 &kms_providers->azure.client_secret,
+                                                 &kms_providers->azure_mut.client_secret,
                                                  status)) {
                 return false;
             }
 
             if (!_mongocrypt_parse_optional_endpoint(&as_bson,
                                                      "azure.identityPlatformEndpoint",
-                                                     &kms_providers->azure.identity_platform_endpoint,
+                                                     &kms_providers->azure_mut.identity_platform_endpoint,
                                                      NULL /* opts */,
                                                      status)) {
                 return false;

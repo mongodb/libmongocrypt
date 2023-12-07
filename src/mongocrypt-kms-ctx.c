@@ -1000,14 +1000,14 @@ bool mongocrypt_kms_ctx_endpoint(mongocrypt_kms_ctx_t *kms, const char **endpoin
 
 bool _mongocrypt_kms_ctx_init_azure_auth(mongocrypt_kms_ctx_t *kms,
                                          _mongocrypt_log_t *log,
-                                         _mongocrypt_opts_kms_providers_t *kms_providers,
+                                         const mc_kms_creds_t *kc,
                                          _mongocrypt_endpoint_t *key_vault_endpoint) {
     BSON_ASSERT_PARAM(kms);
-    BSON_ASSERT_PARAM(kms_providers);
+    BSON_ASSERT_PARAM(kc);
 
     kms_request_opt_t *opt = NULL;
     mongocrypt_status_t *status;
-    _mongocrypt_endpoint_t *identity_platform_endpoint;
+    const _mongocrypt_endpoint_t *identity_platform_endpoint;
     char *scope = NULL;
     const char *hostname;
     char *request_string;
@@ -1016,7 +1016,9 @@ bool _mongocrypt_kms_ctx_init_azure_auth(mongocrypt_kms_ctx_t *kms,
     _init_common(kms, log, MONGOCRYPT_KMS_AZURE_OAUTH);
     status = kms->status;
 
-    identity_platform_endpoint = kms_providers->azure.identity_platform_endpoint;
+    BSON_ASSERT(kc->type == MONGOCRYPT_KMS_PROVIDER_AZURE);
+
+    identity_platform_endpoint = kc->value.azure.identity_platform_endpoint;
 
     if (identity_platform_endpoint) {
         kms->endpoint = bson_strdup(identity_platform_endpoint->host_and_port);
@@ -1042,9 +1044,9 @@ bool _mongocrypt_kms_ctx_init_azure_auth(mongocrypt_kms_ctx_t *kms,
     kms_request_opt_set_provider(opt, KMS_REQUEST_PROVIDER_AZURE);
     kms->req = kms_azure_request_oauth_new(hostname,
                                            scope,
-                                           kms_providers->azure.tenant_id,
-                                           kms_providers->azure.client_id,
-                                           kms_providers->azure.client_secret,
+                                           kc->value.azure.tenant_id,
+                                           kc->value.azure.client_id,
+                                           kc->value.azure.client_secret,
                                            opt);
     if (kms_request_get_error(kms->req)) {
         CLIENT_ERR("error constructing KMS message: %s", kms_request_get_error(kms->req));

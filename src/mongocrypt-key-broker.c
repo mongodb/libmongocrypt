@@ -518,8 +518,9 @@ bool _mongocrypt_key_broker_add_doc(_mongocrypt_key_broker_t *kb,
             goto done;
         }
     } else if (kek_provider == MONGOCRYPT_KMS_PROVIDER_AZURE) {
-        if (kms_providers->azure.access_token) {
-            access_token = bson_strdup(kms_providers->azure.access_token);
+        BSON_ASSERT(kc.type == MONGOCRYPT_KMS_PROVIDER_AZURE);
+        if (kc.value.azure.access_token) {
+            access_token = bson_strdup(kc.value.azure.access_token);
         } else {
             access_token = _mongocrypt_cache_oauth_get(kb->crypt->cache_oauth_azure);
         }
@@ -529,7 +530,7 @@ bool _mongocrypt_key_broker_add_doc(_mongocrypt_key_broker_t *kb,
             if (!kb->auth_request_azure.initialized) {
                 if (!_mongocrypt_kms_ctx_init_azure_auth(&kb->auth_request_azure.kms,
                                                          &kb->crypt->log,
-                                                         kms_providers,
+                                                         &kc,
                                                          /* The key vault endpoint is used to determine the scope. */
                                                          key_doc->kek.provider.azure.key_vault_endpoint)) {
                     mongocrypt_kms_ctx_status(&kb->auth_request_azure.kms, kb->status);
@@ -770,9 +771,17 @@ bool _mongocrypt_key_broker_kms_done(_mongocrypt_key_broker_t *kb, _mongocrypt_o
                 continue;
             }
 
+            mc_kms_creds_t kc;
+            if (!_mongocrypt_opts_kms_providers_lookup(kms_providers, key_returned->doc->kek.kmsid, &kc)) {
+                mongocrypt_status_t *status = kb->status;
+                CLIENT_ERR("KMS provider `%s` is not configured", key_returned->doc->kek.kmsid);
+                return _key_broker_fail(kb);
+            }
+
             if (key_returned->doc->kek.kms_provider == MONGOCRYPT_KMS_PROVIDER_AZURE) {
-                if (kms_providers->azure.access_token) {
-                    access_token = bson_strdup(kms_providers->azure.access_token);
+                BSON_ASSERT(kc.type == MONGOCRYPT_KMS_PROVIDER_AZURE);
+                if (kc.value.azure.access_token) {
+                    access_token = bson_strdup(kc.value.azure.access_token);
                 } else {
                     access_token = _mongocrypt_cache_oauth_get(kb->crypt->cache_oauth_azure);
                 }

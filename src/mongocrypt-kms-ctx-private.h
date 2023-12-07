@@ -72,7 +72,7 @@ void _mongocrypt_kms_ctx_cleanup(mongocrypt_kms_ctx_t *kms);
 
 bool _mongocrypt_kms_ctx_init_azure_auth(mongocrypt_kms_ctx_t *kms,
                                          _mongocrypt_log_t *log,
-                                         _mongocrypt_opts_kms_providers_t *kms_providers,
+                                         const mc_kms_creds_t *kc,
                                          _mongocrypt_endpoint_t *key_vault_endpoint) MONGOCRYPT_WARN_UNUSED_RESULT;
 
 bool _mongocrypt_kms_ctx_init_azure_wrapkey(mongocrypt_kms_ctx_t *kms,

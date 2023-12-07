@@ -221,8 +221,9 @@ static bool _kms_start(mongocrypt_ctx_t *ctx) {
 
         ctx->state = MONGOCRYPT_CTX_NEED_KMS;
     } else if (ctx->opts.kek.kms_provider == MONGOCRYPT_KMS_PROVIDER_AZURE) {
-        if (ctx->kms_providers.azure.access_token) {
-            access_token = bson_strdup(ctx->kms_providers.azure.access_token);
+        BSON_ASSERT(kc.type == MONGOCRYPT_KMS_PROVIDER_AZURE);
+        if (kc.value.azure.access_token) {
+            access_token = bson_strdup(kc.value.azure.access_token);
         } else {
             access_token = _mongocrypt_cache_oauth_get(ctx->crypt->cache_oauth_azure);
         }
@@ -240,7 +241,7 @@ static bool _kms_start(mongocrypt_ctx_t *ctx) {
         } else {
             if (!_mongocrypt_kms_ctx_init_azure_auth(&dkctx->kms,
                                                      &ctx->crypt->log,
-                                                     kms_providers,
+                                                     &kc,
                                                      ctx->opts.kek.provider.azure.key_vault_endpoint)) {
                 mongocrypt_kms_ctx_status(&dkctx->kms, ctx->status);
                 _mongocrypt_ctx_fail(ctx);
