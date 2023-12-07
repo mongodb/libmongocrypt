@@ -9,7 +9,7 @@
 # On Windows it will create the following distribution:
 # pymongocrypt-<version>-py3-none-win_amd64.whl
 #
-# If docker is available, it will also produce the following:
+# If docker is available on Linux or MacOS, it will also produce the following:
 # pymongocrypt-<Version>-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
 
 set -o xtrace   # Write all commands first to stderr
@@ -90,6 +90,12 @@ elif [ "Darwin" = "$(uname -s)" ]; then
 fi
 
 if [ $(command -v docker) ]; then
+    if [ "Windows_NT" = "$OS" ]; then
+        # docker: Error response from daemon: Windows does not support privileged mode
+        # would be raised by the qemu support command.
+        echo "Not supported on Windows"
+    fi
+
     # Set up qemu support using the method used in docker/setup-qemu-action
     # https://github.com/docker/setup-qemu-action/blob/2b82ce82d56a2a04d2637cd93a637ae1b359c0a7/README.md?plain=1#L46
     docker run --rm --privileged tonistiigi/binfmt:latest --install all
