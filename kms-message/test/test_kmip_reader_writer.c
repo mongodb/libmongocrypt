@@ -132,6 +132,8 @@ kms_kmip_writer_test (void)
       "A Structure containing an Enumeration, value 254, followed by an "
       "Integer, value 255, having tags 420004 and 420005 respectively");
    kmip_writer_destroy (writer);
+
+   // zz bool writer test
 }
 
 void
@@ -147,6 +149,7 @@ kms_kmip_reader_test (void)
    int64_t i64;
    uint32_t u32;
    uint8_t *ptr;
+   bool b;
 
    /* The following test cases come from section 9.1.2 of
     * http://docs.oasis-open.org/kmip/spec/v1.4/os/kmip-spec-v1.4-os.html */
@@ -200,7 +203,20 @@ kms_kmip_reader_test (void)
    kmip_reader_destroy (reader);
    free (data);
 
-   /* Boolean is not implemented */
+   data = hex_to_data ("42 00 20 | 06 | 00 00 00 08 | 01 00 00 00 00 00 00 00",
+                       &datalen);
+   reader = kmip_reader_new (data, datalen);
+   ASSERT (kmip_reader_read_tag (reader, &tag));
+   ASSERT (tag == KMIP_TAG_CompromiseDate);
+   ASSERT (kmip_reader_read_type (reader, &type));
+   ASSERT (type == KMIP_ITEM_TYPE_Boolean);
+   ASSERT (kmip_reader_read_length (reader, &length));
+   ASSERT (length == 8);
+   ASSERT (kmip_reader_read_bool (reader, &b));
+   ASSERT (b);
+   ASSERT (!kmip_reader_has_data (reader));
+   kmip_reader_destroy (reader);
+   free (data);
 
    /* A Text String with the value 'Hello World' */
    data = hex_to_data ("42 00 20 | 07 | 00 00 00 0B | 48 65 6C "
