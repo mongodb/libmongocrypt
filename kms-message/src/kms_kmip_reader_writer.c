@@ -178,6 +178,14 @@ kmip_writer_write_enumeration (kmip_writer_t *writer, kmip_tag_type_t tag, int32
    kmip_writer_write_u32 (writer, 0);
 }
 
+void kmip_writer_write_bool (kmip_writer_t *writer, kmip_tag_type_t tag, bool value)
+{
+   kmip_writer_write_tag_enum (writer, tag);
+   kmip_writer_write_u8 (writer, KMIP_ITEM_TYPE_Boolean);
+   kmip_writer_write_u32 (writer, 8);
+   kmip_writer_write_u64(writer, (uint64_t) value);
+}
+
 void
 kmip_writer_write_datetime (kmip_writer_t *writer, kmip_tag_type_t tag, int64_t value)
 {

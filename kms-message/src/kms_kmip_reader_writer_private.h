@@ -60,6 +60,9 @@ void
 kmip_writer_write_enumeration (kmip_writer_t *writer, kmip_tag_type_t tag, int32_t value);
 
 void
+kmip_writer_write_bool (kmip_writer_t *writer, kmip_tag_type_t tag, bool value);
+
+void
 kmip_writer_write_datetime (kmip_writer_t *writer, kmip_tag_type_t tag, int64_t value);
 
 void
