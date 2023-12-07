@@ -32,8 +32,6 @@ jobs:
         buildplat:
         - [ubuntu-20.04, manylinux_x86_64, cp38]
         - [ubuntu-20.04, manylinux_aarch64, cp38]
-        - [ubuntu-20.04, manylinux_ppc64le, cp38]
-        - [ubuntu-20.04, manylinux_s390x, cp38]
         - [macos-11, macosx_x86_64, cp37]
         - [macos-11, macosx_universal2, cp38]
         - [windows-2019, win32, cp38]
