@@ -104,9 +104,10 @@ if [ $(command -v docker) ]; then
     docker run --rm --privileged tonistiigi/binfmt:latest --install all
 
     # Build the manylinux2014 x86_64 wheel.
-    # Supports CentOS 7 rh-python38, CentOS 8 python38, Fedora 32+, Mageia 8+, 
-    # openSUSE 15.3+, Photon OS 4.0+ (3.0+ with updates), Ubuntu 20.04+.
-    # When the rhel7 images go EOL we'll have to switch to the manylinux_x_y variants.
+    # https://github.com/pypa/manylinux
+    # Supports CentOS 7 rh-python38, CentOS 8 python38, Fedora 32+, Ubuntu 20.04+.
+    # When the rhel7 images go EOL we'll have to switch to the manylinux_x_y variants
+    # and use rhel8.
     get_libmongocrypt rhel-70-64-bit libmongocrypt/nocrypto/lib64/libmongocrypt.so
     build_manylinux_wheel quay.io/pypa/manylinux2014_x86_64:2023-12-05-e9f0345
     if [ "Linux" = "$(uname -s)" ]; then
