@@ -108,7 +108,7 @@ if [ $(command -v docker) ]; then
     # PEP 600 has been designed to be "future-proof" and does not enforce specific symbols and a 
     # specific distro to build. It only states that a wheel tagged manylinux_x_y shall work on
     # any distro based on glibc>=x.y
-    get_libmongocrypt ubuntu2004-64 libmongocrypt/nocrypto/lib64/libmongocrypt.so
+    get_libmongocrypt ubuntu2004-64 libmongocrypt/nocrypto/lib/libmongocrypt.so
     build_manylinux_wheel quay.io/pypa/manylinux_2_28:2023-12-05-e9f0345
     if [ "Linux" = "$(uname -s)" ]; then
         test_dist dist/*.whl
