@@ -103,20 +103,20 @@ if [ $(command -v docker) ]; then
     # https://github.com/docker/setup-qemu-action/blob/2b82ce82d56a2a04d2637cd93a637ae1b359c0a7/README.md?plain=1#L46
     docker run --rm --privileged tonistiigi/binfmt:latest --install all
 
-    # Build the manylinux x86_64 wheel.
-    # Per https://github.com/pypa/manylinux
-    # PEP 600 has been designed to be "future-proof" and does not enforce specific symbols and a 
-    # specific distro to build. It only states that a wheel tagged manylinux_x_y shall work on
-    # any distro based on glibc>=x.y
-    get_libmongocrypt ubuntu2004-64 libmongocrypt/nocrypto/lib/libmongocrypt.so
-    build_manylinux_wheel quay.io/pypa/manylinux_2_28:2023-12-05-e9f0345
+    # Build the manylinux2014 x86_64 wheel.
+    # Supports CentOS 7 rh-python38, CentOS 8 python38, Fedora 32+, Mageia 8+, 
+    # openSUSE 15.3+, Photon OS 4.0+ (3.0+ with updates), Ubuntu 20.04+.
+    # When the rhel7 images go EOL we'll have to switch to the manylinux_x_y variants.
+    get_libmongocrypt rhel-70-64-bit libmongocrypt/nocrypto/lib64/libmongocrypt.so
+    build_manylinux_wheel quay.io/pypa/manylinux2014_x86_64:2023-12-05-e9f0345
     if [ "Linux" = "$(uname -s)" ]; then
         test_dist dist/*.whl
     fi
 
-    # Build the manylinux aarch64 wheel.
-    get_libmongocrypt ubuntu2004-arm64 libmongocrypt/nocrypto/lib/libmongocrypt.so
-    build_manylinux_wheel quay.io/pypa/manylinux_2_28_aarch64:2023-12-05-e9f0345
+    # TODO: requires adding a rhel-70-arm64 variant to the "upload-all" task.
+    # Build the manylinux2014 aarch64 wheel.
+    # get_libmongocrypt rhel-70-arm64 libmongocrypt/nocrypto/lib/libmongocrypt.so
+    # build_manylinux_wheel quay.io/pypa/manylinux2014_aarch64:2023-12-05-e9f0345
 fi
 
 ls -ltr dist
