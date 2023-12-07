@@ -711,6 +711,7 @@ bool mongocrypt_ctx_setopt_masterkey_local(mongocrypt_ctx_t *ctx) {
     }
 
     ctx->opts.kek.kms_provider = MONGOCRYPT_KMS_PROVIDER_LOCAL;
+    ctx->opts.kek.kmsid = bson_strdup("local");
     return true;
 }
 
