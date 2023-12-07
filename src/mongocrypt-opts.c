@@ -57,7 +57,7 @@ void _mongocrypt_opts_kms_providers_cleanup(_mongocrypt_opts_kms_providers_t *km
     bson_free(kms_providers->aws_mut.session_token);
     _mongocrypt_buffer_cleanup(&kms_providers->local_mut.key);
     _mongocrypt_opts_kms_provider_azure_cleanup(&kms_providers->azure_mut);
-    _mongocrypt_opts_kms_provider_gcp_cleanup(&kms_providers->gcp);
+    _mongocrypt_opts_kms_provider_gcp_cleanup(&kms_providers->gcp_mut);
     _mongocrypt_endpoint_destroy(kms_providers->kmip.endpoint);
 }
 
@@ -79,7 +79,7 @@ void _mongocrypt_opts_merge_kms_providers(_mongocrypt_opts_kms_providers_t *dest
         dest->configured_providers |= MONGOCRYPT_KMS_PROVIDER_AZURE;
     }
     if (source->configured_providers & MONGOCRYPT_KMS_PROVIDER_GCP) {
-        memcpy(&dest->gcp, &source->gcp, sizeof(source->gcp));
+        memcpy(&dest->gcp_mut, &source->gcp_mut, sizeof(source->gcp_mut));
         dest->configured_providers |= MONGOCRYPT_KMS_PROVIDER_GCP;
     }
     if (source->configured_providers & MONGOCRYPT_KMS_PROVIDER_KMIP) {
@@ -240,7 +240,7 @@ bool _mongocrypt_opts_kms_providers_lookup(const _mongocrypt_opts_kms_providers_
 
     if (0 != (kms_providers->configured_providers & MONGOCRYPT_KMS_PROVIDER_GCP) && 0 == strcmp(kmsid, "gcp")) {
         out->type = MONGOCRYPT_KMS_PROVIDER_GCP;
-        out->value.gcp = kms_providers->gcp;
+        out->value.gcp = kms_providers->gcp_mut;
         return true;
     }
 

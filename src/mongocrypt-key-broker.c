@@ -551,8 +551,9 @@ bool _mongocrypt_key_broker_add_doc(_mongocrypt_key_broker_t *kb,
             }
         }
     } else if (kek_provider == MONGOCRYPT_KMS_PROVIDER_GCP) {
-        if (NULL != kms_providers->gcp.access_token) {
-            access_token = bson_strdup(kms_providers->gcp.access_token);
+        BSON_ASSERT(kc.type == MONGOCRYPT_KMS_PROVIDER_GCP);
+        if (NULL != kc.value.gcp.access_token) {
+            access_token = bson_strdup(kc.value.gcp.access_token);
         } else {
             access_token = _mongocrypt_cache_oauth_get(kb->crypt->cache_oauth_gcp);
         }
@@ -563,7 +564,7 @@ bool _mongocrypt_key_broker_add_doc(_mongocrypt_key_broker_t *kb,
                 if (!_mongocrypt_kms_ctx_init_gcp_auth(&kb->auth_request_gcp.kms,
                                                        &kb->crypt->log,
                                                        &kb->crypt->opts,
-                                                       kms_providers,
+                                                       &kc,
                                                        key_doc->kek.provider.gcp.endpoint)) {
                     mongocrypt_kms_ctx_status(&kb->auth_request_gcp.kms, kb->status);
                     _key_broker_fail(kb);
@@ -803,8 +804,9 @@ bool _mongocrypt_key_broker_kms_done(_mongocrypt_key_broker_t *kb, _mongocrypt_o
                 key_returned->needs_auth = false;
                 bson_free(access_token);
             } else if (key_returned->doc->kek.kms_provider == MONGOCRYPT_KMS_PROVIDER_GCP) {
-                if (NULL != kms_providers->gcp.access_token) {
-                    access_token = bson_strdup(kms_providers->gcp.access_token);
+                BSON_ASSERT(kc.type == MONGOCRYPT_KMS_PROVIDER_GCP);
+                if (NULL != kc.value.gcp.access_token) {
+                    access_token = bson_strdup(kc.value.gcp.access_token);
                 } else {
                     access_token = _mongocrypt_cache_oauth_get(kb->crypt->cache_oauth_gcp);
                 }

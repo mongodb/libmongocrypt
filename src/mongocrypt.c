@@ -1204,12 +1204,12 @@ bool _mongocrypt_parse_kms_providers(mongocrypt_binary_t *kms_providers_definiti
 
             if (!_mongocrypt_parse_optional_utf8(&as_bson,
                                                  "gcp.accessToken",
-                                                 &kms_providers->gcp.access_token,
+                                                 &kms_providers->gcp_mut.access_token,
                                                  status)) {
                 return false;
             }
 
-            if (NULL != kms_providers->gcp.access_token) {
+            if (NULL != kms_providers->gcp_mut.access_token) {
                 /* "gcp" document has form:
                  * {
                  *    "accessToken": <required UTF-8>
@@ -1228,20 +1228,20 @@ bool _mongocrypt_parse_kms_providers(mongocrypt_binary_t *kms_providers_definiti
              *    "privateKey": <required UTF-8 or Binary>
              * }
              */
-            if (!_mongocrypt_parse_required_utf8(&as_bson, "gcp.email", &kms_providers->gcp.email, status)) {
+            if (!_mongocrypt_parse_required_utf8(&as_bson, "gcp.email", &kms_providers->gcp_mut.email, status)) {
                 return false;
             }
 
             if (!_mongocrypt_parse_required_binary(&as_bson,
                                                    "gcp.privateKey",
-                                                   &kms_providers->gcp.private_key,
+                                                   &kms_providers->gcp_mut.private_key,
                                                    status)) {
                 return false;
             }
 
             if (!_mongocrypt_parse_optional_endpoint(&as_bson,
                                                      "gcp.endpoint",
-                                                     &kms_providers->gcp.endpoint,
+                                                     &kms_providers->gcp_mut.endpoint,
                                                      NULL /* opts */,
                                                      status)) {
                 return false;

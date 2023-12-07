@@ -91,7 +91,7 @@ bool _mongocrypt_kms_ctx_init_azure_unwrapkey(mongocrypt_kms_ctx_t *kms,
 bool _mongocrypt_kms_ctx_init_gcp_auth(mongocrypt_kms_ctx_t *kms,
                                        _mongocrypt_log_t *log,
                                        _mongocrypt_opts_t *crypt_opts,
-                                       _mongocrypt_opts_kms_providers_t *kms_providers,
+                                       const mc_kms_creds_t *kc,
                                        _mongocrypt_endpoint_t *kms_endpoint) MONGOCRYPT_WARN_UNUSED_RESULT;
 
 bool _mongocrypt_kms_ctx_init_gcp_encrypt(mongocrypt_kms_ctx_t *kms,

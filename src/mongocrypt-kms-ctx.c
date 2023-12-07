@@ -1236,15 +1236,15 @@ static bool _sign_rsaes_pkcs1_v1_5_trampoline(void *ctx,
 bool _mongocrypt_kms_ctx_init_gcp_auth(mongocrypt_kms_ctx_t *kms,
                                        _mongocrypt_log_t *log,
                                        _mongocrypt_opts_t *crypt_opts,
-                                       _mongocrypt_opts_kms_providers_t *kms_providers,
+                                       const mc_kms_creds_t *kc,
                                        _mongocrypt_endpoint_t *kms_endpoint) {
     BSON_ASSERT_PARAM(kms);
-    BSON_ASSERT_PARAM(kms_providers);
+    BSON_ASSERT_PARAM(kc);
     BSON_ASSERT_PARAM(crypt_opts);
 
     kms_request_opt_t *opt = NULL;
     mongocrypt_status_t *status;
-    _mongocrypt_endpoint_t *auth_endpoint;
+    const _mongocrypt_endpoint_t *auth_endpoint;
     char *scope = NULL;
     char *audience = NULL;
     const char *hostname;
@@ -1257,7 +1257,9 @@ bool _mongocrypt_kms_ctx_init_gcp_auth(mongocrypt_kms_ctx_t *kms,
     ctx_with_status.ctx = crypt_opts;
     ctx_with_status.status = mongocrypt_status_new();
 
-    auth_endpoint = kms_providers->gcp.endpoint;
+    BSON_ASSERT(kc->type == MONGOCRYPT_KMS_PROVIDER_GCP);
+
+    auth_endpoint = kc->value.gcp.endpoint;
     if (auth_endpoint) {
         kms->endpoint = bson_strdup(auth_endpoint->host_and_port);
         hostname = auth_endpoint->host;
@@ -1284,11 +1286,11 @@ bool _mongocrypt_kms_ctx_init_gcp_auth(mongocrypt_kms_ctx_t *kms,
         kms_request_opt_set_crypto_hook_sign_rsaes_pkcs1_v1_5(opt, _sign_rsaes_pkcs1_v1_5_trampoline, &ctx_with_status);
     }
     kms->req = kms_gcp_request_oauth_new(hostname,
-                                         kms_providers->gcp.email,
+                                         kc->value.gcp.email,
                                          audience,
                                          scope,
-                                         (const char *)kms_providers->gcp.private_key.data,
-                                         kms_providers->gcp.private_key.len,
+                                         (const char *)kc->value.gcp.private_key.data,
+                                         kc->value.gcp.private_key.len,
                                          opt);
     if (kms_request_get_error(kms->req)) {
         CLIENT_ERR("error constructing KMS message: %s", kms_request_get_error(kms->req));

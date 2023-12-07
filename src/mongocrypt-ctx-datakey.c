@@ -250,8 +250,9 @@ static bool _kms_start(mongocrypt_ctx_t *ctx) {
         }
         ctx->state = MONGOCRYPT_CTX_NEED_KMS;
     } else if (ctx->opts.kek.kms_provider == MONGOCRYPT_KMS_PROVIDER_GCP) {
-        if (NULL != ctx->kms_providers.gcp.access_token) {
-            access_token = bson_strdup((const char *)ctx->kms_providers.gcp.access_token);
+        BSON_ASSERT(kc.type == MONGOCRYPT_KMS_PROVIDER_GCP);
+        if (NULL != kc.value.gcp.access_token) {
+            access_token = bson_strdup(kc.value.gcp.access_token);
         } else {
             access_token = _mongocrypt_cache_oauth_get(ctx->crypt->cache_oauth_gcp);
         }
@@ -270,7 +271,7 @@ static bool _kms_start(mongocrypt_ctx_t *ctx) {
             if (!_mongocrypt_kms_ctx_init_gcp_auth(&dkctx->kms,
                                                    &ctx->crypt->log,
                                                    &ctx->crypt->opts,
-                                                   kms_providers,
+                                                   &kc,
                                                    ctx->opts.kek.provider.gcp.endpoint)) {
                 mongocrypt_kms_ctx_status(&dkctx->kms, ctx->status);
                 _mongocrypt_ctx_fail(ctx);
