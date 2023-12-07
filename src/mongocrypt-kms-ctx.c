@@ -17,7 +17,9 @@
 #include "mongocrypt-binary-private.h"
 #include "mongocrypt-buffer-private.h"
 #include "mongocrypt-ctx-private.h"
+#include "mongocrypt-endpoint-private.h"
 #include "mongocrypt-kms-ctx-private.h"
+#include "mongocrypt-log-private.h"
 #include "mongocrypt-opts-private.h"
 #include "mongocrypt-private.h"
 #include "mongocrypt-status-private.h"
@@ -1458,8 +1460,6 @@ fail:
     return ret;
 }
 
-// zz need new ctx_init_kmip_{encrypt,decrypt} functions
-
 bool _mongocrypt_kms_ctx_init_kmip_register(mongocrypt_kms_ctx_t *kms_ctx,
                                             const _mongocrypt_endpoint_t *endpoint,
                                             const uint8_t *secretdata,
@@ -1569,17 +1569,29 @@ done:
     return ret;
 }
 
+bool _mongocrypt_kms_ctx_init_kmip_create(mongocrypt_kms_ctx_t *kms,
+                                            const _mongocrypt_endpoint_t *endpoint,
+                                            const char *unique_identifier,
+                                            _mongocrypt_log_t *log) {
+                                            // zz
+    return false;
+}
+
 bool _mongocrypt_kms_ctx_init_kmip_encrypt(mongocrypt_kms_ctx_t *kms,
-                                           _mongocrypt_opts_kms_providers_t *kms_providers,
-                                           _mongocrypt_key_doc_t *key,
-                                           _mongocrypt_log_t *log) {
+                                            const _mongocrypt_endpoint_t *endpoint,
+                                            const char *unique_identifier,
+                                            _mongocrypt_buffer_t *plaintext,
+                                            _mongocrypt_log_t *log) {
+                                            // zz
     return false;
 }
 
 bool _mongocrypt_kms_ctx_init_kmip_decrypt(mongocrypt_kms_ctx_t *kms,
-                                           _mongocrypt_opts_kms_providers_t *kms_providers,
-                                           _mongocrypt_key_doc_t *key,
-                                           _mongocrypt_log_t *log) {
+                                            const _mongocrypt_endpoint_t *endpoint,
+                                            const char *unique_identifier,
+                                            _mongocrypt_buffer_t *ciphertext,
+                                            _mongocrypt_log_t *log) {
+                                            // zz
     return false;
 }
 
