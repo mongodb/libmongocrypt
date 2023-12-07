@@ -116,6 +116,9 @@ bool
 kmip_reader_read_enumeration (kmip_reader_t *reader, uint32_t *enum_value);
 
 bool
+kmip_reader_read_bool (kmip_reader_t *reader, bool *value);
+
+bool
 kmip_reader_read_integer (kmip_reader_t *reader, int32_t *value);
 
 bool
