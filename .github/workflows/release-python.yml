@@ -1,4 +1,4 @@
-name: Python Wheels
+name: Python Release
 
 on:
   pull_request:  # TODO: Remove before merging
@@ -51,7 +51,7 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           name: dist-${{ matrix.os }}
-          path: ./bindings/python/wheelhouse/*.whl
+          path: ./bindings/python/dist/*.whl
           if-no-files-found: error
 
   collect_dist:
