@@ -939,8 +939,10 @@ void _test_ctx_wrap_and_feed_key(mongocrypt_ctx_t *ctx,
                                  const _mongocrypt_buffer_t *id,
                                  _mongocrypt_buffer_t *key,
                                  mongocrypt_status_t *status) {
+    mc_kms_creds_t kc;
+    ASSERT(_mongocrypt_opts_kms_providers_lookup(_mongocrypt_ctx_kms_providers(ctx), "local", &kc));
     // Wrap key using local provider.
-    _mongocrypt_buffer_t kek = _mongocrypt_ctx_kms_providers(ctx)->local.key;
+    _mongocrypt_buffer_t kek = kc.value.local.key;
     _mongocrypt_buffer_t encrypted_key;
     _mongocrypt_buffer_init(&encrypted_key);
     ASSERT_OK_STATUS(_mongocrypt_wrap_key(ctx->crypt->crypto, &kek, key, &encrypted_key, status), status);

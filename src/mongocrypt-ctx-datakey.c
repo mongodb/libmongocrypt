@@ -180,14 +180,23 @@ static bool _kms_start(mongocrypt_ctx_t *ctx) {
 
     dkctx = (_mongocrypt_ctx_datakey_t *)ctx;
 
+    mc_kms_creds_t kc;
+    if (!_mongocrypt_opts_kms_providers_lookup(kms_providers, ctx->opts.kek.kmsid, &kc)) {
+        mongocrypt_status_t *status = ctx->status;
+        CLIENT_ERR("KMS provider `%s` is not configured", ctx->opts.kek.kmsid);
+        _mongocrypt_ctx_fail(ctx);
+        goto done;
+    }
+
     /* Clear out any pre-existing initialized KMS context, and zero it (so it is
      * safe to call cleanup again). */
     _mongocrypt_kms_ctx_cleanup(&dkctx->kms);
     memset(&dkctx->kms, 0, sizeof(dkctx->kms));
     dkctx->kms_returned = false;
     if (ctx->opts.kek.kms_provider == MONGOCRYPT_KMS_PROVIDER_LOCAL) {
+        BSON_ASSERT(kc.type == MONGOCRYPT_KMS_PROVIDER_LOCAL);
         if (!_mongocrypt_wrap_key(ctx->crypt->crypto,
-                                  &kms_providers->local.key,
+                                  &kc.value.local.key,
                                   &dkctx->plaintext_key_material,
                                   &dkctx->encrypted_key_material,
                                   ctx->status)) {

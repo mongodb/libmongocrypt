@@ -486,12 +486,21 @@ bool _mongocrypt_key_broker_add_doc(_mongocrypt_key_broker_t *kb,
         goto done;
     }
 
+    mc_kms_creds_t kc;
+    if (!_mongocrypt_opts_kms_providers_lookup(kms_providers, key_doc->kek.kmsid, &kc)) {
+        mongocrypt_status_t *status = kb->status;
+        CLIENT_ERR("KMS provider `%s` is not configured", key_doc->kek.kmsid);
+        _key_broker_fail(kb);
+        goto done;
+    }
+
     /* If the KMS provider is local, decrypt immediately. Otherwise, create the
      * HTTP KMS request. */
     BSON_ASSERT(kb->crypt);
     if (kek_provider == MONGOCRYPT_KMS_PROVIDER_LOCAL) {
+        BSON_ASSERT(kc.type == MONGOCRYPT_KMS_PROVIDER_LOCAL);
         if (!_mongocrypt_unwrap_key(kb->crypt->crypto,
-                                    &kms_providers->local.key,
+                                    &kc.value.local.key,
                                     &key_returned->doc->key_material,
                                     &key_returned->decrypted_key_material,
                                     kb->status)) {

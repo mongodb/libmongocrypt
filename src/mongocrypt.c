@@ -345,7 +345,7 @@ bool mongocrypt_setopt_kms_provider_local(mongocrypt_t *crypt, mongocrypt_binary
         bson_free(key_val);
     }
 
-    _mongocrypt_buffer_copy_from_binary(&kms_providers->local.key, key);
+    _mongocrypt_buffer_copy_from_binary(&kms_providers->local_mut.key, key);
     kms_providers->configured_providers |= MONGOCRYPT_KMS_PROVIDER_LOCAL;
     return true;
 }
@@ -1248,11 +1248,11 @@ bool _mongocrypt_parse_kms_providers(mongocrypt_binary_t *kms_providers_definiti
         } else if (0 == strcmp(field_name, "local") && bson_empty(&field_bson)) {
             kms_providers->need_credentials |= MONGOCRYPT_KMS_PROVIDER_LOCAL;
         } else if (0 == strcmp(field_name, "local")) {
-            if (!_mongocrypt_parse_required_binary(&as_bson, "local.key", &kms_providers->local.key, status)) {
+            if (!_mongocrypt_parse_required_binary(&as_bson, "local.key", &kms_providers->local_mut.key, status)) {
                 return false;
             }
 
-            if (kms_providers->local.key.len != MONGOCRYPT_KEY_LEN) {
+            if (kms_providers->local_mut.key.len != MONGOCRYPT_KEY_LEN) {
                 CLIENT_ERR("local key must be %d bytes", MONGOCRYPT_KEY_LEN);
                 return false;
             }
