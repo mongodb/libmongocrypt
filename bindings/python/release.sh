@@ -94,6 +94,7 @@ if [ $(command -v docker) ]; then
         # docker: Error response from daemon: Windows does not support privileged mode
         # would be raised by the qemu support command.
         echo "Not supported on Windows"
+        exit 0
     fi
 
     # Set up qemu support using the method used in docker/setup-qemu-action
