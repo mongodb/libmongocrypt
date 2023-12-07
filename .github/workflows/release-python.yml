@@ -51,7 +51,7 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           name: dist-${{ matrix.os }}
-          path: ./bindings/python/dist/*.whl
+          path: ./bindings/python/dist/*.*
           if-no-files-found: error
 
   collect_dist:
