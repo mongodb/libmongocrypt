@@ -75,7 +75,7 @@ typedef struct {
     // Fields suffixed with `_mut` are mutated when constructing the `_mongocrypt_opts_kms_providers_t`.
     // Prefer using `_mongocrypt_opts_kms_providers_lookup` to read the values.
     _mongocrypt_opts_kms_provider_local_t local_mut;
-    _mongocrypt_opts_kms_provider_aws_t aws;
+    _mongocrypt_opts_kms_provider_aws_t aws_mut;
     _mongocrypt_opts_kms_provider_azure_t azure;
     _mongocrypt_opts_kms_provider_gcp_t gcp;
     _mongocrypt_opts_kms_provider_kmip_t kmip;

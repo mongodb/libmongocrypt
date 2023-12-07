@@ -178,14 +178,14 @@ bool mongocrypt_setopt_kms_provider_aws(mongocrypt_t *crypt,
 
     if (!_mongocrypt_validate_and_copy_string(aws_access_key_id,
                                               aws_access_key_id_len,
-                                              &kms_providers->aws.access_key_id)) {
+                                              &kms_providers->aws_mut.access_key_id)) {
         CLIENT_ERR("invalid aws access key id");
         return false;
     }
 
     if (!_mongocrypt_validate_and_copy_string(aws_secret_access_key,
                                               aws_secret_access_key_len,
-                                              &kms_providers->aws.secret_access_key)) {
+                                              &kms_providers->aws_mut.secret_access_key)) {
         CLIENT_ERR("invalid aws secret access key");
         return false;
     }
@@ -196,11 +196,11 @@ bool mongocrypt_setopt_kms_provider_aws(mongocrypt_t *crypt,
                         "%s (%s=\"%s\", %s=%d, %s=\"%s\", %s=%d)",
                         BSON_FUNC,
                         "aws_access_key_id",
-                        kms_providers->aws.access_key_id,
+                        kms_providers->aws_mut.access_key_id,
                         "aws_access_key_id_len",
                         aws_access_key_id_len,
                         "aws_secret_access_key",
-                        kms_providers->aws.secret_access_key,
+                        kms_providers->aws_mut.secret_access_key,
                         "aws_secret_access_key_len",
                         aws_secret_access_key_len);
     }
@@ -1266,20 +1266,20 @@ bool _mongocrypt_parse_kms_providers(mongocrypt_binary_t *kms_providers_definiti
         } else if (0 == strcmp(field_name, "aws")) {
             if (!_mongocrypt_parse_required_utf8(&as_bson,
                                                  "aws.accessKeyId",
-                                                 &kms_providers->aws.access_key_id,
+                                                 &kms_providers->aws_mut.access_key_id,
                                                  status)) {
                 return false;
             }
             if (!_mongocrypt_parse_required_utf8(&as_bson,
                                                  "aws.secretAccessKey",
-                                                 &kms_providers->aws.secret_access_key,
+                                                 &kms_providers->aws_mut.secret_access_key,
                                                  status)) {
                 return false;
             }
 
             if (!_mongocrypt_parse_optional_utf8(&as_bson,
                                                  "aws.sessionToken",
-                                                 &kms_providers->aws.session_token,
+                                                 &kms_providers->aws_mut.session_token,
                                                  status)) {
                 return false;
             }

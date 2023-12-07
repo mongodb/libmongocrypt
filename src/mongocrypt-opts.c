@@ -52,9 +52,9 @@ void _mongocrypt_opts_kms_providers_cleanup(_mongocrypt_opts_kms_providers_t *km
     if (!kms_providers) {
         return;
     }
-    bson_free(kms_providers->aws.secret_access_key);
-    bson_free(kms_providers->aws.access_key_id);
-    bson_free(kms_providers->aws.session_token);
+    bson_free(kms_providers->aws_mut.secret_access_key);
+    bson_free(kms_providers->aws_mut.access_key_id);
+    bson_free(kms_providers->aws_mut.session_token);
     _mongocrypt_buffer_cleanup(&kms_providers->local_mut.key);
     _mongocrypt_opts_kms_provider_azure_cleanup(&kms_providers->azure);
     _mongocrypt_opts_kms_provider_gcp_cleanup(&kms_providers->gcp);
@@ -67,7 +67,7 @@ void _mongocrypt_opts_merge_kms_providers(_mongocrypt_opts_kms_providers_t *dest
     BSON_ASSERT_PARAM(source);
 
     if (source->configured_providers & MONGOCRYPT_KMS_PROVIDER_AWS) {
-        memcpy(&dest->aws, &source->aws, sizeof(source->aws));
+        memcpy(&dest->aws_mut, &source->aws_mut, sizeof(source->aws_mut));
         dest->configured_providers |= MONGOCRYPT_KMS_PROVIDER_AWS;
     }
     if (source->configured_providers & MONGOCRYPT_KMS_PROVIDER_LOCAL) {
@@ -117,7 +117,7 @@ bool _mongocrypt_opts_kms_providers_validate(_mongocrypt_opts_t *opts,
     }
 
     if (kms_providers->configured_providers & MONGOCRYPT_KMS_PROVIDER_AWS) {
-        if (!kms_providers->aws.access_key_id || !kms_providers->aws.secret_access_key) {
+        if (!kms_providers->aws_mut.access_key_id || !kms_providers->aws_mut.secret_access_key) {
             CLIENT_ERR("aws credentials unset");
             return false;
         }
@@ -229,7 +229,7 @@ bool _mongocrypt_opts_kms_providers_lookup(const _mongocrypt_opts_kms_providers_
     *out = (mc_kms_creds_t){0};
     if (0 != (kms_providers->configured_providers & MONGOCRYPT_KMS_PROVIDER_AWS) && 0 == strcmp(kmsid, "aws")) {
         out->type = MONGOCRYPT_KMS_PROVIDER_AWS;
-        out->value.aws = kms_providers->aws;
+        out->value.aws = kms_providers->aws_mut;
         return true;
     }
     if (0 != (kms_providers->configured_providers & MONGOCRYPT_KMS_PROVIDER_AZURE) && 0 == strcmp(kmsid, "azure")) {
