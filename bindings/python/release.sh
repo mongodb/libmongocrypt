@@ -54,7 +54,7 @@ function build_wheel() {
 function test_dist() {
     python -m pip uninstall -y pymongocrypt
     python -m pip install $1
-    pushd $HOME
+    pushd ..
     python -c "from pymongocrypt.binding import libmongocrypt_version, lib"
     popd
 }
