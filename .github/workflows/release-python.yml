@@ -45,14 +45,8 @@ jobs:
         with:
           platforms: all
 
-      - name: Build dist files
+      - name: Build and test dist files
         run: bash ./release.sh
-
-      - name: Test SDist
-        run: |
-          python -m pip install dist/*.gz
-          cd ..
-          python -c "from pymongocrypt.binding import libmongocrypt_version, lib"
 
       - uses: actions/upload-artifact@v3
         with:
