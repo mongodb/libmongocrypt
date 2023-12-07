@@ -104,8 +104,7 @@ if [ $(command -v docker) ]; then
     docker run --rm --privileged tonistiigi/binfmt:latest --install all
 
     # Build the manylinux2014 x86_64 wheel.
-    # When we drop 
-    get_libmongocrypt ubuntu2004-64 libmongocrypt/nocrypto/lib/libmongocrypt.so
+    get_libmongocrypt rhel-70-64-bit libmongocrypt/nocrypto/lib64/libmongocrypt.so
     build_manylinux_wheel quay.io/pypa/manylinux2014_x86_64:2023-12-05-e9f0345
     if [ "Linux" = "$(uname -s)" ]; then
         test_dist dist/*.whl
@@ -113,8 +112,8 @@ if [ $(command -v docker) ]; then
 
     # TODO: requires adding a rhel-70-arm64 variant to the "upload-all" task.
     # Build the manylinux2014 aarch64 wheel.
-    get_libmongocrypt ubuntu2004-arm64 libmongocrypt/nocrypto/lib/libmongocrypt.so
-    build_manylinux_wheel quay.io/pypa/manylinux2014_aarch64:2023-12-05-e9f0345
+    # get_libmongocrypt rhel-82-arm64 libmongocrypt/nocrypto/lib/libmongocrypt.so
+    # build_manylinux_wheel quay.io/pypa/manylinux2014_aarch64:2023-12-05-e9f0345
 fi
 
 ls -ltr dist
