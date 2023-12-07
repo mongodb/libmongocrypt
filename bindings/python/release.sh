@@ -1,14 +1,16 @@
 #!/bin/bash -ex
 
 # This script should be run on macOS and Cygwin on Windows.
-# On macOS it will create the following distributions:
+# On macOS it will create the following distributions
 # pymongocrypt-<version>.tar.gz
-# pymongocrypt-<version>-py2.py3-none-manylinux2010_x86_64.whl
-# pymongocrypt-<version>-py2.py3-none-manylinux_2_12_x86_64.manylinux2010_x86_64.whl
-# pymongocrypt-<version>-py2.py3-none-macosx_10_9_x86_64.whl
+# pymongocrypt-<version>-py3-none-macosx_11_0_arm64.whl
+# pymongocrypt-<version>-py3-none-macosx_10_14_intel.whl
 #
 # On Windows it will create the following distribution:
-# pymongocrypt-<version>-py2.py3-none-win_amd64.whl
+# pymongocrypt-<version>-py3-none-win_amd64.whl
+#
+# If docker is available, it will also produce the following:
+# pymongocrypt-<Version>-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
 
 set -o xtrace   # Write all commands first to stderr
 set -o errexit  # Exit the script with error if any of the commands fail
@@ -17,76 +19,104 @@ set -o errexit  # Exit the script with error if any of the commands fail
 REVISION=$(git rev-list -n 1 1.8.1)
 # The libmongocrypt release branch.
 BRANCH="r1.8"
-MACOS_TARGET=${MACOS_TARGET:="macos"}
+
+# Clean slate.
+rm -rf dist .venv build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
+
+function get_libmongocrypt() {
+    TARGET=$1
+    NOCRYPTO_SO=$2
+    rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
+    curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt-release/$TARGET/${BRANCH}/${REVISION}/libmongocrypt.tar.gz
+    mkdir libmongocrypt
+    tar xzf libmongocrypt.tar.gz -C ./libmongocrypt
+    chmod +x ${NOCRYPTO_SO}
+    cp ${NOCRYPTO_SO} pymongocrypt/
+    rm -rf ./libmongocrypt libmongocrypt.tar.gz
+}
+
+function build_wheel() {
+    WHEEL_NAME=$1
+
+    # Ensure updated deps.
+    python -m pip install --upgrade pip build
+
+    # Build the wheel, and add the platform name.
+    python -m build --wheel
+    old_file=$(echo dist/*-none-any.whl)
+    new_file=$(echo $old_file | sed -E "s/(.*)-any.whl/\1-$WHEEL_NAME.whl/")
+    mv $old_file $new_file
+
+    rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
+    ls dist
+}
+
+function test_dist() {
+    python -m pip uninstall -y pymongocrypt
+    python -m pip install $1
+    pushd $HOME
+    python -c "from pymongocrypt.binding import libmongocrypt_version, lib"
+    popd
+}
+
 
 if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
-    rm -rf venv37
-    virtualenv -p C:\\python\\Python37\\python.exe venv37 && . ./venv37/Scripts/activate
+    virtualenv -p C:\\python\\Python37\\python.exe venv 
+    . ./.venv/Scripts/activate
 
-    # Build the Windows wheel.
-    rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
-    curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt-release/windows-test/${BRANCH}/${REVISION}/libmongocrypt.tar.gz
-    mkdir libmongocrypt
-    tar xzf libmongocrypt.tar.gz -C ./libmongocrypt
-    NOCRYPTO_SO=libmongocrypt/nocrypto/bin/mongocrypt.dll
-    chmod +x ${NOCRYPTO_SO}
-    cp ${NOCRYPTO_SO} pymongocrypt/
-    rm -rf ./libmongocrypt libmongocrypt.tar.gz
+    get_libmongocrypt windows-test libmongocrypt/nocrypto/bin/mongocrypt.dll
+    build_wheel win_amd64
+    test_dist dist/*.whl
 
-    # Ensure updated deps.
-    python -m pip install --upgrade pip setuptools wheel
-
-    python setup.py bdist_wheel
-    rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
-    ls dist
 elif [ "Darwin" = "$(uname -s)" ]; then
-    # Build the mac wheel.
-    PYTHON=${PYTHON:="/Library/Frameworks/Python.framework/Versions/3.10/bin/python3"}
+    python -m venv .venv
+    . .venv/bin/activate
 
-    # Ensure updated deps.
-    $PYTHON -m pip install --upgrade pip setuptools wheel
+    get_libmongocrypt macos_x86_64 libmongocrypt/nocrypto/lib/libmongocrypt.dylib
+    build_wheel macosx_10_14_intel
+    if [ "$(uname -m)" != "arm64" ]; then
+        test_dist dist/*.whl
+    fi
+    
+    get_libmongocrypt macos libmongocrypt/nocrypto/lib/libmongocrypt.dylib
+    build_wheel macosx_11_0_arm64
+    if [ "$(uname -m)" == "arm64" ]; then
+        test_dist dist/*arm64.whl
+    fi
 
-    rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
-
-    # Install the sdist.
-    $PYTHON setup.py sdist
-
-    curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt-release/${MACOS_TARGET}/${BRANCH}/${REVISION}/libmongocrypt.tar.gz
-    mkdir libmongocrypt
-    tar xzf libmongocrypt.tar.gz -C ./libmongocrypt
-    NOCRYPTO_SO=libmongocrypt/nocrypto/lib/libmongocrypt.dylib
-    chmod +x ${NOCRYPTO_SO}
-    cp ${NOCRYPTO_SO} pymongocrypt/
-    rm -rf ./libmongocrypt libmongocrypt.tar.gz
-
-    $PYTHON setup.py bdist_wheel
-    rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
-    ls dist
+    # Build and test sdist.
+    python -m build --sdist
+    test_dist dist/*.tar.gz
 fi
 
+exit 0
 if [ $(command -v docker) ]; then
-    # Build the manylinux2010 wheels.
-    rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
-    curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt-release/rhel-62-64-bit/${BRANCH}/${REVISION}/libmongocrypt.tar.gz
-    mkdir libmongocrypt
-    tar xzf libmongocrypt.tar.gz -C ./libmongocrypt
-    NOCRYPTO_SO=libmongocrypt/nocrypto/lib64/libmongocrypt.so
-    chmod +x ${NOCRYPTO_SO}
-    cp ${NOCRYPTO_SO} pymongocrypt/
-    rm -rf ./libmongocrypt libmongocrypt.tar.gz
+    # Set up qemu support using the method used in docker/setup-qemu-action
+    # https://github.com/docker/setup-qemu-action/blob/2b82ce82d56a2a04d2637cd93a637ae1b359c0a7/README.md?plain=1#L46
+    docker run --rm --privileged tonistiigi/binfmt:latest --install all
 
-    # 2021-05-05-1ac6ef3 was the last release to generate pip < 20.3 compatible
-    # wheels. After that auditwheel was upgraded to v4 which produces PEP 600
-    # manylinux_x_y wheels which requires pip >= 20.3. We use the older docker
-    # image to support older pip versions.
-    images=(quay.io/pypa/manylinux2010_x86_64:2021-05-05-1ac6ef3 \
-            quay.io/pypa/manylinux2010_x86_64)
-    for image in "${images[@]}"; do
-        docker pull $image
-        docker run --rm -v `pwd`:/python $image /python/build-manylinux-wheel.sh
-    done
+    # Build the manylinux2014 x86_64 wheels.
+    get_libmongocrypt rhel-70-64-bit libmongocrypt/nocrypto/lib64/libmongocrypt.so
+    image=quay.io/pypa/manylinux2014_x86_64:2023-12-05-e9f0345
+    docker pull $image
+    docker run --rm -v `pwd`:/python $image /python/build-manylinux-wheel.sh
 
     # Sudo is needed to remove the files created by docker.
     sudo rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
-    ls dist
+
+    if [ "Linux" = "$(uname -s)" ]; then
+        test_dist dist/*.whl
+    fi
+
+    # TODO: requires adding rhel-82-arm64 to the "upload-all" task.
+    # Build the manylinux2014 aarch64 wheels.
+    # get_libmongocrypt rhel-82-arm64 libmongocrypt/nocrypto/lib/libmongocrypt.so
+    # image=quay.io/pypa/manylinux2014_aarch64:2023-12-05-e9f0345
+    # docker pull $image
+    # docker run --rm -v `pwd`:/python $image /python/build-manylinux-wheel.sh
+
+    # # Remove the temp files.
+    # sudo rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
 fi
+
+ls -ltr dist

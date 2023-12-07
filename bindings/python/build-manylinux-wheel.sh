@@ -1,13 +1,10 @@
 #!/bin/bash -ex
 cd /python
 
-# Compile wheel
-# https://github.com/pypa/manylinux/issues/49
-rm -rf build
-/opt/python/cp37-cp37m/bin/python setup.py bdist_wheel
+/opt/python/cp37-cp37m/bin/python -m build --wheel
 
 # Audit wheels and write manylinux tag
-for whl in dist/*.whl; do
+for whl in dist/*none-any.whl; do
     # Skip already built manylinux wheels.
     if [[ "$whl" != *"manylinux"* ]]; then
         auditwheel repair $whl -w dist
