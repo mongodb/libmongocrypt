@@ -473,6 +473,81 @@ bool _mongocrypt_check_allowed_fields_va(const bson_t *bson, const char *dotkey,
     return true;
 }
 
+#define KEY_HELP "Expected `<type>` or `<type>:<name>`. Example: `local` or `local:name`."
+
+static bool kmsid_parse(const char *kmsid,
+                        _mongocrypt_kms_provider_t *type_out,
+                        const char **name_out,
+                        mongocrypt_status_t *status) {
+    BSON_ASSERT_PARAM(kmsid);
+    BSON_ASSERT_PARAM(type_out);
+    BSON_ASSERT_PARAM(name_out);
+    BSON_ASSERT(status || true); // Optional.
+
+    *type_out = MONGOCRYPT_KMS_PROVIDER_NONE;
+    *name_out = NULL;
+
+    const char *type_end = strstr(kmsid, ":");
+    size_t type_nchars;
+
+    if (type_end == NULL) {
+        // Parse `kmsid` as `<type>`.
+        type_nchars = strlen(kmsid);
+    } else {
+        // Parse `kmsid` as `<type>:<name>`.
+        ptrdiff_t diff = type_end - kmsid;
+        BSON_ASSERT(diff >= 0 && (uint64_t)diff < SIZE_MAX);
+        type_nchars = (size_t)diff;
+    }
+
+    if (0 == strncmp("aws", kmsid, type_nchars)) {
+        *type_out = MONGOCRYPT_KMS_PROVIDER_AWS;
+    } else if (0 == strncmp("azure", kmsid, type_nchars)) {
+        *type_out = MONGOCRYPT_KMS_PROVIDER_AZURE;
+    } else if (0 == strncmp("gcp", kmsid, type_nchars)) {
+        *type_out = MONGOCRYPT_KMS_PROVIDER_GCP;
+    } else if (0 == strncmp("kmip", kmsid, type_nchars)) {
+        *type_out = MONGOCRYPT_KMS_PROVIDER_KMIP;
+    } else if (0 == strncmp("local", kmsid, type_nchars)) {
+        *type_out = MONGOCRYPT_KMS_PROVIDER_LOCAL;
+    } else {
+        CLIENT_ERR("invalid KMS provider `%s`: unrecognized type. " KEY_HELP, kmsid);
+        return false;
+    }
+
+    if (type_end != NULL) {
+        // Parse name.
+        *name_out = type_end + 1;
+        if (0 == strlen(*name_out)) {
+            CLIENT_ERR("invalid KMS provider `%s`: empty name. " KEY_HELP, kmsid);
+            return false;
+        }
+
+        // Validate name only contains: [a-zA-Z0-9_]
+        for (const char *cp = *name_out; *cp != '\0'; cp++) {
+            char c = *cp;
+            if (c >= 'a' && c <= 'z') {
+                continue;
+            }
+            if (c >= 'A' && c <= 'Z') {
+                continue;
+            }
+            if (c >= '0' && c <= '9') {
+                continue;
+            }
+            if (c == '_') {
+                continue;
+            }
+            CLIENT_ERR("invalid KMS provider `%s`: unsupported character `%c`. Must be of the form `<provider "
+                       "type>:<name>` where `<name>` only contain characters [a-zA-Z0-9_]",
+                       kmsid,
+                       c);
+            return false;
+        }
+    }
+    return true;
+}
+
 bool _mongocrypt_parse_kms_providers(mongocrypt_binary_t *kms_providers_definition,
                                      _mongocrypt_opts_kms_providers_t *kms_providers,
                                      mongocrypt_status_t *status,
@@ -496,7 +571,40 @@ bool _mongocrypt_parse_kms_providers(mongocrypt_binary_t *kms_providers_definiti
             return false;
         }
 
-        if (0 == strcmp(field_name, "azure") && bson_empty(&field_bson)) {
+        const char *name;
+        _mongocrypt_kms_provider_t type;
+        if (!kmsid_parse(field_name, &type, &name, status)) {
+            return false;
+        }
+
+        if (name != NULL) {
+            switch (type) {
+            case MONGOCRYPT_KMS_PROVIDER_NONE: {
+                CLIENT_ERR("Unexpected parsing KMS type: none");
+                return false;
+            }
+            case MONGOCRYPT_KMS_PROVIDER_AWS: {
+                CLIENT_ERR("Parsing named AWS not yet implemented");
+                return false;
+            }
+            case MONGOCRYPT_KMS_PROVIDER_LOCAL: {
+                CLIENT_ERR("Parsing named local not yet implemented");
+                return false;
+            }
+            case MONGOCRYPT_KMS_PROVIDER_AZURE: {
+                CLIENT_ERR("Parsing named azure not yet implemented");
+                return false;
+            }
+            case MONGOCRYPT_KMS_PROVIDER_GCP: {
+                CLIENT_ERR("Parsing named gcp not yet implemented");
+                return false;
+            }
+            case MONGOCRYPT_KMS_PROVIDER_KMIP: {
+                CLIENT_ERR("Parsing named kmip not yet implemented");
+                return false;
+            }
+            }
+        } else if (0 == strcmp(field_name, "azure") && bson_empty(&field_bson)) {
             kms_providers->need_credentials |= MONGOCRYPT_KMS_PROVIDER_AZURE;
         } else if (0 == strcmp(field_name, "azure")) {
             if (0 != (kms_providers->configured_providers & MONGOCRYPT_KMS_PROVIDER_AZURE)) {
