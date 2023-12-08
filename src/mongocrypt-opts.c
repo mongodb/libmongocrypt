@@ -49,17 +49,29 @@ static void _mongocrypt_opts_kms_provider_gcp_cleanup(_mongocrypt_opts_kms_provi
     bson_free(kms_provider_gcp->access_token);
 }
 
+static void _mongocrypt_opts_kms_provider_local_cleanup(_mongocrypt_opts_kms_provider_local_t *kms_provider_local) {
+    _mongocrypt_buffer_cleanup(&kms_provider_local->key);
+}
+
+static void _mongocrypt_opts_kms_provider_aws_cleanup(_mongocrypt_opts_kms_provider_aws_t *kms_provider_aws) {
+    bson_free(kms_provider_aws->secret_access_key);
+    bson_free(kms_provider_aws->access_key_id);
+    bson_free(kms_provider_aws->session_token);
+}
+
+static void _mongocrypt_opts_kms_provider_kmip_cleanup(_mongocrypt_opts_kms_provider_kmip_t *kms_provider_kmip) {
+    _mongocrypt_endpoint_destroy(kms_provider_kmip->endpoint);
+}
+
 void _mongocrypt_opts_kms_providers_cleanup(_mongocrypt_opts_kms_providers_t *kms_providers) {
     if (!kms_providers) {
         return;
     }
-    bson_free(kms_providers->aws_mut.secret_access_key);
-    bson_free(kms_providers->aws_mut.access_key_id);
-    bson_free(kms_providers->aws_mut.session_token);
-    _mongocrypt_buffer_cleanup(&kms_providers->local_mut.key);
+    _mongocrypt_opts_kms_provider_aws_cleanup(&kms_providers->aws_mut);
+    _mongocrypt_opts_kms_provider_local_cleanup(&kms_providers->local_mut);
     _mongocrypt_opts_kms_provider_azure_cleanup(&kms_providers->azure_mut);
     _mongocrypt_opts_kms_provider_gcp_cleanup(&kms_providers->gcp_mut);
-    _mongocrypt_endpoint_destroy(kms_providers->kmip_mut.endpoint);
+    _mongocrypt_opts_kms_provider_kmip_cleanup(&kms_providers->kmip_mut);
 }
 
 void _mongocrypt_opts_merge_kms_providers(_mongocrypt_opts_kms_providers_t *dest,
