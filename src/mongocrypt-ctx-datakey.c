@@ -46,15 +46,17 @@ static mongocrypt_kms_ctx_t *_next_kms_ctx(mongocrypt_ctx_t *ctx) {
     return &dkctx->kms;
 }
 
-static bool _kms_kmip_start(mongocrypt_ctx_t *ctx) {
+static bool _kms_kmip_start(mongocrypt_ctx_t *ctx, const mc_kms_creds_t *kc) {
     bool ret = false;
     _mongocrypt_ctx_datakey_t *dkctx = (_mongocrypt_ctx_datakey_t *)ctx;
     char *user_supplied_keyid = NULL;
-    _mongocrypt_endpoint_t *endpoint = NULL;
+    const _mongocrypt_endpoint_t *endpoint = NULL;
     mongocrypt_status_t *status = ctx->status;
     _mongocrypt_buffer_t secretdata = {0};
 
     BSON_ASSERT_PARAM(ctx);
+    BSON_ASSERT_PARAM(kc);
+    BSON_ASSERT(kc->type == MONGOCRYPT_KMS_PROVIDER_KMIP);
 
     if (ctx->opts.kek.kms_provider != MONGOCRYPT_KMS_PROVIDER_KMIP) {
         CLIENT_ERR("KMS provider is not KMIP");
@@ -65,8 +67,8 @@ static bool _kms_kmip_start(mongocrypt_ctx_t *ctx) {
 
     if (ctx->opts.kek.provider.kmip.endpoint) {
         endpoint = ctx->opts.kek.provider.kmip.endpoint;
-    } else if (_mongocrypt_ctx_kms_providers(ctx)->kmip.endpoint) {
-        endpoint = _mongocrypt_ctx_kms_providers(ctx)->kmip.endpoint;
+    } else if (kc->value.kmip.endpoint) {
+        endpoint = kc->value.kmip.endpoint;
     } else {
         CLIENT_ERR("endpoint not set for KMIP request");
         goto fail;
@@ -280,7 +282,7 @@ static bool _kms_start(mongocrypt_ctx_t *ctx) {
         }
         ctx->state = MONGOCRYPT_CTX_NEED_KMS;
     } else if (ctx->opts.kek.kms_provider == MONGOCRYPT_KMS_PROVIDER_KMIP) {
-        if (!_kms_kmip_start(ctx)) {
+        if (!_kms_kmip_start(ctx, &kc)) {
             goto done;
         }
     } else {

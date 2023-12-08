@@ -584,6 +584,7 @@ bool _mongocrypt_key_broker_add_doc(_mongocrypt_key_broker_t *kb,
             }
         }
     } else if (kek_provider == MONGOCRYPT_KMS_PROVIDER_KMIP) {
+        BSON_ASSERT(kc.type == MONGOCRYPT_KMS_PROVIDER_KMIP);
         char *unique_identifier;
         _mongocrypt_endpoint_t *endpoint;
 
@@ -596,8 +597,8 @@ bool _mongocrypt_key_broker_add_doc(_mongocrypt_key_broker_t *kb,
 
         if (key_returned->doc->kek.provider.kmip.endpoint) {
             endpoint = key_returned->doc->kek.provider.kmip.endpoint;
-        } else if (kms_providers->kmip.endpoint) {
-            endpoint = kms_providers->kmip.endpoint;
+        } else if (kc.value.kmip.endpoint) {
+            endpoint = kc.value.kmip.endpoint;
         } else {
             _key_broker_fail_w_msg(kb, "endpoint not set for KMIP request");
             goto done;

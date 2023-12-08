@@ -1307,7 +1307,7 @@ bool _mongocrypt_parse_kms_providers(mongocrypt_binary_t *kms_providers_definiti
             opts.allow_empty_subdomain = true;
             if (!_mongocrypt_parse_required_endpoint(&as_bson,
                                                      "kmip.endpoint",
-                                                     &kms_providers->kmip.endpoint,
+                                                     &kms_providers->kmip_mut.endpoint,
                                                      &opts,
                                                      status)) {
                 return false;

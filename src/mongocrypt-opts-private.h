@@ -78,7 +78,7 @@ typedef struct {
     _mongocrypt_opts_kms_provider_aws_t aws_mut;
     _mongocrypt_opts_kms_provider_azure_t azure_mut;
     _mongocrypt_opts_kms_provider_gcp_t gcp_mut;
-    _mongocrypt_opts_kms_provider_kmip_t kmip;
+    _mongocrypt_opts_kms_provider_kmip_t kmip_mut;
 } _mongocrypt_opts_kms_providers_t;
 
 bool _mongocrypt_opts_kms_providers_lookup(const _mongocrypt_opts_kms_providers_t *kms_providers,
