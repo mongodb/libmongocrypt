@@ -81,6 +81,11 @@ typedef struct {
     _mongocrypt_opts_kms_provider_kmip_t kmip_mut;
 } _mongocrypt_opts_kms_providers_t;
 
+bool _mongocrypt_parse_kms_providers(mongocrypt_binary_t *kms_providers_definition,
+                                     _mongocrypt_opts_kms_providers_t *kms_providers,
+                                     mongocrypt_status_t *status,
+                                     _mongocrypt_log_t *log);
+
 bool _mongocrypt_opts_kms_providers_lookup(const _mongocrypt_opts_kms_providers_t *kms_providers,
                                            const char *kmsid,
                                            mc_kms_creds_t *out);
