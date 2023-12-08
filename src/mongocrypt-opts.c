@@ -23,9 +23,19 @@
 
 #include <kms_message/kms_b64.h>
 
+typedef struct {
+    mc_kms_creds_t creds;
+    char *kmsid;
+} mc_kms_creds_with_id_t;
+
+void _mongocrypt_opts_kms_providers_init(_mongocrypt_opts_kms_providers_t *kms_providers) {
+    _mc_array_init(&kms_providers->named_mut, sizeof(mc_kms_creds_with_id_t));
+}
+
 void _mongocrypt_opts_init(_mongocrypt_opts_t *opts) {
     BSON_ASSERT_PARAM(opts);
     memset(opts, 0, sizeof(*opts));
+    _mongocrypt_opts_kms_providers_init(&opts->kms_providers);
 }
 
 static void _mongocrypt_opts_kms_provider_azure_cleanup(_mongocrypt_opts_kms_provider_azure_t *kms_provider_azure) {
@@ -72,6 +82,35 @@ void _mongocrypt_opts_kms_providers_cleanup(_mongocrypt_opts_kms_providers_t *km
     _mongocrypt_opts_kms_provider_azure_cleanup(&kms_providers->azure_mut);
     _mongocrypt_opts_kms_provider_gcp_cleanup(&kms_providers->gcp_mut);
     _mongocrypt_opts_kms_provider_kmip_cleanup(&kms_providers->kmip_mut);
+    for (size_t i = 0; i < kms_providers->named_mut.len; i++) {
+        mc_kms_creds_with_id_t kcwid = _mc_array_index(&kms_providers->named_mut, mc_kms_creds_with_id_t, i);
+        switch (kcwid.creds.type) {
+        default:
+        case MONGOCRYPT_KMS_PROVIDER_NONE: break;
+        case MONGOCRYPT_KMS_PROVIDER_AWS: {
+            _mongocrypt_opts_kms_provider_aws_cleanup(&kcwid.creds.value.aws);
+            break;
+        }
+        case MONGOCRYPT_KMS_PROVIDER_LOCAL: {
+            _mongocrypt_opts_kms_provider_local_cleanup(&kcwid.creds.value.local);
+            break;
+        }
+        case MONGOCRYPT_KMS_PROVIDER_AZURE: {
+            _mongocrypt_opts_kms_provider_azure_cleanup(&kcwid.creds.value.azure);
+            break;
+        }
+        case MONGOCRYPT_KMS_PROVIDER_GCP: {
+            _mongocrypt_opts_kms_provider_gcp_cleanup(&kcwid.creds.value.gcp);
+            break;
+        }
+        case MONGOCRYPT_KMS_PROVIDER_KMIP: {
+            _mongocrypt_endpoint_destroy(kcwid.creds.value.kmip.endpoint);
+            break;
+        }
+        }
+        bson_free(kcwid.kmsid);
+    }
+    _mc_array_destroy(&kms_providers->named_mut);
 }
 
 void _mongocrypt_opts_merge_kms_providers(_mongocrypt_opts_kms_providers_t *dest,
@@ -548,6 +587,32 @@ static bool kmsid_parse(const char *kmsid,
     return true;
 }
 
+static bool _mongocrypt_opts_kms_provider_local_parse(_mongocrypt_opts_kms_provider_local_t *local,
+                                                      const char *kmsid,
+                                                      const bson_t *def,
+                                                      mongocrypt_status_t *status) {
+    bool ok = false;
+    if (!_mongocrypt_parse_required_binary(def, "key", &local->key, status)) {
+        goto fail;
+    }
+
+    if (local->key.len != MONGOCRYPT_KEY_LEN) {
+        CLIENT_ERR("local key must be %d bytes", MONGOCRYPT_KEY_LEN);
+        goto fail;
+    }
+
+    if (!_mongocrypt_check_allowed_fields(def, NULL /* root */, status, "key")) {
+        goto fail;
+    }
+    ok = true;
+fail:
+    if (!ok) {
+        // Wrap error to identify the failing `kmsid`.
+        CLIENT_ERR("Failed to parse KMS provider `%s`: %s", kmsid, mongocrypt_status_message(status, NULL /* len */));
+    }
+    return ok;
+}
+
 bool _mongocrypt_parse_kms_providers(mongocrypt_binary_t *kms_providers_definition,
                                      _mongocrypt_opts_kms_providers_t *kms_providers,
                                      mongocrypt_status_t *status,
@@ -579,6 +644,7 @@ bool _mongocrypt_parse_kms_providers(mongocrypt_binary_t *kms_providers_definiti
 
         if (name != NULL) {
             switch (type) {
+            default:
             case MONGOCRYPT_KMS_PROVIDER_NONE: {
                 CLIENT_ERR("Unexpected parsing KMS type: none");
                 return false;
@@ -588,8 +654,15 @@ bool _mongocrypt_parse_kms_providers(mongocrypt_binary_t *kms_providers_definiti
                 return false;
             }
             case MONGOCRYPT_KMS_PROVIDER_LOCAL: {
-                CLIENT_ERR("Parsing named local not yet implemented");
-                return false;
+                _mongocrypt_opts_kms_provider_local_t local = {0};
+                if (!_mongocrypt_opts_kms_provider_local_parse(&local, field_name, &field_bson, status)) {
+                    _mongocrypt_opts_kms_provider_local_cleanup(&local);
+                    return false;
+                }
+                mc_kms_creds_with_id_t kcwi = {.kmsid = bson_strdup(field_name),
+                                               .creds = {.type = type, .value = {.local = local}}};
+                _mc_array_append_val(&kms_providers->named_mut, kcwi);
+                break;
             }
             case MONGOCRYPT_KMS_PROVIDER_AZURE: {
                 CLIENT_ERR("Parsing named azure not yet implemented");

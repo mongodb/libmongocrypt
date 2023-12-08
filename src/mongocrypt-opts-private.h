@@ -26,6 +26,7 @@
 #include "mongocrypt-kek-private.h"
 #include "mongocrypt-log-private.h"
 #include "mongocrypt.h"
+#include <mc-array-private.h>
 
 typedef struct {
     char *tenant_id;
@@ -79,7 +80,11 @@ typedef struct {
     _mongocrypt_opts_kms_provider_azure_t azure_mut;
     _mongocrypt_opts_kms_provider_gcp_t gcp_mut;
     _mongocrypt_opts_kms_provider_kmip_t kmip_mut;
+    // `named_mut` stores a list of named KMS providers.
+    mc_array_t named_mut;
 } _mongocrypt_opts_kms_providers_t;
+
+void _mongocrypt_opts_kms_providers_init(_mongocrypt_opts_kms_providers_t *kms_providers);
 
 bool _mongocrypt_parse_kms_providers(mongocrypt_binary_t *kms_providers_definition,
                                      _mongocrypt_opts_kms_providers_t *kms_providers,
