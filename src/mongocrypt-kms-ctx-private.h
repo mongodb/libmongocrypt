@@ -39,7 +39,10 @@ typedef enum {
     MONGOCRYPT_KMS_GCP_DECRYPT,
     MONGOCRYPT_KMS_KMIP_REGISTER,
     MONGOCRYPT_KMS_KMIP_ACTIVATE,
-    MONGOCRYPT_KMS_KMIP_GET
+    MONGOCRYPT_KMS_KMIP_GET,
+    MONGOCRYPT_KMS_KMIP_CREATE,
+    MONGOCRYPT_KMS_KMIP_ENCRYPT,
+    MONGOCRYPT_KMS_KMIP_DECRYPT,
 } _kms_request_type_t;
 
 struct _mongocrypt_kms_ctx_t {
@@ -125,7 +128,6 @@ bool _mongocrypt_kms_ctx_init_kmip_get(mongocrypt_kms_ctx_t *kms,
 
 bool _mongocrypt_kms_ctx_init_kmip_create(mongocrypt_kms_ctx_t *kms,
                                             const _mongocrypt_endpoint_t *endpoint,
-                                            const char *unique_identifier,
                                             _mongocrypt_log_t *log);
 
 bool _mongocrypt_kms_ctx_init_kmip_encrypt(mongocrypt_kms_ctx_t *kms,
