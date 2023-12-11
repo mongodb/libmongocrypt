@@ -501,6 +501,7 @@ set (TEST_MONGOCRYPT_SOURCES
    test/test-mongocrypt-traverse-util.c
    test/test-mongocrypt-util.c
    test/test-mongocrypt.c
+   test/test-named-kms-providers.c
    )
 
 # Define test-mongocrypt

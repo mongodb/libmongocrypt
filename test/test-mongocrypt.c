@@ -886,6 +886,7 @@ int main(int argc, char **argv) {
     _mongocrypt_tester_install_mc_reader(&tester);
     _mongocrypt_tester_install_mc_writer(&tester);
     _mongocrypt_tester_install_opts(&tester);
+    _mongocrypt_tester_install_named_kms_providers(&tester);
 
 #ifdef MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO
     char osversion[32];
