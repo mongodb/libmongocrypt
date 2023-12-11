@@ -121,6 +121,7 @@ mongocrypt_t *mongocrypt_new(void) {
     crypt->ctx_counter = 1;
     crypt->cache_oauth_azure = _mongocrypt_cache_oauth_new();
     crypt->cache_oauth_gcp = _mongocrypt_cache_oauth_new();
+    crypt->cache_oauth = mc_mapof_kmsid_to_token_new();
     crypt->csfle = (_mongo_crypt_v1_vtable){.okay = false};
 
     static mlib_once_flag init_flag = MLIB_ONCE_INITIALIZER;
@@ -922,6 +923,7 @@ void mongocrypt_destroy(mongocrypt_t *crypt) {
     bson_free(crypt->crypto);
     _mongocrypt_cache_oauth_destroy(crypt->cache_oauth_azure);
     _mongocrypt_cache_oauth_destroy(crypt->cache_oauth_gcp);
+    mc_mapof_kmsid_to_token_destroy(crypt->cache_oauth);
 
     if (crypt->csfle.okay) {
         _csfle_drop_global_ref();
