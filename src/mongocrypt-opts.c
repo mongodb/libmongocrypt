@@ -703,6 +703,14 @@ bool _mongocrypt_parse_kms_providers(mongocrypt_binary_t *kms_providers_definiti
         }
 
         if (name != NULL) {
+            // Check if named provider already is configured.
+            for (size_t i = 0; i < kms_providers->named_mut.len; i++) {
+                mc_kms_creds_with_id_t kcwi = _mc_array_index(&kms_providers->named_mut, mc_kms_creds_with_id_t, i);
+                if (0 == strcmp(kcwi.kmsid, field_name)) {
+                    CLIENT_ERR("Got unexpected duplicate entry for KMS provider: `%s`", field_name);
+                    return false;
+                }
+            }
             switch (type) {
             default:
             case MONGOCRYPT_KMS_PROVIDER_NONE: {
