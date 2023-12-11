@@ -37,4 +37,19 @@ bool _mongocrypt_cache_oauth_add(_mongocrypt_cache_oauth_t *cache, bson_t *oauth
  * cached. */
 char *_mongocrypt_cache_oauth_get(_mongocrypt_cache_oauth_t *cache);
 
+// `mc_mapof_kmsid_to_token_t` maps a KMS ID (e.g. `azure` or `azure:myname`) to an OAuth token.
+typedef struct _mc_mapof_kmsid_to_token_t mc_mapof_kmsid_to_token_t;
+
+mc_mapof_kmsid_to_token_t *mc_mapof_kmsid_to_token_new(void);
+void mc_mapof_kmsid_to_token_destroy(mc_mapof_kmsid_to_token_t *k2t);
+// `mc_mapof_kmsid_to_token_get_token` returns a copy of the base64 encoded oauth token, or NULL.
+// Thread-safe.
+char *mc_mapof_kmsid_to_token_get_token(mc_mapof_kmsid_to_token_t *k2t, const char *kms_id);
+// `mc_mapof_kmsid_to_token_add_response` overwrites an entry if `kms_id` exists.
+// Thread-safe.
+bool mc_mapof_kmsid_to_token_add_response(mc_mapof_kmsid_to_token_t *k2t,
+                                          const char *kms_id,
+                                          bson_t *response,
+                                          mongocrypt_status_t *status);
+
 #endif /* MONGOCRYPT_CACHE_OAUTH_PRIVATE_H */

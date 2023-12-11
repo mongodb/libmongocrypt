@@ -16,6 +16,7 @@
 
 #include "mongocrypt-cache-oauth-private.h"
 
+#include "mc-array-private.h"
 #include "mongocrypt-private.h"
 
 /* How long before the reported "expires_in" time cache entries get evicted.
@@ -111,4 +112,81 @@ char *_mongocrypt_cache_oauth_get(_mongocrypt_cache_oauth_t *cache) {
     _mongocrypt_mutex_unlock(&cache->mutex);
 
     return access_token;
+}
+
+typedef struct {
+    char *kms_id;
+    _mongocrypt_cache_oauth_t *cache;
+} mc_mapof_kmsid_to_token_entry_t;
+
+struct _mc_mapof_kmsid_to_token_t {
+    mc_array_t entries;
+    mongocrypt_mutex_t mutex; // Guards `entries`.
+};
+
+mc_mapof_kmsid_to_token_t *mc_mapof_kmsid_to_token_new(void) {
+    mc_mapof_kmsid_to_token_t *k2t = bson_malloc0(sizeof(mc_mapof_kmsid_to_token_t));
+    _mc_array_init(&k2t->entries, sizeof(mc_mapof_kmsid_to_token_entry_t));
+    _mongocrypt_mutex_init(&k2t->mutex);
+    return k2t;
+}
+
+void mc_mapof_kmsid_to_token_destroy(mc_mapof_kmsid_to_token_t *k2t) {
+    if (!k2t) {
+        return;
+    }
+    _mongocrypt_mutex_cleanup(&k2t->mutex);
+    for (size_t i = 0; i < k2t->entries.len; i++) {
+        mc_mapof_kmsid_to_token_entry_t k2te = _mc_array_index(&k2t->entries, mc_mapof_kmsid_to_token_entry_t, i);
+        bson_free(k2te.kms_id);
+        _mongocrypt_cache_oauth_destroy(k2te.cache);
+    }
+    _mc_array_destroy(&k2t->entries);
+    bson_free(k2t);
+}
+
+char *mc_mapof_kmsid_to_token_get_token(mc_mapof_kmsid_to_token_t *k2t, const char *kms_id) {
+    BSON_ASSERT_PARAM(k2t);
+    BSON_ASSERT_PARAM(kms_id);
+
+    _mongocrypt_mutex_lock(&k2t->mutex);
+
+    for (size_t i = 0; i < k2t->entries.len; i++) {
+        mc_mapof_kmsid_to_token_entry_t k2te = _mc_array_index(&k2t->entries, mc_mapof_kmsid_to_token_entry_t, i);
+        if (0 == strcmp(k2te.kms_id, kms_id)) {
+            char *got = _mongocrypt_cache_oauth_get(k2te.cache);
+            _mongocrypt_mutex_unlock(&k2t->mutex);
+            return got;
+        }
+    }
+
+    _mongocrypt_mutex_unlock(&k2t->mutex);
+    return NULL;
+}
+
+bool mc_mapof_kmsid_to_token_add_response(mc_mapof_kmsid_to_token_t *k2t,
+                                          const char *kms_id,
+                                          bson_t *response,
+                                          mongocrypt_status_t *status) {
+    BSON_ASSERT_PARAM(k2t);
+    BSON_ASSERT_PARAM(kms_id);
+    BSON_ASSERT_PARAM(response);
+
+    _mongocrypt_mutex_lock(&k2t->mutex);
+
+    // Check if there is an existing entry.
+    for (size_t i = 0; i < k2t->entries.len; i++) {
+        mc_mapof_kmsid_to_token_entry_t k2te = _mc_array_index(&k2t->entries, mc_mapof_kmsid_to_token_entry_t, i);
+        if (0 == strcmp(k2te.kms_id, kms_id)) {
+            bool ok = _mongocrypt_cache_oauth_add(k2te.cache, response, status);
+            _mongocrypt_mutex_unlock(&k2t->mutex);
+            return ok;
+        }
+    }
+    // Create an entry.
+    mc_mapof_kmsid_to_token_entry_t to_put = {.kms_id = bson_strdup(kms_id), .cache = _mongocrypt_cache_oauth_new()};
+    _mc_array_append_val(&k2t->entries, to_put);
+    bool ok = _mongocrypt_cache_oauth_add(to_put.cache, response, status);
+    _mongocrypt_mutex_unlock(&k2t->mutex);
+    return ok;
 }
