@@ -7,24 +7,27 @@
 createvirtualenv () {
     PYTHON=$1
     VENVPATH=$2
-    if $PYTHON -m virtualenv --version; then
-        VIRTUALENV="$PYTHON -m virtualenv --system-site-packages --never-download"
-    elif $PYTHON -m venv -h>/dev/null; then
-        VIRTUALENV="$PYTHON -m venv --system-site-packages"
-    elif command -v virtualenv; then
-        VIRTUALENV="$(command -v virtualenv) -p $PYTHON --system-site-packages --never-download"
+    # Prefer venv
+    VENV="$PYTHON -m venv"
+    if [ "$(uname -s)" = "Darwin" ]; then
+        VIRTUALENV="$PYTHON -m virtualenv"
     else
-        echo "Cannot test without virtualenv"
-        exit 1
+        VIRTUALENV=$(command -v virtualenv 2>/dev/null || echo "$PYTHON -m virtualenv")
+        VIRTUALENV="$VIRTUALENV -p $PYTHON"
     fi
-    $VIRTUALENV $VENVPATH
+    if ! $VENV $VENVPATH 2>/dev/null; then
+        # Workaround for bug in older versions of virtualenv.
+        $VIRTUALENV $VENVPATH 2>/dev/null || $VIRTUALENV $VENVPATH
+    fi
     if [ "Windows_NT" = "$OS" ]; then
+        # Workaround https://bugs.python.org/issue32451:
+        # mongovenv/Scripts/activate: line 3: $'\r': command not found
+        dos2unix $VENVPATH/Scripts/activate || true
         . $VENVPATH/Scripts/activate
     else
         . $VENVPATH/bin/activate
     fi
-    # Upgrade to the latest versions of pip setuptools wheel so that
-    # pip can always download the latest cryptography+cffi wheels.
+
+    export PIP_QUIET=1
     python -m pip install --upgrade pip
-    python -m pip install --upgrade pip setuptools wheel
 }
