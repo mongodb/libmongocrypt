@@ -18,6 +18,38 @@
 #include "mongocrypt-opts-private.h"
 #include "mongocrypt-private.h"
 
+static bool _mongocrypt_azure_kek_parse(_mongocrypt_azure_kek_t *azure,
+                                        const char *kmsid,
+                                        const bson_t *def,
+                                        mongocrypt_status_t *status) {
+    if (!_mongocrypt_parse_required_endpoint(def,
+                                             "keyVaultEndpoint",
+                                             &azure->key_vault_endpoint,
+                                             NULL /* opts */,
+                                             status)) {
+        return false;
+    }
+
+    if (!_mongocrypt_parse_required_utf8(def, "keyName", &azure->key_name, status)) {
+        return false;
+    }
+
+    if (!_mongocrypt_parse_optional_utf8(def, "keyVersion", &azure->key_version, status)) {
+        return false;
+    }
+
+    if (!_mongocrypt_check_allowed_fields(def,
+                                          NULL /* root */,
+                                          status,
+                                          "provider",
+                                          "keyVaultEndpoint",
+                                          "keyName",
+                                          "keyVersion")) {
+        return false;
+    }
+    return true;
+}
+
 /* Possible documents to parse:
  * AWS
  *    provider: "aws"
@@ -61,8 +93,39 @@ bool _mongocrypt_kek_parse_owned(const bson_t *bson, _mongocrypt_kek_t *kek, mon
     if (!mc_kmsid_parse(kek->kmsid, &type, &kek->kmsid_name, status)) {
         goto done;
     }
-
-    if (0 == strcmp(kms_provider, "aws")) {
+    if (kek->kmsid_name != NULL) {
+        kek->kms_provider = type;
+        switch (type) {
+        case MONGOCRYPT_KMS_PROVIDER_NONE: {
+            CLIENT_ERR("Unexpected parsing KMS type: none");
+            goto done;
+        }
+        case MONGOCRYPT_KMS_PROVIDER_AWS: {
+            CLIENT_ERR("Parsing named AWS KEK not yet implemented");
+            goto done;
+        }
+        case MONGOCRYPT_KMS_PROVIDER_LOCAL: {
+            if (!_mongocrypt_check_allowed_fields(bson, NULL, status, "provider")) {
+                goto done;
+            }
+            break;
+        }
+        case MONGOCRYPT_KMS_PROVIDER_AZURE: {
+            if (!_mongocrypt_azure_kek_parse(&kek->provider.azure, kek->kmsid, bson, status)) {
+                goto done;
+            }
+            break;
+        }
+        case MONGOCRYPT_KMS_PROVIDER_GCP: {
+            CLIENT_ERR("Parsing named gcp KEK not yet implemented");
+            goto done;
+        }
+        case MONGOCRYPT_KMS_PROVIDER_KMIP: {
+            CLIENT_ERR("Parsing named kmip KEK not yet implemented");
+            goto done;
+        }
+        }
+    } else if (0 == strcmp(kms_provider, "aws")) {
         kek->kms_provider = MONGOCRYPT_KMS_PROVIDER_AWS;
         if (!_mongocrypt_parse_required_utf8(bson, "key", &kek->provider.aws.cmk, status)) {
             goto done;
