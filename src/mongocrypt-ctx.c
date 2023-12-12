@@ -750,9 +750,13 @@ bool _mongocrypt_ctx_init(mongocrypt_ctx_t *ctx, _mongocrypt_ctx_opts_spec_t *op
         if (!ctx->opts.kek.kms_provider) {
             return _mongocrypt_ctx_fail_w_msg(ctx, "master key required");
         }
-        if (!ctx->crypt->opts.use_need_kms_credentials_state
-            && !((int)ctx->opts.kek.kms_provider & _mongocrypt_ctx_kms_providers(ctx)->configured_providers)) {
-            return _mongocrypt_ctx_fail_w_msg(ctx, "requested kms provider not configured");
+        mc_kms_creds_t unused;
+        bool is_configured =
+            _mongocrypt_opts_kms_providers_lookup(_mongocrypt_ctx_kms_providers(ctx), ctx->opts.kek.kmsid, &unused);
+        if (!ctx->crypt->opts.use_need_kms_credentials_state && !is_configured) {
+            mongocrypt_status_t *status = ctx->status;
+            CLIENT_ERR("requested kms provider not configured: `%s`", ctx->opts.kek.kmsid);
+            return _mongocrypt_ctx_fail(ctx);
         }
     }
 
@@ -762,9 +766,16 @@ bool _mongocrypt_ctx_init(mongocrypt_ctx_t *ctx, _mongocrypt_ctx_opts_spec_t *op
 
     /* Check that the kms provider required by the datakey is configured.  */
     if (ctx->opts.kek.kms_provider) {
-        if (!((ctx->crypt->opts.kms_providers.need_credentials | ctx->crypt->opts.kms_providers.configured_providers)
-              & (int)ctx->opts.kek.kms_provider)) {
-            return _mongocrypt_ctx_fail_w_msg(ctx, "kms provider required by datakey is not configured");
+        mc_kms_creds_t unused;
+        bool is_configured =
+            _mongocrypt_opts_kms_providers_lookup(_mongocrypt_ctx_kms_providers(ctx), ctx->opts.kek.kmsid, &unused);
+        bool needs = _mongocrypt_needs_credentials_for_provider(ctx->crypt,
+                                                                ctx->opts.kek.kms_provider,
+                                                                ctx->opts.kek.kmsid_name);
+        if (!is_configured && !needs) {
+            mongocrypt_status_t *status = ctx->status;
+            CLIENT_ERR("requested kms provider required by datakey not configured: `%s`", ctx->opts.kek.kmsid);
+            return _mongocrypt_ctx_fail(ctx);
         }
     }
 
