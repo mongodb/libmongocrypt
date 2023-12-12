@@ -494,7 +494,7 @@ bool mongocrypt_ctx_datakey_init(mongocrypt_ctx_t *ctx) {
         }
     }
 
-    if (_mongocrypt_needs_credentials_for_provider(ctx->crypt, ctx->opts.kek.kms_provider)) {
+    if (_mongocrypt_needs_credentials_for_provider(ctx->crypt, ctx->opts.kek.kms_provider, ctx->opts.kek.kmsid_name)) {
         ctx->state = MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS;
     } else if (!_kms_start(ctx)) {
         goto done;

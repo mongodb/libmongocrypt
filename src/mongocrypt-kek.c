@@ -57,6 +57,11 @@ bool _mongocrypt_kek_parse_owned(const bson_t *bson, _mongocrypt_kek_t *kek, mon
 
     kek->kmsid = bson_strdup(kms_provider);
 
+    _mongocrypt_kms_provider_t type;
+    if (!mc_kmsid_parse(kek->kmsid, &type, &kek->kmsid_name, status)) {
+        goto done;
+    }
+
     if (0 == strcmp(kms_provider, "aws")) {
         kek->kms_provider = MONGOCRYPT_KMS_PROVIDER_AWS;
         if (!_mongocrypt_parse_required_utf8(bson, "key", &kek->provider.aws.cmk, status)) {

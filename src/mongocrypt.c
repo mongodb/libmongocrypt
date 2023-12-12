@@ -1145,8 +1145,15 @@ bool _mongocrypt_needs_credentials(mongocrypt_t *crypt) {
     return crypt->opts.kms_providers.need_credentials != 0;
 }
 
-bool _mongocrypt_needs_credentials_for_provider(mongocrypt_t *crypt, _mongocrypt_kms_provider_t provider) {
+bool _mongocrypt_needs_credentials_for_provider(mongocrypt_t *crypt,
+                                                _mongocrypt_kms_provider_t provider,
+                                                const char *name) {
     BSON_ASSERT_PARAM(crypt);
+
+    if (name != NULL) {
+        // Named KMS providers do not support on-demand credentials.
+        return false;
+    }
 
     if (!crypt->opts.use_need_kms_credentials_state) {
         return false;
