@@ -987,6 +987,19 @@ tasks:
       params:
         file: libmongocrypt/bindings/java/mongocrypt/benchmarks/results.json
 
+- name: benchmark-python
+  commands:
+    - func: "fetch source"
+    - command: "subprocess.exec"
+      params:
+        binary: bash
+        working_dir: "./libmongocrypt"
+        args:
+          - "./.evergreen/benchmark-python.sh"
+    - command: "perf.send"
+      params:
+        file: libmongocrypt/bindings/python/results.json
+
 pre:
   # Update the evergreen expansion to dynamically set the ${libmongocrypt_s3_suffix} and ${libmongocrypt_s3_suffix_copy} expansions.
   - command: "shell.exec"
@@ -1201,7 +1214,7 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
-  # - test-java - Fails with `JAVA_HOME is set to an invalid directory`. Unskip once MONGOCRYPT-593 is resolved.
+  - test-java
   - name: publish-packages
     distros:
     - ubuntu2004-small
@@ -1485,7 +1498,6 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
-  # - test-java - Fails with `JAVA_HOME is set to an invalid directory`. Unskip once MONGOCRYPT-593 is resolved.
   - name: publish-packages
     distros:
     - ubuntu2004-small
@@ -1522,7 +1534,6 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan
   - build-and-test-node
-  # - test-java - Fails with `JAVA_HOME is set to an invalid directory`. Unskip once MONGOCRYPT-593 is resolved.
   - name: publish-packages
     distros:
     - ubuntu2004-small
@@ -1571,3 +1582,4 @@ buildvariants:
   run_on: rhel90-dbx-perf-large
   tasks:
   - benchmark-java
+  - benchmark-python
