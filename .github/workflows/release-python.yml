@@ -1,7 +1,6 @@
 name: Python Release
 
 on:
-  pull_request:  # TODO: Remove before merging
   push:
     tags:
       - "pymongocrypt-[0-9]+.[0-9]+.[0-9]+"
