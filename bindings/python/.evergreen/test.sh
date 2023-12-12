@@ -64,12 +64,12 @@ for PYTHON_BINARY in "${PYTHONS[@]}"; do
     createvirtualenv $PYTHON_BINARY .venv
     python -m pip install --prefer-binary -r test-requirements.txt
     python -m pip install -v -e .
-    python -m pytest -v .
+    python -m pytest -v --ignore=test/performance .
     echo "Running tests with CSFLE on dynamic library path..."
     TEST_CRYPT_SHARED=1 DYLD_FALLBACK_LIBRARY_PATH=../crypt_shared/lib/:$DYLD_FALLBACK_LIBRARY_PATH \
       LD_LIBRARY_PATH=../crypt_shared/lib:$LD_LIBRARY_PATH \
       PATH=../crypt_shared/bin:$PATH \
-      python -m pytest -v .
+      python -m pytest -v --ignore=test/performance .
     deactivate
     rm -rf .venv
 done
