@@ -27,13 +27,12 @@ if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
 elif [ "Darwin" = "$(uname -s)" ]; then
     export PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/nocrypto/lib/libmongocrypt.dylib
     MACOS_VER=$(sw_vers -productVersion)
-    if [ $MACOS_VER =~ ^10.14 ]; then
+    if [[ $MACOS_VER =~ ^10.14 ]]; then
       PYTHONS=("/Library/Frameworks/Python.framework/Versions/3.7/bin/python3"
                "/Library/Frameworks/Python.framework/Versions/3.8/bin/python3"
                "/Library/Frameworks/Python.framework/Versions/3.9/bin/python3")
     else
           PYTHONS=(
-               "/Library/Frameworks/Python.framework/Versions/3.8/bin/python3"
                "/Library/Frameworks/Python.framework/Versions/3.9/bin/python3"
                "/Library/Frameworks/Python.framework/Versions/3.10/bin/python3"
                "/Library/Frameworks/Python.framework/Versions/3.11/bin/python3"
