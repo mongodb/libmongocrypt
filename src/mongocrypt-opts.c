@@ -308,7 +308,14 @@ bool _mongocrypt_opts_kms_providers_lookup(const _mongocrypt_opts_kms_providers_
         return true;
     }
 
-    // TODO: MONGOCRYPT-605: check for KMS providers with a name.
+    // Check for KMS providers with a name.
+    for (size_t i = 0; i < kms_providers->named_mut.len; i++) {
+        mc_kms_creds_with_id_t kcwi = _mc_array_index(&kms_providers->named_mut, mc_kms_creds_with_id_t, i);
+        if (0 == strcmp(kmsid, kcwi.kmsid)) {
+            *out = kcwi.creds;
+            return true;
+        }
+    }
 
     return false;
 }
