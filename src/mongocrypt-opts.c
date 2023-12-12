@@ -514,10 +514,10 @@ bool _mongocrypt_check_allowed_fields_va(const bson_t *bson, const char *dotkey,
 
 #define KEY_HELP "Expected `<type>` or `<type>:<name>`. Example: `local` or `local:name`."
 
-static bool kmsid_parse(const char *kmsid,
-                        _mongocrypt_kms_provider_t *type_out,
-                        const char **name_out,
-                        mongocrypt_status_t *status) {
+bool mc_kmsid_parse(const char *kmsid,
+                    _mongocrypt_kms_provider_t *type_out,
+                    const char **name_out,
+                    mongocrypt_status_t *status) {
     BSON_ASSERT_PARAM(kmsid);
     BSON_ASSERT_PARAM(type_out);
     BSON_ASSERT_PARAM(name_out);
@@ -698,7 +698,7 @@ bool _mongocrypt_parse_kms_providers(mongocrypt_binary_t *kms_providers_definiti
 
         const char *name;
         _mongocrypt_kms_provider_t type;
-        if (!kmsid_parse(field_name, &type, &name, status)) {
+        if (!mc_kmsid_parse(field_name, &type, &name, status)) {
             return false;
         }
 

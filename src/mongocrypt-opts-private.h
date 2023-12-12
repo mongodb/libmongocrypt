@@ -229,4 +229,8 @@ bool _mongocrypt_check_allowed_fields_va(const bson_t *bson, const char *dotkey,
 #define _mongocrypt_check_allowed_fields(bson, path, status, ...)                                                      \
     _mongocrypt_check_allowed_fields_va(bson, path, status, __VA_ARGS__, NULL)
 
+bool mc_kmsid_parse(const char *kmsid,
+                    _mongocrypt_kms_provider_t *type_out,
+                    const char **name_out,
+                    mongocrypt_status_t *status);
 #endif /* MONGOCRYPT_OPTS_PRIVATE_H */
