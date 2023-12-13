@@ -774,7 +774,7 @@ bool _mongocrypt_ctx_init(mongocrypt_ctx_t *ctx, _mongocrypt_ctx_opts_spec_t *op
                                                                 ctx->opts.kek.kmsid_name);
         if (!is_configured && !needs) {
             mongocrypt_status_t *status = ctx->status;
-            CLIENT_ERR("requested kms provider required by datakey not configured: `%s`", ctx->opts.kek.kmsid);
+            CLIENT_ERR("requested kms provider required by datakey is not configured: `%s`", ctx->opts.kek.kmsid);
             return _mongocrypt_ctx_fail(ctx);
         }
     }

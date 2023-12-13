@@ -557,7 +557,7 @@ bool mc_kmsid_parse(const char *kmsid,
     } else if (0 == strncmp("local", kmsid, type_nchars)) {
         *type_out = MONGOCRYPT_KMS_PROVIDER_LOCAL;
     } else {
-        CLIENT_ERR("invalid KMS provider `%s`: unrecognized type. " KEY_HELP, kmsid);
+        CLIENT_ERR("unrecognized KMS provider `%s`: unrecognized type. " KEY_HELP, kmsid);
         return false;
     }
 
@@ -565,7 +565,7 @@ bool mc_kmsid_parse(const char *kmsid,
         // Parse name.
         *name_out = type_end + 1;
         if (0 == strlen(*name_out)) {
-            CLIENT_ERR("invalid KMS provider `%s`: empty name. " KEY_HELP, kmsid);
+            CLIENT_ERR("unrecognized KMS provider `%s`: empty name. " KEY_HELP, kmsid);
             return false;
         }
 
@@ -584,7 +584,7 @@ bool mc_kmsid_parse(const char *kmsid,
             if (c == '_') {
                 continue;
             }
-            CLIENT_ERR("invalid KMS provider `%s`: unsupported character `%c`. Must be of the form `<provider "
+            CLIENT_ERR("unrecognized KMS provider `%s`: unsupported character `%c`. Must be of the form `<provider "
                        "type>:<name>` where `<name>` only contain characters [a-zA-Z0-9_]",
                        kmsid,
                        c);

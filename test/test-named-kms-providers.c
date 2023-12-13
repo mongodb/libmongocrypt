@@ -48,7 +48,7 @@ static void test_configuring_named_kms_providers(_mongocrypt_tester_t *tester) {
         mongocrypt_t *crypt = mongocrypt_new();
         mongocrypt_binary_t *kms_providers = TEST_BSON(BSON_STR({"foo:bar" : {"key" : "%s"}}), LOCAL_KEK1_BASE64);
         bool ok = mongocrypt_setopt_kms_providers(crypt, kms_providers);
-        ASSERT_FAILS(ok, crypt, "invalid KMS provider");
+        ASSERT_FAILS(ok, crypt, "unrecognized type");
         mongocrypt_destroy(crypt);
     }
 
@@ -180,7 +180,7 @@ static void test_create_datakey_with_named_kms_provider(_mongocrypt_tester_t *te
             ctx);
         ASSERT_FAILS(mongocrypt_ctx_datakey_init(ctx),
                      ctx,
-                     "requested kms provider required by datakey not configured: `local:not_configured`");
+                     "requested kms provider required by datakey is not configured: `local:not_configured`");
 
         mongocrypt_ctx_destroy(ctx);
         mongocrypt_destroy(crypt);
