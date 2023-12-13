@@ -651,6 +651,8 @@ tasks:
       name: build-and-test-and-upload
     - variant: rhel-80-64-bit
       name: build-and-test-and-upload
+    - variant: rhel-82-arm64
+      name: build-and-test-and-upload
     - variant: suse12-64
       name: build-and-test-and-upload
     - variant: suse15-64
@@ -704,6 +706,8 @@ tasks:
       vars: { variant_name: "rhel-71-ppc64el" }
     - func: "download tarball"
       vars: { variant_name: "rhel-80-64-bit" }
+    - func: "download tarball"
+      vars: { variant_name: "rhel-82-arm64" }
     - func: "download tarball"
       vars: { variant_name: "suse12-64" }
     - func: "download tarball"
