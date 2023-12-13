@@ -91,7 +91,10 @@ typedef struct _auth_request_t {
     mongocrypt_kms_ctx_t kms;
     bool returned;
     bool initialized;
+    char *kmsid;
 } auth_request_t;
+
+typedef struct _mc_mapof_kmsid_to_authrequest_t mc_mapof_kmsid_to_authrequest_t;
 
 typedef struct {
     key_broker_state_t state;
@@ -111,6 +114,7 @@ typedef struct {
     key_returned_t *decryptor_iter;
     auth_request_t auth_request_azure;
     auth_request_t auth_request_gcp;
+    mc_mapof_kmsid_to_authrequest_t *auth_requests;
 } _mongocrypt_key_broker_t;
 
 void _mongocrypt_key_broker_init(_mongocrypt_key_broker_t *kb, mongocrypt_t *crypt);
