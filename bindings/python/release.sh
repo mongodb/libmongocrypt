@@ -61,6 +61,9 @@ function test_dist() {
 # Handle Windows dist.
 if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
     $PYTHON -m venv .venv
+    # Workaround https://bugs.python.org/issue32451:
+    # .venv/Scripts/activate: line 3: $'\r': command not found
+    dos2unix $VENVPATH/Scripts/activate || true
     . ./.venv/Scripts/activate
 
     get_libmongocrypt windows-test libmongocrypt/nocrypto/bin/mongocrypt.dll
