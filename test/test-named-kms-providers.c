@@ -117,6 +117,14 @@ static void test_configuring_named_kms_providers(_mongocrypt_tester_t *tester) {
         ASSERT_OK(mongocrypt_init(crypt), crypt);
         mongocrypt_destroy(crypt);
     }
+
+    // Test configuring with an empty name is an error.
+    {
+        mongocrypt_t *crypt = mongocrypt_new();
+        mongocrypt_binary_t *kms_providers = TEST_BSON(BSON_STR({"local:" : {"key" : "%s"}}), LOCAL_KEK1_BASE64);
+        ASSERT_FAILS(mongocrypt_setopt_kms_providers(crypt, kms_providers), crypt, "empty name");
+        mongocrypt_destroy(crypt);
+    }
 }
 
 static void test_create_datakey_with_named_kms_provider(_mongocrypt_tester_t *tester) {
