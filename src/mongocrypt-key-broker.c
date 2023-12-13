@@ -522,7 +522,7 @@ bool _mongocrypt_key_broker_add_doc(_mongocrypt_key_broker_t *kb,
         if (kc.value.azure.access_token) {
             access_token = bson_strdup(kc.value.azure.access_token);
         } else {
-            access_token = _mongocrypt_cache_oauth_get(kb->crypt->cache_oauth_azure);
+            access_token = mc_mapof_kmsid_to_token_get_token(kb->crypt->cache_oauth, key_doc->kek.kmsid);
         }
         if (!access_token) {
             key_returned->needs_auth = true;
@@ -747,7 +747,8 @@ bool _mongocrypt_key_broker_kms_done(_mongocrypt_key_broker_t *kb, _mongocrypt_o
 
             /* Cache returned tokens. */
             BSON_ASSERT(_mongocrypt_buffer_to_bson(&oauth_response_buf, &oauth_response));
-            if (!_mongocrypt_cache_oauth_add(kb->crypt->cache_oauth_azure, &oauth_response, kb->status)) {
+            // TODO: replace "azure" with KMS ID once auth request contains KMS ID.
+            if (!mc_mapof_kmsid_to_token_add_response(kb->crypt->cache_oauth, "azure", &oauth_response, kb->status)) {
                 return false;
             }
         }
@@ -785,7 +786,8 @@ bool _mongocrypt_key_broker_kms_done(_mongocrypt_key_broker_t *kb, _mongocrypt_o
                 if (kc.value.azure.access_token) {
                     access_token = bson_strdup(kc.value.azure.access_token);
                 } else {
-                    access_token = _mongocrypt_cache_oauth_get(kb->crypt->cache_oauth_azure);
+                    access_token =
+                        mc_mapof_kmsid_to_token_get_token(kb->crypt->cache_oauth, key_returned->doc->kek.kmsid);
                 }
 
                 if (!access_token) {

@@ -119,7 +119,6 @@ mongocrypt_t *mongocrypt_new(void) {
     // Default to using FLEv2 (aka QEv2)
     crypt->opts.use_fle2_v2 = true;
     crypt->ctx_counter = 1;
-    crypt->cache_oauth_azure = _mongocrypt_cache_oauth_new();
     crypt->cache_oauth_gcp = _mongocrypt_cache_oauth_new();
     crypt->cache_oauth = mc_mapof_kmsid_to_token_new();
     crypt->csfle = (_mongo_crypt_v1_vtable){.okay = false};
@@ -921,7 +920,6 @@ void mongocrypt_destroy(mongocrypt_t *crypt) {
     _mongocrypt_log_cleanup(&crypt->log);
     mongocrypt_status_destroy(crypt->status);
     bson_free(crypt->crypto);
-    _mongocrypt_cache_oauth_destroy(crypt->cache_oauth_azure);
     _mongocrypt_cache_oauth_destroy(crypt->cache_oauth_gcp);
     mc_mapof_kmsid_to_token_destroy(crypt->cache_oauth);
 

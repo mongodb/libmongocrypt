@@ -123,7 +123,6 @@ struct _mongocrypt_t {
     _mongocrypt_crypto_t *crypto;
     /* A counter, protected by mutex, for generating unique context ids */
     uint32_t ctx_counter;
-    _mongocrypt_cache_oauth_t *cache_oauth_azure;
     _mongocrypt_cache_oauth_t *cache_oauth_gcp;
     mc_mapof_kmsid_to_token_t *cache_oauth;
     /// A CSFLE DLL vtable, initialized by mongocrypt_init
