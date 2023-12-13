@@ -19,6 +19,8 @@ set -o errexit  # Exit the script with error if any of the commands fail
 REVISION=$(git rev-list -n 1 1.8.1)
 # The libmongocrypt release branch.
 BRANCH="r1.8"
+# The python executable to use.
+PYTHON=${PYTHON:-python}
 
 # Clean slate.
 rm -rf dist .venv build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
@@ -58,7 +60,7 @@ function test_dist() {
 
 # Handle Windows dist.
 if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
-    python -m venv .venv
+    $PYTHON -m venv .venv
     . ./.venv/Scripts/activate
 
     get_libmongocrypt windows-test libmongocrypt/nocrypto/bin/mongocrypt.dll
@@ -68,7 +70,7 @@ fi
 
 # Handle MacOS dists.
 if [ "Darwin" = "$(uname -s)" ]; then
-    python -m venv .venv
+    $PYTHON -m venv .venv
     . .venv/bin/activate
 
     # Build intel wheel for Python 3.7.
@@ -111,6 +113,8 @@ if [ $(command -v docker) ]; then
     get_libmongocrypt rhel-70-64-bit libmongocrypt/nocrypto/lib64/libmongocrypt.so
     build_manylinux_wheel quay.io/pypa/manylinux2014_x86_64:2023-12-05-e9f0345
     if [ "Linux" = "$(uname -s)" ]; then
+        $PYTHON -m venv .venv
+        . .venv/bin/activate
         test_dist dist/*.whl
     fi
 
