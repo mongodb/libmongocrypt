@@ -749,7 +749,7 @@ bool _mongocrypt_key_broker_kms_done(_mongocrypt_key_broker_t *kb, _mongocrypt_o
             BSON_ASSERT(_mongocrypt_buffer_to_bson(&oauth_response_buf, &oauth_response));
             // TODO: replace "azure" with KMS ID once auth request contains KMS ID.
             if (!mc_mapof_kmsid_to_token_add_response(kb->crypt->cache_oauth, "azure", &oauth_response, kb->status)) {
-                return false;
+                return _key_broker_fail(kb);
             }
         }
 
@@ -763,7 +763,7 @@ bool _mongocrypt_key_broker_kms_done(_mongocrypt_key_broker_t *kb, _mongocrypt_o
             BSON_ASSERT(_mongocrypt_buffer_to_bson(&oauth_response_buf, &oauth_response));
             // TODO: replace "gcp" with KMS ID once auth request contains KMS ID.
             if (!mc_mapof_kmsid_to_token_add_response(kb->crypt->cache_oauth, "gcp", &oauth_response, kb->status)) {
-                return false;
+                return _key_broker_fail(kb);
             }
         }
 
