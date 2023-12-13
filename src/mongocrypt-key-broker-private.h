@@ -112,7 +112,6 @@ typedef struct {
     mongocrypt_t *crypt;
 
     key_returned_t *decryptor_iter;
-    auth_request_t auth_request_gcp;
     mc_mapof_kmsid_to_authrequest_t *auth_requests;
 } _mongocrypt_key_broker_t;
 
