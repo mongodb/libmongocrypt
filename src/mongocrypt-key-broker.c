@@ -97,6 +97,7 @@ void _mongocrypt_key_broker_init(_mongocrypt_key_broker_t *kb, mongocrypt_t *cry
     kb->crypt = crypt;
     kb->state = KB_REQUESTING;
     kb->status = mongocrypt_status_new();
+    kb->auth_requests = mc_mapof_kmsid_to_authrequest_new();
 }
 
 /*
@@ -599,17 +600,21 @@ bool _mongocrypt_key_broker_add_doc(_mongocrypt_key_broker_t *kb,
         if (!access_token) {
             key_returned->needs_auth = true;
             /* Create an oauth request if one does not exist. */
-            if (!kb->auth_request_azure.initialized) {
-                if (!_mongocrypt_kms_ctx_init_azure_auth(&kb->auth_request_azure.kms,
+            if (!mc_mapof_kmsid_to_authrequest_has(kb->auth_requests, key_doc->kek.kmsid)) {
+                auth_request_t *ar = auth_request_new();
+                if (!_mongocrypt_kms_ctx_init_azure_auth(&ar->kms,
                                                          &kb->crypt->log,
                                                          &kc,
                                                          /* The key vault endpoint is used to determine the scope. */
                                                          key_doc->kek.provider.azure.key_vault_endpoint)) {
-                    mongocrypt_kms_ctx_status(&kb->auth_request_azure.kms, kb->status);
+                    mongocrypt_kms_ctx_status(&ar->kms, kb->status);
                     _key_broker_fail(kb);
+                    auth_request_destroy(ar);
                     goto done;
                 }
-                kb->auth_request_azure.initialized = true;
+                ar->kmsid = bson_strdup(key_doc->kek.kmsid);
+                ar->initialized = true;
+                mc_mapof_kmsid_to_authrequest_put(kb->auth_requests, ar);
             }
         } else {
             if (!_mongocrypt_kms_ctx_init_azure_unwrapkey(&key_returned->kms,
@@ -763,15 +768,21 @@ mongocrypt_kms_ctx_t *_mongocrypt_key_broker_next_kms(_mongocrypt_key_broker_t *
     }
 
     if (kb->state == KB_AUTHENTICATING) {
-        if (!kb->auth_request_azure.initialized && !kb->auth_request_gcp.initialized) {
+        if (mc_mapof_kmsid_to_authrequest_empty(kb->auth_requests) && !kb->auth_request_gcp.initialized) {
             _key_broker_fail_w_msg(kb,
                                    "unexpected, attempting to authenticate but "
                                    "KMS request not initialized");
             return NULL;
         }
-        if (kb->auth_request_azure.initialized && !kb->auth_request_azure.returned) {
-            kb->auth_request_azure.returned = true;
-            return &kb->auth_request_azure.kms;
+
+        // Return the first not-yet-returned auth request.
+        for (size_t i = 0; i < mc_mapof_kmsid_to_authrequest_len(kb->auth_requests); i++) {
+            auth_request_t *ar = mc_mapof_kmsid_to_authrequest_at(kb->auth_requests, i);
+            if (ar->returned) {
+                continue;
+            }
+            ar->returned = true;
+            return &ar->kms;
         }
 
         if (kb->auth_request_gcp.initialized && !kb->auth_request_gcp.returned) {
@@ -811,16 +822,19 @@ bool _mongocrypt_key_broker_kms_done(_mongocrypt_key_broker_t *kb, _mongocrypt_o
         bson_t oauth_response;
         _mongocrypt_buffer_t oauth_response_buf;
 
-        if (kb->auth_request_azure.initialized) {
-            if (!_mongocrypt_kms_ctx_result(&kb->auth_request_azure.kms, &oauth_response_buf)) {
-                mongocrypt_kms_ctx_status(&kb->auth_request_azure.kms, kb->status);
+        // Apply tokens from oauth responses to oauth token cache.
+        for (size_t i = 0; i < mc_mapof_kmsid_to_authrequest_len(kb->auth_requests); i++) {
+            auth_request_t *ar = mc_mapof_kmsid_to_authrequest_at(kb->auth_requests, i);
+            BSON_ASSERT(ar->initialized);
+
+            if (!_mongocrypt_kms_ctx_result(&ar->kms, &oauth_response_buf)) {
+                mongocrypt_kms_ctx_status(&ar->kms, kb->status);
                 return _key_broker_fail(kb);
             }
 
             /* Cache returned tokens. */
             BSON_ASSERT(_mongocrypt_buffer_to_bson(&oauth_response_buf, &oauth_response));
-            // TODO: replace "azure" with KMS ID once auth request contains KMS ID.
-            if (!mc_mapof_kmsid_to_token_add_response(kb->crypt->cache_oauth, "azure", &oauth_response, kb->status)) {
+            if (!mc_mapof_kmsid_to_token_add_response(kb->crypt->cache_oauth, ar->kmsid, &oauth_response, kb->status)) {
                 return _key_broker_fail(kb);
             }
         }
@@ -1101,8 +1115,8 @@ void _mongocrypt_key_broker_cleanup(_mongocrypt_key_broker_t *kb) {
     _destroy_keys_returned(kb->keys_returned);
     _destroy_keys_returned(kb->keys_cached);
     _destroy_key_requests(kb->key_requests);
-    _mongocrypt_kms_ctx_cleanup(&kb->auth_request_azure.kms);
     _mongocrypt_kms_ctx_cleanup(&kb->auth_request_gcp.kms);
+    mc_mapof_kmsid_to_authrequest_destroy(kb->auth_requests);
 }
 
 void _mongocrypt_key_broker_add_test_key(_mongocrypt_key_broker_t *kb, const _mongocrypt_buffer_t *key_id) {
