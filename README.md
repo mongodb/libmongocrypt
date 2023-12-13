@@ -191,6 +191,25 @@ Then install the libmongocrypt packages:
 sudo yum install -y libmongocrypt
 ```
 
+#### Amazon Linux 2023 ####
+
+Create the file `/etc/yum.repos.d/libmongocrypt.repo` with contents:
+
+```
+[libmongocrypt]
+name=libmongocrypt repository
+baseurl=https://libmongocrypt.s3.amazonaws.com/yum/amazon/2023/libmongocrypt/1.8/x86_64
+gpgcheck=1
+enabled=1
+gpgkey=https://www.mongodb.org/static/pgp/libmongocrypt.asc
+```
+
+Then install the libmongocrypt packages:
+
+```
+sudo yum install -y libmongocrypt
+```
+
 #### Amazon Linux 2 ####
 
 Create the file `/etc/yum.repos.d/libmongocrypt.repo` with contents:
