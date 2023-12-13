@@ -87,13 +87,6 @@ typedef struct _key_returned_t {
     struct _key_returned_t *next;
 } key_returned_t;
 
-typedef struct _auth_request_t {
-    mongocrypt_kms_ctx_t kms;
-    bool returned;
-    bool initialized;
-    char *kmsid;
-} auth_request_t;
-
 typedef struct _mc_mapof_kmsid_to_authrequest_t mc_mapof_kmsid_to_authrequest_t;
 
 typedef struct {

@@ -18,6 +18,13 @@
 #include "mongocrypt-key-broker-private.h"
 #include "mongocrypt-private.h"
 
+typedef struct _auth_request_t {
+    mongocrypt_kms_ctx_t kms;
+    bool returned;
+    bool initialized;
+    char *kmsid;
+} auth_request_t;
+
 auth_request_t *auth_request_new() {
     return bson_malloc0(sizeof(auth_request_t));
 }
