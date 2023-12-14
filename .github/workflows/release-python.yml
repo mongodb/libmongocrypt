@@ -73,7 +73,7 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
-          name: dist-${{ matrix.os }}
+          name: dist-${{ matrix.os }}-legacy
           path: ./bindings/python/dist/*.*
           if-no-files-found: error
 
