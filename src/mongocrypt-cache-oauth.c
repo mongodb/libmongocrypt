@@ -116,7 +116,9 @@ char *_mongocrypt_cache_oauth_get(_mongocrypt_cache_oauth_t *cache) {
 
 typedef struct {
     char *kms_id;
-    _mongocrypt_cache_oauth_t *cache;
+    bson_t *entry;
+    char *access_token;
+    int64_t expiration_time_us;
 } mc_mapof_kmsid_to_token_entry_t;
 
 struct _mc_mapof_kmsid_to_token_t {
@@ -139,7 +141,8 @@ void mc_mapof_kmsid_to_token_destroy(mc_mapof_kmsid_to_token_t *k2t) {
     for (size_t i = 0; i < k2t->entries.len; i++) {
         mc_mapof_kmsid_to_token_entry_t k2te = _mc_array_index(&k2t->entries, mc_mapof_kmsid_to_token_entry_t, i);
         bson_free(k2te.kms_id);
-        _mongocrypt_cache_oauth_destroy(k2te.cache);
+        bson_destroy(k2te.entry);
+        bson_free(k2te.access_token);
     }
     _mc_array_destroy(&k2t->entries);
     bson_free(k2t);
@@ -154,9 +157,14 @@ char *mc_mapof_kmsid_to_token_get_token(mc_mapof_kmsid_to_token_t *k2t, const ch
     for (size_t i = 0; i < k2t->entries.len; i++) {
         mc_mapof_kmsid_to_token_entry_t k2te = _mc_array_index(&k2t->entries, mc_mapof_kmsid_to_token_entry_t, i);
         if (0 == strcmp(k2te.kms_id, kms_id)) {
-            char *got = _mongocrypt_cache_oauth_get(k2te.cache);
+            if (bson_get_monotonic_time() >= k2te.expiration_time_us) {
+                // Expired.
+                _mongocrypt_mutex_unlock(&k2t->mutex);
+                return NULL;
+            }
+            char *access_token = bson_strdup(k2te.access_token);
             _mongocrypt_mutex_unlock(&k2t->mutex);
-            return got;
+            return access_token;
         }
     }
 
@@ -172,21 +180,56 @@ bool mc_mapof_kmsid_to_token_add_response(mc_mapof_kmsid_to_token_t *k2t,
     BSON_ASSERT_PARAM(kms_id);
     BSON_ASSERT_PARAM(response);
 
+    // Parse access token before locking.
+    const char *access_token;
+    int64_t expiration_time_us;
+    {
+        bson_iter_t iter;
+        int64_t cache_time_us;
+        int64_t expires_in_s;
+        int64_t expires_in_us;
+
+        /* The OAuth spec strongly implies that the value of expires_in is positive,
+         * so the overflow checks in this function don't consider negative values. */
+        if (!bson_iter_init_find(&iter, response, "expires_in") || !BSON_ITER_HOLDS_INT(&iter)) {
+            CLIENT_ERR("OAuth response invalid, no 'expires_in' field.");
+            return false;
+        }
+        cache_time_us = bson_get_monotonic_time();
+        expires_in_s = bson_iter_as_int64(&iter);
+        BSON_ASSERT(expires_in_s <= INT64_MAX / 1000 / 1000);
+        expires_in_us = expires_in_s * 1000 * 1000;
+        BSON_ASSERT(expires_in_us <= INT64_MAX - cache_time_us
+                    && expires_in_us + cache_time_us > MONGOCRYPT_OAUTH_CACHE_EVICTION_PERIOD_US);
+        expiration_time_us = expires_in_us + cache_time_us - MONGOCRYPT_OAUTH_CACHE_EVICTION_PERIOD_US;
+
+        if (!bson_iter_init_find(&iter, response, "access_token") || !BSON_ITER_HOLDS_UTF8(&iter)) {
+            CLIENT_ERR("OAuth response invalid, no 'access_token' field.");
+            return false;
+        }
+        access_token = bson_iter_utf8(&iter, NULL);
+    }
+
     _mongocrypt_mutex_lock(&k2t->mutex);
 
     // Check if there is an existing entry.
     for (size_t i = 0; i < k2t->entries.len; i++) {
-        mc_mapof_kmsid_to_token_entry_t k2te = _mc_array_index(&k2t->entries, mc_mapof_kmsid_to_token_entry_t, i);
-        if (0 == strcmp(k2te.kms_id, kms_id)) {
-            bool ok = _mongocrypt_cache_oauth_add(k2te.cache, response, status);
+        mc_mapof_kmsid_to_token_entry_t *k2te = &_mc_array_index(&k2t->entries, mc_mapof_kmsid_to_token_entry_t, i);
+        if (0 == strcmp(k2te->kms_id, kms_id)) {
+            // Update entry.
+            bson_free(k2te->access_token);
+            k2te->access_token = bson_strdup(access_token);
+            k2te->expiration_time_us = expiration_time_us;
             _mongocrypt_mutex_unlock(&k2t->mutex);
-            return ok;
+            return true;
         }
     }
     // Create an entry.
-    mc_mapof_kmsid_to_token_entry_t to_put = {.kms_id = bson_strdup(kms_id), .cache = _mongocrypt_cache_oauth_new()};
+    mc_mapof_kmsid_to_token_entry_t to_put = {.kms_id = bson_strdup(kms_id),
+                                              .entry = bson_copy(response),
+                                              .access_token = bson_strdup(access_token),
+                                              .expiration_time_us = expiration_time_us};
     _mc_array_append_val(&k2t->entries, to_put);
-    bool ok = _mongocrypt_cache_oauth_add(to_put.cache, response, status);
     _mongocrypt_mutex_unlock(&k2t->mutex);
-    return ok;
+    return true;
 }
