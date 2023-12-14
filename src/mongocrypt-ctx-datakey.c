@@ -256,7 +256,7 @@ static bool _kms_start(mongocrypt_ctx_t *ctx) {
         if (NULL != kc.value.gcp.access_token) {
             access_token = bson_strdup(kc.value.gcp.access_token);
         } else {
-            access_token = _mongocrypt_cache_oauth_get(ctx->crypt->cache_oauth_gcp);
+            access_token = mc_mapof_kmsid_to_token_get_token(ctx->crypt->cache_oauth, ctx->opts.kek.kmsid);
         }
         if (access_token) {
             if (!_mongocrypt_kms_ctx_init_gcp_encrypt(&dkctx->kms,
@@ -329,7 +329,10 @@ static bool _kms_done(mongocrypt_ctx_t *ctx) {
         bson_t oauth_response;
 
         BSON_ASSERT(_mongocrypt_buffer_to_bson(&dkctx->kms.result, &oauth_response));
-        if (!_mongocrypt_cache_oauth_add(ctx->crypt->cache_oauth_gcp, &oauth_response, status)) {
+        if (!mc_mapof_kmsid_to_token_add_response(ctx->crypt->cache_oauth,
+                                                  ctx->opts.kek.kmsid,
+                                                  &oauth_response,
+                                                  status)) {
             return _mongocrypt_ctx_fail(ctx);
         }
         return _kms_start(ctx);
