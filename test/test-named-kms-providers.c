@@ -464,7 +464,482 @@ static void test_create_datakey_with_named_kms_provider(_mongocrypt_tester_t *te
     }
 }
 
+typedef struct {
+    mongocrypt_binary_t *kms_providers;
+    const char *key_alt_name;
+    mongocrypt_binary_t *kek;
+    mongocrypt_binary_t *kms_response_1;
+    mongocrypt_binary_t *kms_response_2;
+} create_dek_args;
+
+// `create_dek` is a test helper to create a Data Encryption Key (DEK).
+static void create_dek(_mongocrypt_tester_t *tester, create_dek_args args, _mongocrypt_buffer_t *dek) {
+    BSON_ASSERT_PARAM(args.kms_providers);
+    BSON_ASSERT_PARAM(args.key_alt_name);
+    BSON_ASSERT_PARAM(args.kek);
+    // kms_response_1 and kms_response_2 may be NULL.
+
+    mongocrypt_t *crypt = mongocrypt_new();
+    ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, args.kms_providers), crypt);
+    ASSERT_OK(mongocrypt_init(crypt), crypt);
+
+    mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+    ASSERT_OK(mongocrypt_ctx_setopt_key_encryption_key(ctx, args.kek), ctx);
+    ASSERT_OK(mongocrypt_ctx_setopt_key_alt_name(ctx, TEST_BSON(BSON_STR({"keyAltName" : "%s"}), args.key_alt_name)),
+              ctx);
+    ASSERT_OK(mongocrypt_ctx_datakey_init(ctx), ctx);
+
+    if (args.kms_response_1) {
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_KMS);
+        mongocrypt_kms_ctx_t *kctx = mongocrypt_ctx_next_kms_ctx(ctx);
+        ASSERT(kctx);
+        ASSERT_OK(kms_ctx_feed_all(kctx,
+                                   mongocrypt_binary_data(args.kms_response_1),
+                                   mongocrypt_binary_len(args.kms_response_1)),
+                  kctx);
+        kctx = mongocrypt_ctx_next_kms_ctx(ctx);
+        ASSERT(!kctx);
+        ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
+    }
+
+    if (args.kms_response_2) {
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_KMS);
+        mongocrypt_kms_ctx_t *kctx = mongocrypt_ctx_next_kms_ctx(ctx);
+        ASSERT(kctx);
+        ASSERT_OK(kms_ctx_feed_all(kctx,
+                                   mongocrypt_binary_data(args.kms_response_2),
+                                   mongocrypt_binary_len(args.kms_response_2)),
+                  kctx);
+        kctx = mongocrypt_ctx_next_kms_ctx(ctx);
+        ASSERT(!kctx);
+        ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
+    }
+
+    ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
+    mongocrypt_binary_t *bin = mongocrypt_binary_new();
+    ASSERT_OK(mongocrypt_ctx_finalize(ctx, bin), ctx);
+    _mongocrypt_buffer_copy_from_binary(dek, bin);
+    mongocrypt_binary_destroy(bin);
+    mongocrypt_ctx_destroy(ctx);
+    mongocrypt_destroy(crypt);
+}
+
+static void test_explicit_with_named_kms_provider_for_azure(_mongocrypt_tester_t *tester) {
+    mongocrypt_binary_t *kms_providers = TEST_BSON(BSON_STR({
+        "azure:name1" : {
+            "tenantId" : "placeholder1-tenantId",
+            "clientId" : "placeholder1-clientId",
+            "clientSecret" : "placeholder1-clientSecret",
+            "identityPlatformEndpoint" : "placeholder1-identityPlatformEndpoint.com"
+        },
+        "azure:name2" : {
+            "tenantId" : "placeholder2-tenantId",
+            "clientId" : "placeholder2-clientId",
+            "clientSecret" : "placeholder2-clientSecret",
+            "identityPlatformEndpoint" : "placeholder2-identityPlatformEndpoint.com"
+        }
+    }));
+
+    // Create `dek1` from `azure:name1`
+    _mongocrypt_buffer_t dek1;
+    create_dek(tester,
+               (create_dek_args){.kms_providers = kms_providers,
+                                 .key_alt_name = "azure1",
+                                 .kek = TEST_BSON(BSON_STR({
+                                     "provider" : "azure:name1",
+                                     "keyName" : "placeholder1-keyName",
+                                     "keyVaultEndpoint" : "placeholder1-keyVaultEndpoint.com"
+                                 })),
+                                 .kms_response_1 = TEST_FILE("./test/data/azure-auth/oauth-response.txt"),
+                                 .kms_response_2 = TEST_FILE("./test/data/azure-auth/encrypt-response.txt")},
+               &dek1);
+
+    // Create `dek2` from `azure:name2`
+    _mongocrypt_buffer_t dek2;
+    create_dek(tester,
+               (create_dek_args){.kms_providers = kms_providers,
+                                 .key_alt_name = "azure2",
+                                 .kek = TEST_BSON(BSON_STR({
+                                     "provider" : "azure:name2",
+                                     "keyName" : "placeholder2-keyName",
+                                     "keyVaultEndpoint" : "placeholder2-keyVaultEndpoint.com"
+                                 })),
+                                 .kms_response_1 = TEST_FILE("./test/data/azure-auth/oauth-response.txt"),
+                                 .kms_response_2 = TEST_FILE("./test/data/azure-auth/encrypt-response.txt")},
+               &dek2);
+
+    // Test encrypting.
+    _mongocrypt_buffer_t ciphertext;
+    {
+        mongocrypt_t *crypt = mongocrypt_new();
+        ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, kms_providers), crypt);
+        ASSERT_OK(mongocrypt_init(crypt), crypt);
+
+        // Test encrypting without cached DEK. Store result for later decryption.
+        {
+            mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+            ASSERT_OK(mongocrypt_ctx_setopt_key_alt_name(ctx, TEST_BSON(BSON_STR({"keyAltName" : "azure1"}))), ctx);
+            ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_DETERMINISTIC_STR, -1), ctx);
+            ASSERT_OK(mongocrypt_ctx_explicit_encrypt_init(ctx, TEST_BSON(BSON_STR({"v" : "foo"}))), ctx);
+
+            ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, _mongocrypt_buffer_as_binary(&dek1)), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+
+            // Needs KMS for oauth token.
+            {
+                ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_KMS);
+                mongocrypt_kms_ctx_t *kctx = mongocrypt_ctx_next_kms_ctx(ctx);
+                ASSERT(kctx);
+                const char *endpoint;
+                ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
+                ASSERT_STREQUAL(endpoint, "placeholder1-identityPlatformEndpoint.com:443");
+                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/azure-auth/oauth-response.txt")), kctx);
+                kctx = mongocrypt_ctx_next_kms_ctx(ctx);
+                ASSERT(!kctx);
+                ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
+            }
+
+            // Needs KMS to decrypt DEK.
+            {
+                ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_KMS);
+                mongocrypt_kms_ctx_t *kctx = mongocrypt_ctx_next_kms_ctx(ctx);
+                ASSERT(kctx);
+                const char *endpoint;
+                ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
+                ASSERT_STREQUAL(endpoint, "placeholder1-keyVaultEndpoint.com:443");
+                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/azure-auth/decrypt-response.txt")),
+                          kctx);
+                kctx = mongocrypt_ctx_next_kms_ctx(ctx);
+                ASSERT(!kctx);
+                ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
+            }
+
+            ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
+            mongocrypt_binary_t *bin = mongocrypt_binary_new();
+            ASSERT_OK(mongocrypt_ctx_finalize(ctx, bin), ctx);
+            _mongocrypt_buffer_copy_from_binary(&ciphertext, bin);
+            mongocrypt_binary_destroy(bin);
+            mongocrypt_ctx_destroy(ctx);
+        }
+
+        // Test encrypting with cached DEK.
+        {
+            mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+            ASSERT_OK(mongocrypt_ctx_setopt_key_alt_name(ctx, TEST_BSON(BSON_STR({"keyAltName" : "azure1"}))), ctx);
+            ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_DETERMINISTIC_STR, -1), ctx);
+            ASSERT_OK(mongocrypt_ctx_explicit_encrypt_init(ctx, TEST_BSON(BSON_STR({"v" : "foo"}))), ctx);
+            // DEK is already cached. State transitions directly to ready.
+            ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
+            mongocrypt_binary_t *bin = mongocrypt_binary_new();
+            ASSERT_OK(mongocrypt_ctx_finalize(ctx, bin), ctx);
+            mongocrypt_binary_destroy(bin);
+            mongocrypt_ctx_destroy(ctx);
+        }
+
+        mongocrypt_destroy(crypt);
+    }
+
+    // Test decrypting.
+    {
+        mongocrypt_t *crypt = mongocrypt_new();
+        ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, kms_providers), crypt);
+        ASSERT_OK(mongocrypt_init(crypt), crypt);
+
+        // Test decrypting without cached DEK.
+        {
+            mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+            ASSERT_OK(mongocrypt_ctx_explicit_decrypt_init(ctx, _mongocrypt_buffer_as_binary(&ciphertext)), ctx);
+
+            ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, _mongocrypt_buffer_as_binary(&dek1)), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+
+            // Needs KMS for oauth token.
+            {
+                ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_KMS);
+                mongocrypt_kms_ctx_t *kctx = mongocrypt_ctx_next_kms_ctx(ctx);
+                ASSERT(kctx);
+                const char *endpoint;
+                ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
+                ASSERT_STREQUAL(endpoint, "placeholder1-identityPlatformEndpoint.com:443");
+                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/azure-auth/oauth-response.txt")), kctx);
+                kctx = mongocrypt_ctx_next_kms_ctx(ctx);
+                ASSERT(!kctx);
+                ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
+            }
+
+            // Needs KMS to decrypt DEK.
+            {
+                ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_KMS);
+                mongocrypt_kms_ctx_t *kctx = mongocrypt_ctx_next_kms_ctx(ctx);
+                ASSERT(kctx);
+                const char *endpoint;
+                ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
+                ASSERT_STREQUAL(endpoint, "placeholder1-keyVaultEndpoint.com:443");
+                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/azure-auth/decrypt-response.txt")),
+                          kctx);
+                kctx = mongocrypt_ctx_next_kms_ctx(ctx);
+                ASSERT(!kctx);
+                ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
+            }
+
+            ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
+            mongocrypt_binary_t *bin = mongocrypt_binary_new();
+            ASSERT_OK(mongocrypt_ctx_finalize(ctx, bin), ctx);
+            ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TEST_BSON(BSON_STR({"v" : "foo"})), bin);
+            mongocrypt_binary_destroy(bin);
+            mongocrypt_ctx_destroy(ctx);
+        }
+
+        // Test decrypting with cached DEK.
+        {
+            mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+            ASSERT_OK(mongocrypt_ctx_explicit_decrypt_init(ctx, _mongocrypt_buffer_as_binary(&ciphertext)), ctx);
+            // DEK is already cached. State transitions directly to ready.
+            ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
+            mongocrypt_binary_t *bin = mongocrypt_binary_new();
+            ASSERT_OK(mongocrypt_ctx_finalize(ctx, bin), ctx);
+            ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TEST_BSON(BSON_STR({"v" : "foo"})), bin);
+            mongocrypt_binary_destroy(bin);
+            mongocrypt_ctx_destroy(ctx);
+        }
+        mongocrypt_destroy(crypt);
+    }
+
+    // Test decrypting with a cached oauth token, but not a cached DEK.
+    {
+        mongocrypt_t *crypt = mongocrypt_new();
+        ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, kms_providers), crypt);
+        ASSERT_OK(mongocrypt_init(crypt), crypt);
+
+        // Decrypt.
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+        ASSERT_OK(mongocrypt_ctx_explicit_decrypt_init(ctx, _mongocrypt_buffer_as_binary(&ciphertext)), ctx);
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+        ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, _mongocrypt_buffer_as_binary(&dek1)), ctx);
+        ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+
+        // Needs KMS for oauth token.
+        {
+            ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_KMS);
+            mongocrypt_kms_ctx_t *kctx = mongocrypt_ctx_next_kms_ctx(ctx);
+            ASSERT(kctx);
+            const char *endpoint;
+            ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
+            ASSERT_STREQUAL(endpoint, "placeholder1-identityPlatformEndpoint.com:443");
+            ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/azure-auth/oauth-response.txt")), kctx);
+            kctx = mongocrypt_ctx_next_kms_ctx(ctx);
+            ASSERT(!kctx);
+            ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
+        }
+
+        // Recreate the `mongocrypt_ctx_t`. Expect the oauth token to be cached but the DEK not to be cached.
+        mongocrypt_ctx_destroy(ctx);
+
+        ctx = mongocrypt_ctx_new(crypt);
+        ASSERT_OK(mongocrypt_ctx_explicit_decrypt_init(ctx, _mongocrypt_buffer_as_binary(&ciphertext)), ctx);
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+        ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, _mongocrypt_buffer_as_binary(&dek1)), ctx);
+        ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+
+        // Needs KMS to decrypt DEK.
+        {
+            ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_KMS);
+            mongocrypt_kms_ctx_t *kctx = mongocrypt_ctx_next_kms_ctx(ctx);
+            ASSERT(kctx);
+            const char *endpoint;
+            ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
+            ASSERT_STREQUAL(endpoint, "placeholder1-keyVaultEndpoint.com:443");
+            ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/azure-auth/decrypt-response.txt")), kctx);
+            kctx = mongocrypt_ctx_next_kms_ctx(ctx);
+            ASSERT(!kctx);
+            ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
+        mongocrypt_binary_t *bin = mongocrypt_binary_new();
+        ASSERT_OK(mongocrypt_ctx_finalize(ctx, bin), ctx);
+        ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TEST_BSON(BSON_STR({"v" : "foo"})), bin);
+        mongocrypt_binary_destroy(bin);
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+
+    // Test encrypting with two different named Azure.
+    // Expect two separate oauth token requests.
+    {
+        mongocrypt_t *crypt = mongocrypt_new();
+        ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, kms_providers), crypt);
+        ASSERT_OK(mongocrypt_init(crypt), crypt);
+
+        // Encrypt with azure:name1
+        {
+            mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+            ASSERT_OK(mongocrypt_ctx_setopt_key_alt_name(ctx, TEST_BSON(BSON_STR({"keyAltName" : "azure1"}))), ctx);
+            ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_DETERMINISTIC_STR, -1), ctx);
+            ASSERT_OK(mongocrypt_ctx_explicit_encrypt_init(ctx, TEST_BSON(BSON_STR({"v" : "foo"}))), ctx);
+
+            ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, _mongocrypt_buffer_as_binary(&dek1)), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+
+            // Needs KMS for oauth token.
+            {
+                ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_KMS);
+                mongocrypt_kms_ctx_t *kctx = mongocrypt_ctx_next_kms_ctx(ctx);
+                ASSERT(kctx);
+                const char *endpoint;
+                ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
+                ASSERT_STREQUAL(endpoint, "placeholder1-identityPlatformEndpoint.com:443");
+                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/azure-auth/oauth-response.txt")), kctx);
+                kctx = mongocrypt_ctx_next_kms_ctx(ctx);
+                ASSERT(!kctx);
+                ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
+            }
+
+            // Needs KMS to decrypt DEK.
+            {
+                ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_KMS);
+                mongocrypt_kms_ctx_t *kctx = mongocrypt_ctx_next_kms_ctx(ctx);
+                ASSERT(kctx);
+                const char *endpoint;
+                ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
+                ASSERT_STREQUAL(endpoint, "placeholder1-keyVaultEndpoint.com:443");
+                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/azure-auth/decrypt-response.txt")),
+                          kctx);
+                kctx = mongocrypt_ctx_next_kms_ctx(ctx);
+                ASSERT(!kctx);
+                ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
+            }
+
+            ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
+            mongocrypt_binary_t *bin = mongocrypt_binary_new();
+            ASSERT_OK(mongocrypt_ctx_finalize(ctx, bin), ctx);
+            mongocrypt_binary_destroy(bin);
+            mongocrypt_ctx_destroy(ctx);
+        }
+
+        // Encrypt with azure:name2
+        {
+            mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+            ASSERT_OK(mongocrypt_ctx_setopt_key_alt_name(ctx, TEST_BSON(BSON_STR({"keyAltName" : "azure2"}))), ctx);
+            ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_DETERMINISTIC_STR, -1), ctx);
+            ASSERT_OK(mongocrypt_ctx_explicit_encrypt_init(ctx, TEST_BSON(BSON_STR({"v" : "foo"}))), ctx);
+
+            ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, _mongocrypt_buffer_as_binary(&dek2)), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+
+            // Needs KMS for oauth token.
+            {
+                ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_KMS);
+                mongocrypt_kms_ctx_t *kctx = mongocrypt_ctx_next_kms_ctx(ctx);
+                ASSERT(kctx);
+                const char *endpoint;
+                ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
+                ASSERT_STREQUAL(endpoint, "placeholder2-identityPlatformEndpoint.com:443");
+                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/azure-auth/oauth-response.txt")), kctx);
+                kctx = mongocrypt_ctx_next_kms_ctx(ctx);
+                ASSERT(!kctx);
+                ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
+            }
+
+            // Needs KMS to decrypt DEK.
+            {
+                ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_KMS);
+                mongocrypt_kms_ctx_t *kctx = mongocrypt_ctx_next_kms_ctx(ctx);
+                ASSERT(kctx);
+                const char *endpoint;
+                ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
+                ASSERT_STREQUAL(endpoint, "placeholder2-keyVaultEndpoint.com:443");
+                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/azure-auth/decrypt-response.txt")),
+                          kctx);
+                kctx = mongocrypt_ctx_next_kms_ctx(ctx);
+                ASSERT(!kctx);
+                ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
+            }
+
+            ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
+            mongocrypt_binary_t *bin = mongocrypt_binary_new();
+            ASSERT_OK(mongocrypt_ctx_finalize(ctx, bin), ctx);
+            mongocrypt_binary_destroy(bin);
+            mongocrypt_ctx_destroy(ctx);
+        }
+        mongocrypt_destroy(crypt);
+    }
+
+    // Test encrypting when access token is included in KMS providers.
+    {
+        mongocrypt_t *crypt = mongocrypt_new();
+
+        mongocrypt_binary_t *kms_providers_withAccessToken =
+            TEST_BSON(BSON_STR({"azure:name3_withAccessToken" : {"accessToken" : "placeholder3-accesstoken"}}));
+
+        ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, kms_providers_withAccessToken), crypt);
+        ASSERT_OK(mongocrypt_init(crypt), crypt);
+
+        // Create `dek3` from `azure:name3_withAccessToken`
+        _mongocrypt_buffer_t dek3;
+        create_dek(tester,
+                   (create_dek_args){.kms_providers = kms_providers_withAccessToken,
+                                     .key_alt_name = "azure3",
+                                     .kek = TEST_BSON(BSON_STR({
+                                         "provider" : "azure:name3_withAccessToken",
+                                         "keyName" : "placeholder3-keyName",
+                                         "keyVaultEndpoint" : "placeholder3-keyVaultEndpoint.com"
+                                     })),
+                                     // Does not need KMS for oauth token.
+                                     .kms_response_1 = TEST_FILE("./test/data/azure-auth/encrypt-response.txt")},
+                   &dek3);
+
+        // Encrypt with `dek3`.
+        {
+            mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+            ASSERT_OK(mongocrypt_ctx_setopt_key_alt_name(ctx, TEST_BSON(BSON_STR({"keyAltName" : "azure3"}))), ctx);
+            ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_DETERMINISTIC_STR, -1), ctx);
+            ASSERT_OK(mongocrypt_ctx_explicit_encrypt_init(ctx, TEST_BSON(BSON_STR({"v" : "foo"}))), ctx);
+
+            ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, _mongocrypt_buffer_as_binary(&dek3)), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+
+            // Does not need KMS for oauth token.
+
+            // Needs KMS to decrypt DEK.
+            {
+                ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_KMS);
+                mongocrypt_kms_ctx_t *kctx = mongocrypt_ctx_next_kms_ctx(ctx);
+                ASSERT(kctx);
+                const char *endpoint;
+                ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
+                ASSERT_STREQUAL(endpoint, "placeholder3-keyVaultEndpoint.com:443");
+                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/azure-auth/decrypt-response.txt")),
+                          kctx);
+                kctx = mongocrypt_ctx_next_kms_ctx(ctx);
+                ASSERT(!kctx);
+                ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
+            }
+
+            ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
+            mongocrypt_binary_t *bin = mongocrypt_binary_new();
+            ASSERT_OK(mongocrypt_ctx_finalize(ctx, bin), ctx);
+            mongocrypt_binary_destroy(bin);
+            mongocrypt_ctx_destroy(ctx);
+        }
+        _mongocrypt_buffer_cleanup(&dek3);
+        mongocrypt_destroy(crypt);
+    }
+
+    _mongocrypt_buffer_cleanup(&ciphertext);
+    _mongocrypt_buffer_cleanup(&dek2);
+    _mongocrypt_buffer_cleanup(&dek1);
+}
+
 void _mongocrypt_tester_install_named_kms_providers(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(test_configuring_named_kms_providers);
     INSTALL_TEST(test_create_datakey_with_named_kms_provider);
+    INSTALL_TEST(test_explicit_with_named_kms_provider_for_azure);
 }
