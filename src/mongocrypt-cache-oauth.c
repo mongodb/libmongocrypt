@@ -27,7 +27,6 @@
 
 typedef struct {
     char *kmsid;
-    bson_t *entry;
     char *access_token;
     int64_t expiration_time_us;
 } mc_mapof_kmsid_to_token_entry_t;
@@ -52,7 +51,6 @@ void mc_mapof_kmsid_to_token_destroy(mc_mapof_kmsid_to_token_t *k2t) {
     for (size_t i = 0; i < k2t->entries.len; i++) {
         mc_mapof_kmsid_to_token_entry_t k2te = _mc_array_index(&k2t->entries, mc_mapof_kmsid_to_token_entry_t, i);
         bson_free(k2te.kmsid);
-        bson_destroy(k2te.entry);
         bson_free(k2te.access_token);
     }
     _mc_array_destroy(&k2t->entries);
@@ -137,7 +135,6 @@ bool mc_mapof_kmsid_to_token_add_response(mc_mapof_kmsid_to_token_t *k2t,
     }
     // Create an entry.
     mc_mapof_kmsid_to_token_entry_t to_put = {.kmsid = bson_strdup(kmsid),
-                                              .entry = bson_copy(response),
                                               .access_token = bson_strdup(access_token),
                                               .expiration_time_us = expiration_time_us};
     _mc_array_append_val(&k2t->entries, to_put);
