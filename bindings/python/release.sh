@@ -78,6 +78,7 @@ if [ "Darwin" = "$(uname -s)" ]; then
 
     # Build intel wheel for Python 3.7.
     get_libmongocrypt macos_x86_64 libmongocrypt/nocrypto/lib/libmongocrypt.dylib
+    export MACOSX_DEPLOYMENT_TARGET=10.14
     build_wheel
     if [ "$(uname -m)" != "arm64" ]; then
         test_dist dist/*.whl
@@ -85,6 +86,7 @@ if [ "Darwin" = "$(uname -s)" ]; then
     
     # Build universal2 wheel.
     get_libmongocrypt macos libmongocrypt/nocrypto/lib/libmongocrypt.dylib
+    export MACOSX_DEPLOYMENT_TARGET=11.0
     build_wheel
     if [ "$(uname -m)" == "arm64" ]; then
         test_dist dist/*universal2.whl
