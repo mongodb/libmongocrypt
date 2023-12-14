@@ -18,35 +18,41 @@
 #include "test-mongocrypt.h"
 
 static void _test_cache_oauth_expiration(_mongocrypt_tester_t *tester) {
-    _mongocrypt_cache_oauth_t *cache;
+    mc_mapof_kmsid_to_token_t *cache;
     char *token;
     bool ret;
     mongocrypt_status_t *status;
 
-    cache = _mongocrypt_cache_oauth_new();
-    token = _mongocrypt_cache_oauth_get(cache);
+    cache = mc_mapof_kmsid_to_token_new();
+    token = mc_mapof_kmsid_to_token_get_token(cache, "aws");
     BSON_ASSERT(!token);
 
     status = mongocrypt_status_new();
-    ret = _mongocrypt_cache_oauth_add(cache, TMP_BSON("{'expires_in': 0, 'access_token': 'foo'}"), status);
+    ret = mc_mapof_kmsid_to_token_add_response(cache,
+                                               "aws",
+                                               TMP_BSON("{'expires_in': 0, 'access_token': 'foo'}"),
+                                               status);
     ASSERT_OR_PRINT(ret, status);
-    /* Attempting to get the token will purge the new token from the cache. */
-    token = _mongocrypt_cache_oauth_get(cache);
+    /* Does not return expired token. */
+    token = mc_mapof_kmsid_to_token_get_token(cache, "aws");
     BSON_ASSERT(!token);
 
     /* Attempt to get again, to ensure MONGOCRYPT-321 is fixed. */
-    token = _mongocrypt_cache_oauth_get(cache);
+    token = mc_mapof_kmsid_to_token_get_token(cache, "aws");
     BSON_ASSERT(!token);
 
     /* Add an unexpired token. */
-    ret = _mongocrypt_cache_oauth_add(cache, TMP_BSON("{'expires_in': 1000, 'access_token': 'bar'}"), status);
+    ret = mc_mapof_kmsid_to_token_add_response(cache,
+                                               "aws",
+                                               TMP_BSON("{'expires_in': 1000, 'access_token': 'bar'}"),
+                                               status);
     ASSERT_OR_PRINT(ret, status);
 
-    token = _mongocrypt_cache_oauth_get(cache);
+    token = mc_mapof_kmsid_to_token_get_token(cache, "aws");
     ASSERT_STREQUAL(token, "bar");
     bson_free(token);
 
-    _mongocrypt_cache_oauth_destroy(cache);
+    mc_mapof_kmsid_to_token_destroy(cache);
     mongocrypt_status_destroy(status);
 }
 
