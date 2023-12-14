@@ -26,7 +26,7 @@
 #define MONGOCRYPT_OAUTH_CACHE_EVICTION_PERIOD_US 5000 * 1000
 
 typedef struct {
-    char *kms_id;
+    char *kmsid;
     bson_t *entry;
     char *access_token;
     int64_t expiration_time_us;
@@ -51,7 +51,7 @@ void mc_mapof_kmsid_to_token_destroy(mc_mapof_kmsid_to_token_t *k2t) {
     _mongocrypt_mutex_cleanup(&k2t->mutex);
     for (size_t i = 0; i < k2t->entries.len; i++) {
         mc_mapof_kmsid_to_token_entry_t k2te = _mc_array_index(&k2t->entries, mc_mapof_kmsid_to_token_entry_t, i);
-        bson_free(k2te.kms_id);
+        bson_free(k2te.kmsid);
         bson_destroy(k2te.entry);
         bson_free(k2te.access_token);
     }
@@ -59,15 +59,15 @@ void mc_mapof_kmsid_to_token_destroy(mc_mapof_kmsid_to_token_t *k2t) {
     bson_free(k2t);
 }
 
-char *mc_mapof_kmsid_to_token_get_token(mc_mapof_kmsid_to_token_t *k2t, const char *kms_id) {
+char *mc_mapof_kmsid_to_token_get_token(mc_mapof_kmsid_to_token_t *k2t, const char *kmsid) {
     BSON_ASSERT_PARAM(k2t);
-    BSON_ASSERT_PARAM(kms_id);
+    BSON_ASSERT_PARAM(kmsid);
 
     _mongocrypt_mutex_lock(&k2t->mutex);
 
     for (size_t i = 0; i < k2t->entries.len; i++) {
         mc_mapof_kmsid_to_token_entry_t k2te = _mc_array_index(&k2t->entries, mc_mapof_kmsid_to_token_entry_t, i);
-        if (0 == strcmp(k2te.kms_id, kms_id)) {
+        if (0 == strcmp(k2te.kmsid, kmsid)) {
             if (bson_get_monotonic_time() >= k2te.expiration_time_us) {
                 // Expired.
                 _mongocrypt_mutex_unlock(&k2t->mutex);
@@ -84,11 +84,11 @@ char *mc_mapof_kmsid_to_token_get_token(mc_mapof_kmsid_to_token_t *k2t, const ch
 }
 
 bool mc_mapof_kmsid_to_token_add_response(mc_mapof_kmsid_to_token_t *k2t,
-                                          const char *kms_id,
+                                          const char *kmsid,
                                           bson_t *response,
                                           mongocrypt_status_t *status) {
     BSON_ASSERT_PARAM(k2t);
-    BSON_ASSERT_PARAM(kms_id);
+    BSON_ASSERT_PARAM(kmsid);
     BSON_ASSERT_PARAM(response);
 
     // Parse access token before locking.
@@ -126,7 +126,7 @@ bool mc_mapof_kmsid_to_token_add_response(mc_mapof_kmsid_to_token_t *k2t,
     // Check if there is an existing entry.
     for (size_t i = 0; i < k2t->entries.len; i++) {
         mc_mapof_kmsid_to_token_entry_t *k2te = &_mc_array_index(&k2t->entries, mc_mapof_kmsid_to_token_entry_t, i);
-        if (0 == strcmp(k2te->kms_id, kms_id)) {
+        if (0 == strcmp(k2te->kmsid, kmsid)) {
             // Update entry.
             bson_free(k2te->access_token);
             k2te->access_token = bson_strdup(access_token);
@@ -136,7 +136,7 @@ bool mc_mapof_kmsid_to_token_add_response(mc_mapof_kmsid_to_token_t *k2t,
         }
     }
     // Create an entry.
-    mc_mapof_kmsid_to_token_entry_t to_put = {.kms_id = bson_strdup(kms_id),
+    mc_mapof_kmsid_to_token_entry_t to_put = {.kmsid = bson_strdup(kmsid),
                                               .entry = bson_copy(response),
                                               .access_token = bson_strdup(access_token),
                                               .expiration_time_us = expiration_time_us};
