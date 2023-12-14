@@ -80,7 +80,7 @@ if [ "Darwin" = "$(uname -s)" ]; then
     get_libmongocrypt macos_x86_64 libmongocrypt/nocrypto/lib/libmongocrypt.dylib
     # See https://github.com/pypa/cibuildwheel/blob/a3e5b541dc3111166a3abdbbc90ecb195c8cb9e2/cibuildwheel/macos.py#L247
     # for information on these environment variables.
-    export MACOSX_DEPLOYMENT_TARGET=10.9
+    export MACOSX_DEPLOYMENT_TARGET=10.14
     export _PYTHON_HOST_PLATFORM=macosx-10.9-x86_64
     build_wheel
     if [ "$(uname -m)" != "arm64" ]; then
@@ -120,7 +120,7 @@ if [ $(command -v docker) ]; then
     # When the rhel7 images go EOL we'll have to switch to the manylinux_x_y variants
     # and use rhel8.
     get_libmongocrypt rhel-70-64-bit libmongocrypt/nocrypto/lib64/libmongocrypt.so
-    build_manylinux_wheel quay.io/pypa/manylinux2010_x86_64:2021-05-05-1ac6ef3
+    build_manylinux_wheel quay.io/pypa/manylinux2014_x86_64:2023-12-05-e9f0345
     if [ "Linux" = "$(uname -s)" ]; then
         $PYTHON -m venv .venv
         . .venv/bin/activate
