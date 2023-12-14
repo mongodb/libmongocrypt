@@ -114,7 +114,7 @@ if [ $(command -v docker) ]; then
     # When the rhel7 images go EOL we'll have to switch to the manylinux_x_y variants
     # and use rhel8.
     get_libmongocrypt rhel-70-64-bit libmongocrypt/nocrypto/lib64/libmongocrypt.so
-    build_manylinux_wheel quay.io/pypa/manylinux2014_x86_64:2023-12-05-e9f0345
+    build_manylinux_wheel quay.io/pypa/manylinux2010_x86_64:2021-05-05-1ac6ef3
     if [ "Linux" = "$(uname -s)" ]; then
         $PYTHON -m venv .venv
         . .venv/bin/activate
