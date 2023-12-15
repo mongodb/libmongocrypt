@@ -4,7 +4,7 @@
 bindings/node @nbbeeken @durran @baileympearson @dariakp @addaleax
 
 # Python Bindings
-bindings/python @ShaneHarvey @blink1073 @juliusgeo
+bindings/python @mongodb/dbx-python
 
 # Java Bindings
 bindings/java @jyemin @rozza
