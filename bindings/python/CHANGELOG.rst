@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Changes in Version 1.8.0
+------------------------
+
+- Update from manylinux2010 to manylinux2014 wheels.
+
 Changes in Version 1.7.0
 ------------------------
 

@@ -51,25 +51,9 @@ Docker and a Windows machine.
    $ git tag -a "pymongocrypt-<version>" -m "pymongocrypt-<version"
    $ git push --tags
 
-#. Pushing a tag will trigger a release process in Evergreen which builds
-   wheels for manylinux, macOS, and Windows. Wait for the "release-python-combine"
-   task to complete and then download the "Release Python files all" archive. See:
-   https://evergreen.mongodb.com/waterfall/libmongocrypt?bv_filter=release
-   (requires auth)
-
-   The contents should look like this::
-
-     $ ls path/to/archive
-     pymongocrypt-<version>.tar.gz
-     pymongocrypt-<version>-py2.py3-none-manylinux2010_x86_64.whl
-     pymongocrypt-<version>-py2.py3-none-manylinux_2_12_x86_64.manylinux2010_x86_64.whl
-     pymongocrypt-<version>-py2.py3-none-macosx_10_14_x86_64.whl
-     pymongocrypt-<version>-py2.py3-none-macosx_11_0_universal2.whl
-     pymongocrypt-<version>-py2.py3-none-win_amd64.whl
-
-#. Upload all the release packages to PyPI with twine::
-
-     $ python3 -m twine upload dist/*
+#. Pushing a tag will trigger the release process on GitHub Actions that will require a member 
+   of the team to authorize the deployment. Navigate to https://github.com/mongodb/libmongocrypt/actions/workflows/release-python.yml 
+   and wait for the publish to complete.
 
 #. Create a new PR against the same ticket to update version to a ``.dev0``
    version.
@@ -103,5 +87,3 @@ Manually Creating Wheels
 
      $ ls dist
      pymongocrypt-<version>-py2.py3-none-win_amd64.whl
-
-

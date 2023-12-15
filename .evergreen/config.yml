@@ -258,36 +258,14 @@ functions:
             bash ./libmongocrypt/.evergreen/build_all.sh
           env ${compile_env|} bash ./libmongocrypt/.evergreen/compile_cs.sh
 
-  "build python release macos":
-    - command: shell.exec
-      params:
-        script: |
-          set -ex
-          cd ./libmongocrypt/bindings/python
-          PYTHON=${PYTHON} MACOS_TARGET=${MACOS_TARGET} ./release.sh
-
   "build python release":
     - command: shell.exec
       params:
+        shell: bash
         script: |
           set -ex
           cd ./libmongocrypt/bindings/python
-          ./release.sh
-
-  "test python release":
-    - command: shell.exec
-      params:
-        script: |
-          set -ex
-          cd ./libmongocrypt/bindings/python
-          ROOT=$(pwd)
-          for file in ./dist/*.whl; do
-            ${PYTHON} -m pip uninstall -y pymongocrypt
-            ${PYTHON} -m pip install --upgrade --user $file
-            cd $HOME
-            ${PYTHON} -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
-            cd $ROOT
-          done
+          PYTHON=${PYTHON} ./release.sh
 
   "upload python release":
     - command: archive.targz_pack
@@ -470,8 +448,7 @@ tasks:
   run_on: macos-1100
   commands:
     - func: "fetch source"
-    - func: "build python release macos"
-    - func: "test python release"
+    - func: "build python release"
       vars: { PYTHON: /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 }
     - func: "upload python release"
 
@@ -480,12 +457,9 @@ tasks:
   run_on: macos-1014
   commands:
     - func: "fetch source"
-    - func: "build python release macos"
+    - func: "build python release"
       vars:
         PYTHON: /Library/Frameworks/Python.framework/Versions/3.7/bin/python3
-        MACOS_TARGET: macos_x86_64
-    - func: "test python release"
-      vars: { PYTHON: /Library/Frameworks/Python.framework/Versions/3.7/bin/python3 }
     - func: "upload python release"
 
 - name: "release-python-linux"
@@ -495,7 +469,6 @@ tasks:
   commands:
     - func: "fetch source"
     - func: "build python release"
-    - func: "test python release"
       vars: { PYTHON: /opt/python/3.7/bin/python3 }
     - func: "upload python release"
 
@@ -505,7 +478,6 @@ tasks:
   commands:
     - func: "fetch source"
     - func: "build python release"
-    - func: "test python release"
       vars: { PYTHON: C:/python/Python37/python.exe }
     - func: "upload python release"
 
