@@ -726,6 +726,41 @@ done:
     return ok;
 }
 
+static bool _mongocrypt_opts_kms_provider_aws_parse(_mongocrypt_opts_kms_provider_aws_t *aws,
+                                                    const char *kmsid,
+                                                    const bson_t *def,
+                                                    mongocrypt_status_t *status) {
+    bool ok = false;
+
+    if (!_mongocrypt_parse_required_utf8(def, "accessKeyId", &aws->access_key_id, status)) {
+        goto done;
+    }
+    if (!_mongocrypt_parse_required_utf8(def, "secretAccessKey", &aws->secret_access_key, status)) {
+        goto done;
+    }
+
+    if (!_mongocrypt_parse_optional_utf8(def, "sessionToken", &aws->session_token, status)) {
+        goto done;
+    }
+
+    if (!_mongocrypt_check_allowed_fields(def,
+                                          NULL /* root */,
+                                          status,
+                                          "accessKeyId",
+                                          "secretAccessKey",
+                                          "sessionToken")) {
+        goto done;
+    }
+
+    ok = true;
+done:
+    if (!ok) {
+        // Wrap error to identify the failing `kmsid`.
+        CLIENT_ERR("Failed to parse KMS provider `%s`: %s", kmsid, mongocrypt_status_message(status, NULL /* len */));
+    }
+    return ok;
+}
+
 bool _mongocrypt_parse_kms_providers(mongocrypt_binary_t *kms_providers_definition,
                                      _mongocrypt_opts_kms_providers_t *kms_providers,
                                      mongocrypt_status_t *status,
@@ -771,8 +806,15 @@ bool _mongocrypt_parse_kms_providers(mongocrypt_binary_t *kms_providers_definiti
                 return false;
             }
             case MONGOCRYPT_KMS_PROVIDER_AWS: {
-                CLIENT_ERR("Parsing named AWS not yet implemented");
-                return false;
+                _mongocrypt_opts_kms_provider_aws_t aws = {0};
+                if (!_mongocrypt_opts_kms_provider_aws_parse(&aws, field_name, &field_bson, status)) {
+                    _mongocrypt_opts_kms_provider_aws_cleanup(&aws);
+                    return false;
+                }
+                mc_kms_creds_with_id_t kcwi = {.kmsid = bson_strdup(field_name),
+                                               .creds = {.type = type, .value = {.aws = aws}}};
+                _mc_array_append_val(&kms_providers->named_mut, kcwi);
+                break;
             }
             case MONGOCRYPT_KMS_PROVIDER_LOCAL: {
                 _mongocrypt_opts_kms_provider_local_t local = {0};

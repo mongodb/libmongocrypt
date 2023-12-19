@@ -92,6 +92,26 @@ static bool _mongocrypt_gcp_kek_parse(_mongocrypt_gcp_kek_t *gcp,
     return true;
 }
 
+static bool _mongocrypt_aws_kek_parse(_mongocrypt_aws_kek_t *aws,
+                                      const char *kmsid,
+                                      const bson_t *def,
+                                      mongocrypt_status_t *status) {
+    if (!_mongocrypt_parse_required_utf8(def, "key", &aws->cmk, status)) {
+        return false;
+    }
+    if (!_mongocrypt_parse_required_utf8(def, "region", &aws->region, status)) {
+        return false;
+    }
+    if (!_mongocrypt_parse_optional_endpoint(def, "endpoint", &aws->endpoint, NULL /* opts */, status)) {
+        return false;
+    }
+    if (!_mongocrypt_check_allowed_fields(def, NULL, status, "provider", "key", "region", "endpoint")) {
+        return false;
+    }
+
+    return true;
+}
+
 /* Possible documents to parse:
  * AWS
  *    provider: "aws"
@@ -143,8 +163,10 @@ bool _mongocrypt_kek_parse_owned(const bson_t *bson, _mongocrypt_kek_t *kek, mon
             goto done;
         }
         case MONGOCRYPT_KMS_PROVIDER_AWS: {
-            CLIENT_ERR("Parsing named AWS KEK not yet implemented");
-            goto done;
+            if (!_mongocrypt_aws_kek_parse(&kek->provider.aws, kek->kmsid, bson, status)) {
+                goto done;
+            }
+            break;
         }
         case MONGOCRYPT_KMS_PROVIDER_LOCAL: {
             if (!_mongocrypt_check_allowed_fields(bson, NULL, status, "provider")) {
