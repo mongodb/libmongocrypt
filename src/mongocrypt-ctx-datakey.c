@@ -16,6 +16,7 @@
 
 #include "mongocrypt-crypto-private.h"
 #include "mongocrypt-ctx-private.h"
+#include "mongocrypt-kms-ctx-private.h"
 #include "mongocrypt-private.h"
 #include "mongocrypt.h"
 
@@ -106,8 +107,11 @@ static bool _kms_kmip_start(mongocrypt_ctx_t *ctx, const mc_kms_creds_t *kc) {
 
     if (!dkctx->kmip_unique_identifier) {
         if (delegated) {
-            ;
             // zz KMIP Create request
+            if (!_mongocrypt_kms_ctx_init_kmip_create(&dkctx->kms, endpoint, &ctx->crypt->log)) {
+                mongocrypt_kms_ctx_status(&dkctx->kms, ctx->status);
+                goto fail;
+            }
         } else {
             /* User did not set a 'keyId'. */
             /* Step 1. Send a KMIP Register request with a new 96 byte SecretData. */
@@ -160,6 +164,16 @@ static bool _kms_kmip_start(mongocrypt_ctx_t *ctx, const mc_kms_creds_t *kc) {
 
     if (delegated) {
         // zz use UniqueIdentifier to encrypt a new DEK
+        if (!_mongocrypt_kms_ctx_init_kmip_encrypt(&dkctx->kms,
+                                                   endpoint,
+                                                   dkctx->kmip_unique_identifier,
+                                                   &dkctx->plaintext_key_material,
+                                                   &ctx->crypt->log)) {
+            mongocrypt_kms_ctx_status(&dkctx->kms, ctx->status);
+            goto fail;
+        }
+        ctx->state = MONGOCRYPT_CTX_NEED_KMS;
+        goto success;
     } else {
         /* Step 4. Use the 96 byte SecretData to encrypt a new DEK. */
         if (!_mongocrypt_wrap_key(ctx->crypt->crypto,
