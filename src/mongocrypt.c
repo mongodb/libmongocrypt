@@ -1307,7 +1307,7 @@ bool _mongocrypt_parse_kms_providers(mongocrypt_binary_t *kms_providers_definiti
                 return false;
             }
 
-            if (!_mongocrypt_check_allowed_fields(&as_bson, "kmip", status, "endpoint")) {
+            if (!_mongocrypt_check_allowed_fields(&as_bson, "kmip", status, "endpoint", "delegated")) {
                 return false;
             }
             kms_providers->configured_providers |= MONGOCRYPT_KMS_PROVIDER_KMIP;
