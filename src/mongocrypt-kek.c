@@ -148,9 +148,9 @@ bool _mongocrypt_kek_parse_owned(const bson_t *bson, _mongocrypt_kek_t *kek, mon
                                               "keyVersion")) {
             goto done;
         }
-    } else if (0 == strcmp(kms_provider, "kmip") || 0 == strcmp(kms_provider, "kmip-delegated")) {
-        kek->provider.kmip.delegated = 0 == strcmp(kms_provider, "kmip-delegated");
+    } else if (0 == strcmp(kms_provider, "kmip")) {
         _mongocrypt_endpoint_parse_opts_t opts = {0};
+        kek->kms_provider = MONGOCRYPT_KMS_PROVIDER_KMIP;
 
         opts.allow_empty_subdomain = true;
         if (!_mongocrypt_parse_optional_endpoint(bson, "endpoint", &kek->provider.kmip.endpoint, &opts, status)) {
@@ -161,7 +161,11 @@ bool _mongocrypt_kek_parse_owned(const bson_t *bson, _mongocrypt_kek_t *kek, mon
             goto done;
         }
 
-        if (!_mongocrypt_check_allowed_fields(bson, NULL, status, "provider", "endpoint", "keyId")) {
+        if (!_mongocrypt_parse_optional_bool(bson, "delegated", &kek->provider.kmip.delegated, status)) {
+            goto done;
+        }
+
+        if (!_mongocrypt_check_allowed_fields(bson, NULL, status, "provider", "endpoint", "keyId", "delegated")) {
             goto done;
         }
     } else {

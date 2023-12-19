@@ -143,6 +143,7 @@ bool _mongocrypt_opts_kms_providers_validate(_mongocrypt_opts_t *opts,
  * Returns true if no error occured.
  */
 bool _mongocrypt_parse_optional_utf8(const bson_t *bson, const char *dotkey, char **out, mongocrypt_status_t *status);
+bool _mongocrypt_parse_optional_bool(const bson_t *bson, const char *dotkey, bool *out, mongocrypt_status_t *status);
 
 /*
  * Parse a required UTF-8 value from BSON.

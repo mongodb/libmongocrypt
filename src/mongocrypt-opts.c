@@ -301,6 +301,33 @@ bool _mongocrypt_parse_optional_utf8(const bson_t *bson, const char *dotkey, cha
     return true;
 }
 
+bool _mongocrypt_parse_optional_bool(const bson_t *bson, const char *dotkey, bool *out, mongocrypt_status_t *status) {
+    bson_iter_t iter;
+    bson_iter_t child;
+
+    BSON_ASSERT_PARAM(bson);
+    BSON_ASSERT_PARAM(dotkey);
+    BSON_ASSERT_PARAM(out);
+
+    *out = false;
+
+    if (!bson_iter_init(&iter, bson)) {
+        CLIENT_ERR("invalid BSON");
+        return false;
+    }
+    if (!bson_iter_find_descendant(&iter, dotkey, &child)) {
+        /* Not found. Not an error. */
+        return true;
+    }
+    if (!BSON_ITER_HOLDS_BOOL(&child)) {
+        CLIENT_ERR("expected bool %s", dotkey);
+        return false;
+    }
+
+    *out = bson_iter_bool(&child);
+    return true;
+}
+
 bool _mongocrypt_parse_required_utf8(const bson_t *bson, const char *dotkey, char **out, mongocrypt_status_t *status) {
     BSON_ASSERT_PARAM(bson);
     BSON_ASSERT_PARAM(dotkey);
