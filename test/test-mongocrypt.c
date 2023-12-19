@@ -24,6 +24,7 @@
 #include "mongocrypt-marking-private.h"
 #include "mongocrypt.h"
 #include "test-mongocrypt.h"
+#include <kms_message/kms_b64.h> // kms_message_b64_pton
 
 #ifdef MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO
 #include <sys/sysctl.h>
@@ -783,6 +784,37 @@ static void _test_setopt_kms_providers(_mongocrypt_tester_t *tester) {
         } else {
             ASSERT_FAILS(mongocrypt_setopt_kms_providers(crypt, TEST_BSON(test->value)), crypt, test->errmsg);
         }
+        mongocrypt_destroy(crypt);
+    }
+
+    // Errors if followed by call to `mongocrypt_setopt_kms_providers` configuring "local".
+    // This is a regression test for: MONGOCRYPT-610
+    {
+        _mongocrypt_buffer_t local_kek_buf;
+        // Create buffer for local KEK to pass data.
+        {
+            _mongocrypt_buffer_init(&local_kek_buf);
+            _mongocrypt_buffer_resize(&local_kek_buf, MONGOCRYPT_KEY_LEN);
+            int result_len =
+                kms_message_b64_pton(EXAMPLE_LOCAL_MATERIAL, local_kek_buf.data, (size_t)local_kek_buf.len);
+            ASSERT_CMPINT(result_len, ==, MONGOCRYPT_KEY_LEN);
+        }
+
+        mongocrypt_binary_t *more = TEST_BSON("{'local' : {'key' : '%s'}}", EXAMPLE_LOCAL_MATERIAL);
+        mongocrypt_t *crypt = mongocrypt_new();
+        ASSERT_OK(mongocrypt_setopt_kms_provider_local(crypt, _mongocrypt_buffer_as_binary(&local_kek_buf)), crypt);
+        ASSERT_FAILS(mongocrypt_setopt_kms_providers(crypt, more), crypt, "already set");
+        mongocrypt_destroy(crypt);
+        _mongocrypt_buffer_cleanup(&local_kek_buf);
+    }
+
+    // Errors if followed by call to `mongocrypt_setopt_kms_providers` configuring "aws".
+    // This is a regression test for: MONGOCRYPT-610
+    {
+        mongocrypt_binary_t *more = TEST_BSON("{'aws' : {'accessKeyId' : 'foo', 'secretAccessKey' : 'bar'}}");
+        mongocrypt_t *crypt = mongocrypt_new();
+        ASSERT_OK(mongocrypt_setopt_kms_provider_aws(crypt, "foo", -1, "bar", -1), crypt);
+        ASSERT_FAILS(mongocrypt_setopt_kms_providers(crypt, more), crypt, "already set");
         mongocrypt_destroy(crypt);
     }
 }
