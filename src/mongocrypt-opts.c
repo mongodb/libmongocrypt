@@ -680,6 +680,52 @@ done:
     return ok;
 }
 
+static bool _mongocrypt_opts_kms_provider_gcp_parse(_mongocrypt_opts_kms_provider_gcp_t *gcp,
+                                                    const char *kmsid,
+                                                    const bson_t *def,
+                                                    mongocrypt_status_t *status) {
+    bool ok = false;
+    if (!_mongocrypt_parse_optional_utf8(def, "accessToken", &gcp->access_token, status)) {
+        goto done;
+    }
+
+    if (gcp->access_token) {
+        // Caller provides an accessToken directly
+        if (!_mongocrypt_check_allowed_fields(def, NULL /* root */, status, "accessToken")) {
+            goto done;
+        }
+        ok = true;
+        goto done;
+    }
+
+    // No accessToken given, so we'll need to look one up on our own later
+    // using the GCP API
+
+    if (!_mongocrypt_parse_required_utf8(def, "email", &gcp->email, status)) {
+        goto done;
+    }
+
+    if (!_mongocrypt_parse_required_binary(def, "privateKey", &gcp->private_key, status)) {
+        goto done;
+    }
+
+    if (!_mongocrypt_parse_optional_endpoint(def, "endpoint", &gcp->endpoint, NULL /* opts */, status)) {
+        goto done;
+    }
+
+    if (!_mongocrypt_check_allowed_fields(def, NULL /* root */, status, "email", "privateKey", "endpoint")) {
+        goto done;
+    }
+
+    ok = true;
+done:
+    if (!ok) {
+        // Wrap error to identify the failing `kmsid`.
+        CLIENT_ERR("Failed to parse KMS provider `%s`: %s", kmsid, mongocrypt_status_message(status, NULL /* len */));
+    }
+    return ok;
+}
+
 bool _mongocrypt_parse_kms_providers(mongocrypt_binary_t *kms_providers_definition,
                                      _mongocrypt_opts_kms_providers_t *kms_providers,
                                      mongocrypt_status_t *status,
@@ -751,8 +797,15 @@ bool _mongocrypt_parse_kms_providers(mongocrypt_binary_t *kms_providers_definiti
                 break;
             }
             case MONGOCRYPT_KMS_PROVIDER_GCP: {
-                CLIENT_ERR("Parsing named gcp not yet implemented");
-                return false;
+                _mongocrypt_opts_kms_provider_gcp_t gcp = {0};
+                if (!_mongocrypt_opts_kms_provider_gcp_parse(&gcp, field_name, &field_bson, status)) {
+                    _mongocrypt_opts_kms_provider_gcp_cleanup(&gcp);
+                    return false;
+                }
+                mc_kms_creds_with_id_t kcwi = {.kmsid = bson_strdup(field_name),
+                                               .creds = {.type = type, .value = {.gcp = gcp}}};
+                _mc_array_append_val(&kms_providers->named_mut, kcwi);
+                break;
             }
             case MONGOCRYPT_KMS_PROVIDER_KMIP: {
                 CLIENT_ERR("Parsing named kmip not yet implemented");

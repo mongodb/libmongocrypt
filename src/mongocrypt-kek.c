@@ -50,6 +50,48 @@ static bool _mongocrypt_azure_kek_parse(_mongocrypt_azure_kek_t *azure,
     return true;
 }
 
+static bool _mongocrypt_gcp_kek_parse(_mongocrypt_gcp_kek_t *gcp,
+                                      const char *kmsid,
+                                      const bson_t *def,
+                                      mongocrypt_status_t *status) {
+    if (!_mongocrypt_parse_optional_endpoint(def, "endpoint", &gcp->endpoint, NULL /* opts */, status)) {
+        return false;
+    }
+
+    if (!_mongocrypt_parse_required_utf8(def, "projectId", &gcp->project_id, status)) {
+        return false;
+    }
+
+    if (!_mongocrypt_parse_required_utf8(def, "location", &gcp->location, status)) {
+        return false;
+    }
+
+    if (!_mongocrypt_parse_required_utf8(def, "keyRing", &gcp->key_ring, status)) {
+        return false;
+    }
+
+    if (!_mongocrypt_parse_required_utf8(def, "keyName", &gcp->key_name, status)) {
+        return false;
+    }
+
+    if (!_mongocrypt_parse_optional_utf8(def, "keyVersion", &gcp->key_version, status)) {
+        return false;
+    }
+    if (!_mongocrypt_check_allowed_fields(def,
+                                          NULL,
+                                          status,
+                                          "provider",
+                                          "endpoint",
+                                          "projectId",
+                                          "location",
+                                          "keyRing",
+                                          "keyName",
+                                          "keyVersion")) {
+        return false;
+    }
+    return true;
+}
+
 /* Possible documents to parse:
  * AWS
  *    provider: "aws"
@@ -117,8 +159,10 @@ bool _mongocrypt_kek_parse_owned(const bson_t *bson, _mongocrypt_kek_t *kek, mon
             break;
         }
         case MONGOCRYPT_KMS_PROVIDER_GCP: {
-            CLIENT_ERR("Parsing named gcp KEK not yet implemented");
-            goto done;
+            if (!_mongocrypt_gcp_kek_parse(&kek->provider.gcp, kek->kmsid, bson, status)) {
+                goto done;
+            }
+            break;
         }
         case MONGOCRYPT_KMS_PROVIDER_KMIP: {
             CLIENT_ERR("Parsing named kmip KEK not yet implemented");
