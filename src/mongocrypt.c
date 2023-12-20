@@ -1248,6 +1248,10 @@ bool _mongocrypt_parse_kms_providers(mongocrypt_binary_t *kms_providers_definiti
         } else if (0 == strcmp(field_name, "local") && bson_empty(&field_bson)) {
             kms_providers->need_credentials |= MONGOCRYPT_KMS_PROVIDER_LOCAL;
         } else if (0 == strcmp(field_name, "local")) {
+            if (0 != (kms_providers->configured_providers & MONGOCRYPT_KMS_PROVIDER_LOCAL)) {
+                CLIENT_ERR("local KMS provider already set");
+                return false;
+            }
             if (!_mongocrypt_parse_required_binary(&as_bson, "local.key", &kms_providers->local.key, status)) {
                 return false;
             }
@@ -1264,6 +1268,11 @@ bool _mongocrypt_parse_kms_providers(mongocrypt_binary_t *kms_providers_definiti
         } else if (0 == strcmp(field_name, "aws") && bson_empty(&field_bson)) {
             kms_providers->need_credentials |= MONGOCRYPT_KMS_PROVIDER_AWS;
         } else if (0 == strcmp(field_name, "aws")) {
+            if (0 != (kms_providers->configured_providers & MONGOCRYPT_KMS_PROVIDER_AWS)) {
+                CLIENT_ERR("aws KMS provider already set");
+                return false;
+            }
+
             if (!_mongocrypt_parse_required_utf8(&as_bson,
                                                  "aws.accessKeyId",
                                                  &kms_providers->aws.access_key_id,
