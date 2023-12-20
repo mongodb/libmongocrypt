@@ -554,6 +554,9 @@ static bool _state_need_kms(_state_machine_t *state_machine, bson_error_t *error
         }
 
         /* Read and feed reply. */
+        if (state_machine->trace) {
+            MONGOC_DEBUG("<-- read KMS reply:");
+        }
         while (mongocrypt_kms_ctx_bytes_needed(kms_ctx) > 0) {
 #define BUFFER_SIZE 1024
             uint8_t buf[BUFFER_SIZE];
@@ -584,7 +587,6 @@ static bool _state_need_kms(_state_machine_t *state_machine, bson_error_t *error
             }
 
             if (state_machine->trace) {
-                MONGOC_DEBUG("<-- read KMS reply:");
                 const char *kms_provider = mongocrypt_kms_ctx_get_kms_provider(kms_ctx, NULL);
                 if (0 == strcmp(kms_provider, "kmip")) {
                     // Print KMIP protocol as hex.
@@ -598,7 +600,6 @@ static bool _state_need_kms(_state_machine_t *state_machine, bson_error_t *error
                     BSON_ASSERT(read_ret <= INT_MAX);
                     printf("%.*s", (int)read_ret, as_char_ptr);
                 }
-                printf("\n");
             }
 
             mongocrypt_binary_destroy(http_reply);
@@ -607,6 +608,9 @@ static bool _state_need_kms(_state_machine_t *state_machine, bson_error_t *error
                 _test_kms_ctx_check_error(kms_ctx, error, true);
                 goto fail;
             }
+        }
+        if (state_machine->trace) {
+            printf("\n");
         }
         kms_ctx = mongocrypt_ctx_next_kms_ctx(state_machine->ctx);
     }
