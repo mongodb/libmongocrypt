@@ -761,6 +761,32 @@ done:
     return ok;
 }
 
+static bool _mongocrypt_opts_kms_provider_kmip_parse(_mongocrypt_opts_kms_provider_kmip_t *kmip,
+                                                     const char *kmsid,
+                                                     const bson_t *def,
+                                                     mongocrypt_status_t *status) {
+    bool ok = false;
+
+    _mongocrypt_endpoint_parse_opts_t opts = {0};
+
+    opts.allow_empty_subdomain = true;
+    if (!_mongocrypt_parse_required_endpoint(def, "endpoint", &kmip->endpoint, &opts, status)) {
+        goto done;
+    }
+
+    if (!_mongocrypt_check_allowed_fields(def, NULL /* root */, status, "endpoint")) {
+        goto done;
+    }
+
+    ok = true;
+done:
+    if (!ok) {
+        // Wrap error to identify the failing `kmsid`.
+        CLIENT_ERR("Failed to parse KMS provider `%s`: %s", kmsid, mongocrypt_status_message(status, NULL /* len */));
+    }
+    return ok;
+}
+
 bool _mongocrypt_parse_kms_providers(mongocrypt_binary_t *kms_providers_definition,
                                      _mongocrypt_opts_kms_providers_t *kms_providers,
                                      mongocrypt_status_t *status,
@@ -850,7 +876,15 @@ bool _mongocrypt_parse_kms_providers(mongocrypt_binary_t *kms_providers_definiti
                 break;
             }
             case MONGOCRYPT_KMS_PROVIDER_KMIP: {
-                CLIENT_ERR("Parsing named kmip not yet implemented");
+                _mongocrypt_opts_kms_provider_kmip_t kmip = {0};
+                if (!_mongocrypt_opts_kms_provider_kmip_parse(&kmip, field_name, &field_bson, status)) {
+                    _mongocrypt_opts_kms_provider_kmip_cleanup(&kmip);
+                    return false;
+                }
+                mc_kms_creds_with_id_t kcwi = {.kmsid = bson_strdup(field_name),
+                                               .creds = {.type = type, .value = {.kmip = kmip}}};
+                _mc_array_append_val(&kms_providers->named_mut, kcwi);
+                break;
                 return false;
             }
             }

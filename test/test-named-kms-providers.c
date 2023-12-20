@@ -36,6 +36,210 @@
 
 #define BSON_STR(...) #__VA_ARGS__
 
+// `kmip_get_operation_type` returns a string representation of an Operation in a KMIP request.
+// Useful for tests wanting to assert the type of KMIP request contained in a `mongocrypt_kms_ctx_t`.
+static const char *kmip_get_operation_type(mongocrypt_binary_t *bin) {
+    // Convert to hex for easier searching with `strstr`.
+    char *as_hex = data_to_hex(mongocrypt_binary_data(bin), mongocrypt_binary_len(bin));
+    const char *needle = "42005c"   // Tag=Operation
+                         "05"       // Type=Enum
+                         "00000004" // Length
+                         "000000";  // First three bytes of four byte value.
+    char *found = strstr(as_hex, needle);
+    if (!found) {
+        bson_free(as_hex);
+        return "Not found";
+    }
+    // Read the next two hex characters.
+    found += strlen(needle);
+    const char *got = "Unknown";
+    // Refer to section 9.1.3.2.26 of KMIP 1.0 specification for the Operation values.
+    if (0 == strncmp(found, "01", 2)) {
+        got = "Create";
+    } else if (0 == strncmp(found, "02", 2)) {
+        got = "Create_Key_Pair";
+    } else if (0 == strncmp(found, "03", 2)) {
+        got = "Register";
+    } else if (0 == strncmp(found, "04", 2)) {
+        got = "Rekey";
+    } else if (0 == strncmp(found, "05", 2)) {
+        got = "Derive_Key";
+    } else if (0 == strncmp(found, "06", 2)) {
+        got = "Certify";
+    } else if (0 == strncmp(found, "07", 2)) {
+        got = "Recertify";
+    } else if (0 == strncmp(found, "08", 2)) {
+        got = "Locate";
+    } else if (0 == strncmp(found, "09", 2)) {
+        got = "Check";
+    } else if (0 == strncmp(found, "0a", 2)) {
+        got = "Get";
+    } else if (0 == strncmp(found, "0b", 2)) {
+        got = "Get_Attributes";
+    } else if (0 == strncmp(found, "0c", 2)) {
+        got = "Get_Attribute_List";
+    } else if (0 == strncmp(found, "0d", 2)) {
+        got = "Add_Attribute";
+    } else if (0 == strncmp(found, "0e", 2)) {
+        got = "Modify_Attribute";
+    } else if (0 == strncmp(found, "0f", 2)) {
+        got = "Delete_Attribute";
+    } else if (0 == strncmp(found, "10", 2)) {
+        got = "Obtain_Lease";
+    } else if (0 == strncmp(found, "11", 2)) {
+        got = "Get_Usage_Allocation";
+    } else if (0 == strncmp(found, "12", 2)) {
+        got = "Activate";
+    } else if (0 == strncmp(found, "13", 2)) {
+        got = "Revoke";
+    } else if (0 == strncmp(found, "14", 2)) {
+        got = "Destroy";
+    } else if (0 == strncmp(found, "15", 2)) {
+        got = "Archive";
+    } else if (0 == strncmp(found, "16", 2)) {
+        got = "Recover";
+    } else if (0 == strncmp(found, "17", 2)) {
+        got = "Validate";
+    } else if (0 == strncmp(found, "18", 2)) {
+        got = "Query";
+    } else if (0 == strncmp(found, "19", 2)) {
+        got = "Cancel";
+    } else if (0 == strncmp(found, "1a", 2)) {
+        got = "Poll";
+    } else if (0 == strncmp(found, "1b", 2)) {
+        got = "Notify";
+    } else if (0 == strncmp(found, "1c", 2)) {
+        got = "Put";
+    }
+    bson_free(as_hex);
+    return got;
+}
+
+/*
+clang-format off
+
+`KMIP_REGISTER_RESPONSE` represents:
+
+<ResponseMessage tag="0x42007b" type="Structure">
+ <ResponseHeader tag="0x42007a" type="Structure">
+  <ProtocolVersion tag="0x420069" type="Structure">
+   <ProtocolVersionMajor tag="0x42006a" type="Integer" value="1"/>
+   <ProtocolVersionMinor tag="0x42006b" type="Integer" value="0"/>
+  </ProtocolVersion>
+  <TimeStamp tag="0x420092" type="DateTime" value="2023-12-20T13:28:43-0500"/>
+  <BatchCount tag="0x42000d" type="Integer" value="1"/>
+ </ResponseHeader>
+ <BatchItem tag="0x42000f" type="Structure">
+  <Operation tag="0x42005c" type="Enumeration" value="3"/>
+  <ResultStatus tag="0x42007f" type="Enumeration" value="0"/>
+  <ResponsePayload tag="0x42007c" type="Structure">
+   <UniqueIdentifier tag="0x420094" type="TextString" value="12"/>
+  </ResponsePayload>
+ </BatchItem>
+</ResponseMessage>
+
+clang-format on
+*/
+static const uint8_t KMIP_REGISTER_RESPONSE[] = {
+    0x42, 0x00, 0x7b, 0x01, 0x00, 0x00, 0x00, 0x90, 0x42, 0x00, 0x7a, 0x01, 0x00, 0x00, 0x00, 0x48, 0x42, 0x00, 0x69,
+    0x01, 0x00, 0x00, 0x00, 0x20, 0x42, 0x00, 0x6a, 0x02, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00,
+    0x00, 0x00, 0x42, 0x00, 0x6b, 0x02, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x42,
+    0x00, 0x92, 0x09, 0x00, 0x00, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x65, 0x82, 0xec, 0x0b, 0x42, 0x00, 0x0d, 0x02,
+    0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x42, 0x00, 0x0f, 0x01, 0x00, 0x00, 0x00,
+    0x38, 0x42, 0x00, 0x5c, 0x05, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x42, 0x00,
+    0x7f, 0x05, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x42, 0x00, 0x7c, 0x01, 0x00,
+    0x00, 0x00, 0x10, 0x42, 0x00, 0x94, 0x07, 0x00, 0x00, 0x00, 0x02, 0x31, 0x32, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+
+/*
+clang-format off
+
+`KMIP_ACTIVATE_RESPONSE` represents:
+
+<ResponseMessage tag="0x42007b" type="Structure">
+ <ResponseHeader tag="0x42007a" type="Structure">
+  <ProtocolVersion tag="0x420069" type="Structure">
+   <ProtocolVersionMajor tag="0x42006a" type="Integer" value="1"/>
+   <ProtocolVersionMinor tag="0x42006b" type="Integer" value="0"/>
+  </ProtocolVersion>
+  <TimeStamp tag="0x420092" type="DateTime" value="2023-12-20T13:28:43-0500"/>
+  <BatchCount tag="0x42000d" type="Integer" value="1"/>
+ </ResponseHeader>
+ <BatchItem tag="0x42000f" type="Structure">
+  <Operation tag="0x42005c" type="Enumeration" value="18"/>
+  <ResultStatus tag="0x42007f" type="Enumeration" value="0"/>
+  <ResponsePayload tag="0x42007c" type="Structure">
+   <UniqueIdentifier tag="0x420094" type="TextString" value="12"/>
+  </ResponsePayload>
+ </BatchItem>
+</ResponseMessage>
+
+clang-format on
+*/
+static const uint8_t KMIP_ACTIVATE_RESPONSE[] = {
+    0x42, 0x00, 0x7b, 0x01, 0x00, 0x00, 0x00, 0x90, 0x42, 0x00, 0x7a, 0x01, 0x00, 0x00, 0x00, 0x48, 0x42, 0x00, 0x69,
+    0x01, 0x00, 0x00, 0x00, 0x20, 0x42, 0x00, 0x6a, 0x02, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00,
+    0x00, 0x00, 0x42, 0x00, 0x6b, 0x02, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x42,
+    0x00, 0x92, 0x09, 0x00, 0x00, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x65, 0x82, 0xec, 0x0b, 0x42, 0x00, 0x0d, 0x02,
+    0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x42, 0x00, 0x0f, 0x01, 0x00, 0x00, 0x00,
+    0x38, 0x42, 0x00, 0x5c, 0x05, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x12, 0x00, 0x00, 0x00, 0x00, 0x42, 0x00,
+    0x7f, 0x05, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x42, 0x00, 0x7c, 0x01, 0x00,
+    0x00, 0x00, 0x10, 0x42, 0x00, 0x94, 0x07, 0x00, 0x00, 0x00, 0x02, 0x31, 0x32, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+
+/*
+clang-format off
+
+`KMIP_GET_RESPONSE` represents:
+
+<ResponseMessage tag="0x42007b" type="Structure">
+ <ResponseHeader tag="0x42007a" type="Structure">
+  <ProtocolVersion tag="0x420069" type="Structure">
+   <ProtocolVersionMajor tag="0x42006a" type="Integer" value="1"/>
+   <ProtocolVersionMinor tag="0x42006b" type="Integer" value="0"/>
+  </ProtocolVersion>
+  <TimeStamp tag="0x420092" type="DateTime" value="2023-12-20T13:28:43-0500"/>
+  <BatchCount tag="0x42000d" type="Integer" value="1"/>
+ </ResponseHeader>
+ <BatchItem tag="0x42000f" type="Structure">
+  <Operation tag="0x42005c" type="Enumeration" value="10"/>
+  <ResultStatus tag="0x42007f" type="Enumeration" value="0"/>
+  <ResponsePayload tag="0x42007c" type="Structure">
+   <ObjectType tag="0x420057" type="Enumeration" value="7"/>
+   <UniqueIdentifier tag="0x420094" type="TextString" value="12"/>
+   <SecretData tag="0x420085" type="Structure">
+    <SecretDataType tag="0x420086" type="Enumeration" value="2"/>
+    <KeyBlock tag="0x420040" type="Structure">
+     <KeyFormatType tag="0x420042" type="Enumeration" value="2"/>
+     <KeyValue tag="0x420045" type="Structure">
+      <KeyMaterial tag="0x420043" type="ByteString" value="e6e4b2504fc61c4e8e45691b1719d5d6618b749167100683f4f8e55df1f22ad3cbba2ab421ed9daeb73bc25c031ade820580a5c75518ab21379b3936effbcfcda146b21671f2cf9f8012b0e183d719166481075d6c3932a5aed5411f0c26e157"/>
+     </KeyValue>
+    </KeyBlock>
+   </SecretData>
+  </ResponsePayload>
+ </BatchItem>
+</ResponseMessage>
+
+clang-format on
+*/
+static const uint8_t KMIP_GET_RESPONSE[] = {
+    0x42, 0x00, 0x7b, 0x01, 0x00, 0x00, 0x01, 0x40, 0x42, 0x00, 0x7a, 0x01, 0x00, 0x00, 0x00, 0x48, 0x42, 0x00, 0x69,
+    0x01, 0x00, 0x00, 0x00, 0x20, 0x42, 0x00, 0x6a, 0x02, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00,
+    0x00, 0x00, 0x42, 0x00, 0x6b, 0x02, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x42,
+    0x00, 0x92, 0x09, 0x00, 0x00, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x65, 0x82, 0xec, 0x0b, 0x42, 0x00, 0x0d, 0x02,
+    0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x42, 0x00, 0x0f, 0x01, 0x00, 0x00, 0x00,
+    0xe8, 0x42, 0x00, 0x5c, 0x05, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x0a, 0x00, 0x00, 0x00, 0x00, 0x42, 0x00,
+    0x7f, 0x05, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x42, 0x00, 0x7c, 0x01, 0x00,
+    0x00, 0x00, 0xc0, 0x42, 0x00, 0x57, 0x05, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00, 0x00,
+    0x42, 0x00, 0x94, 0x07, 0x00, 0x00, 0x00, 0x02, 0x31, 0x32, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x42, 0x00, 0x85,
+    0x01, 0x00, 0x00, 0x00, 0x98, 0x42, 0x00, 0x86, 0x05, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00,
+    0x00, 0x00, 0x42, 0x00, 0x40, 0x01, 0x00, 0x00, 0x00, 0x80, 0x42, 0x00, 0x42, 0x05, 0x00, 0x00, 0x00, 0x04, 0x00,
+    0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x42, 0x00, 0x45, 0x01, 0x00, 0x00, 0x00, 0x68, 0x42, 0x00, 0x43, 0x08,
+    0x00, 0x00, 0x00, 0x60, 0xe6, 0xe4, 0xb2, 0x50, 0x4f, 0xc6, 0x1c, 0x4e, 0x8e, 0x45, 0x69, 0x1b, 0x17, 0x19, 0xd5,
+    0xd6, 0x61, 0x8b, 0x74, 0x91, 0x67, 0x10, 0x06, 0x83, 0xf4, 0xf8, 0xe5, 0x5d, 0xf1, 0xf2, 0x2a, 0xd3, 0xcb, 0xba,
+    0x2a, 0xb4, 0x21, 0xed, 0x9d, 0xae, 0xb7, 0x3b, 0xc2, 0x5c, 0x03, 0x1a, 0xde, 0x82, 0x05, 0x80, 0xa5, 0xc7, 0x55,
+    0x18, 0xab, 0x21, 0x37, 0x9b, 0x39, 0x36, 0xef, 0xfb, 0xcf, 0xcd, 0xa1, 0x46, 0xb2, 0x16, 0x71, 0xf2, 0xcf, 0x9f,
+    0x80, 0x12, 0xb0, 0xe1, 0x83, 0xd7, 0x19, 0x16, 0x64, 0x81, 0x07, 0x5d, 0x6c, 0x39, 0x32, 0xa5, 0xae, 0xd5, 0x41,
+    0x1f, 0x0c, 0x26, 0xe1, 0x57};
+
 static void test_configuring_named_kms_providers(_mongocrypt_tester_t *tester) {
     // Test that a named KMS provider can be set.
     {
@@ -467,6 +671,151 @@ static void test_create_datakey_with_named_kms_provider(_mongocrypt_tester_t *te
             mongocrypt_binary_destroy(out);
             mongocrypt_ctx_destroy(ctx);
         }
+        mongocrypt_destroy(crypt);
+    }
+
+    // Test successfully creating an KMIP DEK with a named KMS provider
+    {
+        mongocrypt_t *crypt = mongocrypt_new();
+        mongocrypt_binary_t *kms_providers =
+            TEST_BSON(BSON_STR({"kmip:name1" : {"endpoint" : "placeholder1-endpoint.com"}}));
+        ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, kms_providers), crypt);
+        ASSERT_OK(mongocrypt_init(crypt), crypt);
+
+        // Create with named KMS provider.
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+        ASSERT_OK(
+            mongocrypt_ctx_setopt_key_encryption_key(ctx,
+                                                     TEST_BSON(BSON_STR({"provider" : "kmip:name1", "keyId" : "12"}))),
+            ctx);
+        ASSERT_OK(mongocrypt_ctx_datakey_init(ctx), ctx);
+
+        // Needs KMS to Get KEK.
+        {
+            ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_KMS);
+            mongocrypt_kms_ctx_t *kctx = mongocrypt_ctx_next_kms_ctx(ctx);
+            ASSERT(kctx);
+            const char *endpoint;
+            ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
+            ASSERT_STREQUAL(endpoint, "placeholder1-endpoint.com:5696");
+            // Assert request is a Get.
+            {
+                mongocrypt_binary_t *request = mongocrypt_binary_new();
+                ASSERT_OK(mongocrypt_kms_ctx_message(kctx, request), kctx);
+                ASSERT_STREQUAL(kmip_get_operation_type(request), "Get");
+                mongocrypt_binary_destroy(request);
+            }
+            // Feed response to Get.
+            ASSERT_OK(kms_ctx_feed_all(kctx, KMIP_GET_RESPONSE, (uint32_t)(sizeof(KMIP_GET_RESPONSE))), kctx);
+            kctx = mongocrypt_ctx_next_kms_ctx(ctx);
+            ASSERT(!kctx);
+            ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
+        mongocrypt_binary_t *out = mongocrypt_binary_new();
+        ASSERT_OK(mongocrypt_ctx_finalize(ctx, out), ctx);
+        // Check that `out` contains name.
+        bson_t out_bson;
+        ASSERT(_mongocrypt_binary_to_bson(out, &out_bson));
+        char *pattern = BSON_STR({"masterKey" : {"provider" : "kmip:name1"}});
+        _assert_match_bson(&out_bson, TMP_BSON(pattern));
+        bson_destroy(&out_bson);
+        mongocrypt_binary_destroy(out);
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+
+    // Test creating a KMIP key when `keyId` is not passed.
+    {
+        mongocrypt_t *crypt = mongocrypt_new();
+        mongocrypt_binary_t *kms_providers =
+            TEST_BSON(BSON_STR({"kmip:name1" : {"endpoint" : "placeholder1-endpoint.com"}}));
+        ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, kms_providers), crypt);
+        ASSERT_OK(mongocrypt_init(crypt), crypt);
+
+        // Create with named KMS provider.
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+        ASSERT_OK(mongocrypt_ctx_setopt_key_encryption_key(ctx, TEST_BSON(BSON_STR({"provider" : "kmip:name1"}))), ctx);
+        ASSERT_OK(mongocrypt_ctx_datakey_init(ctx), ctx);
+
+        // Needs KMS to Register KEK.
+        {
+            ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_KMS);
+            mongocrypt_kms_ctx_t *kctx = mongocrypt_ctx_next_kms_ctx(ctx);
+            ASSERT(kctx);
+            const char *endpoint;
+            ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
+            ASSERT_STREQUAL(endpoint, "placeholder1-endpoint.com:5696");
+            // Assert request is a Register.
+            {
+                mongocrypt_binary_t *request = mongocrypt_binary_new();
+                ASSERT_OK(mongocrypt_kms_ctx_message(kctx, request), kctx);
+                ASSERT_STREQUAL(kmip_get_operation_type(request), "Register");
+                mongocrypt_binary_destroy(request);
+            }
+            // Feed response to Register.
+            ASSERT_OK(kms_ctx_feed_all(kctx, KMIP_REGISTER_RESPONSE, (uint32_t)(sizeof(KMIP_REGISTER_RESPONSE))), kctx);
+            kctx = mongocrypt_ctx_next_kms_ctx(ctx);
+            ASSERT(!kctx);
+            ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
+        }
+
+        // Needs KMS to Activate KEK.
+        {
+            ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_KMS);
+            mongocrypt_kms_ctx_t *kctx = mongocrypt_ctx_next_kms_ctx(ctx);
+            ASSERT(kctx);
+            const char *endpoint;
+            ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
+            ASSERT_STREQUAL(endpoint, "placeholder1-endpoint.com:5696");
+            // Assert request is a Activate.
+            {
+                mongocrypt_binary_t *request = mongocrypt_binary_new();
+                ASSERT_OK(mongocrypt_kms_ctx_message(kctx, request), kctx);
+                ASSERT_STREQUAL(kmip_get_operation_type(request), "Activate");
+                mongocrypt_binary_destroy(request);
+            }
+            // Feed response to Activate.
+            ASSERT_OK(kms_ctx_feed_all(kctx, KMIP_ACTIVATE_RESPONSE, (uint32_t)(sizeof(KMIP_ACTIVATE_RESPONSE))), kctx);
+            kctx = mongocrypt_ctx_next_kms_ctx(ctx);
+            ASSERT(!kctx);
+            ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
+        }
+
+        // Needs KMS to Get KEK.
+        {
+            ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_KMS);
+            mongocrypt_kms_ctx_t *kctx = mongocrypt_ctx_next_kms_ctx(ctx);
+            ASSERT(kctx);
+            const char *endpoint;
+            ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
+            ASSERT_STREQUAL(endpoint, "placeholder1-endpoint.com:5696");
+            // Assert request is a Get.
+            {
+                mongocrypt_binary_t *request = mongocrypt_binary_new();
+                ASSERT_OK(mongocrypt_kms_ctx_message(kctx, request), kctx);
+                ASSERT_STREQUAL(kmip_get_operation_type(request), "Get");
+                mongocrypt_binary_destroy(request);
+            }
+            // Feed response to Get.
+            ASSERT_OK(kms_ctx_feed_all(kctx, KMIP_GET_RESPONSE, (uint32_t)(sizeof(KMIP_GET_RESPONSE))), kctx);
+            kctx = mongocrypt_ctx_next_kms_ctx(ctx);
+            ASSERT(!kctx);
+            ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
+        mongocrypt_binary_t *out = mongocrypt_binary_new();
+        ASSERT_OK(mongocrypt_ctx_finalize(ctx, out), ctx);
+        // Check that `out` contains name.
+        bson_t out_bson;
+        ASSERT(_mongocrypt_binary_to_bson(out, &out_bson));
+        char *pattern = BSON_STR({"masterKey" : {"provider" : "kmip:name1"}});
+        _assert_match_bson(&out_bson, TMP_BSON(pattern));
+        bson_destroy(&out_bson);
+        mongocrypt_binary_destroy(out);
+        mongocrypt_ctx_destroy(ctx);
         mongocrypt_destroy(crypt);
     }
 }
@@ -1581,10 +1930,170 @@ static void test_explicit_with_named_kms_provider_for_aws(_mongocrypt_tester_t *
     _mongocrypt_buffer_cleanup(&dek1);
 }
 
+static void test_explicit_with_named_kms_provider_for_kmip(_mongocrypt_tester_t *tester) {
+    mongocrypt_binary_t *kms_providers = TEST_BSON(BSON_STR({
+        "kmip:name1" : {"endpoint" : "placeholder1-endpoint.com"},
+        "kmip:name2" : {"endpoint" : "placeholder2-endpoint.com"}
+    }));
+
+    mongocrypt_binary_t *get_response =
+        mongocrypt_binary_new_from_data((uint8_t *)KMIP_GET_RESPONSE, (uint32_t)sizeof(KMIP_GET_RESPONSE));
+
+    // Create `dek1` from `kmip:name1`
+    _mongocrypt_buffer_t dek1;
+
+    create_dek(tester,
+               (create_dek_args){.kms_providers = kms_providers,
+                                 .key_alt_name = "kmip1",
+                                 .kek = TEST_BSON(BSON_STR({"provider" : "kmip:name1", "keyId" : "12"})),
+                                 .kms_response_1 = get_response},
+               &dek1);
+
+    // Create `dek2` from `kmip:name2`
+    _mongocrypt_buffer_t dek2;
+    create_dek(tester,
+               (create_dek_args){.kms_providers = kms_providers,
+                                 .key_alt_name = "kmip2",
+                                 .kek = TEST_BSON(BSON_STR({"provider" : "kmip:name2", "keyId" : "12"})),
+                                 .kms_response_1 = get_response},
+               &dek2);
+
+    // Test encrypting.
+    _mongocrypt_buffer_t ciphertext;
+    {
+        mongocrypt_t *crypt = mongocrypt_new();
+        ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, kms_providers), crypt);
+        ASSERT_OK(mongocrypt_init(crypt), crypt);
+
+        // Test encrypting without cached DEK. Store result for later decryption.
+        {
+            mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+            ASSERT_OK(mongocrypt_ctx_setopt_key_alt_name(ctx, TEST_BSON(BSON_STR({"keyAltName" : "kmip1"}))), ctx);
+            ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_DETERMINISTIC_STR, -1), ctx);
+            ASSERT_OK(mongocrypt_ctx_explicit_encrypt_init(ctx, TEST_BSON(BSON_STR({"v" : "foo"}))), ctx);
+
+            ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, _mongocrypt_buffer_as_binary(&dek1)), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+
+            // Needs KMS to Get KEK.
+            {
+                ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_KMS);
+                mongocrypt_kms_ctx_t *kctx = mongocrypt_ctx_next_kms_ctx(ctx);
+                ASSERT(kctx);
+                const char *endpoint;
+                ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
+                ASSERT_STREQUAL(endpoint, "placeholder1-endpoint.com:5696");
+                // Assert request is a Get.
+                {
+                    mongocrypt_binary_t *request = mongocrypt_binary_new();
+                    ASSERT_OK(mongocrypt_kms_ctx_message(kctx, request), kctx);
+                    ASSERT_STREQUAL(kmip_get_operation_type(request), "Get");
+                    mongocrypt_binary_destroy(request);
+                }
+                // Feed response to Get.
+                ASSERT_OK(kms_ctx_feed_all(kctx, KMIP_GET_RESPONSE, (uint32_t)(sizeof(KMIP_GET_RESPONSE))), kctx);
+                kctx = mongocrypt_ctx_next_kms_ctx(ctx);
+                ASSERT(!kctx);
+                ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
+            }
+
+            ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
+            mongocrypt_binary_t *bin = mongocrypt_binary_new();
+            ASSERT_OK(mongocrypt_ctx_finalize(ctx, bin), ctx);
+            _mongocrypt_buffer_copy_from_binary(&ciphertext, bin);
+            mongocrypt_binary_destroy(bin);
+            mongocrypt_ctx_destroy(ctx);
+        }
+
+        // Test encrypting with cached DEK.
+        {
+            mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+            ASSERT_OK(mongocrypt_ctx_setopt_key_alt_name(ctx, TEST_BSON(BSON_STR({"keyAltName" : "kmip1"}))), ctx);
+            ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_DETERMINISTIC_STR, -1), ctx);
+            ASSERT_OK(mongocrypt_ctx_explicit_encrypt_init(ctx, TEST_BSON(BSON_STR({"v" : "foo"}))), ctx);
+            // DEK is already cached. State transitions directly to ready.
+            ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
+            mongocrypt_binary_t *bin = mongocrypt_binary_new();
+            ASSERT_OK(mongocrypt_ctx_finalize(ctx, bin), ctx);
+            mongocrypt_binary_destroy(bin);
+            mongocrypt_ctx_destroy(ctx);
+        }
+
+        mongocrypt_destroy(crypt);
+    }
+
+    // Test decrypting.
+    {
+        mongocrypt_t *crypt = mongocrypt_new();
+        ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, kms_providers), crypt);
+        ASSERT_OK(mongocrypt_init(crypt), crypt);
+
+        // Test decrypting without cached DEK.
+        {
+            mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+            ASSERT_OK(mongocrypt_ctx_explicit_decrypt_init(ctx, _mongocrypt_buffer_as_binary(&ciphertext)), ctx);
+
+            ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, _mongocrypt_buffer_as_binary(&dek1)), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+
+            // Needs KMS to Get KEK.
+            {
+                ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_KMS);
+                mongocrypt_kms_ctx_t *kctx = mongocrypt_ctx_next_kms_ctx(ctx);
+                ASSERT(kctx);
+                const char *endpoint;
+                ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
+                ASSERT_STREQUAL(endpoint, "placeholder1-endpoint.com:5696");
+                // Assert request is a Get.
+                {
+                    mongocrypt_binary_t *request = mongocrypt_binary_new();
+                    ASSERT_OK(mongocrypt_kms_ctx_message(kctx, request), kctx);
+                    ASSERT_STREQUAL(kmip_get_operation_type(request), "Get");
+                    mongocrypt_binary_destroy(request);
+                }
+                // Feed response to Get.
+                ASSERT_OK(kms_ctx_feed_all(kctx, KMIP_GET_RESPONSE, (uint32_t)(sizeof(KMIP_GET_RESPONSE))), kctx);
+                kctx = mongocrypt_ctx_next_kms_ctx(ctx);
+                ASSERT(!kctx);
+                ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
+            }
+
+            ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
+            mongocrypt_binary_t *bin = mongocrypt_binary_new();
+            ASSERT_OK(mongocrypt_ctx_finalize(ctx, bin), ctx);
+            ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TEST_BSON(BSON_STR({"v" : "foo"})), bin);
+            mongocrypt_binary_destroy(bin);
+            mongocrypt_ctx_destroy(ctx);
+        }
+
+        // Test decrypting with cached DEK.
+        {
+            mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+            ASSERT_OK(mongocrypt_ctx_explicit_decrypt_init(ctx, _mongocrypt_buffer_as_binary(&ciphertext)), ctx);
+            // DEK is already cached. State transitions directly to ready.
+            ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
+            mongocrypt_binary_t *bin = mongocrypt_binary_new();
+            ASSERT_OK(mongocrypt_ctx_finalize(ctx, bin), ctx);
+            ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TEST_BSON(BSON_STR({"v" : "foo"})), bin);
+            mongocrypt_binary_destroy(bin);
+            mongocrypt_ctx_destroy(ctx);
+        }
+        mongocrypt_destroy(crypt);
+    }
+
+    _mongocrypt_buffer_cleanup(&ciphertext);
+    _mongocrypt_buffer_cleanup(&dek2);
+    _mongocrypt_buffer_cleanup(&dek1);
+    mongocrypt_binary_destroy(get_response);
+}
+
 void _mongocrypt_tester_install_named_kms_providers(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(test_configuring_named_kms_providers);
     INSTALL_TEST(test_create_datakey_with_named_kms_provider);
     INSTALL_TEST(test_explicit_with_named_kms_provider_for_azure);
     INSTALL_TEST(test_explicit_with_named_kms_provider_for_gcp);
     INSTALL_TEST(test_explicit_with_named_kms_provider_for_aws);
+    INSTALL_TEST(test_explicit_with_named_kms_provider_for_kmip);
 }

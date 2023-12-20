@@ -112,6 +112,27 @@ static bool _mongocrypt_aws_kek_parse(_mongocrypt_aws_kek_t *aws,
     return true;
 }
 
+static bool _mongocrypt_kmip_kek_parse(_mongocrypt_kmip_kek_t *kmip,
+                                       const char *kmsid,
+                                       const bson_t *def,
+                                       mongocrypt_status_t *status) {
+    _mongocrypt_endpoint_parse_opts_t opts = {0};
+
+    opts.allow_empty_subdomain = true;
+    if (!_mongocrypt_parse_optional_endpoint(def, "endpoint", &kmip->endpoint, &opts, status)) {
+        return false;
+    }
+
+    if (!_mongocrypt_parse_optional_utf8(def, "keyId", &kmip->key_id, status)) {
+        return false;
+    }
+
+    if (!_mongocrypt_check_allowed_fields(def, NULL, status, "provider", "endpoint", "keyId")) {
+        return false;
+    }
+    return true;
+}
+
 /* Possible documents to parse:
  * AWS
  *    provider: "aws"
@@ -187,8 +208,10 @@ bool _mongocrypt_kek_parse_owned(const bson_t *bson, _mongocrypt_kek_t *kek, mon
             break;
         }
         case MONGOCRYPT_KMS_PROVIDER_KMIP: {
-            CLIENT_ERR("Parsing named kmip KEK not yet implemented");
-            goto done;
+            if (!_mongocrypt_kmip_kek_parse(&kek->provider.kmip, kek->kmsid, bson, status)) {
+                goto done;
+            }
+            break;
         }
         }
     } else if (0 == strcmp(kms_provider, "aws")) {
