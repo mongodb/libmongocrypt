@@ -16,6 +16,7 @@
 
 #include "kms_message/kms_kmip_request.h"
 
+#include "kms_kmip_tag_type_private.h"
 #include "kms_message_private.h"
 #include "kms_kmip_reader_writer_private.h"
 
@@ -280,14 +281,13 @@ kms_kmip_request_create_new (void *reserved) {
    kmip_writer_begin_struct (writer, KMIP_TAG_RequestPayload);
    /* 0x02 == symmetric key */
    kmip_writer_write_enumeration(writer, KMIP_TAG_ObjectType, 0x02);
-   kmip_writer_begin_struct(writer, KMIP_TAG_Attribute);
+   kmip_writer_begin_struct(writer, KMIP_TAG_Attributes);
 
-   const char* extractable_attr = "Extractable";
-   kmip_writer_write_string(writer, KMIP_TAG_AttributeName, extractable_attr,
-      strlen(extractable_attr));
-   kmip_writer_write_bool(writer, KMIP_TAG_AttributeValue, false);
+   kmip_writer_write_enumeration(writer, KMIP_TAG_CryptographicAlgorithm, 3 /* AES */);
+   kmip_writer_write_integer(writer, KMIP_TAG_CryptographicLength, 256);
+   kmip_writer_write_integer(writer, KMIP_TAG_CryptographicUsageMask, 4 | 8 /* Encrypt | Decrypt */);
 
-   kmip_writer_close_struct (writer); /* KMIP_TAG_Attribute */
+   kmip_writer_close_struct (writer); /* KMIP_TAG_Attributes */
    kmip_writer_close_struct (writer); /* KMIP_TAG_RequestPayload */
    kmip_writer_close_struct (writer); /* KMIP_TAG_BatchItem */
    kmip_writer_close_struct (writer); /* KMIP_TAG_RequestMessage */
