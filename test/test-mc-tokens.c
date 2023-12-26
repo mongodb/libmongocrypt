@@ -33,6 +33,11 @@
     F(EDCDerivedFromDataTokenAndCounter)                                                                               \
     F(ESCDerivedFromDataTokenAndCounter)                                                                               \
     F(ECCDerivedFromDataTokenAndCounter)                                                                               \
+    F(EDCTwiceDerivedToken)                                                                                            \
+    F(ESCTwiceDerivedTagToken)                                                                                         \
+    F(ESCTwiceDerivedValueToken)                                                                                       \
+    F(ECCTwiceDerivedTagToken)                                                                                         \
+    F(ECCTwiceDerivedValueToken)                                                                                       \
     F(serverCountAndContentionFactorEncryptionToken)                                                                   \
     F(serverZerosEncryptionToken)
 
@@ -152,6 +157,20 @@ static void _mc_token_test_run(_mongocrypt_tester_t *tester, const char *path) {
     TEST_DERIVED(ECC)
 #undef TEST_DERIVED_FROM_DATA_TOKEN
 
+// (EDC/ESC/ECC)TwiceDerivedToken(Tag|Value)?
+#define TEST_TWICE(Name, Suffix)                                                                                       \
+    mc_##Name##TwiceDerived##Suffix##_t *Name##TwiceDerived##Suffix =                                                  \
+        mc_##Name##TwiceDerived##Suffix##_new(crypt->crypto, Name##DerivedFromDataTokenAndCounter, status);            \
+    ASSERT_OR_PRINT(Name##TwiceDerived##Suffix, status);                                                               \
+    ASSERT_CMPBUF(*mc_##Name##TwiceDerived##Suffix##_get(Name##TwiceDerived##Suffix),                                  \
+                  test.Name##TwiceDerived##Suffix);
+   TEST_TWICE(EDC, Token);
+   TEST_TWICE(ESC, TagToken);
+   TEST_TWICE(ESC, ValueToken);
+   TEST_TWICE(ECC, TagToken);
+   TEST_TWICE(ECC, ValueToken);
+#undef TEST_TWICE
+
     // ServerDerivedFromDataToken
     mc_ServerDerivedFromDataToken_t *serverDerivedFromDataToken =
         mc_ServerDerivedFromDataToken_new(crypt->crypto, serverTokenDerivationLevel1Token, &test.value, status);
@@ -175,6 +194,11 @@ static void _mc_token_test_run(_mongocrypt_tester_t *tester, const char *path) {
     mc_ServerZerosEncryptionToken_destroy(serverZeros);
     mc_ServerCountAndContentionFactorEncryptionToken_destroy(serverCACFET);
     mc_ServerDerivedFromDataToken_destroy(serverDerivedFromDataToken);
+    mc_ECCTwiceDerivedValueToken_destroy(ECCTwiceDerivedValueToken);
+    mc_ECCTwiceDerivedTagToken_destroy(ECCTwiceDerivedTagToken);
+    mc_ESCTwiceDerivedValueToken_destroy(ESCTwiceDerivedValueToken);
+    mc_ESCTwiceDerivedTagToken_destroy(ESCTwiceDerivedTagToken);
+    mc_EDCTwiceDerivedToken_destroy(EDCTwiceDerivedToken);
     mc_ECCDerivedFromDataTokenAndCounter_destroy(ECCDerivedFromDataTokenAndCounter);
     mc_ESCDerivedFromDataTokenAndCounter_destroy(ESCDerivedFromDataTokenAndCounter);
     mc_EDCDerivedFromDataTokenAndCounter_destroy(EDCDerivedFromDataTokenAndCounter);
