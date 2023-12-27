@@ -114,17 +114,6 @@ IMPL_TOKEN_NEW_CONST(mc_ESCTwiceDerivedValueToken,
                      mc_ESCDerivedFromDataTokenAndCounter_get(ESCDerivedFromDataTokenAndCounter),
                      2)
 
-DEF_TOKEN_TYPE(mc_ECCTwiceDerivedTagToken,
-               const mc_ECCDerivedFromDataTokenAndCounter_t *ECCDerivedFromDataTokenAndCounter)
-IMPL_TOKEN_NEW_CONST(mc_ECCTwiceDerivedTagToken,
-                     mc_ECCDerivedFromDataTokenAndCounter_get(ECCDerivedFromDataTokenAndCounter),
-                     1)
-DEF_TOKEN_TYPE(mc_ECCTwiceDerivedValueToken,
-               const mc_ECCDerivedFromDataTokenAndCounter_t *ECCDerivedFromDataTokenAndCounter)
-IMPL_TOKEN_NEW_CONST(mc_ECCTwiceDerivedValueToken,
-                     mc_ECCDerivedFromDataTokenAndCounter_get(ECCDerivedFromDataTokenAndCounter),
-                     2)
-
 DEF_TOKEN_TYPE(mc_ServerDataEncryptionLevel1Token, const _mongocrypt_buffer_t *RootKey)
 IMPL_TOKEN_NEW_CONST(mc_ServerDataEncryptionLevel1Token, RootKey, 3)
 

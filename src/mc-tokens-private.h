@@ -53,6 +53,8 @@
  * ECCTwiceDerivedValueToken = HMAC(ECCDerivedFromDataTokenAndCounter, 2)
  *
  * Note: ECC related tokens are used in FLE2v1 only.
+ *       Further, ECCTwiceDerivedValue(Tag|Token) have been omitted entirely.
+ *       The above comment describing derivation is for doc purposes only.
  * ----------------------------------------------------------------------------
  * Added in FLE2v2:
  *
@@ -124,10 +126,6 @@ DECL_TOKEN_TYPE(mc_ESCTwiceDerivedTagToken,
                 const mc_ESCDerivedFromDataTokenAndCounter_t *ESCDerivedFromDataTokenAndCounter);
 DECL_TOKEN_TYPE(mc_ESCTwiceDerivedValueToken,
                 const mc_ESCDerivedFromDataTokenAndCounter_t *ESCDerivedFromDataTokenAndCounter);
-DECL_TOKEN_TYPE(mc_ECCTwiceDerivedTagToken,
-                const mc_ECCDerivedFromDataTokenAndCounter_t *ECCDerivedFromDataTokenAndCounter);
-DECL_TOKEN_TYPE(mc_ECCTwiceDerivedValueToken,
-                const mc_ECCDerivedFromDataTokenAndCounter_t *ECCDerivedFromDataTokenAndCounter);
 
 DECL_TOKEN_TYPE(mc_ServerDerivedFromDataToken,
                 const mc_ServerTokenDerivationLevel1Token_t *ServerTokenDerivationToken,
