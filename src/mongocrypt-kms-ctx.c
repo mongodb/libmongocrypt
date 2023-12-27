@@ -121,7 +121,8 @@ _set_kms_crypto_hooks(_mongocrypt_crypto_t *crypto, ctx_with_status_t *ctx_with_
 
 static bool is_kms(_kms_request_type_t kms_type) {
     return kms_type == MONGOCRYPT_KMS_KMIP_REGISTER || kms_type == MONGOCRYPT_KMS_KMIP_ACTIVATE
-        || kms_type == MONGOCRYPT_KMS_KMIP_GET;
+        || kms_type == MONGOCRYPT_KMS_KMIP_GET || kms_type == MONGOCRYPT_KMS_KMIP_ENCRYPT
+        || kms_type == MONGOCRYPT_KMS_KMIP_DECRYPT || kms_type == MONGOCRYPT_KMS_KMIP_CREATE;
 }
 
 static void _init_common(mongocrypt_kms_ctx_t *kms, _mongocrypt_log_t *log, _kms_request_type_t kms_type) {
@@ -848,6 +849,40 @@ done:
     return ret;
 }
 
+static bool _ctx_done_kmip_create(mongocrypt_kms_ctx_t *kms_ctx) {
+    BSON_ASSERT_PARAM(kms_ctx);
+
+    kms_response_t *res = NULL;
+
+    mongocrypt_status_t *status = kms_ctx->status;
+    bool ret = false;
+    char *uid;
+
+    res = kms_response_parser_get_response(kms_ctx->parser);
+    if (!res) {
+        CLIENT_ERR("Error getting KMIP response: %s", kms_response_parser_error(kms_ctx->parser));
+        goto done;
+    }
+
+    uid = kms_kmip_response_get_unique_identifier(res);
+    if (!uid) {
+        CLIENT_ERR("Error getting UniqueIdentifer from KMIP Create response: %s", kms_response_get_error(res));
+        goto done;
+    }
+
+    if (!_mongocrypt_buffer_steal_from_string(&kms_ctx->result, uid)) {
+        CLIENT_ERR("Error storing KMS UniqueIdentifer result");
+        bson_free(uid);
+        goto done;
+    }
+    ret = true;
+
+done:
+    kms_response_destroy(res);
+    return ret;
+
+}
+
 static bool _ctx_done_kmip_encrypt_decrypt(mongocrypt_kms_ctx_t *kms_ctx) {
     BSON_ASSERT_PARAM(kms_ctx);
 
@@ -948,6 +983,7 @@ bool mongocrypt_kms_ctx_feed(mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *byt
         case MONGOCRYPT_KMS_KMIP_GET: return _ctx_done_kmip_get(kms);
         case MONGOCRYPT_KMS_KMIP_ENCRYPT: return _ctx_done_kmip_encrypt_decrypt(kms);
         case MONGOCRYPT_KMS_KMIP_DECRYPT: return _ctx_done_kmip_encrypt_decrypt(kms);
+        case MONGOCRYPT_KMS_KMIP_CREATE: return _ctx_done_kmip_create(kms);
         }
     }
     return true;
@@ -1641,7 +1677,7 @@ bool _mongocrypt_kms_ctx_init_kmip_encrypt(mongocrypt_kms_ctx_t *kms_ctx,
     BSON_ASSERT_PARAM(endpoint);
     bool ret = false;
 
-    _init_common(kms_ctx, log, MONGOCRYPT_KMS_KMIP_CREATE);
+    _init_common(kms_ctx, log, MONGOCRYPT_KMS_KMIP_ENCRYPT);
     mongocrypt_status_t *status = kms_ctx->status;
     kms_ctx->endpoint = bson_strdup(endpoint->host_and_port);
     _mongocrypt_apply_default_port(&kms_ctx->endpoint, DEFAULT_KMIP_PORT);
@@ -1676,7 +1712,7 @@ bool _mongocrypt_kms_ctx_init_kmip_decrypt(mongocrypt_kms_ctx_t *kms_ctx,
     BSON_ASSERT_PARAM(endpoint);
     bool ret = false;
 
-    _init_common(kms_ctx, log, MONGOCRYPT_KMS_KMIP_CREATE);
+    _init_common(kms_ctx, log, MONGOCRYPT_KMS_KMIP_DECRYPT);
     mongocrypt_status_t *status = kms_ctx->status;
     kms_ctx->endpoint = bson_strdup(endpoint->host_and_port);
     _mongocrypt_apply_default_port(&kms_ctx->endpoint, DEFAULT_KMIP_PORT);
