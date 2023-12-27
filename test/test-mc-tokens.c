@@ -160,11 +160,10 @@ static void _mc_token_test_run(_mongocrypt_tester_t *tester, const char *path) {
     mc_##Name##TwiceDerived##Suffix##_t *Name##TwiceDerived##Suffix =                                                  \
         mc_##Name##TwiceDerived##Suffix##_new(crypt->crypto, Name##DerivedFromDataTokenAndCounter, status);            \
     ASSERT_OR_PRINT(Name##TwiceDerived##Suffix, status);                                                               \
-    ASSERT_CMPBUF(*mc_##Name##TwiceDerived##Suffix##_get(Name##TwiceDerived##Suffix),                                  \
-                  test.Name##TwiceDerived##Suffix);
-   TEST_TWICE(EDC, Token);
-   TEST_TWICE(ESC, TagToken);
-   TEST_TWICE(ESC, ValueToken);
+    ASSERT_CMPBUF(*mc_##Name##TwiceDerived##Suffix##_get(Name##TwiceDerived##Suffix), test.Name##TwiceDerived##Suffix);
+    TEST_TWICE(EDC, Token);
+    TEST_TWICE(ESC, TagToken);
+    TEST_TWICE(ESC, ValueToken);
 #undef TEST_TWICE
 
     // ServerDerivedFromDataToken

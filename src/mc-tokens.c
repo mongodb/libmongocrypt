@@ -97,8 +97,7 @@ IMPL_TOKEN_NEW(mc_ESCDerivedFromDataToken, mc_ESCToken_get(ESCToken), v)
 DEF_TOKEN_TYPE(mc_ECCDerivedFromDataToken, const mc_ECCToken_t *ECCToken, const _mongocrypt_buffer_t *v)
 IMPL_TOKEN_NEW(mc_ECCDerivedFromDataToken, mc_ECCToken_get(ECCToken), v)
 
-DEF_TOKEN_TYPE(mc_EDCTwiceDerivedToken,
-               const mc_EDCDerivedFromDataTokenAndCounter_t *EDCDerivedFromDataTokenAndCounter)
+DEF_TOKEN_TYPE(mc_EDCTwiceDerivedToken, const mc_EDCDerivedFromDataTokenAndCounter_t *EDCDerivedFromDataTokenAndCounter)
 IMPL_TOKEN_NEW_CONST(mc_EDCTwiceDerivedToken,
                      mc_EDCDerivedFromDataTokenAndCounter_get(EDCDerivedFromDataTokenAndCounter),
                      1)
