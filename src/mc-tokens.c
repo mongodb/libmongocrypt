@@ -97,6 +97,22 @@ IMPL_TOKEN_NEW(mc_ESCDerivedFromDataToken, mc_ESCToken_get(ESCToken), v)
 DEF_TOKEN_TYPE(mc_ECCDerivedFromDataToken, const mc_ECCToken_t *ECCToken, const _mongocrypt_buffer_t *v)
 IMPL_TOKEN_NEW(mc_ECCDerivedFromDataToken, mc_ECCToken_get(ECCToken), v)
 
+DEF_TOKEN_TYPE(mc_EDCTwiceDerivedToken, const mc_EDCDerivedFromDataTokenAndCounter_t *EDCDerivedFromDataTokenAndCounter)
+IMPL_TOKEN_NEW_CONST(mc_EDCTwiceDerivedToken,
+                     mc_EDCDerivedFromDataTokenAndCounter_get(EDCDerivedFromDataTokenAndCounter),
+                     1)
+
+DEF_TOKEN_TYPE(mc_ESCTwiceDerivedTagToken,
+               const mc_ESCDerivedFromDataTokenAndCounter_t *ESCDerivedFromDataTokenAndCounter)
+IMPL_TOKEN_NEW_CONST(mc_ESCTwiceDerivedTagToken,
+                     mc_ESCDerivedFromDataTokenAndCounter_get(ESCDerivedFromDataTokenAndCounter),
+                     1)
+DEF_TOKEN_TYPE(mc_ESCTwiceDerivedValueToken,
+               const mc_ESCDerivedFromDataTokenAndCounter_t *ESCDerivedFromDataTokenAndCounter)
+IMPL_TOKEN_NEW_CONST(mc_ESCTwiceDerivedValueToken,
+                     mc_ESCDerivedFromDataTokenAndCounter_get(ESCDerivedFromDataTokenAndCounter),
+                     2)
+
 DEF_TOKEN_TYPE(mc_ServerDataEncryptionLevel1Token, const _mongocrypt_buffer_t *RootKey)
 IMPL_TOKEN_NEW_CONST(mc_ServerDataEncryptionLevel1Token, RootKey, 3)
 

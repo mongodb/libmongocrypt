@@ -16,6 +16,9 @@
    "EDCDerivedFromDataTokenAndCounter": "70fb9a3f760996f2f1438c5bf2a4d52bcba01b0badc3596276f49ffb2f0b136e",
    "ESCDerivedFromDataTokenAndCounter": "7076c7b05fb4be4fe585eed930b852a6d088a0c55f3c96b50069e8a26ebfb347",
    "ECCDerivedFromDataTokenAndCounter": "6c6a349956c19f9c5e638e612011a71fbb71921edb540310c17cd0208b7f548b",
+   "EDCTwiceDerivedToken": "3643fd370e2719c03234cdeec787dfdc7d8fceecafa8a992e3c1f9d4d53449fe",
+   "ESCTwiceDerivedTagToken": "c73bc4ff5e70222c653140b2b4998b4d62db973f20f116f66ff811a9a907a78f",
+   "ESCTwiceDerivedValueToken": "34150c6f5ab56dc39ddb935accb7f53e5276322fa937650b76a4dda9723d6fba",
    "serverCountAndContentionFactorEncryptionToken": "a8c4a477e5518a527f718a5a1530919f2dad13b1f3559833e17b479711cbdbb9",
    "serverZerosEncryptionToken": "95fda1e139ef1dc84260d4d3ebaab7627a9676f4af7aeb1b596c7c14a0b3a2ea"
 }
