@@ -2347,6 +2347,33 @@ static void test_rewrap_with_named_kms_provider_azure2local(_mongocrypt_tester_t
     _mongocrypt_buffer_cleanup(&dek1);
 }
 
+static void test_mongocrypt_kms_ctx_get_kms_provider(_mongocrypt_tester_t *tester) {
+    mongocrypt_binary_t *kms_providers =
+        TEST_BSON(BSON_STR({"kmip:name1" : {"endpoint" : "placeholder1-endpoint.com"}}));
+
+    mongocrypt_t *crypt = mongocrypt_new();
+    ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, kms_providers), crypt);
+    ASSERT_OK(mongocrypt_init(crypt), crypt);
+
+    mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+    ASSERT_OK(
+        mongocrypt_ctx_setopt_key_encryption_key(ctx, TEST_BSON(BSON_STR({"provider" : "kmip:name1", "keyId" : "12"}))),
+        ctx);
+    ASSERT_OK(mongocrypt_ctx_setopt_key_alt_name(ctx, TEST_BSON(BSON_STR({"keyAltName" : "kmip1"}))), ctx);
+    ASSERT_OK(mongocrypt_ctx_datakey_init(ctx), ctx);
+
+    // Needs KMS to Get KEK.
+    {
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_KMS);
+        mongocrypt_kms_ctx_t *kctx = mongocrypt_ctx_next_kms_ctx(ctx);
+        ASSERT(kctx);
+        ASSERT_STREQUAL(mongocrypt_kms_ctx_get_kms_provider(kctx, NULL /* len */), "kmip:name1");
+    }
+
+    mongocrypt_ctx_destroy(ctx);
+    mongocrypt_destroy(crypt);
+}
+
 void _mongocrypt_tester_install_named_kms_providers(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(test_configuring_named_kms_providers);
     INSTALL_TEST(test_create_datakey_with_named_kms_provider);
@@ -2357,4 +2384,5 @@ void _mongocrypt_tester_install_named_kms_providers(_mongocrypt_tester_t *tester
     INSTALL_TEST(test_rewrap_with_named_kms_provider_local2local);
     INSTALL_TEST(test_rewrap_with_named_kms_provider_azure2azure);
     INSTALL_TEST(test_rewrap_with_named_kms_provider_azure2local);
+    INSTALL_TEST(test_mongocrypt_kms_ctx_get_kms_provider);
 }
