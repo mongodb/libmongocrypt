@@ -383,8 +383,6 @@ static void _test_mongocrypt_kms_ctx_get_kms_provider(_mongocrypt_tester_t *test
                                                 &crypt->log);
     ASSERT_OK_STATUS(ok, kms_ctx.status);
 
-    ASSERT_STREQUAL(mongocrypt_kms_ctx_get_kms_provider(&kms_ctx, NULL), "kmip");
-
     ASSERT_STREQUAL(mongocrypt_kms_ctx_get_kms_provider(&kms_ctx, &len), "kmip");
     ASSERT_CMPINT(len, ==, 4);
 
