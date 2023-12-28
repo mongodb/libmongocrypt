@@ -1593,18 +1593,5 @@ const char *mongocrypt_kms_ctx_get_kms_provider(mongocrypt_kms_ctx_t *kms, uint3
     BSON_ASSERT_PARAM(kms);
     /* len is checked in set_and_ret () before it is used */
 
-    switch (kms->req_type) {
-    default: BSON_ASSERT(false && "unknown KMS request type");
-    case MONGOCRYPT_KMS_AWS_ENCRYPT:
-    case MONGOCRYPT_KMS_AWS_DECRYPT: return set_and_ret("aws", len);
-    case MONGOCRYPT_KMS_AZURE_OAUTH:
-    case MONGOCRYPT_KMS_AZURE_WRAPKEY:
-    case MONGOCRYPT_KMS_AZURE_UNWRAPKEY: return set_and_ret("azure", len);
-    case MONGOCRYPT_KMS_GCP_OAUTH:
-    case MONGOCRYPT_KMS_GCP_ENCRYPT:
-    case MONGOCRYPT_KMS_GCP_DECRYPT: return set_and_ret("gcp", len);
-    case MONGOCRYPT_KMS_KMIP_REGISTER:
-    case MONGOCRYPT_KMS_KMIP_ACTIVATE:
-    case MONGOCRYPT_KMS_KMIP_GET: return set_and_ret("kmip", len);
-    }
+    return set_and_ret(kms->kmsid, len);
 }
