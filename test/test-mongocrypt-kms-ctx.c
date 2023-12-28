@@ -124,7 +124,8 @@ static void _test_mongocrypt_kms_ctx_kmip_register(_mongocrypt_tester_t *tester)
                                                 endpoint,
                                                 secretdata,
                                                 KMS_KMIP_REQUEST_SECRETDATA_LENGTH,
-                                                &crypt->log);
+                                                &crypt->log,
+                                                "kmip");
     ASSERT_OK_STATUS(ok, kms_ctx.status);
 
     bytes = mongocrypt_binary_new();
@@ -221,7 +222,8 @@ static void _test_mongocrypt_kms_ctx_kmip_activate(_mongocrypt_tester_t *tester)
     ok = _mongocrypt_kms_ctx_init_kmip_activate(&kms_ctx,
                                                 endpoint,
                                                 (char *)SUCCESS_ACTIVATE_RESPONSE_UNIQUE_IDENTIFIER,
-                                                &crypt->log);
+                                                &crypt->log,
+                                                "kmip");
     ASSERT_OK_STATUS(ok, kms_ctx.status);
 
     bytes = mongocrypt_binary_new();
@@ -343,7 +345,11 @@ static void _test_mongocrypt_kms_ctx_kmip_get(_mongocrypt_tester_t *tester) {
     ASSERT_OK_STATUS(endpoint != NULL, status);
 
     crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
-    ok = _mongocrypt_kms_ctx_init_kmip_get(&kms_ctx, endpoint, (char *)GET_REQUEST_UNIQUE_IDENTIFIER, &crypt->log);
+    ok = _mongocrypt_kms_ctx_init_kmip_get(&kms_ctx,
+                                           endpoint,
+                                           (char *)GET_REQUEST_UNIQUE_IDENTIFIER,
+                                           &crypt->log,
+                                           "kmip");
     ASSERT_OK_STATUS(ok, kms_ctx.status);
 
     bytes = mongocrypt_binary_new();
@@ -380,7 +386,8 @@ static void _test_mongocrypt_kms_ctx_get_kms_provider(_mongocrypt_tester_t *test
     ok = _mongocrypt_kms_ctx_init_kmip_activate(&kms_ctx,
                                                 endpoint,
                                                 (char *)SUCCESS_ACTIVATE_RESPONSE_UNIQUE_IDENTIFIER,
-                                                &crypt->log);
+                                                &crypt->log,
+                                                "kmip");
     ASSERT_OK_STATUS(ok, kms_ctx.status);
 
     ASSERT_STREQUAL(mongocrypt_kms_ctx_get_kms_provider(&kms_ctx, &len), "kmip");
@@ -410,7 +417,8 @@ static void _test_mongocrypt_kms_ctx_default_port(_mongocrypt_tester_t *tester) 
     ASSERT_OK(_mongocrypt_kms_ctx_init_kmip_activate(&kms_ctx,
                                                      endpoint,
                                                      (char *)SUCCESS_ACTIVATE_RESPONSE_UNIQUE_IDENTIFIER,
-                                                     &crypt->log),
+                                                     &crypt->log,
+                                                     "kmip"),
               &kms_ctx);
     ASSERT_OK(mongocrypt_kms_ctx_endpoint(&kms_ctx, &kms_ctx_endpoint), &kms_ctx);
     ASSERT_STREQUAL("example.com:5696", kms_ctx_endpoint);
@@ -425,7 +433,8 @@ static void _test_mongocrypt_kms_ctx_default_port(_mongocrypt_tester_t *tester) 
     ASSERT_OK(_mongocrypt_kms_ctx_init_kmip_activate(&kms_ctx,
                                                      endpoint,
                                                      (char *)SUCCESS_ACTIVATE_RESPONSE_UNIQUE_IDENTIFIER,
-                                                     &crypt->log),
+                                                     &crypt->log,
+                                                     "kmip"),
               &kms_ctx);
     ASSERT_OK(mongocrypt_kms_ctx_endpoint(&kms_ctx, &kms_ctx_endpoint), &kms_ctx);
     ASSERT_STREQUAL("example.com:1234", kms_ctx_endpoint);
@@ -452,7 +461,8 @@ static void _test_mongocrypt_kms_ctx_feed_empty_bytes(_mongocrypt_tester_t *test
     ASSERT_OK(_mongocrypt_kms_ctx_init_kmip_activate(&kms_ctx,
                                                      endpoint,
                                                      (char *)SUCCESS_ACTIVATE_RESPONSE_UNIQUE_IDENTIFIER,
-                                                     &crypt->log),
+                                                     &crypt->log,
+                                                     "kmip"),
               &kms_ctx);
 
     /* Test KMS Feed. Expect to fail with empty bytes */

@@ -121,8 +121,12 @@ static bool is_kms(_kms_request_type_t kms_type) {
         || kms_type == MONGOCRYPT_KMS_KMIP_GET;
 }
 
-static void _init_common(mongocrypt_kms_ctx_t *kms, _mongocrypt_log_t *log, _kms_request_type_t kms_type) {
+static void
+_init_common(mongocrypt_kms_ctx_t *kms, _mongocrypt_log_t *log, _kms_request_type_t kms_type, const char *kmsid) {
     BSON_ASSERT_PARAM(kms);
+    BSON_ASSERT_PARAM(kmsid);
+
+    kms->kmsid = bson_strdup(kmsid);
 
     if (is_kms(kms_type)) {
         kms->parser = kms_kmip_response_parser_new(NULL /* reserved */);
@@ -139,7 +143,8 @@ bool _mongocrypt_kms_ctx_init_aws_decrypt(mongocrypt_kms_ctx_t *kms,
                                           _mongocrypt_opts_kms_providers_t *kms_providers,
                                           _mongocrypt_key_doc_t *key,
                                           _mongocrypt_log_t *log,
-                                          _mongocrypt_crypto_t *crypto) {
+                                          _mongocrypt_crypto_t *crypto,
+                                          const char *kmsid) {
     BSON_ASSERT_PARAM(kms);
     BSON_ASSERT_PARAM(key);
     BSON_ASSERT_PARAM(kms_providers);
@@ -150,7 +155,7 @@ bool _mongocrypt_kms_ctx_init_aws_decrypt(mongocrypt_kms_ctx_t *kms,
     ctx_with_status_t ctx_with_status;
     bool ret = false;
 
-    _init_common(kms, log, MONGOCRYPT_KMS_AWS_DECRYPT);
+    _init_common(kms, log, MONGOCRYPT_KMS_AWS_DECRYPT, kmsid);
     status = kms->status;
     ctx_with_status.ctx = crypto;
     ctx_with_status.status = mongocrypt_status_new();
@@ -273,7 +278,8 @@ bool _mongocrypt_kms_ctx_init_aws_encrypt(mongocrypt_kms_ctx_t *kms,
                                           _mongocrypt_ctx_opts_t *ctx_opts,
                                           _mongocrypt_buffer_t *plaintext_key_material,
                                           _mongocrypt_log_t *log,
-                                          _mongocrypt_crypto_t *crypto) {
+                                          _mongocrypt_crypto_t *crypto,
+                                          const char *kmsid) {
     BSON_ASSERT_PARAM(kms);
     BSON_ASSERT_PARAM(ctx_opts);
     BSON_ASSERT_PARAM(kms_providers);
@@ -285,7 +291,7 @@ bool _mongocrypt_kms_ctx_init_aws_encrypt(mongocrypt_kms_ctx_t *kms,
     ctx_with_status_t ctx_with_status;
     bool ret = false;
 
-    _init_common(kms, log, MONGOCRYPT_KMS_AWS_ENCRYPT);
+    _init_common(kms, log, MONGOCRYPT_KMS_AWS_ENCRYPT, kmsid);
     status = kms->status;
     ctx_with_status.ctx = crypto;
     ctx_with_status.status = mongocrypt_status_new();
@@ -968,6 +974,7 @@ void _mongocrypt_kms_ctx_cleanup(mongocrypt_kms_ctx_t *kms) {
     _mongocrypt_buffer_cleanup(&kms->msg);
     _mongocrypt_buffer_cleanup(&kms->result);
     bson_free(kms->endpoint);
+    bson_free(kms->kmsid);
 }
 
 bool mongocrypt_kms_ctx_message(mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *msg) {
@@ -1001,7 +1008,8 @@ bool mongocrypt_kms_ctx_endpoint(mongocrypt_kms_ctx_t *kms, const char **endpoin
 bool _mongocrypt_kms_ctx_init_azure_auth(mongocrypt_kms_ctx_t *kms,
                                          _mongocrypt_log_t *log,
                                          const mc_kms_creds_t *kc,
-                                         _mongocrypt_endpoint_t *key_vault_endpoint) {
+                                         _mongocrypt_endpoint_t *key_vault_endpoint,
+                                         const char *kmsid) {
     BSON_ASSERT_PARAM(kms);
     BSON_ASSERT_PARAM(kc);
 
@@ -1013,7 +1021,7 @@ bool _mongocrypt_kms_ctx_init_azure_auth(mongocrypt_kms_ctx_t *kms,
     char *request_string;
     bool ret = false;
 
-    _init_common(kms, log, MONGOCRYPT_KMS_AZURE_OAUTH);
+    _init_common(kms, log, MONGOCRYPT_KMS_AZURE_OAUTH, kmsid);
     status = kms->status;
 
     BSON_ASSERT(kc->type == MONGOCRYPT_KMS_PROVIDER_AZURE);
@@ -1075,7 +1083,8 @@ bool _mongocrypt_kms_ctx_init_azure_wrapkey(mongocrypt_kms_ctx_t *kms,
                                             _mongocrypt_opts_kms_providers_t *kms_providers,
                                             struct __mongocrypt_ctx_opts_t *ctx_opts,
                                             const char *access_token,
-                                            _mongocrypt_buffer_t *plaintext_key_material) {
+                                            _mongocrypt_buffer_t *plaintext_key_material,
+                                            const char *kmsid) {
     BSON_ASSERT_PARAM(kms);
     BSON_ASSERT_PARAM(ctx_opts);
     BSON_ASSERT_PARAM(plaintext_key_material);
@@ -1088,7 +1097,7 @@ bool _mongocrypt_kms_ctx_init_azure_wrapkey(mongocrypt_kms_ctx_t *kms,
     char *request_string;
     bool ret = false;
 
-    _init_common(kms, log, MONGOCRYPT_KMS_AZURE_WRAPKEY);
+    _init_common(kms, log, MONGOCRYPT_KMS_AZURE_WRAPKEY, kmsid);
     status = kms->status;
 
     BSON_ASSERT(ctx_opts->kek.provider.azure.key_vault_endpoint);
@@ -1136,7 +1145,8 @@ bool _mongocrypt_kms_ctx_init_azure_unwrapkey(mongocrypt_kms_ctx_t *kms,
                                               _mongocrypt_opts_kms_providers_t *kms_providers,
                                               const char *access_token,
                                               _mongocrypt_key_doc_t *key,
-                                              _mongocrypt_log_t *log) {
+                                              _mongocrypt_log_t *log,
+                                              const char *kmsid) {
     BSON_ASSERT_PARAM(kms);
     BSON_ASSERT_PARAM(key);
 
@@ -1148,7 +1158,7 @@ bool _mongocrypt_kms_ctx_init_azure_unwrapkey(mongocrypt_kms_ctx_t *kms,
     char *request_string;
     bool ret = false;
 
-    _init_common(kms, log, MONGOCRYPT_KMS_AZURE_UNWRAPKEY);
+    _init_common(kms, log, MONGOCRYPT_KMS_AZURE_UNWRAPKEY, kmsid);
     status = kms->status;
 
     BSON_ASSERT(key->kek.provider.azure.key_vault_endpoint);
@@ -1237,7 +1247,8 @@ bool _mongocrypt_kms_ctx_init_gcp_auth(mongocrypt_kms_ctx_t *kms,
                                        _mongocrypt_log_t *log,
                                        _mongocrypt_opts_t *crypt_opts,
                                        const mc_kms_creds_t *kc,
-                                       _mongocrypt_endpoint_t *kms_endpoint) {
+                                       _mongocrypt_endpoint_t *kms_endpoint,
+                                       const char *kmsid) {
     BSON_ASSERT_PARAM(kms);
     BSON_ASSERT_PARAM(kc);
     BSON_ASSERT_PARAM(crypt_opts);
@@ -1252,7 +1263,7 @@ bool _mongocrypt_kms_ctx_init_gcp_auth(mongocrypt_kms_ctx_t *kms,
     bool ret = false;
     ctx_with_status_t ctx_with_status;
 
-    _init_common(kms, log, MONGOCRYPT_KMS_GCP_OAUTH);
+    _init_common(kms, log, MONGOCRYPT_KMS_GCP_OAUTH, kmsid);
     status = kms->status;
     ctx_with_status.ctx = crypt_opts;
     ctx_with_status.status = mongocrypt_status_new();
@@ -1323,7 +1334,8 @@ bool _mongocrypt_kms_ctx_init_gcp_encrypt(mongocrypt_kms_ctx_t *kms,
                                           _mongocrypt_opts_kms_providers_t *kms_providers,
                                           struct __mongocrypt_ctx_opts_t *ctx_opts,
                                           const char *access_token,
-                                          _mongocrypt_buffer_t *plaintext_key_material) {
+                                          _mongocrypt_buffer_t *plaintext_key_material,
+                                          const char *kmsid) {
     BSON_ASSERT_PARAM(kms);
     BSON_ASSERT_PARAM(ctx_opts);
     BSON_ASSERT_PARAM(kms_providers);
@@ -1338,7 +1350,7 @@ bool _mongocrypt_kms_ctx_init_gcp_encrypt(mongocrypt_kms_ctx_t *kms,
     char *request_string;
     bool ret = false;
 
-    _init_common(kms, log, MONGOCRYPT_KMS_GCP_ENCRYPT);
+    _init_common(kms, log, MONGOCRYPT_KMS_GCP_ENCRYPT, kmsid);
     status = kms->status;
 
     if (ctx_opts->kek.provider.gcp.endpoint) {
@@ -1392,7 +1404,8 @@ bool _mongocrypt_kms_ctx_init_gcp_decrypt(mongocrypt_kms_ctx_t *kms,
                                           _mongocrypt_opts_kms_providers_t *kms_providers,
                                           const char *access_token,
                                           _mongocrypt_key_doc_t *key,
-                                          _mongocrypt_log_t *log) {
+                                          _mongocrypt_log_t *log,
+                                          const char *kmsid) {
     BSON_ASSERT_PARAM(kms);
     BSON_ASSERT_PARAM(kms_providers);
     BSON_ASSERT_PARAM(access_token);
@@ -1406,7 +1419,7 @@ bool _mongocrypt_kms_ctx_init_gcp_decrypt(mongocrypt_kms_ctx_t *kms,
     char *request_string;
     bool ret = false;
 
-    _init_common(kms, log, MONGOCRYPT_KMS_GCP_DECRYPT);
+    _init_common(kms, log, MONGOCRYPT_KMS_GCP_DECRYPT, kmsid);
     status = kms->status;
 
     if (key->kek.provider.gcp.endpoint) {
@@ -1459,7 +1472,8 @@ bool _mongocrypt_kms_ctx_init_kmip_register(mongocrypt_kms_ctx_t *kms_ctx,
                                             const _mongocrypt_endpoint_t *endpoint,
                                             const uint8_t *secretdata,
                                             uint32_t secretdata_len,
-                                            _mongocrypt_log_t *log) {
+                                            _mongocrypt_log_t *log,
+                                            const char *kmsid) {
     BSON_ASSERT_PARAM(kms_ctx);
     BSON_ASSERT_PARAM(endpoint);
     BSON_ASSERT_PARAM(secretdata);
@@ -1469,7 +1483,7 @@ bool _mongocrypt_kms_ctx_init_kmip_register(mongocrypt_kms_ctx_t *kms_ctx,
     const uint8_t *reqdata;
     size_t reqlen;
 
-    _init_common(kms_ctx, log, MONGOCRYPT_KMS_KMIP_REGISTER);
+    _init_common(kms_ctx, log, MONGOCRYPT_KMS_KMIP_REGISTER, kmsid);
     status = kms_ctx->status;
 
     kms_ctx->endpoint = bson_strdup(endpoint->host_and_port);
@@ -1495,7 +1509,8 @@ done:
 bool _mongocrypt_kms_ctx_init_kmip_activate(mongocrypt_kms_ctx_t *kms_ctx,
                                             const _mongocrypt_endpoint_t *endpoint,
                                             const char *unique_identifier,
-                                            _mongocrypt_log_t *log) {
+                                            _mongocrypt_log_t *log,
+                                            const char *kmsid) {
     BSON_ASSERT_PARAM(kms_ctx);
     BSON_ASSERT_PARAM(endpoint);
     BSON_ASSERT_PARAM(unique_identifier);
@@ -1505,7 +1520,7 @@ bool _mongocrypt_kms_ctx_init_kmip_activate(mongocrypt_kms_ctx_t *kms_ctx,
     size_t reqlen;
     const uint8_t *reqdata;
 
-    _init_common(kms_ctx, log, MONGOCRYPT_KMS_KMIP_ACTIVATE);
+    _init_common(kms_ctx, log, MONGOCRYPT_KMS_KMIP_ACTIVATE, kmsid);
     status = kms_ctx->status;
 
     kms_ctx->endpoint = bson_strdup(endpoint->host_and_port);
@@ -1531,7 +1546,8 @@ done:
 bool _mongocrypt_kms_ctx_init_kmip_get(mongocrypt_kms_ctx_t *kms_ctx,
                                        const _mongocrypt_endpoint_t *endpoint,
                                        const char *unique_identifier,
-                                       _mongocrypt_log_t *log) {
+                                       _mongocrypt_log_t *log,
+                                       const char *kmsid) {
     BSON_ASSERT_PARAM(kms_ctx);
     BSON_ASSERT_PARAM(endpoint);
     BSON_ASSERT_PARAM(unique_identifier);
@@ -1541,7 +1557,7 @@ bool _mongocrypt_kms_ctx_init_kmip_get(mongocrypt_kms_ctx_t *kms_ctx,
     size_t reqlen;
     const uint8_t *reqdata;
 
-    _init_common(kms_ctx, log, MONGOCRYPT_KMS_KMIP_GET);
+    _init_common(kms_ctx, log, MONGOCRYPT_KMS_KMIP_GET, kmsid);
     status = kms_ctx->status;
 
     kms_ctx->endpoint = bson_strdup(endpoint->host_and_port);
