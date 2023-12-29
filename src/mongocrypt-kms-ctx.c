@@ -149,7 +149,6 @@ bool _mongocrypt_kms_ctx_init_aws_decrypt(mongocrypt_kms_ctx_t *kms,
     BSON_ASSERT_PARAM(kms_providers);
     BSON_ASSERT_PARAM(crypto);
 
-    // zz delegates encryption to AWS
     kms_request_opt_t *opt;
     mongocrypt_status_t *status;
     ctx_with_status_t ctx_with_status;
