@@ -318,19 +318,20 @@ kmip_encrypt_decrypt (const char* unique_identifer, const uint8_t *data, size_t 
    kmip_writer_close_struct (writer); /* KMIP_TAG_RequestHeader */
 
    kmip_writer_begin_struct (writer, KMIP_TAG_BatchItem);
-   if (encrypt) {
-      /* 0x1F == Encrypt */
-      kmip_writer_write_enumeration (writer, KMIP_TAG_Operation, 0x1F);
-   } else {
-      /* 0x20 == Encrypt */
-      kmip_writer_write_enumeration (writer, KMIP_TAG_Operation, 0x20);
-   }
-
+   /* 0x1F == Encrypt, 0x20 == Decrypt*/
+   kmip_writer_write_enumeration (writer, KMIP_TAG_Operation, encrypt ? 0x1F : 0x20);
    kmip_writer_begin_struct (writer, KMIP_TAG_RequestPayload);
    kmip_writer_write_string (writer,
                              KMIP_TAG_UniqueIdentifier,
                              unique_identifer,
                              strlen (unique_identifer));
+   // zz workaround for pykmip
+   kmip_writer_begin_struct (writer, KMIP_TAG_CryptographicParameters);
+   kmip_writer_write_enumeration(writer, KMIP_TAG_BlockCipherMode, 1 /* CBC */);
+   kmip_writer_write_enumeration(writer, KMIP_TAG_PaddingMethod, 3 /* PKCS5 */);
+   kmip_writer_write_enumeration(writer, KMIP_TAG_CryptographicAlgorithm, 3 /* AES */);
+   kmip_writer_close_struct(writer); /* KMIP_TAG_CryptographicParameters */
+
    kmip_writer_write_bytes(writer, KMIP_TAG_Data, (char *) data, len);
 
    kmip_writer_close_struct (writer); /* KMIP_TAG_RequestPayload */
