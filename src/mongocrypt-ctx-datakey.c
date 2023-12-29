@@ -173,7 +173,6 @@ static bool _kms_kmip_start(mongocrypt_ctx_t *ctx, const mc_kms_creds_t *kc) {
             goto fail;
         }
         ctx->state = MONGOCRYPT_CTX_NEED_KMS;
-        goto success;
     } else {
         /* Step 4. Use the 96 byte SecretData to encrypt a new DEK. */
         if (!_mongocrypt_wrap_key(ctx->crypt->crypto,
@@ -372,7 +371,8 @@ static bool _kms_done(mongocrypt_ctx_t *ctx) {
             return _mongocrypt_ctx_fail(ctx);
         }
         return _kms_start(ctx);
-    } else if (dkctx->kms.req_type == MONGOCRYPT_KMS_KMIP_REGISTER) {
+    } else if (dkctx->kms.req_type == MONGOCRYPT_KMS_KMIP_REGISTER 
+            || dkctx->kms.req_type == MONGOCRYPT_KMS_KMIP_CREATE) {
         dkctx->kmip_unique_identifier = bson_strdup((const char *)dkctx->kms.result.data);
         return _kms_start(ctx);
     } else if (dkctx->kms.req_type == MONGOCRYPT_KMS_KMIP_ACTIVATE) {
