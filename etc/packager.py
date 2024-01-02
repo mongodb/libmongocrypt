@@ -230,9 +230,8 @@ class Distro(object):
                 return "s390x"
             elif arch.endswith("86"):
                 return "i686"
-            elif arch == "arm64":
-                return "arm64"
-            elif arch == "aarch64":
+            # MC: transform arm64 -> aarch64 to match the structure of the PPA
+            elif arch == "arm64" or arch == "aarch64":
                 return "aarch64"
             return "x86_64"
         else:
