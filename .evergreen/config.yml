@@ -1142,7 +1142,7 @@ buildvariants:
   expansions:
     has_packages: true
     packager_distro: amazon2
-    packager_arch: arm64
+    packager_arch: aarch64
     node_lts_version: 16
   tasks:
   - build-and-test-and-upload
@@ -1171,7 +1171,7 @@ buildvariants:
   expansions:
     has_packages: true
     packager_distro: amazon2023
-    packager_arch: arm64
+    packager_arch: aarch64
     node_lts_version: 16
   tasks:
   - build-and-test-and-upload
@@ -1293,7 +1293,7 @@ buildvariants:
   expansions:
     has_packages: true
     packager_distro: rhel82
-    packager_arch: arm64
+    packager_arch: aarch64
   tasks:
   - build-and-test-and-upload
   - name: publish-packages
@@ -1341,7 +1341,7 @@ buildvariants:
   expansions:
     has_packages: true
     packager_distro: rhel91
-    packager_arch: arm64
+    packager_arch: aarch64
   tasks:
   - build-and-test-and-upload
   - name: publish-packages
