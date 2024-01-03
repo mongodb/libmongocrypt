@@ -883,7 +883,7 @@ bool _mongocrypt_key_broker_kms_done(_mongocrypt_key_broker_t *kb, _mongocrypt_o
                 bson_free(access_token);
             } else if (key_returned->doc->kek.kms_provider == MONGOCRYPT_KMS_PROVIDER_GCP) {
                 BSON_ASSERT(kc.type == MONGOCRYPT_KMS_PROVIDER_GCP);
-                if (NULL != kc.value.gcp.access_token) {
+                if (kc.value.gcp.access_token) {
                     access_token = bson_strdup(kc.value.gcp.access_token);
                 } else {
                     access_token =

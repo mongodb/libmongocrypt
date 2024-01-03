@@ -577,7 +577,7 @@ bool _mongocrypt_parse_kms_providers(mongocrypt_binary_t *kms_providers_definiti
                 return false;
             }
 
-            if (NULL != kms_providers->gcp_mut.access_token) {
+            if (kms_providers->gcp_mut.access_token) {
                 /* "gcp" document has form:
                  * {
                  *    "accessToken": <required UTF-8>
