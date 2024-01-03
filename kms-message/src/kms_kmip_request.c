@@ -299,7 +299,8 @@ kms_kmip_request_create_new (void *reserved) {
 }
 
 static kms_request_t *
-kmip_encrypt_decrypt (const char* unique_identifer, const uint8_t *data, size_t len, bool encrypt) {
+kmip_encrypt_decrypt (const char* unique_identifer, const uint8_t *data, size_t len, 
+   const uint8_t *iv_data, size_t iv_len, bool encrypt) {
    kmip_writer_t *writer;
    kms_request_t *req;
 
@@ -325,14 +326,16 @@ kmip_encrypt_decrypt (const char* unique_identifer, const uint8_t *data, size_t 
                              KMIP_TAG_UniqueIdentifier,
                              unique_identifer,
                              strlen (unique_identifer));
-   // zz workaround for pykmip
+                             
    kmip_writer_begin_struct (writer, KMIP_TAG_CryptographicParameters);
    kmip_writer_write_enumeration(writer, KMIP_TAG_BlockCipherMode, 1 /* CBC */);
    kmip_writer_write_enumeration(writer, KMIP_TAG_PaddingMethod, 3 /* PKCS5 */);
    kmip_writer_write_enumeration(writer, KMIP_TAG_CryptographicAlgorithm, 3 /* AES */);
+   if (encrypt) kmip_writer_write_bool(writer, KMIP_TAG_RandomIV, true);
    kmip_writer_close_struct(writer); /* KMIP_TAG_CryptographicParameters */
 
    kmip_writer_write_bytes(writer, KMIP_TAG_Data, (char *) data, len);
+   if (!encrypt) kmip_writer_write_bytes(writer, KMIP_TAG_IVCounterNonce, (char *) iv_data, iv_len);
 
    kmip_writer_close_struct (writer); /* KMIP_TAG_RequestPayload */
    kmip_writer_close_struct (writer); /* KMIP_TAG_BatchItem */
@@ -346,11 +349,11 @@ kmip_encrypt_decrypt (const char* unique_identifer, const uint8_t *data, size_t 
 
 kms_request_t *
 kms_kmip_request_encrypt_new (void *reserved, const char* unique_identifer, const uint8_t *plaintext, size_t len) {
-   return kmip_encrypt_decrypt(unique_identifer, plaintext, len, true);
+   return kmip_encrypt_decrypt(unique_identifer, plaintext, len, NULL, 0, true);
 }
 
 kms_request_t *
-kms_kmip_request_decrypt_new (void *reserved, const char* unique_identifer, const uint8_t *ciphertext, size_t len) {
-   return kmip_encrypt_decrypt(unique_identifer, ciphertext, len, false);
+kms_kmip_request_decrypt_new (void *reserved, const char* unique_identifer, const uint8_t *ciphertext, size_t len, const uint8_t *iv_data, size_t iv_len) {
+   return kmip_encrypt_decrypt(unique_identifer, ciphertext, len, iv_data, iv_len, false);
 }
 
