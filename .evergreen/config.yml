@@ -609,6 +609,10 @@ tasks:
       name: build-and-test-and-upload
     - variant: amazon2-arm64
       name: build-and-test-and-upload
+    - variant: amazon2023
+      name: build-and-test-and-upload
+    - variant: amazon2023-arm64
+      name: build-and-test-and-upload
     - variant: debian11
       name: build-and-test-and-upload
     - variant: debian10
@@ -623,7 +627,15 @@ tasks:
       name: build-and-test-and-upload
     - variant: rhel-80-64-bit
       name: build-and-test-and-upload
+    - variant: rhel-81-ppc64el
+      name: build-and-test-and-upload
     - variant: rhel-82-arm64
+      name: build-and-test-and-upload
+    - variant: rhel-83-zseries
+      name: build-and-test-and-upload
+    - variant: rhel-91-64-bit
+      name: build-and-test-and-upload
+    - variant: rhel-91-arm64
       name: build-and-test-and-upload
     - variant: suse12-64
       name: build-and-test-and-upload
@@ -665,6 +677,10 @@ tasks:
     - func: "download tarball"
       vars: { variant_name: "amazon2-arm64" }
     - func: "download tarball"
+      vars: { variant_name: "amazon2023" }
+    - func: "download tarball"
+      vars: { variant_name: "amazon2023-arm64" }
+    - func: "download tarball"
       vars: { variant_name: "debian11" }
     - func: "download tarball"
       vars: { variant_name: "debian10" }
@@ -679,7 +695,15 @@ tasks:
     - func: "download tarball"
       vars: { variant_name: "rhel-80-64-bit" }
     - func: "download tarball"
+      vars: { variant_name: "rhel-81-ppc64el" }
+    - func: "download tarball"
       vars: { variant_name: "rhel-82-arm64" }
+    - func: "download tarball"
+      vars: { variant_name: "rhel-83-zseries" }
+    - func: "download tarball"
+      vars: { variant_name: "rhel-91-64-bit" }
+    - func: "download tarball"
+      vars: { variant_name: "rhel-91-arm64" }
     - func: "download tarball"
       vars: { variant_name: "suse12-64" }
     - func: "download tarball"
@@ -1142,7 +1166,7 @@ buildvariants:
   expansions:
     has_packages: true
     packager_distro: amazon2
-    packager_arch: arm64
+    packager_arch: aarch64
     node_lts_version: 16
   tasks:
   - build-and-test-and-upload
@@ -1171,7 +1195,7 @@ buildvariants:
   expansions:
     has_packages: true
     packager_distro: amazon2023
-    packager_arch: arm64
+    packager_arch: aarch64
     node_lts_version: 16
   tasks:
   - build-and-test-and-upload
@@ -1293,7 +1317,7 @@ buildvariants:
   expansions:
     has_packages: true
     packager_distro: rhel82
-    packager_arch: arm64
+    packager_arch: aarch64
   tasks:
   - build-and-test-and-upload
   - name: publish-packages
@@ -1341,7 +1365,7 @@ buildvariants:
   expansions:
     has_packages: true
     packager_distro: rhel91
-    packager_arch: arm64
+    packager_arch: aarch64
   tasks:
   - build-and-test-and-upload
   - name: publish-packages
