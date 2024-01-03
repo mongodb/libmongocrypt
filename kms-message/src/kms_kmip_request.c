@@ -258,6 +258,38 @@ kms_kmip_request_get_new (void *reserved, const char *unique_identifer)
 
 kms_request_t *
 kms_kmip_request_create_new (void *reserved) {
+   /*
+   Create a KMIP Create request of this form:
+   <RequestMessage tag="0x420078" type="Structure">
+    <RequestHeader tag="0x420077" type="Structure">
+     <ProtocolVersion tag="0x420069" type="Structure">
+      <ProtocolVersionMajor tag="0x42006a" type="Integer" value="1"/>
+      <ProtocolVersionMinor tag="0x42006b" type="Integer" value="0"/>
+     </ProtocolVersion>
+     <BatchCount tag="0x42000d" type="Integer" value="1"/>
+    </RequestHeader>
+    <BatchItem tag="0x42000f" type="Structure">
+     <Operation tag="0x42005c" type="Enumeration" value="1"/>
+     <RequestPayload tag="0x420079" type="Structure">
+      <ObjectType tag="0x420057" type="Enumeration" value="2"/>
+      <TemplateAttribute tag="0x420091" type="Structure">
+       <Attribute tag="0x420008" type="Structure">
+        <AttributeName tag="0x42000a" type="TextString" value="Cryptographic Algorithm"/>
+        <AttributeValue tag="0x42000b" type="Enumeration" value="3"/>
+       </Attribute>
+       <Attribute tag="0x420008" type="Structure">
+        <AttributeName tag="0x42000a" type="TextString" value="Cryptographic Length"/>
+        <AttributeValue tag="0x42000b" type="Integer" value="256"/>
+       </Attribute>
+       <Attribute tag="0x420008" type="Structure">
+        <AttributeName tag="0x42000a" type="TextString" value="Cryptographic
+   Usage Mask"/> <AttributeValue tag="0x42000b" type="Integer" value="12"/>
+       </Attribute>
+      </TemplateAttribute>
+     </RequestPayload>
+    </BatchItem>
+   </RequestMessage>
+   */
    kmip_writer_t *writer;
    kms_request_t *req;
 
@@ -269,8 +301,8 @@ kms_kmip_request_create_new (void *reserved) {
 
    kmip_writer_begin_struct (writer, KMIP_TAG_RequestHeader);
    kmip_writer_begin_struct (writer, KMIP_TAG_ProtocolVersion);
-   kmip_writer_write_integer (writer, KMIP_TAG_ProtocolVersionMajor, 2);
-   kmip_writer_write_integer (writer, KMIP_TAG_ProtocolVersionMinor, 0);
+   kmip_writer_write_integer (writer, KMIP_TAG_ProtocolVersionMajor, 1);
+   kmip_writer_write_integer (writer, KMIP_TAG_ProtocolVersionMinor, 2);
    kmip_writer_close_struct (writer); /* KMIP_TAG_ProtocolVersion */
    kmip_writer_write_integer (writer, KMIP_TAG_BatchCount, 1);
    kmip_writer_close_struct (writer); /* KMIP_TAG_RequestHeader */
@@ -281,13 +313,47 @@ kms_kmip_request_create_new (void *reserved) {
    kmip_writer_begin_struct (writer, KMIP_TAG_RequestPayload);
    /* 0x02 == symmetric key */
    kmip_writer_write_enumeration(writer, KMIP_TAG_ObjectType, 0x02);
-   kmip_writer_begin_struct(writer, KMIP_TAG_Attributes);
 
-   kmip_writer_write_enumeration(writer, KMIP_TAG_CryptographicAlgorithm, 3 /* AES */);
+   /*
+   Template-Attributes are deprecated in KMIP 1.3. Instead, use:
+
+   kmip_writer_begin_struct(writer, KMIP_TAG_Attributes)
+   kmip_writer_write_enumeration(writer, KMIP_TAG_CryptographicAlgorithm, 3);
    kmip_writer_write_integer(writer, KMIP_TAG_CryptographicLength, 256);
-   kmip_writer_write_integer(writer, KMIP_TAG_CryptographicUsageMask, 4 | 8 /* Encrypt | Decrypt */);
+   kmip_writer_write_integer(writer, KMIP_TAG_CryptographicUsageMask, 4 | 8);
+   kmip_writer_end_struct(writer);
+   */
+   {
+      kmip_writer_begin_struct (writer, KMIP_TAG_TemplateAttribute);
 
-   kmip_writer_close_struct (writer); /* KMIP_TAG_Attributes */
+      kmip_writer_begin_struct (writer, KMIP_TAG_Attribute);
+      const char *cryptographicAlgorithmStr = "Cryptographic Algorithm";
+      kmip_writer_write_string (writer,
+                                KMIP_TAG_AttributeName,
+                                cryptographicAlgorithmStr,
+                                strlen (cryptographicAlgorithmStr));
+      kmip_writer_write_enumeration (writer, KMIP_TAG_AttributeValue, 3 /* AES */);
+      kmip_writer_close_struct (writer);
+      kmip_writer_begin_struct (writer, KMIP_TAG_Attribute);
+      const char *cryptographicLengthStr = "Cryptographic Length";
+      kmip_writer_write_string (writer,
+                                KMIP_TAG_AttributeName,
+                                cryptographicLengthStr,
+                                strlen (cryptographicLengthStr));
+      kmip_writer_write_integer (writer, KMIP_TAG_AttributeValue, 256);
+      kmip_writer_close_struct (writer);
+      kmip_writer_begin_struct (writer, KMIP_TAG_Attribute);
+      const char *cryptographicUsageMaskStr = "Cryptographic Usage Mask";
+      kmip_writer_write_string (writer,
+                                KMIP_TAG_AttributeName,
+                                cryptographicUsageMaskStr,
+                                strlen (cryptographicUsageMaskStr));
+      kmip_writer_write_integer (writer, KMIP_TAG_AttributeValue, 4 | 8 /* Encrypt | Decrypt */);
+      kmip_writer_close_struct (writer);
+
+      kmip_writer_close_struct (writer); /* KMIP_TAG_TemplateAttribute */
+   }
+
    kmip_writer_close_struct (writer); /* KMIP_TAG_RequestPayload */
    kmip_writer_close_struct (writer); /* KMIP_TAG_BatchItem */
    kmip_writer_close_struct (writer); /* KMIP_TAG_RequestMessage */
@@ -312,8 +378,8 @@ kmip_encrypt_decrypt (const char* unique_identifer, const uint8_t *data, size_t 
 
    kmip_writer_begin_struct (writer, KMIP_TAG_RequestHeader);
    kmip_writer_begin_struct (writer, KMIP_TAG_ProtocolVersion);
-   kmip_writer_write_integer (writer, KMIP_TAG_ProtocolVersionMajor, 2);
-   kmip_writer_write_integer (writer, KMIP_TAG_ProtocolVersionMinor, 0);
+   kmip_writer_write_integer (writer, KMIP_TAG_ProtocolVersionMajor, 1);
+   kmip_writer_write_integer (writer, KMIP_TAG_ProtocolVersionMinor, 2);
    kmip_writer_close_struct (writer); /* KMIP_TAG_ProtocolVersion */
    kmip_writer_write_integer (writer, KMIP_TAG_BatchCount, 1);
    kmip_writer_close_struct (writer); /* KMIP_TAG_RequestHeader */
@@ -349,11 +415,61 @@ kmip_encrypt_decrypt (const char* unique_identifer, const uint8_t *data, size_t 
 
 kms_request_t *
 kms_kmip_request_encrypt_new (void *reserved, const char* unique_identifer, const uint8_t *plaintext, size_t len) {
+   /*
+   Create a KMIP Encrypt request of this form:
+   <RequestMessage tag="0x420078" type="Structure">
+    <RequestHeader tag="0x420077" type="Structure">
+     <ProtocolVersion tag="0x420069" type="Structure">
+      <ProtocolVersionMajor tag="0x42006a" type="Integer" value="1"/>
+      <ProtocolVersionMinor tag="0x42006b" type="Integer" value="2"/>
+     </ProtocolVersion>
+     <BatchCount tag="0x42000d" type="Integer" value="1"/>
+    </RequestHeader>
+    <BatchItem tag="0x42000f" type="Structure">
+     <Operation tag="0x42005c" type="Enumeration" value="31"/>
+     <RequestPayload tag="0x420079" type="Structure">
+      <UniqueIdentifier tag="0x420094" type="TextString" value="..."/>
+      <CryptographicParameters tag="0x42002b" type="Structure">
+       <BlockCipherMode tag="0x420011" type="Enumeration" value="1"/>
+       <PaddingMethod tag="0x42005f" type="Enumeration" value="3"/>
+       <CryptographicAlgorithm tag="0x420028" type="Enumeration" value="3"/>
+       <RandomIV tag="0x4200c5" type="Boolean" value="True"/>
+      </CryptographicParameters>
+      <Data tag="0x4200c2" type="ByteString" value="..."/>
+     </RequestPayload>
+    </BatchItem>
+   </RequestMessage>
+   */
    return kmip_encrypt_decrypt(unique_identifer, plaintext, len, NULL, 0, true);
 }
 
 kms_request_t *
 kms_kmip_request_decrypt_new (void *reserved, const char* unique_identifer, const uint8_t *ciphertext, size_t len, const uint8_t *iv_data, size_t iv_len) {
+   /*
+   Create a KMIP Decrypt request of this form:
+   <RequestMessage tag="0x420078" type="Structure">
+    <RequestHeader tag="0x420077" type="Structure">
+     <ProtocolVersion tag="0x420069" type="Structure">
+      <ProtocolVersionMajor tag="0x42006a" type="Integer" value="1"/>
+      <ProtocolVersionMinor tag="0x42006b" type="Integer" value="2"/>
+     </ProtocolVersion>
+     <BatchCount tag="0x42000d" type="Integer" value="1"/>
+    </RequestHeader>
+    <BatchItem tag="0x42000f" type="Structure">
+     <Operation tag="0x42005c" type="Enumeration" value="32"/>
+     <RequestPayload tag="0x420079" type="Structure">
+      <UniqueIdentifier tag="0x420094" type="TextString" value="..."/>
+      <CryptographicParameters tag="0x42002b" type="Structure">
+       <BlockCipherMode tag="0x420011" type="Enumeration" value="1"/>
+       <PaddingMethod tag="0x42005f" type="Enumeration" value="3"/>
+       <CryptographicAlgorithm tag="0x420028" type="Enumeration" value="3"/>
+      </CryptographicParameters>
+      <Data tag="0x4200c2" type="ByteString" value="..."/>
+      <IVCounterNonce tag="0x42003d" type="ByteString" value="..."/>
+     </RequestPayload>
+    </BatchItem>
+   </RequestMessage>
+   */
    return kmip_encrypt_decrypt(unique_identifer, ciphertext, len, iv_data, iv_len, false);
 }
 

@@ -1703,7 +1703,6 @@ done:
 bool _mongocrypt_kms_ctx_init_kmip_create(mongocrypt_kms_ctx_t *kms_ctx,
                                             const _mongocrypt_endpoint_t *endpoint,
                                             _mongocrypt_log_t *log) {
-                                            // zz
     BSON_ASSERT_PARAM(kms_ctx);
     BSON_ASSERT_PARAM(endpoint);
     bool ret = false;

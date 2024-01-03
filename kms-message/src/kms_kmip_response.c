@@ -211,6 +211,28 @@ fail:
    return kms_request_str_detach (nullterminated);
 }
 
+/*
+Example of a successful response to an Encrypt request:
+<ResponseMessage tag="0x42007b" type="Structure">
+ <ResponseHeader tag="0x42007a" type="Structure">
+  <ProtocolVersion tag="0x420069" type="Structure">
+   <ProtocolVersionMajor tag="0x42006a" type="Integer" value="1"/>
+   <ProtocolVersionMinor tag="0x42006b" type="Integer" value="2"/>
+  </ProtocolVersion>
+  <TimeStamp tag="0x420092" type="DateTime" value="2021-10-12T14:09:25-0500"/>
+  <BatchCount tag="0x42000d" type="Integer" value="1"/>
+ </ResponseHeader>
+ <BatchItem tag="0x42000f" type="Structure">
+  <Operation tag="0x42005c" type="Enumeration" value="31"/>
+  <ResultStatus tag="0x42007f" type="Enumeration" value="0"/>
+  <ResponsePayload tag="0x42007c" type="Structure">
+   <UniqueIdentifier tag="0x420094" type="TextString" value="39"/>
+   <Data tag="0x4200c2" type="ByteString" value="..."/>
+   <IVCounterNonce tag="0x42003d" type="ByteString" value="..."/>
+  </ResponsePayload>
+ </BatchItem>
+</ResponseMessage>
+*/
 uint8_t *
 kms_kmip_response_get_iv (kms_response_t *res, size_t *datalen) {
    kmip_reader_t *reader = NULL;
@@ -271,8 +293,25 @@ kms_kmip_response_get_iv (kms_response_t *res, size_t *datalen) {
 }
 
 /*
-Example of a successful response to an Encrypt or Decrypt request:
-// zz
+Example of a successful response to a Decrypt request:
+<ResponseMessage tag="0x42007b" type="Structure">
+ <ResponseHeader tag="0x42007a" type="Structure">
+  <ProtocolVersion tag="0x420069" type="Structure">
+   <ProtocolVersionMajor tag="0x42006a" type="Integer" value="1"/>
+   <ProtocolVersionMinor tag="0x42006b" type="Integer" value="2"/>
+  </ProtocolVersion>
+  <TimeStamp tag="0x420092" type="DateTime" value="2021-10-12T14:09:25-0500"/>
+  <BatchCount tag="0x42000d" type="Integer" value="1"/>
+ </ResponseHeader>
+ <BatchItem tag="0x42000f" type="Structure">
+  <Operation tag="0x42005c" type="Enumeration" value="32"/>
+  <ResultStatus tag="0x42007f" type="Enumeration" value="0"/>
+  <ResponsePayload tag="0x42007c" type="Structure">
+   <UniqueIdentifier tag="0x420094" type="TextString" value="39"/>
+   <Data tag="0x4200c2" type="ByteString" value="..."/>
+  </ResponsePayload>
+ </BatchItem>
+</ResponseMessage>
 */
 uint8_t *
 kms_kmip_response_get_data (kms_response_t *res, size_t *datalen) {
