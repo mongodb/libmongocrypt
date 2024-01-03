@@ -1,5 +1,7 @@
 #include "kms_message/kms_kmip_response.h"
 
+#include "kms_kmip_item_type_private.h"
+#include "kms_kmip_tag_type_private.h"
 #include "kms_message_private.h"
 #include "kms_kmip_reader_writer_private.h"
 #include "kms_kmip_result_reason_private.h"
@@ -207,6 +209,65 @@ kms_kmip_response_get_unique_identifier (kms_response_t *res)
 fail:
    kmip_reader_destroy (reader);
    return kms_request_str_detach (nullterminated);
+}
+
+uint8_t *
+kms_kmip_response_get_iv (kms_response_t *res, size_t *datalen) {
+   kmip_reader_t *reader = NULL;
+   size_t pos;
+   size_t len;
+   uint8_t *data = NULL;
+   uint8_t *tmp;
+
+   if (!check_and_require_kmip (res)) {
+      goto fail;
+   }
+
+   if (!kms_kmip_response_ok (res)) {
+      goto fail;
+   }
+
+   reader = kmip_reader_new (res->kmip.data, res->kmip.len);
+
+   if (!kmip_reader_find_and_recurse (reader, KMIP_TAG_ResponseMessage)) {
+      KMS_ERROR (res,
+                 "unable to find tag: %s",
+                 kmip_tag_to_string (KMIP_TAG_ResponseMessage));
+      goto fail;
+   }
+
+   if (!kmip_reader_find_and_recurse (reader, KMIP_TAG_BatchItem)) {
+      KMS_ERROR (res,
+                 "unable to find tag: %s",
+                 kmip_tag_to_string (KMIP_TAG_BatchItem));
+      goto fail;
+   }
+
+   if (!kmip_reader_find_and_recurse (reader, KMIP_TAG_ResponsePayload)) {
+      KMS_ERROR (res,
+                 "unable to find tag: %s",
+                 kmip_tag_to_string (KMIP_TAG_ResponsePayload));
+      goto fail;
+   }
+
+   if (!kmip_reader_find (reader, KMIP_TAG_IVCounterNonce, KMIP_ITEM_TYPE_ByteString, &pos, &len)) {
+      KMS_ERROR (res,
+                 "unable to find tag: %s",
+                 kmip_tag_to_string (KMIP_TAG_Data));
+      goto fail;
+   }
+
+   if (!kmip_reader_read_bytes (reader, &tmp, len)) {
+      KMS_ERROR (res, "unable to read data bytes");
+      goto fail;
+   }
+   data = malloc (len);
+   memcpy (data, tmp, len);
+   *datalen = len;
+
+   fail:
+   kmip_reader_destroy (reader);
+   return data;
 }
 
 /*
