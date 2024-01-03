@@ -17,6 +17,7 @@
 #include "mongocrypt-kek-private.h"
 #include "mongocrypt-opts-private.h"
 #include "mongocrypt-private.h"
+#include <bson/bson.h>
 
 static bool _mongocrypt_azure_kek_parse(_mongocrypt_azure_kek_t *azure,
                                         const char *kmsid,
@@ -257,6 +258,10 @@ bool _mongocrypt_kek_append(const _mongocrypt_kek_t *kek, bson_t *bson, mongocry
             BSON_APPEND_UTF8(bson, "endpoint", kek->provider.kmip.endpoint->host_and_port);
         }
 
+        if (kek->provider.kmip.delegated) {
+            BSON_APPEND_BOOL(bson, "delegated", kek->provider.kmip.delegated);
+        }
+
         /* "keyId" is required in the final data key document for the "kmip" KMS
          * provider. It may be set from the "kmip.keyId" in the BSON document set
          * in mongocrypt_ctx_setopt_key_encryption_key, Otherwise, libmongocrypt
@@ -295,6 +300,7 @@ void _mongocrypt_kek_copy_to(const _mongocrypt_kek_t *src, _mongocrypt_kek_t *ds
     } else if (src->kms_provider == MONGOCRYPT_KMS_PROVIDER_KMIP) {
         dst->provider.kmip.endpoint = _mongocrypt_endpoint_copy(src->provider.kmip.endpoint);
         dst->provider.kmip.key_id = bson_strdup(src->provider.kmip.key_id);
+        dst->provider.kmip.delegated = src->provider.kmip.delegated;
     } else {
         BSON_ASSERT(src->kms_provider == MONGOCRYPT_KMS_PROVIDER_NONE
                     || src->kms_provider == MONGOCRYPT_KMS_PROVIDER_LOCAL);
