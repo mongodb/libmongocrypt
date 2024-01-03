@@ -1,5 +1,8 @@
 # ChangeLog
 ## 1.8.3
+### Fixed
+- Fix `aarch64` packages for RHEL 8, RHEL 9, Amazon 2023, and Amazon 2
+## 1.8.3
 ### Improvements
 - Include packages for RHEL 8, RHEL 9, and Amazon 2023
 ## 1.8.2
