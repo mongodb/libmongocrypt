@@ -64,9 +64,9 @@ KMS_MSG_EXPORT (kms_request_t *)
 kms_kmip_request_decrypt_new (void *reserved,
                           const char *unique_identifier,
                           const uint8_t *ciphertext,
-                          size_t len);
-
-//zz KMIP Encrypt and Decrypt requests
+                          size_t len,
+                          const uint8_t *iv,
+                          size_t iv_len);
 
 #ifdef __cplusplus
 }

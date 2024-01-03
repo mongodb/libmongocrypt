@@ -23,6 +23,7 @@
 #include "mongocrypt-compat.h"
 #include "mongocrypt-crypto-private.h"
 #include "mongocrypt-endpoint-private.h"
+#include "mongocrypt-key-private.h"
 #include "mongocrypt-opts-private.h"
 #include "mongocrypt.h"
 
@@ -138,8 +139,7 @@ bool _mongocrypt_kms_ctx_init_kmip_encrypt(mongocrypt_kms_ctx_t *kms,
 
 bool _mongocrypt_kms_ctx_init_kmip_decrypt(mongocrypt_kms_ctx_t *kms,
                                             const _mongocrypt_endpoint_t *endpoint,
-                                            const char *unique_identifier,
-                                            _mongocrypt_buffer_t *ciphertext,
+                                            _mongocrypt_key_doc_t *key,
                                             _mongocrypt_log_t *log);
 
 #endif /* MONGOCRYPT_KMX_CTX_PRIVATE_H */
