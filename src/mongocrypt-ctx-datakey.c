@@ -159,7 +159,7 @@ static bool _kms_kmip_start(mongocrypt_ctx_t *ctx, const mc_kms_creds_t *kc) {
         goto success;
     }
 
-    if (delegated) {
+    if (delegated && !dkctx->encrypted_key_material.data) {
         /* Step 3. Have the KMS encrypt a new DEK. */
         if (!_mongocrypt_kms_ctx_init_kmip_encrypt(&dkctx->kms,
                                                    endpoint,
@@ -170,7 +170,8 @@ static bool _kms_kmip_start(mongocrypt_ctx_t *ctx, const mc_kms_creds_t *kc) {
             goto fail;
         }
         ctx->state = MONGOCRYPT_CTX_NEED_KMS;
-    } else {
+        goto success;
+    } else if (!delegated) {
         /* Step 4. Use the 96 byte SecretData to encrypt a new DEK. */
         if (!_mongocrypt_wrap_key(ctx->crypt->crypto,
                                   &dkctx->kmip_secretdata,
@@ -315,7 +316,6 @@ static bool _kms_start(mongocrypt_ctx_t *ctx) {
         if (!_kms_kmip_start(ctx, &kc)) {
             goto done;
         }
-        // zz new one for kmip_delegated
     } else {
         _mongocrypt_ctx_fail_w_msg(ctx, "unsupported KMS provider");
         goto done;
@@ -376,6 +376,12 @@ static bool _kms_done(mongocrypt_ctx_t *ctx) {
         return _kms_start(ctx);
     } else if (dkctx->kms.req_type == MONGOCRYPT_KMS_KMIP_GET) {
         _mongocrypt_buffer_copy_to(&dkctx->kms.result, &dkctx->kmip_secretdata);
+        return _kms_start(ctx);
+    } else if (dkctx->kms.req_type == MONGOCRYPT_KMS_KMIP_ENCRYPT) {
+        _mongocrypt_buffer_copy_to(&dkctx->kms.result, &dkctx->encrypted_key_material);
+        return _kms_start(ctx);
+    } else if (dkctx->kms.req_type == MONGOCRYPT_KMS_KMIP_DECRYPT) {
+        _mongocrypt_buffer_copy_to(&dkctx->kms.result, &dkctx->plaintext_key_material);
         return _kms_start(ctx);
     }
 

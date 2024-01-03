@@ -53,6 +53,8 @@ csfle create_datakey
     KMIP options.
     --kmip_kek_endpoint <string>
     --kmip_kek_keyid <string>
+    --kmip_kek_delegated <bool>
+        Defaults to true.
 
 csfle auto_encrypt
     --command <JSON string> or --command_file <string>

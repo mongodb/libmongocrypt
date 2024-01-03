@@ -493,6 +493,7 @@ bool _mongocrypt_key_broker_add_doc(_mongocrypt_key_broker_t *kb,
     key_returned_t *key_returned;
     _mongocrypt_kms_provider_t kek_provider;
     char *access_token = NULL;
+    _mongocrypt_buffer_t iv = {0};
 
     BSON_ASSERT_PARAM(kb);
     BSON_ASSERT_PARAM(kms_providers);
@@ -672,7 +673,6 @@ bool _mongocrypt_key_broker_add_doc(_mongocrypt_key_broker_t *kb,
         BSON_ASSERT(kc.type == MONGOCRYPT_KMS_PROVIDER_KMIP);
         char *unique_identifier;
         _mongocrypt_endpoint_t *endpoint;
-        // zz decrypt here with KMIP delegated
 
         if (!key_returned->doc->kek.provider.kmip.key_id) {
             _key_broker_fail_w_msg(kb, "KMIP key malformed, no keyId present");
@@ -690,10 +690,21 @@ bool _mongocrypt_key_broker_add_doc(_mongocrypt_key_broker_t *kb,
             goto done;
         }
 
-        if (!_mongocrypt_kms_ctx_init_kmip_get(&key_returned->kms, endpoint, unique_identifier, &kb->crypt->log)) {
-            mongocrypt_kms_ctx_status(&key_returned->kms, kb->status);
-            _key_broker_fail(kb);
-            goto done;
+        if (key_returned->doc->kek.provider.kmip.delegated) {
+            if (!_mongocrypt_kms_ctx_init_kmip_decrypt(&key_returned->kms,
+                                                        endpoint,
+                                                        key_doc,
+                                                        &kb->crypt->log)) {
+                mongocrypt_kms_ctx_status(&key_returned->kms, kb->status);
+                _key_broker_fail(kb);
+                goto done;
+            }
+        } else {
+            if (!_mongocrypt_kms_ctx_init_kmip_get(&key_returned->kms, endpoint, unique_identifier, &kb->crypt->log)) {
+                mongocrypt_kms_ctx_status(&key_returned->kms, kb->status);
+                _key_broker_fail(kb);
+                goto done;
+            }
         }
     } else {
         _key_broker_fail_w_msg(kb, "unrecognized kms provider");
@@ -714,6 +725,7 @@ bool _mongocrypt_key_broker_add_doc(_mongocrypt_key_broker_t *kb,
 done:
     bson_free(access_token);
     _mongocrypt_key_destroy(key_doc);
+    _mongocrypt_buffer_cleanup(&iv);
     return ret;
 }
 
@@ -946,8 +958,12 @@ bool _mongocrypt_key_broker_kms_done(_mongocrypt_key_broker_t *kb, _mongocrypt_o
                 return _key_broker_fail(kb);
             }
 
-            // zz where KMIP decrypts the keys locally
-            if (!_mongocrypt_unwrap_key(kb->crypt->crypto,
+            if (key_returned->doc->kek.provider.kmip.delegated) {
+                if (!_mongocrypt_kms_ctx_result(&key_returned->kms, &key_returned->decrypted_key_material)) {
+                    mongocrypt_kms_ctx_status(&key_returned->kms, kb->status);
+                    return _key_broker_fail(kb);
+                }
+            } else if (!_mongocrypt_unwrap_key(kb->crypt->crypto,
                                         &kek,
                                         &key_returned->doc->key_material,
                                         &key_returned->decrypted_key_material,
