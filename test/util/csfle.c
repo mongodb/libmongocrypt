@@ -238,6 +238,10 @@ static void fn_createdatakey(bson_t *args) {
             BSON_APPEND_UTF8(&kmip_kek, "keyId", bson_req_utf8(args, "kmip_kek_keyid"));
         }
 
+        if (bson_has_field(args, "kmip_kek_delegated")) {
+            BSON_APPEND_BOOL(&kmip_kek, "delegated", bson_get_bool(args, "kmip_kek_delegated", true));
+        }
+
         bin = util_bson_to_bin(&kmip_kek);
         if (!mongocrypt_ctx_setopt_key_encryption_key(ctx, bin)) {
             ERREXIT_CTX(ctx);
