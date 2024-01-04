@@ -24,7 +24,7 @@
  *
  * v is a BSON value. It is the bytes after "e_name" in "element" in
  * https://bsonspec.org/spec.html.
- * u is a "contention factor" counter. It is a uint64_t.
+ * u is a "contention factor". It is a uint64_t.
  * HMAC is the HMAC-SHA-256 function.
  * Integers are represented as uint64_t in little-endian.
  *

@@ -32,7 +32,7 @@
 typedef struct {
     mc_array_t edgeFindTokenSetArray;           // g
     _mongocrypt_buffer_t serverEncryptionToken; // e
-    int64_t maxContentionCounter;               // cm
+    int64_t maxContentionFactor;                // cm
 } mc_FLE2FindRangePayloadEdgesInfo_t;
 
 /**
@@ -49,7 +49,7 @@ typedef struct {
  * bson is a BSON document of this form:
  * g: array<EdgeFindTokenSet> // Array of Edges
  * e: <binary> // ServerDataEncryptionLevel1Token
- * cm: <int64> // Queryable Encryption max counter
+ * cm: <int64> // Queryable Encryption max contentionFactor
  */
 typedef struct {
     struct {

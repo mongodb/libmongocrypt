@@ -589,10 +589,10 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_common_v1(_mongocrypt_
     bool res = false;
 
     *contentionFactor = 0;
-    if (placeholder->maxContentionCounter > 0) {
+    if (placeholder->maxContentionFactor > 0) {
         /* Choose a random contentionFactor in the inclusive range [0,
-         * placeholder->maxContentionCounter] */
-        if (!_mongocrypt_random_int64(crypto, placeholder->maxContentionCounter + 1, contentionFactor, status)) {
+         * placeholder->maxContentionFactor] */
+        if (!_mongocrypt_random_int64(crypto, placeholder->maxContentionFactor + 1, contentionFactor, status)) {
             goto fail;
         }
     }
@@ -735,10 +735,10 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_common(_mongocrypt_key
     bool res = false;
 
     out->contentionFactor = 0; // k
-    if (placeholder->maxContentionCounter > 0) {
+    if (placeholder->maxContentionFactor > 0) {
         /* Choose a random contentionFactor in the inclusive range [0,
-         * placeholder->maxContentionCounter] */
-        if (!_mongocrypt_random_int64(crypto, placeholder->maxContentionCounter + 1, &out->contentionFactor, status)) {
+         * placeholder->maxContentionFactor] */
+        if (!_mongocrypt_random_int64(crypto, placeholder->maxContentionFactor + 1, &out->contentionFactor, status)) {
             goto fail;
         }
     }
@@ -1201,7 +1201,7 @@ fail:
 /**
  * Payload subtype 5: FLE2FindEqualityPayload
  *
- * {d: EDC, s: ESC, c: ECC, e: serverToken, cm: contentionCounter}
+ * {d: EDC, s: ESC, c: ECC, e: serverToken, cm: maxContentionFactor}
  */
 static bool _mongocrypt_fle2_placeholder_to_find_ciphertext_v1(_mongocrypt_key_broker_t *kb,
                                                                _mongocrypt_marking_t *marking,
@@ -1230,7 +1230,7 @@ static bool _mongocrypt_fle2_placeholder_to_find_ciphertext_v1(_mongocrypt_key_b
                                              &placeholder->index_key_id,
                                              &value,
                                              false, /* derive tokens without contentionFactor */
-                                             placeholder->maxContentionCounter, /* ignored */
+                                             placeholder->maxContentionFactor, /* ignored */
                                              status)) {
         goto fail;
     }
@@ -1246,7 +1246,7 @@ static bool _mongocrypt_fle2_placeholder_to_find_ciphertext_v1(_mongocrypt_key_b
     _mongocrypt_buffer_copy_to(mc_ServerDataEncryptionLevel1Token_get(common.serverDataEncryptionLevel1Token),
                                &payload.serverEncryptionToken);
 
-    payload.maxContentionCounter = placeholder->maxContentionCounter;
+    payload.maxContentionFactor = placeholder->maxContentionFactor;
 
     {
         bson_t out;
@@ -1271,7 +1271,7 @@ fail:
  * Payload subtype 12: FLE2FindEqualityPayloadV2
  * Delegates to ..._find_ciphertext_v1 when crypt->opts.use_fle2_v2 == false.
  *
- * {d: EDC, s: ESC, l: serverDerivedFromDataToken, cm: contentionCounter}
+ * {d: EDC, s: ESC, l: serverDerivedFromDataToken, cm: maxContentionFactor}
  */
 static bool _mongocrypt_fle2_placeholder_to_find_ciphertext(_mongocrypt_key_broker_t *kb,
                                                             _mongocrypt_marking_t *marking,
@@ -1304,7 +1304,7 @@ static bool _mongocrypt_fle2_placeholder_to_find_ciphertext(_mongocrypt_key_brok
                                              &placeholder->index_key_id,
                                              &value,
                                              false, /* derive tokens without contentionFactor */
-                                             placeholder->maxContentionCounter, /* ignored */
+                                             placeholder->maxContentionFactor, /* ignored */
                                              status)) {
         goto fail;
     }
@@ -1317,8 +1317,8 @@ static bool _mongocrypt_fle2_placeholder_to_find_ciphertext(_mongocrypt_key_brok
     // l := serverDerivedFromDataToken
     _mongocrypt_buffer_steal(&payload.serverDerivedFromDataToken, &common.serverDerivedFromDataToken);
 
-    // cm := maxContentionCounter
-    payload.maxContentionCounter = placeholder->maxContentionCounter;
+    // cm := maxContentionFactor
+    payload.maxContentionFactor = placeholder->maxContentionFactor;
 
     {
         bson_t out;
@@ -1507,7 +1507,7 @@ mc_get_mincover_from_FLE2RangeFindSpec(mc_FLE2RangeFindSpec_t *findSpec, size_t 
 /**
  * Payload subtype 10: FLE2FindRangePayload
  *
- * {e: serverToken, cm: contentionCounter,
+ * {e: serverToken, cm: maxContentionFactor,
  *  g: [{d: EDC, s: ESC, c: ECC}, ...]}
  */
 static bool _mongocrypt_fle2_placeholder_to_find_ciphertextForRange_v1(_mongocrypt_key_broker_t *kb,
@@ -1541,8 +1541,8 @@ static bool _mongocrypt_fle2_placeholder_to_find_ciphertextForRange_v1(_mongocry
     }
 
     if (findSpec.edgesInfo.set) {
-        // cm := Queryable Encryption max counter
-        payload.payload.value.maxContentionCounter = placeholder->maxContentionCounter;
+        // cm := Queryable Encryption max contentionFactor
+        payload.payload.value.maxContentionFactor = placeholder->maxContentionFactor;
 
         // e := ServerDataEncryptionLevel1Token
         {
@@ -1586,7 +1586,7 @@ static bool _mongocrypt_fle2_placeholder_to_find_ciphertextForRange_v1(_mongocry
                                                          &placeholder->index_key_id,
                                                          &edge_buf,
                                                          false, /* derive tokens using contentionFactor */
-                                                         placeholder->maxContentionCounter, /* ignored */
+                                                         placeholder->maxContentionFactor, /* ignored */
                                                          status)) {
                     goto fail_loop;
                 }
@@ -1642,7 +1642,7 @@ fail:
  * Delegates to ..._find_ciphertextForRange_v1
  *   when crypt->opts.use_fle2_v2 is false
  *
- * {cm: contentionCounter,
+ * {cm: maxContentionFactor,
  *  g: [{d: EDC, s: ESC, l: serverDerivedFromDataToken}, ...]}
  */
 static bool _mongocrypt_fle2_placeholder_to_find_ciphertextForRange(_mongocrypt_key_broker_t *kb,
@@ -1677,8 +1677,8 @@ static bool _mongocrypt_fle2_placeholder_to_find_ciphertextForRange(_mongocrypt_
     }
 
     if (findSpec.edgesInfo.set) {
-        // cm := Queryable Encryption max counter
-        payload.payload.value.maxContentionCounter = placeholder->maxContentionCounter;
+        // cm := Queryable Encryption max contentionFactor
+        payload.payload.value.maxContentionFactor = placeholder->maxContentionFactor;
 
         // g:= array<EdgeFindTokenSet>
         {
@@ -1706,7 +1706,7 @@ static bool _mongocrypt_fle2_placeholder_to_find_ciphertextForRange(_mongocrypt_
                                                          &placeholder->index_key_id,
                                                          &edge_buf,
                                                          false, /* derive tokens without using contentionFactor */
-                                                         placeholder->maxContentionCounter, /* ignored */
+                                                         placeholder->maxContentionFactor, /* ignored */
                                                          status)) {
                     goto fail_loop;
                 }

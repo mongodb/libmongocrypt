@@ -29,7 +29,7 @@
  */
 typedef struct {
     mc_array_t edgeFindTokenSetArray; // g
-    int64_t maxContentionCounter;     // cm
+    int64_t maxContentionFactor;      // cm
 } mc_FLE2FindRangePayloadEdgesInfoV2_t;
 
 /**
