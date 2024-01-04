@@ -256,14 +256,6 @@ kms_kmip_request_get_new (void *reserved, const char *unique_identifer)
    return req;
 }
 
-void print_hex(const uint8_t *data, size_t len) {
-   size_t i;
-   for (i = 0; i < len; i++) {
-      printf("%02x", data[i]);
-   }
-   printf("\n");
-}
-
 kms_request_t *
 kms_kmip_request_create_new (void *reserved) {
    /*
@@ -368,10 +360,6 @@ kms_kmip_request_create_new (void *reserved) {
 
    /* Copy the KMIP writer buffer to a KMIP request. */
    copy_writer_buffer (req, writer);
-   printf("Create request:\n");
-   size_t len;
-   const uint8_t *buf = kmip_writer_get_buffer (writer, &len);
-   print_hex(buf, len);
    kmip_writer_destroy (writer);
    return req;
 }
@@ -422,9 +410,6 @@ kmip_encrypt_decrypt (const char* unique_identifer, const uint8_t *data, size_t 
    /* Copy the KMIP writer buffer to a KMIP request. */
    copy_writer_buffer (req, writer);
    kmip_writer_destroy (writer);
-   const uint8_t *buf = kmip_writer_get_buffer (writer, &len);
-   print_hex(buf, len);
-   kmip_writer_destroy (writer);
    return req;
 }
 
@@ -455,7 +440,6 @@ kms_kmip_request_encrypt_new (void *reserved, const char* unique_identifer, cons
     </BatchItem>
    </RequestMessage>
    */
-   printf("Encrypt request:\n");
    return kmip_encrypt_decrypt(unique_identifer, plaintext, len, NULL, 0, true);
 }
 
@@ -486,7 +470,6 @@ kms_kmip_request_decrypt_new (void *reserved, const char* unique_identifer, cons
     </BatchItem>
    </RequestMessage>
    */
-   printf("Decrypt request:\n");
    return kmip_encrypt_decrypt(unique_identifer, ciphertext, len, iv_data, iv_len, false);
 }
 
