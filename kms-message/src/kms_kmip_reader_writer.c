@@ -240,6 +240,12 @@ struct _kmip_reader_t {
 kmip_reader_t *
 kmip_reader_new (uint8_t *ptr, size_t len)
 {
+   size_t i;
+   for (i = 0; i < len; i++) {
+      printf("%02x", ptr[i]);
+   }
+   printf("\n");
+
    kmip_reader_t *reader = calloc (1, sizeof (kmip_reader_t));
    reader->ptr = ptr;
    reader->len = len;
