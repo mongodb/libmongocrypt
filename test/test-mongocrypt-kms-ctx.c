@@ -639,6 +639,7 @@ static void _test_mongocrypt_kms_ctx_kmip_encrypt(_mongocrypt_tester_t *tester) 
     ASSERT_OK_STATUS(ok, kms_ctx.status);
     ASSERT_CMPBYTES(result.data, result.len, IV_CIPHERTEXT, sizeof(IV_CIPHERTEXT));
 
+    _mongocrypt_buffer_cleanup(&plaintext);
     mongocrypt_binary_destroy(bytes);
     _mongocrypt_endpoint_destroy(endpoint);
     mongocrypt_status_destroy(status);
@@ -766,6 +767,7 @@ static void _test_mongocrypt_kms_ctx_kmip_decrypt(_mongocrypt_tester_t *tester) 
     ASSERT_OK_STATUS(ok, kms_ctx.status);
     ASSERT_CMPBYTES(result.data, result.len, PLAINTEXT, sizeof(PLAINTEXT));
 
+    _mongocrypt_buffer_cleanup(&key_doc.key_material);
     mongocrypt_binary_destroy(bytes);
     _mongocrypt_endpoint_destroy(endpoint);
     mongocrypt_status_destroy(status);
