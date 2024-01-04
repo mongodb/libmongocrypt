@@ -1792,6 +1792,7 @@ bool _mongocrypt_kms_ctx_init_kmip_decrypt(mongocrypt_kms_ctx_t *kms_ctx,
     }
 
     BSON_ASSERT(key->kek.kms_provider == MONGOCRYPT_KMS_PROVIDER_KMIP);
+    BSON_ASSERT(key->kek.provider.kmip.delegated);
     kms_ctx->req = kms_kmip_request_decrypt_new(NULL /* reserved */,
                                                 key->kek.provider.kmip.key_id,
                                                 ciphertext.data,
