@@ -17,7 +17,6 @@
 #include "mongocrypt-kek-private.h"
 #include "mongocrypt-opts-private.h"
 #include "mongocrypt-private.h"
-#include <bson/bson.h>
 
 static bool _mongocrypt_azure_kek_parse(_mongocrypt_azure_kek_t *azure,
                                         const char *kmsid,
