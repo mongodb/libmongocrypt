@@ -885,6 +885,7 @@ int main(int argc, char **argv) {
     _mongocrypt_tester_install_gcp_auth(&tester);
     _mongocrypt_tester_install_mc_reader(&tester);
     _mongocrypt_tester_install_mc_writer(&tester);
+    _mongocrypt_tester_install_opts(&tester);
 
 #ifdef MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO
     char osversion[32];
@@ -970,8 +971,10 @@ void _test_ctx_wrap_and_feed_key(mongocrypt_ctx_t *ctx,
                                  const _mongocrypt_buffer_t *id,
                                  _mongocrypt_buffer_t *key,
                                  mongocrypt_status_t *status) {
+    mc_kms_creds_t kc;
+    ASSERT(_mongocrypt_opts_kms_providers_lookup(_mongocrypt_ctx_kms_providers(ctx), "local", &kc));
     // Wrap key using local provider.
-    _mongocrypt_buffer_t kek = _mongocrypt_ctx_kms_providers(ctx)->local.key;
+    _mongocrypt_buffer_t kek = kc.value.local.key;
     _mongocrypt_buffer_t encrypted_key;
     _mongocrypt_buffer_init(&encrypted_key);
     ASSERT_OK_STATUS(_mongocrypt_wrap_key(ctx->crypt->crypto, &kek, key, &encrypted_key, status), status);

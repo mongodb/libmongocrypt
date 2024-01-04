@@ -119,8 +119,7 @@ mongocrypt_t *mongocrypt_new(void) {
     // Default to using FLEv2 (aka QEv2)
     crypt->opts.use_fle2_v2 = true;
     crypt->ctx_counter = 1;
-    crypt->cache_oauth_azure = _mongocrypt_cache_oauth_new();
-    crypt->cache_oauth_gcp = _mongocrypt_cache_oauth_new();
+    crypt->cache_oauth = mc_mapof_kmsid_to_token_new();
     crypt->csfle = (_mongo_crypt_v1_vtable){.okay = false};
 
     static mlib_once_flag init_flag = MLIB_ONCE_INITIALIZER;
@@ -178,14 +177,14 @@ bool mongocrypt_setopt_kms_provider_aws(mongocrypt_t *crypt,
 
     if (!_mongocrypt_validate_and_copy_string(aws_access_key_id,
                                               aws_access_key_id_len,
-                                              &kms_providers->aws.access_key_id)) {
+                                              &kms_providers->aws_mut.access_key_id)) {
         CLIENT_ERR("invalid aws access key id");
         return false;
     }
 
     if (!_mongocrypt_validate_and_copy_string(aws_secret_access_key,
                                               aws_secret_access_key_len,
-                                              &kms_providers->aws.secret_access_key)) {
+                                              &kms_providers->aws_mut.secret_access_key)) {
         CLIENT_ERR("invalid aws secret access key");
         return false;
     }
@@ -196,11 +195,11 @@ bool mongocrypt_setopt_kms_provider_aws(mongocrypt_t *crypt,
                         "%s (%s=\"%s\", %s=%d, %s=\"%s\", %s=%d)",
                         BSON_FUNC,
                         "aws_access_key_id",
-                        kms_providers->aws.access_key_id,
+                        kms_providers->aws_mut.access_key_id,
                         "aws_access_key_id_len",
                         aws_access_key_id_len,
                         "aws_secret_access_key",
-                        kms_providers->aws.secret_access_key,
+                        kms_providers->aws_mut.secret_access_key,
                         "aws_secret_access_key_len",
                         aws_secret_access_key_len);
     }
@@ -345,7 +344,7 @@ bool mongocrypt_setopt_kms_provider_local(mongocrypt_t *crypt, mongocrypt_binary
         bson_free(key_val);
     }
 
-    _mongocrypt_buffer_copy_from_binary(&kms_providers->local.key, key);
+    _mongocrypt_buffer_copy_from_binary(&kms_providers->local_mut.key, key);
     kms_providers->configured_providers |= MONGOCRYPT_KMS_PROVIDER_LOCAL;
     return true;
 }
@@ -920,8 +919,7 @@ void mongocrypt_destroy(mongocrypt_t *crypt) {
     _mongocrypt_log_cleanup(&crypt->log);
     mongocrypt_status_destroy(crypt->status);
     bson_free(crypt->crypto);
-    _mongocrypt_cache_oauth_destroy(crypt->cache_oauth_azure);
-    _mongocrypt_cache_oauth_destroy(crypt->cache_oauth_gcp);
+    mc_mapof_kmsid_to_token_destroy(crypt->cache_oauth);
 
     if (crypt->csfle.okay) {
         _csfle_drop_global_ref();
@@ -1103,236 +1101,6 @@ bool mongocrypt_setopt_kms_providers(mongocrypt_t *crypt, mongocrypt_binary_t *k
                                            &crypt->opts.kms_providers,
                                            crypt->status,
                                            &crypt->log);
-}
-
-bool _mongocrypt_parse_kms_providers(mongocrypt_binary_t *kms_providers_definition,
-                                     _mongocrypt_opts_kms_providers_t *kms_providers,
-                                     mongocrypt_status_t *status,
-                                     _mongocrypt_log_t *log) {
-    bson_t as_bson;
-    bson_iter_t iter;
-
-    BSON_ASSERT_PARAM(kms_providers_definition);
-    BSON_ASSERT_PARAM(kms_providers);
-    if (!_mongocrypt_binary_to_bson(kms_providers_definition, &as_bson) || !bson_iter_init(&iter, &as_bson)) {
-        CLIENT_ERR("invalid BSON");
-        return false;
-    }
-
-    while (bson_iter_next(&iter)) {
-        const char *field_name;
-        bson_t field_bson;
-
-        field_name = bson_iter_key(&iter);
-        if (!mc_iter_document_as_bson(&iter, &field_bson, status)) {
-            return false;
-        }
-
-        if (0 == strcmp(field_name, "azure") && bson_empty(&field_bson)) {
-            kms_providers->need_credentials |= MONGOCRYPT_KMS_PROVIDER_AZURE;
-        } else if (0 == strcmp(field_name, "azure")) {
-            if (0 != (kms_providers->configured_providers & MONGOCRYPT_KMS_PROVIDER_AZURE)) {
-                CLIENT_ERR("azure KMS provider already set");
-                return false;
-            }
-
-            if (!_mongocrypt_parse_optional_utf8(&as_bson,
-                                                 "azure.accessToken",
-                                                 &kms_providers->azure.access_token,
-                                                 status)) {
-                return false;
-            }
-
-            if (kms_providers->azure.access_token) {
-                // Caller provides an accessToken directly
-                if (!_mongocrypt_check_allowed_fields(&as_bson, "azure", status, "accessToken")) {
-                    return false;
-                }
-                kms_providers->configured_providers |= MONGOCRYPT_KMS_PROVIDER_AZURE;
-                continue;
-            }
-
-            // No accessToken given, so we'll need to look one up on our own later
-            // using the Azure API
-
-            if (!_mongocrypt_parse_required_utf8(&as_bson, "azure.tenantId", &kms_providers->azure.tenant_id, status)) {
-                return false;
-            }
-
-            if (!_mongocrypt_parse_required_utf8(&as_bson, "azure.clientId", &kms_providers->azure.client_id, status)) {
-                return false;
-            }
-
-            if (!_mongocrypt_parse_required_utf8(&as_bson,
-                                                 "azure.clientSecret",
-                                                 &kms_providers->azure.client_secret,
-                                                 status)) {
-                return false;
-            }
-
-            if (!_mongocrypt_parse_optional_endpoint(&as_bson,
-                                                     "azure.identityPlatformEndpoint",
-                                                     &kms_providers->azure.identity_platform_endpoint,
-                                                     NULL /* opts */,
-                                                     status)) {
-                return false;
-            }
-
-            if (!_mongocrypt_check_allowed_fields(&as_bson,
-                                                  "azure",
-                                                  status,
-                                                  "tenantId",
-                                                  "clientId",
-                                                  "clientSecret",
-                                                  "identityPlatformEndpoint")) {
-                return false;
-            }
-            kms_providers->configured_providers |= MONGOCRYPT_KMS_PROVIDER_AZURE;
-        } else if (0 == strcmp(field_name, "gcp") && bson_empty(&field_bson)) {
-            kms_providers->need_credentials |= MONGOCRYPT_KMS_PROVIDER_GCP;
-        } else if (0 == strcmp(field_name, "gcp")) {
-            if (0 != (kms_providers->configured_providers & MONGOCRYPT_KMS_PROVIDER_GCP)) {
-                CLIENT_ERR("gcp KMS provider already set");
-                return false;
-            }
-
-            if (!_mongocrypt_parse_optional_utf8(&as_bson,
-                                                 "gcp.accessToken",
-                                                 &kms_providers->gcp.access_token,
-                                                 status)) {
-                return false;
-            }
-
-            if (NULL != kms_providers->gcp.access_token) {
-                /* "gcp" document has form:
-                 * {
-                 *    "accessToken": <required UTF-8>
-                 * }
-                 */
-                if (!_mongocrypt_check_allowed_fields(&as_bson, "gcp", status, "accessToken")) {
-                    return false;
-                }
-                kms_providers->configured_providers |= MONGOCRYPT_KMS_PROVIDER_GCP;
-                continue;
-            }
-
-            /* "gcp" document has form:
-             * {
-             *    "email": <required UTF-8>
-             *    "privateKey": <required UTF-8 or Binary>
-             * }
-             */
-            if (!_mongocrypt_parse_required_utf8(&as_bson, "gcp.email", &kms_providers->gcp.email, status)) {
-                return false;
-            }
-
-            if (!_mongocrypt_parse_required_binary(&as_bson,
-                                                   "gcp.privateKey",
-                                                   &kms_providers->gcp.private_key,
-                                                   status)) {
-                return false;
-            }
-
-            if (!_mongocrypt_parse_optional_endpoint(&as_bson,
-                                                     "gcp.endpoint",
-                                                     &kms_providers->gcp.endpoint,
-                                                     NULL /* opts */,
-                                                     status)) {
-                return false;
-            }
-
-            if (!_mongocrypt_check_allowed_fields(&as_bson, "gcp", status, "email", "privateKey", "endpoint")) {
-                return false;
-            }
-            kms_providers->configured_providers |= MONGOCRYPT_KMS_PROVIDER_GCP;
-        } else if (0 == strcmp(field_name, "local") && bson_empty(&field_bson)) {
-            kms_providers->need_credentials |= MONGOCRYPT_KMS_PROVIDER_LOCAL;
-        } else if (0 == strcmp(field_name, "local")) {
-            if (0 != (kms_providers->configured_providers & MONGOCRYPT_KMS_PROVIDER_LOCAL)) {
-                CLIENT_ERR("local KMS provider already set");
-                return false;
-            }
-            if (!_mongocrypt_parse_required_binary(&as_bson, "local.key", &kms_providers->local.key, status)) {
-                return false;
-            }
-
-            if (kms_providers->local.key.len != MONGOCRYPT_KEY_LEN) {
-                CLIENT_ERR("local key must be %d bytes", MONGOCRYPT_KEY_LEN);
-                return false;
-            }
-
-            if (!_mongocrypt_check_allowed_fields(&as_bson, "local", status, "key")) {
-                return false;
-            }
-            kms_providers->configured_providers |= MONGOCRYPT_KMS_PROVIDER_LOCAL;
-        } else if (0 == strcmp(field_name, "aws") && bson_empty(&field_bson)) {
-            kms_providers->need_credentials |= MONGOCRYPT_KMS_PROVIDER_AWS;
-        } else if (0 == strcmp(field_name, "aws")) {
-            if (0 != (kms_providers->configured_providers & MONGOCRYPT_KMS_PROVIDER_AWS)) {
-                CLIENT_ERR("aws KMS provider already set");
-                return false;
-            }
-
-            if (!_mongocrypt_parse_required_utf8(&as_bson,
-                                                 "aws.accessKeyId",
-                                                 &kms_providers->aws.access_key_id,
-                                                 status)) {
-                return false;
-            }
-            if (!_mongocrypt_parse_required_utf8(&as_bson,
-                                                 "aws.secretAccessKey",
-                                                 &kms_providers->aws.secret_access_key,
-                                                 status)) {
-                return false;
-            }
-
-            if (!_mongocrypt_parse_optional_utf8(&as_bson,
-                                                 "aws.sessionToken",
-                                                 &kms_providers->aws.session_token,
-                                                 status)) {
-                return false;
-            }
-
-            if (!_mongocrypt_check_allowed_fields(&as_bson,
-                                                  "aws",
-                                                  status,
-                                                  "accessKeyId",
-                                                  "secretAccessKey",
-                                                  "sessionToken")) {
-                return false;
-            }
-            kms_providers->configured_providers |= MONGOCRYPT_KMS_PROVIDER_AWS;
-        } else if (0 == strcmp(field_name, "kmip") && bson_empty(&field_bson)) {
-            kms_providers->need_credentials |= MONGOCRYPT_KMS_PROVIDER_KMIP;
-        } else if (0 == strcmp(field_name, "kmip")) {
-            _mongocrypt_endpoint_parse_opts_t opts = {0};
-
-            opts.allow_empty_subdomain = true;
-            if (!_mongocrypt_parse_required_endpoint(&as_bson,
-                                                     "kmip.endpoint",
-                                                     &kms_providers->kmip.endpoint,
-                                                     &opts,
-                                                     status)) {
-                return false;
-            }
-
-            if (!_mongocrypt_check_allowed_fields(&as_bson, "kmip", status, "endpoint")) {
-                return false;
-            }
-            kms_providers->configured_providers |= MONGOCRYPT_KMS_PROVIDER_KMIP;
-        } else {
-            CLIENT_ERR("unsupported KMS provider: %s", field_name);
-            return false;
-        }
-    }
-
-    if (log && log->trace_enabled) {
-        char *as_str = bson_as_json(&as_bson, NULL);
-        _mongocrypt_log(log, MONGOCRYPT_LOG_LEVEL_TRACE, "%s (%s=\"%s\")", BSON_FUNC, "kms_providers", as_str);
-        bson_free(as_str);
-    }
-
-    return true;
 }
 
 void mongocrypt_setopt_append_crypt_shared_lib_search_path(mongocrypt_t *crypt, const char *path) {

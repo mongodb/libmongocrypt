@@ -377,8 +377,11 @@ static void _test_datakey_custom_key_material(_mongocrypt_tester_t *tester) {
         _mongocrypt_buffer_t decrypted_dek_buf;
         mongocrypt_binary_t decrypted_dek;
 
+        mc_kms_creds_t kc;
+        ASSERT(_mongocrypt_opts_kms_providers_lookup(&crypt->opts.kms_providers, "local", &kc));
+
         ASSERT(_mongocrypt_unwrap_key(crypt->crypto,
-                                      &crypt->opts.kms_providers.local.key,
+                                      &kc.value.local.key,
                                       &encrypted_dek_buf,
                                       &decrypted_dek_buf,
                                       crypt->status));

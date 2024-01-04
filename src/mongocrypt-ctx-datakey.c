@@ -46,15 +46,17 @@ static mongocrypt_kms_ctx_t *_next_kms_ctx(mongocrypt_ctx_t *ctx) {
     return &dkctx->kms;
 }
 
-static bool _kms_kmip_start(mongocrypt_ctx_t *ctx) {
+static bool _kms_kmip_start(mongocrypt_ctx_t *ctx, const mc_kms_creds_t *kc) {
     bool ret = false;
     _mongocrypt_ctx_datakey_t *dkctx = (_mongocrypt_ctx_datakey_t *)ctx;
     char *user_supplied_keyid = NULL;
-    _mongocrypt_endpoint_t *endpoint = NULL;
+    const _mongocrypt_endpoint_t *endpoint = NULL;
     mongocrypt_status_t *status = ctx->status;
     _mongocrypt_buffer_t secretdata = {0};
 
     BSON_ASSERT_PARAM(ctx);
+    BSON_ASSERT_PARAM(kc);
+    BSON_ASSERT(kc->type == MONGOCRYPT_KMS_PROVIDER_KMIP);
 
     if (ctx->opts.kek.kms_provider != MONGOCRYPT_KMS_PROVIDER_KMIP) {
         CLIENT_ERR("KMS provider is not KMIP");
@@ -65,8 +67,8 @@ static bool _kms_kmip_start(mongocrypt_ctx_t *ctx) {
 
     if (ctx->opts.kek.provider.kmip.endpoint) {
         endpoint = ctx->opts.kek.provider.kmip.endpoint;
-    } else if (_mongocrypt_ctx_kms_providers(ctx)->kmip.endpoint) {
-        endpoint = _mongocrypt_ctx_kms_providers(ctx)->kmip.endpoint;
+    } else if (kc->value.kmip.endpoint) {
+        endpoint = kc->value.kmip.endpoint;
     } else {
         CLIENT_ERR("endpoint not set for KMIP request");
         goto fail;
@@ -180,14 +182,23 @@ static bool _kms_start(mongocrypt_ctx_t *ctx) {
 
     dkctx = (_mongocrypt_ctx_datakey_t *)ctx;
 
+    mc_kms_creds_t kc;
+    if (!_mongocrypt_opts_kms_providers_lookup(kms_providers, ctx->opts.kek.kmsid, &kc)) {
+        mongocrypt_status_t *status = ctx->status;
+        CLIENT_ERR("KMS provider `%s` is not configured", ctx->opts.kek.kmsid);
+        _mongocrypt_ctx_fail(ctx);
+        goto done;
+    }
+
     /* Clear out any pre-existing initialized KMS context, and zero it (so it is
      * safe to call cleanup again). */
     _mongocrypt_kms_ctx_cleanup(&dkctx->kms);
     memset(&dkctx->kms, 0, sizeof(dkctx->kms));
     dkctx->kms_returned = false;
     if (ctx->opts.kek.kms_provider == MONGOCRYPT_KMS_PROVIDER_LOCAL) {
+        BSON_ASSERT(kc.type == MONGOCRYPT_KMS_PROVIDER_LOCAL);
         if (!_mongocrypt_wrap_key(ctx->crypt->crypto,
-                                  &kms_providers->local.key,
+                                  &kc.value.local.key,
                                   &dkctx->plaintext_key_material,
                                   &dkctx->encrypted_key_material,
                                   ctx->status)) {
@@ -212,10 +223,11 @@ static bool _kms_start(mongocrypt_ctx_t *ctx) {
 
         ctx->state = MONGOCRYPT_CTX_NEED_KMS;
     } else if (ctx->opts.kek.kms_provider == MONGOCRYPT_KMS_PROVIDER_AZURE) {
-        if (ctx->kms_providers.azure.access_token) {
-            access_token = bson_strdup(ctx->kms_providers.azure.access_token);
+        BSON_ASSERT(kc.type == MONGOCRYPT_KMS_PROVIDER_AZURE);
+        if (kc.value.azure.access_token) {
+            access_token = bson_strdup(kc.value.azure.access_token);
         } else {
-            access_token = _mongocrypt_cache_oauth_get(ctx->crypt->cache_oauth_azure);
+            access_token = mc_mapof_kmsid_to_token_get_token(ctx->crypt->cache_oauth, ctx->opts.kek.kmsid);
         }
         if (access_token) {
             if (!_mongocrypt_kms_ctx_init_azure_wrapkey(&dkctx->kms,
@@ -231,7 +243,7 @@ static bool _kms_start(mongocrypt_ctx_t *ctx) {
         } else {
             if (!_mongocrypt_kms_ctx_init_azure_auth(&dkctx->kms,
                                                      &ctx->crypt->log,
-                                                     kms_providers,
+                                                     &kc,
                                                      ctx->opts.kek.provider.azure.key_vault_endpoint)) {
                 mongocrypt_kms_ctx_status(&dkctx->kms, ctx->status);
                 _mongocrypt_ctx_fail(ctx);
@@ -240,10 +252,11 @@ static bool _kms_start(mongocrypt_ctx_t *ctx) {
         }
         ctx->state = MONGOCRYPT_CTX_NEED_KMS;
     } else if (ctx->opts.kek.kms_provider == MONGOCRYPT_KMS_PROVIDER_GCP) {
-        if (NULL != ctx->kms_providers.gcp.access_token) {
-            access_token = bson_strdup((const char *)ctx->kms_providers.gcp.access_token);
+        BSON_ASSERT(kc.type == MONGOCRYPT_KMS_PROVIDER_GCP);
+        if (NULL != kc.value.gcp.access_token) {
+            access_token = bson_strdup(kc.value.gcp.access_token);
         } else {
-            access_token = _mongocrypt_cache_oauth_get(ctx->crypt->cache_oauth_gcp);
+            access_token = mc_mapof_kmsid_to_token_get_token(ctx->crypt->cache_oauth, ctx->opts.kek.kmsid);
         }
         if (access_token) {
             if (!_mongocrypt_kms_ctx_init_gcp_encrypt(&dkctx->kms,
@@ -260,7 +273,7 @@ static bool _kms_start(mongocrypt_ctx_t *ctx) {
             if (!_mongocrypt_kms_ctx_init_gcp_auth(&dkctx->kms,
                                                    &ctx->crypt->log,
                                                    &ctx->crypt->opts,
-                                                   kms_providers,
+                                                   &kc,
                                                    ctx->opts.kek.provider.gcp.endpoint)) {
                 mongocrypt_kms_ctx_status(&dkctx->kms, ctx->status);
                 _mongocrypt_ctx_fail(ctx);
@@ -269,7 +282,7 @@ static bool _kms_start(mongocrypt_ctx_t *ctx) {
         }
         ctx->state = MONGOCRYPT_CTX_NEED_KMS;
     } else if (ctx->opts.kek.kms_provider == MONGOCRYPT_KMS_PROVIDER_KMIP) {
-        if (!_kms_kmip_start(ctx)) {
+        if (!_kms_kmip_start(ctx, &kc)) {
             goto done;
         }
     } else {
@@ -305,7 +318,10 @@ static bool _kms_done(mongocrypt_ctx_t *ctx) {
         bson_t oauth_response;
 
         BSON_ASSERT(_mongocrypt_buffer_to_bson(&dkctx->kms.result, &oauth_response));
-        if (!_mongocrypt_cache_oauth_add(ctx->crypt->cache_oauth_azure, &oauth_response, status)) {
+        if (!mc_mapof_kmsid_to_token_add_response(ctx->crypt->cache_oauth,
+                                                  ctx->opts.kek.kmsid,
+                                                  &oauth_response,
+                                                  status)) {
             return _mongocrypt_ctx_fail(ctx);
         }
         return _kms_start(ctx);
@@ -313,7 +329,10 @@ static bool _kms_done(mongocrypt_ctx_t *ctx) {
         bson_t oauth_response;
 
         BSON_ASSERT(_mongocrypt_buffer_to_bson(&dkctx->kms.result, &oauth_response));
-        if (!_mongocrypt_cache_oauth_add(ctx->crypt->cache_oauth_gcp, &oauth_response, status)) {
+        if (!mc_mapof_kmsid_to_token_add_response(ctx->crypt->cache_oauth,
+                                                  ctx->opts.kek.kmsid,
+                                                  &oauth_response,
+                                                  status)) {
             return _mongocrypt_ctx_fail(ctx);
         }
         return _kms_start(ctx);
