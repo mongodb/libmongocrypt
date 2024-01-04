@@ -1311,8 +1311,8 @@ static void test_explicit_with_named_kms_provider_for_gcp(_mongocrypt_tester_t *
                                      "keyName" : "placeholder1-keyName",
                                      "endpoint" : "placeholder1-kmsEndpoint.com"
                                  })),
-                                 .kms_response_1 = TEST_FILE("./test/data/gcp-auth/oauth-response.txt"),
-                                 .kms_response_2 = TEST_FILE("./test/data/gcp-auth/encrypt-response.txt")},
+                                 .kms_response_1 = TEST_FILE("./test/data/kms-gcp/oauth-response.txt"),
+                                 .kms_response_2 = TEST_FILE("./test/data/kms-gcp/encrypt-response.txt")},
                &dek1);
 
     // Create `dek2` from `gcp:name2`
@@ -1328,8 +1328,8 @@ static void test_explicit_with_named_kms_provider_for_gcp(_mongocrypt_tester_t *
                                      "keyName" : "placeholder2-keyName",
                                      "endpoint" : "placeholder2-kmsEndpoint.com"
                                  })),
-                                 .kms_response_1 = TEST_FILE("./test/data/gcp-auth/oauth-response.txt"),
-                                 .kms_response_2 = TEST_FILE("./test/data/gcp-auth/encrypt-response.txt")},
+                                 .kms_response_1 = TEST_FILE("./test/data/kms-gcp/oauth-response.txt"),
+                                 .kms_response_2 = TEST_FILE("./test/data/kms-gcp/encrypt-response.txt")},
                &dek2);
 
     // Test encrypting.
@@ -1358,7 +1358,7 @@ static void test_explicit_with_named_kms_provider_for_gcp(_mongocrypt_tester_t *
                 const char *endpoint;
                 ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
                 ASSERT_STREQUAL(endpoint, "placeholder1-oauthEndpoint.com:443");
-                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/gcp-auth/oauth-response.txt")), kctx);
+                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/kms-gcp/oauth-response.txt")), kctx);
                 kctx = mongocrypt_ctx_next_kms_ctx(ctx);
                 ASSERT(!kctx);
                 ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
@@ -1372,7 +1372,7 @@ static void test_explicit_with_named_kms_provider_for_gcp(_mongocrypt_tester_t *
                 const char *endpoint;
                 ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
                 ASSERT_STREQUAL(endpoint, "placeholder1-kmsEndpoint.com:443");
-                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/gcp-auth/decrypt-response.txt")), kctx);
+                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/kms-gcp/decrypt-response.txt")), kctx);
                 kctx = mongocrypt_ctx_next_kms_ctx(ctx);
                 ASSERT(!kctx);
                 ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
@@ -1426,7 +1426,7 @@ static void test_explicit_with_named_kms_provider_for_gcp(_mongocrypt_tester_t *
                 const char *endpoint;
                 ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
                 ASSERT_STREQUAL(endpoint, "placeholder1-oauthEndpoint.com:443");
-                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/gcp-auth/oauth-response.txt")), kctx);
+                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/kms-gcp/oauth-response.txt")), kctx);
                 kctx = mongocrypt_ctx_next_kms_ctx(ctx);
                 ASSERT(!kctx);
                 ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
@@ -1440,7 +1440,7 @@ static void test_explicit_with_named_kms_provider_for_gcp(_mongocrypt_tester_t *
                 const char *endpoint;
                 ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
                 ASSERT_STREQUAL(endpoint, "placeholder1-kmsEndpoint.com:443");
-                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/gcp-auth/decrypt-response.txt")), kctx);
+                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/kms-gcp/decrypt-response.txt")), kctx);
                 kctx = mongocrypt_ctx_next_kms_ctx(ctx);
                 ASSERT(!kctx);
                 ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
@@ -1491,7 +1491,7 @@ static void test_explicit_with_named_kms_provider_for_gcp(_mongocrypt_tester_t *
             const char *endpoint;
             ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
             ASSERT_STREQUAL(endpoint, "placeholder1-oauthEndpoint.com:443");
-            ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/gcp-auth/oauth-response.txt")), kctx);
+            ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/kms-gcp/oauth-response.txt")), kctx);
             kctx = mongocrypt_ctx_next_kms_ctx(ctx);
             ASSERT(!kctx);
             ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
@@ -1515,7 +1515,7 @@ static void test_explicit_with_named_kms_provider_for_gcp(_mongocrypt_tester_t *
             const char *endpoint;
             ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
             ASSERT_STREQUAL(endpoint, "placeholder1-kmsEndpoint.com:443");
-            ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/gcp-auth/decrypt-response.txt")), kctx);
+            ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/kms-gcp/decrypt-response.txt")), kctx);
             kctx = mongocrypt_ctx_next_kms_ctx(ctx);
             ASSERT(!kctx);
             ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
@@ -1556,7 +1556,7 @@ static void test_explicit_with_named_kms_provider_for_gcp(_mongocrypt_tester_t *
                 const char *endpoint;
                 ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
                 ASSERT_STREQUAL(endpoint, "placeholder1-oauthEndpoint.com:443");
-                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/gcp-auth/oauth-response.txt")), kctx);
+                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/kms-gcp/oauth-response.txt")), kctx);
                 kctx = mongocrypt_ctx_next_kms_ctx(ctx);
                 ASSERT(!kctx);
                 ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
@@ -1570,7 +1570,7 @@ static void test_explicit_with_named_kms_provider_for_gcp(_mongocrypt_tester_t *
                 const char *endpoint;
                 ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
                 ASSERT_STREQUAL(endpoint, "placeholder1-kmsEndpoint.com:443");
-                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/gcp-auth/decrypt-response.txt")), kctx);
+                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/kms-gcp/decrypt-response.txt")), kctx);
                 kctx = mongocrypt_ctx_next_kms_ctx(ctx);
                 ASSERT(!kctx);
                 ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
@@ -1602,7 +1602,7 @@ static void test_explicit_with_named_kms_provider_for_gcp(_mongocrypt_tester_t *
                 const char *endpoint;
                 ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
                 ASSERT_STREQUAL(endpoint, "placeholder2-oauthEndpoint.com:443");
-                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/gcp-auth/oauth-response.txt")), kctx);
+                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/kms-gcp/oauth-response.txt")), kctx);
                 kctx = mongocrypt_ctx_next_kms_ctx(ctx);
                 ASSERT(!kctx);
                 ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
@@ -1616,7 +1616,7 @@ static void test_explicit_with_named_kms_provider_for_gcp(_mongocrypt_tester_t *
                 const char *endpoint;
                 ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
                 ASSERT_STREQUAL(endpoint, "placeholder2-kmsEndpoint.com:443");
-                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/gcp-auth/decrypt-response.txt")), kctx);
+                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/kms-gcp/decrypt-response.txt")), kctx);
                 kctx = mongocrypt_ctx_next_kms_ctx(ctx);
                 ASSERT(!kctx);
                 ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
@@ -1683,7 +1683,7 @@ static void test_explicit_with_named_kms_provider_for_gcp(_mongocrypt_tester_t *
             const char *endpoint;
             ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
             ASSERT_STREQUAL(endpoint, "placeholder1-oauthEndpoint.com:443");
-            ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/gcp-auth/oauth-response.txt")), kctx);
+            ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/kms-gcp/oauth-response.txt")), kctx);
             kctx = mongocrypt_ctx_next_kms_ctx(ctx);
             ASSERT(!kctx);
             ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
@@ -1729,7 +1729,7 @@ static void test_explicit_with_named_kms_provider_for_gcp(_mongocrypt_tester_t *
                                          })),
                                          // Does not need KMS for oauth token.
 
-                                         .kms_response_1 = TEST_FILE("./test/data/gcp-auth/encrypt-response.txt")},
+                                         .kms_response_1 = TEST_FILE("./test/data/kms-gcp/encrypt-response.txt")},
                        &dek3);
         }
 
@@ -1754,7 +1754,7 @@ static void test_explicit_with_named_kms_provider_for_gcp(_mongocrypt_tester_t *
                 const char *endpoint;
                 ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
                 ASSERT_STREQUAL(endpoint, "placeholder3-kmsEndpoint.com:443");
-                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/gcp-auth/decrypt-response.txt")), kctx);
+                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/kms-gcp/decrypt-response.txt")), kctx);
                 kctx = mongocrypt_ctx_next_kms_ctx(ctx);
                 ASSERT(!kctx);
                 ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);

@@ -46,7 +46,7 @@ static void _test_createdatakey_with_credentials(_mongocrypt_tester_t *tester) {
         ASSERT_STREQUAL("oauth2.googleapis.com:443", endpoint);
 
         /* Satisfy request. */
-        ASSERT_OK(mongocrypt_kms_ctx_feed(kms, TEST_FILE("./test/data/gcp-auth/oauth-response.txt")), kms);
+        ASSERT_OK(mongocrypt_kms_ctx_feed(kms, TEST_FILE("./test/data/kms-gcp/oauth-response.txt")), kms);
         ASSERT_CMPINT((int)mongocrypt_kms_ctx_bytes_needed(kms), ==, 0);
 
         kms = mongocrypt_ctx_next_kms_ctx(ctx);
@@ -64,7 +64,7 @@ static void _test_createdatakey_with_credentials(_mongocrypt_tester_t *tester) {
         ASSERT_STREQUAL("cloudkms.googleapis.com:443", endpoint);
 
         /* Satisfy request. */
-        ASSERT_OK(mongocrypt_kms_ctx_feed(kms, TEST_FILE("./test/data/gcp-auth/encrypt-response.txt")), kms);
+        ASSERT_OK(mongocrypt_kms_ctx_feed(kms, TEST_FILE("./test/data/kms-gcp/encrypt-response.txt")), kms);
         ASSERT_CMPINT((int)mongocrypt_kms_ctx_bytes_needed(kms), ==, 0);
 
         kms = mongocrypt_ctx_next_kms_ctx(ctx);
@@ -109,7 +109,7 @@ static void _test_encrypt_with_credentials(_mongocrypt_tester_t *tester) {
         ASSERT_STREQUAL("oauth2.googleapis.com:443", endpoint);
 
         /* Satisfy request. */
-        ASSERT_OK(mongocrypt_kms_ctx_feed(kms, TEST_FILE("./test/data/gcp-auth/oauth-response.txt")), kms);
+        ASSERT_OK(mongocrypt_kms_ctx_feed(kms, TEST_FILE("./test/data/kms-gcp/oauth-response.txt")), kms);
         ASSERT_CMPINT((int)mongocrypt_kms_ctx_bytes_needed(kms), ==, 0);
 
         kms = mongocrypt_ctx_next_kms_ctx(ctx);
@@ -127,7 +127,7 @@ static void _test_encrypt_with_credentials(_mongocrypt_tester_t *tester) {
         ASSERT_STREQUAL("cloudkms.googleapis.com:443", endpoint);
 
         /* Satisfy request. */
-        ASSERT_OK(mongocrypt_kms_ctx_feed(kms, TEST_FILE("./test/data/gcp-auth/decrypt-response.txt")), kms);
+        ASSERT_OK(mongocrypt_kms_ctx_feed(kms, TEST_FILE("./test/data/kms-gcp/decrypt-response.txt")), kms);
         ASSERT_CMPINT((int)mongocrypt_kms_ctx_bytes_needed(kms), ==, 0);
 
         kms = mongocrypt_ctx_next_kms_ctx(ctx);
@@ -175,7 +175,7 @@ static void _test_createdatakey_with_accesstoken(_mongocrypt_tester_t *tester) {
         ASSERT_STREQUAL("cloudkms.googleapis.com:443", endpoint);
 
         /* Satisfy request. */
-        ASSERT_OK(mongocrypt_kms_ctx_feed(kms, TEST_FILE("./test/data/gcp-auth/encrypt-response.txt")), kms);
+        ASSERT_OK(mongocrypt_kms_ctx_feed(kms, TEST_FILE("./test/data/kms-gcp/encrypt-response.txt")), kms);
         ASSERT_CMPINT((int)mongocrypt_kms_ctx_bytes_needed(kms), ==, 0);
 
         kms = mongocrypt_ctx_next_kms_ctx(ctx);
@@ -227,7 +227,7 @@ static void _test_encrypt_with_accesstoken(_mongocrypt_tester_t *tester) {
         ASSERT_STREQUAL("cloudkms.googleapis.com:443", endpoint);
 
         /* Satisfy request. */
-        ASSERT_OK(mongocrypt_kms_ctx_feed(kms, TEST_FILE("./test/data/gcp-auth/decrypt-response.txt")), kms);
+        ASSERT_OK(mongocrypt_kms_ctx_feed(kms, TEST_FILE("./test/data/kms-gcp/decrypt-response.txt")), kms);
         ASSERT_CMPINT((int)mongocrypt_kms_ctx_bytes_needed(kms), ==, 0);
 
         kms = mongocrypt_ctx_next_kms_ctx(ctx);
