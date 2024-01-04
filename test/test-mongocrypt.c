@@ -726,7 +726,7 @@ static void _test_setopt_kms_providers(_mongocrypt_tester_t *tester) {
          "'privateKey': {'$binary': {'base64': 'AAAA', 'subType': '00'}} }}"},
         /* endpoint is not required. */
         {"{'gcp': {'email': 'test', 'privateKey': 'AAAA' }}"},
-        {"{'gcp': {'privateKey': 'AAAA'}}", "expected UTF-8 gcp.email"},
+        {"{'gcp': {'privateKey': 'AAAA'}}", "Failed to parse KMS provider `gcp`: expected UTF-8 email"},
         {"{'gcp': {'email': 'test', 'privateKey': 'invalid base64' }}", "unable to parse base64"},
         {"{'gcp': {'endpoint': 'example', 'email': 'test', 'privateKey': "
          "'AAAA'}}",
