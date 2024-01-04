@@ -94,7 +94,7 @@ static void _test_create_data_key_with_provider(_mongocrypt_tester_t *tester,
         BSON_ASSERT(mongocrypt_ctx_state(ctx) == MONGOCRYPT_CTX_NEED_KMS);
         kms = mongocrypt_ctx_next_kms_ctx(ctx);
         BSON_ASSERT(kms);
-        ASSERT_OK(mongocrypt_kms_ctx_feed(kms, TEST_FILE("./test/data/kms-encrypt-reply.txt")), kms);
+        ASSERT_OK(mongocrypt_kms_ctx_feed(kms, TEST_FILE("./test/data/kms-aws/encrypt-response.txt")), kms);
         BSON_ASSERT(0 == mongocrypt_kms_ctx_bytes_needed(kms));
         ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
     }
@@ -180,7 +180,7 @@ static void _test_datakey_custom_endpoint(_mongocrypt_tester_t *tester) {
     bin = mongocrypt_binary_new();
     ASSERT_OK(mongocrypt_kms_ctx_message(kms_ctx, bin), ctx);
     BSON_ASSERT(NULL != strstr((char *)bin->data, "Host:example.com"));
-    ASSERT_OK(mongocrypt_kms_ctx_feed(kms_ctx, TEST_FILE("./test/data/kms-encrypt-reply.txt")), kms_ctx);
+    ASSERT_OK(mongocrypt_kms_ctx_feed(kms_ctx, TEST_FILE("./test/data/kms-aws/encrypt-response.txt")), kms_ctx);
     BSON_ASSERT(0 == mongocrypt_kms_ctx_bytes_needed(kms_ctx));
     ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
 
@@ -228,7 +228,7 @@ static void _test_datakey_kms_per_ctx_credentials(_mongocrypt_tester_t *tester) 
     bin = mongocrypt_binary_new();
     ASSERT_OK(mongocrypt_kms_ctx_message(kms_ctx, bin), ctx);
     BSON_ASSERT(NULL != strstr((char *)bin->data, "Host:example.com"));
-    ASSERT_OK(mongocrypt_kms_ctx_feed(kms_ctx, TEST_FILE("./test/data/kms-encrypt-reply.txt")), kms_ctx);
+    ASSERT_OK(mongocrypt_kms_ctx_feed(kms_ctx, TEST_FILE("./test/data/kms-aws/encrypt-response.txt")), kms_ctx);
     BSON_ASSERT(0 == mongocrypt_kms_ctx_bytes_needed(kms_ctx));
     ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
 

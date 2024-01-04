@@ -269,7 +269,7 @@ void _mongocrypt_tester_satisfy_kms(_mongocrypt_tester_t *tester, mongocrypt_kms
 
     BSON_ASSERT(mongocrypt_kms_ctx_endpoint(kms, &endpoint));
     BSON_ASSERT(endpoint == strstr(endpoint, "kms.") && strstr(endpoint, ".amazonaws.com"));
-    mongocrypt_kms_ctx_feed(kms, TEST_FILE("./test/example/kms-decrypt-reply.txt"));
+    mongocrypt_kms_ctx_feed(kms, TEST_FILE("./test/data/kms-aws/decrypt-response.txt"));
     BSON_ASSERT(0 == mongocrypt_kms_ctx_bytes_needed(kms));
 }
 
