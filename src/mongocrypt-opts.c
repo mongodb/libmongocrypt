@@ -885,7 +885,6 @@ bool _mongocrypt_parse_kms_providers(mongocrypt_binary_t *kms_providers_definiti
                                                .creds = {.type = type, .value = {.kmip = kmip}}};
                 _mc_array_append_val(&kms_providers->named_mut, kcwi);
                 break;
-                return false;
             }
             }
         } else if (0 == strcmp(field_name, "azure") && bson_empty(&field_bson)) {
