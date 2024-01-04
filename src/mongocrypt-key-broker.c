@@ -691,10 +691,7 @@ bool _mongocrypt_key_broker_add_doc(_mongocrypt_key_broker_t *kb,
         }
 
         if (key_returned->doc->kek.provider.kmip.delegated) {
-            if (!_mongocrypt_kms_ctx_init_kmip_decrypt(&key_returned->kms,
-                                                        endpoint,
-                                                        key_doc,
-                                                        &kb->crypt->log)) {
+            if (!_mongocrypt_kms_ctx_init_kmip_decrypt(&key_returned->kms, endpoint, key_doc, &kb->crypt->log)) {
                 mongocrypt_kms_ctx_status(&key_returned->kms, kb->status);
                 _key_broker_fail(kb);
                 goto done;
@@ -964,10 +961,10 @@ bool _mongocrypt_key_broker_kms_done(_mongocrypt_key_broker_t *kb, _mongocrypt_o
                     return _key_broker_fail(kb);
                 }
             } else if (!_mongocrypt_unwrap_key(kb->crypt->crypto,
-                                        &kek,
-                                        &key_returned->doc->key_material,
-                                        &key_returned->decrypted_key_material,
-                                        kb->status)) {
+                                               &kek,
+                                               &key_returned->doc->key_material,
+                                               &key_returned->decrypted_key_material,
+                                               kb->status)) {
                 _key_broker_fail(kb);
                 _mongocrypt_buffer_cleanup(&kek);
                 return false;

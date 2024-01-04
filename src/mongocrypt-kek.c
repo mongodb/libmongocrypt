@@ -152,7 +152,7 @@ bool _mongocrypt_kek_parse_owned(const bson_t *bson, _mongocrypt_kek_t *kek, mon
     } else if (0 == strcmp(kms_provider, "kmip")) {
         _mongocrypt_endpoint_parse_opts_t opts = {0};
         kek->kms_provider = MONGOCRYPT_KMS_PROVIDER_KMIP;
- 
+
         opts.allow_empty_subdomain = true;
         if (!_mongocrypt_parse_optional_endpoint(bson, "endpoint", &kek->provider.kmip.endpoint, &opts, status)) {
             goto done;

@@ -882,7 +882,6 @@ static bool _ctx_done_kmip_create(mongocrypt_kms_ctx_t *kms_ctx) {
 done:
     kms_response_destroy(res);
     return ret;
-
 }
 
 static bool _ctx_done_kmip_encrypt(mongocrypt_kms_ctx_t *kms_ctx) {
@@ -1701,8 +1700,8 @@ done:
 }
 
 bool _mongocrypt_kms_ctx_init_kmip_create(mongocrypt_kms_ctx_t *kms_ctx,
-                                            const _mongocrypt_endpoint_t *endpoint,
-                                            _mongocrypt_log_t *log) {
+                                          const _mongocrypt_endpoint_t *endpoint,
+                                          _mongocrypt_log_t *log) {
     BSON_ASSERT_PARAM(kms_ctx);
     BSON_ASSERT_PARAM(endpoint);
     bool ret = false;
@@ -1732,10 +1731,10 @@ done:
 }
 
 bool _mongocrypt_kms_ctx_init_kmip_encrypt(mongocrypt_kms_ctx_t *kms_ctx,
-                                            const _mongocrypt_endpoint_t *endpoint,
-                                            const char *unique_identifier,
-                                            _mongocrypt_buffer_t *plaintext,
-                                            _mongocrypt_log_t *log) {
+                                           const _mongocrypt_endpoint_t *endpoint,
+                                           const char *unique_identifier,
+                                           _mongocrypt_buffer_t *plaintext,
+                                           _mongocrypt_log_t *log) {
     BSON_ASSERT_PARAM(kms_ctx);
     BSON_ASSERT_PARAM(endpoint);
     bool ret = false;
@@ -1745,8 +1744,8 @@ bool _mongocrypt_kms_ctx_init_kmip_encrypt(mongocrypt_kms_ctx_t *kms_ctx,
     kms_ctx->endpoint = bson_strdup(endpoint->host_and_port);
     _mongocrypt_apply_default_port(&kms_ctx->endpoint, DEFAULT_KMIP_PORT);
 
-    kms_ctx->req = kms_kmip_request_encrypt_new(NULL /* reserved */,
-        unique_identifier, plaintext->data, plaintext->len);
+    kms_ctx->req =
+        kms_kmip_request_encrypt_new(NULL /* reserved */, unique_identifier, plaintext->data, plaintext->len);
 
     if (kms_request_get_error(kms_ctx->req)) {
         CLIENT_ERR("Error creating KMIP encrypt request: %s", kms_request_get_error(kms_ctx->req));
@@ -1766,9 +1765,9 @@ done:
 }
 
 bool _mongocrypt_kms_ctx_init_kmip_decrypt(mongocrypt_kms_ctx_t *kms_ctx,
-                                            const _mongocrypt_endpoint_t *endpoint,
-                                            _mongocrypt_key_doc_t *key,
-                                            _mongocrypt_log_t *log) {
+                                           const _mongocrypt_endpoint_t *endpoint,
+                                           _mongocrypt_key_doc_t *key,
+                                           _mongocrypt_log_t *log) {
     BSON_ASSERT_PARAM(kms_ctx);
     BSON_ASSERT_PARAM(endpoint);
     bool ret = false;
@@ -1784,15 +1783,21 @@ bool _mongocrypt_kms_ctx_init_kmip_decrypt(mongocrypt_kms_ctx_t *kms_ctx,
         goto done;
     }
     _mongocrypt_buffer_t ciphertext;
-    if (!_mongocrypt_buffer_from_subrange(&ciphertext, &key->key_material, MONGOCRYPT_IV_LEN, key->key_material.len - MONGOCRYPT_IV_LEN)) {
+    if (!_mongocrypt_buffer_from_subrange(&ciphertext,
+                                          &key->key_material,
+                                          MONGOCRYPT_IV_LEN,
+                                          key->key_material.len - MONGOCRYPT_IV_LEN)) {
         CLIENT_ERR("Error getting ciphertext from key material");
         goto done;
     }
 
-    BSON_ASSERT (key->kek.kms_provider == MONGOCRYPT_KMS_PROVIDER_KMIP);
+    BSON_ASSERT(key->kek.kms_provider == MONGOCRYPT_KMS_PROVIDER_KMIP);
     kms_ctx->req = kms_kmip_request_decrypt_new(NULL /* reserved */,
-        key->kek.provider.kmip.key_id, ciphertext.data, ciphertext.len,
-        iv.data, iv.len);
+                                                key->kek.provider.kmip.key_id,
+                                                ciphertext.data,
+                                                ciphertext.len,
+                                                iv.data,
+                                                iv.len);
 
     if (kms_request_get_error(kms_ctx->req)) {
         CLIENT_ERR("Error creating KMIP decrypt request: %s", kms_request_get_error(kms_ctx->req));
