@@ -17,7 +17,6 @@
 #include "mongocrypt-kek-private.h"
 #include "mongocrypt-opts-private.h"
 #include "mongocrypt-private.h"
-#include <bson/bson.h>
 
 /* Possible documents to parse:
  * AWS
