@@ -245,19 +245,21 @@ void _mongocrypt_marking_cleanup(_mongocrypt_marking_t *marking) {
         }                                                                                                              \
                                                                                                                        \
         BSON_ASSERT(contentionFactor >= 0);                                                                            \
-        /* InsertUpdatePayload continues through *fromDataTokenAndCounter */                                           \
-        mc_##Name##DerivedFromDataTokenAndContentionFactor_t *fromTokenAndCounter =                                    \
+        /* InsertUpdatePayload continues through *fromDataTokenAndContentionFactor */                                  \
+        mc_##Name##DerivedFromDataTokenAndContentionFactor_t *fromTokenAndContentionFactor =                           \
             mc_##Name##DerivedFromDataTokenAndContentionFactor_new(crypto,                                             \
                                                                    fromDataToken,                                      \
                                                                    (uint64_t)contentionFactor,                         \
                                                                    status);                                            \
         mc_##Name##DerivedFromDataToken_destroy(fromDataToken);                                                        \
-        if (!fromTokenAndCounter) {                                                                                    \
+        if (!fromTokenAndContentionFactor) {                                                                           \
             return false;                                                                                              \
         }                                                                                                              \
                                                                                                                        \
-        _mongocrypt_buffer_copy_to(mc_##Name##DerivedFromDataTokenAndContentionFactor_get(fromTokenAndCounter), out);  \
-        mc_##Name##DerivedFromDataTokenAndContentionFactor_destroy(fromTokenAndCounter);                               \
+        _mongocrypt_buffer_copy_to(                                                                                    \
+            mc_##Name##DerivedFromDataTokenAndContentionFactor_get(fromTokenAndContentionFactor),                      \
+            out);                                                                                                      \
+        mc_##Name##DerivedFromDataTokenAndContentionFactor_destroy(fromTokenAndContentionFactor);                      \
                                                                                                                        \
         return true;                                                                                                   \
     }
