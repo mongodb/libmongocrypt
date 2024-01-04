@@ -348,8 +348,8 @@ static bool _kms_done(mongocrypt_ctx_t *ctx) {
             return _mongocrypt_ctx_fail(ctx);
         }
         return _kms_start(ctx);
-    } else if (dkctx->kms.req_type == MONGOCRYPT_KMS_KMIP_REGISTER 
-            || dkctx->kms.req_type == MONGOCRYPT_KMS_KMIP_CREATE) {
+    } else if (dkctx->kms.req_type == MONGOCRYPT_KMS_KMIP_REGISTER
+               || dkctx->kms.req_type == MONGOCRYPT_KMS_KMIP_CREATE) {
         dkctx->kmip_unique_identifier = bson_strdup((const char *)dkctx->kms.result.data);
         return _kms_start(ctx);
     } else if (dkctx->kms.req_type == MONGOCRYPT_KMS_KMIP_ACTIVATE) {
