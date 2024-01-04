@@ -464,7 +464,7 @@ static void test_create_datakey_with_named_kms_provider(_mongocrypt_tester_t *te
             const char *endpoint;
             ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
             ASSERT_STREQUAL(endpoint, "placeholder1-identityPlatformEndpoint.com:443");
-            ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/azure-auth/oauth-response.txt")), kctx);
+            ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/kms-azure/oauth-response.txt")), kctx);
             kctx = mongocrypt_ctx_next_kms_ctx(ctx);
             ASSERT(!kctx);
             ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
@@ -478,7 +478,7 @@ static void test_create_datakey_with_named_kms_provider(_mongocrypt_tester_t *te
             const char *endpoint;
             ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
             ASSERT_STREQUAL(endpoint, "placeholder1-keyVaultEndpoint.com:443");
-            ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/azure-auth/encrypt-response.txt")), kctx);
+            ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/kms-azure/encrypt-response.txt")), kctx);
             kctx = mongocrypt_ctx_next_kms_ctx(ctx);
             ASSERT(!kctx);
             ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
@@ -523,7 +523,7 @@ static void test_create_datakey_with_named_kms_provider(_mongocrypt_tester_t *te
             const char *endpoint;
             ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
             ASSERT_STREQUAL(endpoint, "placeholder1-keyVaultEndpoint.com:443");
-            ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/azure-auth/encrypt-response.txt")), kctx);
+            ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/kms-azure/encrypt-response.txt")), kctx);
             kctx = mongocrypt_ctx_next_kms_ctx(ctx);
             ASSERT(!kctx);
             ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
@@ -584,7 +584,7 @@ static void test_create_datakey_with_named_kms_provider(_mongocrypt_tester_t *te
                 const char *endpoint;
                 ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
                 ASSERT_STREQUAL(endpoint, "placeholder1-identityPlatformEndpoint.com:443");
-                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/azure-auth/oauth-response.txt")), kctx);
+                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/kms-azure/oauth-response.txt")), kctx);
                 kctx = mongocrypt_ctx_next_kms_ctx(ctx);
                 ASSERT(!kctx);
                 ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
@@ -598,8 +598,7 @@ static void test_create_datakey_with_named_kms_provider(_mongocrypt_tester_t *te
                 const char *endpoint;
                 ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
                 ASSERT_STREQUAL(endpoint, "placeholder1-keyVaultEndpoint.com:443");
-                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/azure-auth/encrypt-response.txt")),
-                          kctx);
+                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/kms-azure/encrypt-response.txt")), kctx);
                 kctx = mongocrypt_ctx_next_kms_ctx(ctx);
                 ASSERT(!kctx);
                 ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
@@ -638,7 +637,7 @@ static void test_create_datakey_with_named_kms_provider(_mongocrypt_tester_t *te
                 const char *endpoint;
                 ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
                 ASSERT_STREQUAL(endpoint, "placeholder2-identityPlatformEndpoint.com:443");
-                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/azure-auth/oauth-response.txt")), kctx);
+                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/kms-azure/oauth-response.txt")), kctx);
                 kctx = mongocrypt_ctx_next_kms_ctx(ctx);
                 ASSERT(!kctx);
                 ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
@@ -652,8 +651,7 @@ static void test_create_datakey_with_named_kms_provider(_mongocrypt_tester_t *te
                 const char *endpoint;
                 ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
                 ASSERT_STREQUAL(endpoint, "placeholder2-keyVaultEndpoint.com:443");
-                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/azure-auth/encrypt-response.txt")),
-                          kctx);
+                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/kms-azure/encrypt-response.txt")), kctx);
                 kctx = mongocrypt_ctx_next_kms_ctx(ctx);
                 ASSERT(!kctx);
                 ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
@@ -906,8 +904,8 @@ static void test_explicit_with_named_kms_provider_for_azure(_mongocrypt_tester_t
                                      "keyName" : "placeholder1-keyName",
                                      "keyVaultEndpoint" : "placeholder1-keyVaultEndpoint.com"
                                  })),
-                                 .kms_response_1 = TEST_FILE("./test/data/azure-auth/oauth-response.txt"),
-                                 .kms_response_2 = TEST_FILE("./test/data/azure-auth/encrypt-response.txt")},
+                                 .kms_response_1 = TEST_FILE("./test/data/kms-azure/oauth-response.txt"),
+                                 .kms_response_2 = TEST_FILE("./test/data/kms-azure/encrypt-response.txt")},
                &dek1);
 
     // Create `dek2` from `azure:name2`
@@ -920,8 +918,8 @@ static void test_explicit_with_named_kms_provider_for_azure(_mongocrypt_tester_t
                                      "keyName" : "placeholder2-keyName",
                                      "keyVaultEndpoint" : "placeholder2-keyVaultEndpoint.com"
                                  })),
-                                 .kms_response_1 = TEST_FILE("./test/data/azure-auth/oauth-response.txt"),
-                                 .kms_response_2 = TEST_FILE("./test/data/azure-auth/encrypt-response.txt")},
+                                 .kms_response_1 = TEST_FILE("./test/data/kms-azure/oauth-response.txt"),
+                                 .kms_response_2 = TEST_FILE("./test/data/kms-azure/encrypt-response.txt")},
                &dek2);
 
     // Test encrypting.
@@ -950,7 +948,7 @@ static void test_explicit_with_named_kms_provider_for_azure(_mongocrypt_tester_t
                 const char *endpoint;
                 ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
                 ASSERT_STREQUAL(endpoint, "placeholder1-identityPlatformEndpoint.com:443");
-                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/azure-auth/oauth-response.txt")), kctx);
+                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/kms-azure/oauth-response.txt")), kctx);
                 kctx = mongocrypt_ctx_next_kms_ctx(ctx);
                 ASSERT(!kctx);
                 ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
@@ -964,8 +962,7 @@ static void test_explicit_with_named_kms_provider_for_azure(_mongocrypt_tester_t
                 const char *endpoint;
                 ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
                 ASSERT_STREQUAL(endpoint, "placeholder1-keyVaultEndpoint.com:443");
-                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/azure-auth/decrypt-response.txt")),
-                          kctx);
+                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/kms-azure/decrypt-response.txt")), kctx);
                 kctx = mongocrypt_ctx_next_kms_ctx(ctx);
                 ASSERT(!kctx);
                 ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
@@ -1019,7 +1016,7 @@ static void test_explicit_with_named_kms_provider_for_azure(_mongocrypt_tester_t
                 const char *endpoint;
                 ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
                 ASSERT_STREQUAL(endpoint, "placeholder1-identityPlatformEndpoint.com:443");
-                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/azure-auth/oauth-response.txt")), kctx);
+                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/kms-azure/oauth-response.txt")), kctx);
                 kctx = mongocrypt_ctx_next_kms_ctx(ctx);
                 ASSERT(!kctx);
                 ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
@@ -1033,8 +1030,7 @@ static void test_explicit_with_named_kms_provider_for_azure(_mongocrypt_tester_t
                 const char *endpoint;
                 ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
                 ASSERT_STREQUAL(endpoint, "placeholder1-keyVaultEndpoint.com:443");
-                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/azure-auth/decrypt-response.txt")),
-                          kctx);
+                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/kms-azure/decrypt-response.txt")), kctx);
                 kctx = mongocrypt_ctx_next_kms_ctx(ctx);
                 ASSERT(!kctx);
                 ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
@@ -1085,7 +1081,7 @@ static void test_explicit_with_named_kms_provider_for_azure(_mongocrypt_tester_t
             const char *endpoint;
             ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
             ASSERT_STREQUAL(endpoint, "placeholder1-identityPlatformEndpoint.com:443");
-            ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/azure-auth/oauth-response.txt")), kctx);
+            ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/kms-azure/oauth-response.txt")), kctx);
             kctx = mongocrypt_ctx_next_kms_ctx(ctx);
             ASSERT(!kctx);
             ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
@@ -1109,7 +1105,7 @@ static void test_explicit_with_named_kms_provider_for_azure(_mongocrypt_tester_t
             const char *endpoint;
             ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
             ASSERT_STREQUAL(endpoint, "placeholder1-keyVaultEndpoint.com:443");
-            ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/azure-auth/decrypt-response.txt")), kctx);
+            ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/kms-azure/decrypt-response.txt")), kctx);
             kctx = mongocrypt_ctx_next_kms_ctx(ctx);
             ASSERT(!kctx);
             ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
@@ -1150,7 +1146,7 @@ static void test_explicit_with_named_kms_provider_for_azure(_mongocrypt_tester_t
                 const char *endpoint;
                 ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
                 ASSERT_STREQUAL(endpoint, "placeholder1-identityPlatformEndpoint.com:443");
-                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/azure-auth/oauth-response.txt")), kctx);
+                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/kms-azure/oauth-response.txt")), kctx);
                 kctx = mongocrypt_ctx_next_kms_ctx(ctx);
                 ASSERT(!kctx);
                 ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
@@ -1164,8 +1160,7 @@ static void test_explicit_with_named_kms_provider_for_azure(_mongocrypt_tester_t
                 const char *endpoint;
                 ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
                 ASSERT_STREQUAL(endpoint, "placeholder1-keyVaultEndpoint.com:443");
-                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/azure-auth/decrypt-response.txt")),
-                          kctx);
+                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/kms-azure/decrypt-response.txt")), kctx);
                 kctx = mongocrypt_ctx_next_kms_ctx(ctx);
                 ASSERT(!kctx);
                 ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
@@ -1197,7 +1192,7 @@ static void test_explicit_with_named_kms_provider_for_azure(_mongocrypt_tester_t
                 const char *endpoint;
                 ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
                 ASSERT_STREQUAL(endpoint, "placeholder2-identityPlatformEndpoint.com:443");
-                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/azure-auth/oauth-response.txt")), kctx);
+                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/kms-azure/oauth-response.txt")), kctx);
                 kctx = mongocrypt_ctx_next_kms_ctx(ctx);
                 ASSERT(!kctx);
                 ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
@@ -1211,8 +1206,7 @@ static void test_explicit_with_named_kms_provider_for_azure(_mongocrypt_tester_t
                 const char *endpoint;
                 ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
                 ASSERT_STREQUAL(endpoint, "placeholder2-keyVaultEndpoint.com:443");
-                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/azure-auth/decrypt-response.txt")),
-                          kctx);
+                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/kms-azure/decrypt-response.txt")), kctx);
                 kctx = mongocrypt_ctx_next_kms_ctx(ctx);
                 ASSERT(!kctx);
                 ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
@@ -1248,7 +1242,7 @@ static void test_explicit_with_named_kms_provider_for_azure(_mongocrypt_tester_t
                                          "keyVaultEndpoint" : "placeholder3-keyVaultEndpoint.com"
                                      })),
                                      // Does not need KMS for oauth token.
-                                     .kms_response_1 = TEST_FILE("./test/data/azure-auth/encrypt-response.txt")},
+                                     .kms_response_1 = TEST_FILE("./test/data/kms-azure/encrypt-response.txt")},
                    &dek3);
 
         // Encrypt with `dek3`.
@@ -1272,8 +1266,7 @@ static void test_explicit_with_named_kms_provider_for_azure(_mongocrypt_tester_t
                 const char *endpoint;
                 ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
                 ASSERT_STREQUAL(endpoint, "placeholder3-keyVaultEndpoint.com:443");
-                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/azure-auth/decrypt-response.txt")),
-                          kctx);
+                ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/kms-azure/decrypt-response.txt")), kctx);
                 kctx = mongocrypt_ctx_next_kms_ctx(ctx);
                 ASSERT(!kctx);
                 ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
@@ -2162,8 +2155,8 @@ static void test_rewrap_with_named_kms_provider_azure2azure(_mongocrypt_tester_t
                                      "keyName" : "placeholder1-keyName",
                                      "keyVaultEndpoint" : "placeholder1-keyVaultEndpoint.com"
                                  })),
-                                 .kms_response_1 = TEST_FILE("./test/data/azure-auth/oauth-response.txt"),
-                                 .kms_response_2 = TEST_FILE("./test/data/azure-auth/encrypt-response.txt")},
+                                 .kms_response_1 = TEST_FILE("./test/data/kms-azure/oauth-response.txt"),
+                                 .kms_response_2 = TEST_FILE("./test/data/kms-azure/encrypt-response.txt")},
                &dek1);
 
     // Rewrap `dek1` with `azure:name2`.
@@ -2193,7 +2186,7 @@ static void test_rewrap_with_named_kms_provider_azure2azure(_mongocrypt_tester_t
             const char *endpoint;
             ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
             ASSERT_STREQUAL(endpoint, "placeholder1-identityPlatformEndpoint.com:443");
-            ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/azure-auth/oauth-response.txt")), kctx);
+            ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/kms-azure/oauth-response.txt")), kctx);
             kctx = mongocrypt_ctx_next_kms_ctx(ctx);
             ASSERT(!kctx);
             ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
@@ -2207,7 +2200,7 @@ static void test_rewrap_with_named_kms_provider_azure2azure(_mongocrypt_tester_t
             const char *endpoint;
             ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
             ASSERT_STREQUAL(endpoint, "placeholder1-keyVaultEndpoint.com:443");
-            ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/azure-auth/decrypt-response.txt")), kctx);
+            ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/kms-azure/decrypt-response.txt")), kctx);
             kctx = mongocrypt_ctx_next_kms_ctx(ctx);
             ASSERT(!kctx);
             ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
@@ -2221,7 +2214,7 @@ static void test_rewrap_with_named_kms_provider_azure2azure(_mongocrypt_tester_t
             const char *endpoint;
             ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
             ASSERT_STREQUAL(endpoint, "placeholder2-identityPlatformEndpoint.com:443");
-            ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/azure-auth/oauth-response.txt")), kctx);
+            ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/kms-azure/oauth-response.txt")), kctx);
             kctx = mongocrypt_ctx_next_kms_ctx(ctx);
             ASSERT(!kctx);
             ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
@@ -2235,7 +2228,7 @@ static void test_rewrap_with_named_kms_provider_azure2azure(_mongocrypt_tester_t
             const char *endpoint;
             ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
             ASSERT_STREQUAL(endpoint, "placeholder2-keyVaultEndpoint.com:443");
-            ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/azure-auth/encrypt-response.txt")), kctx);
+            ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/kms-azure/encrypt-response.txt")), kctx);
             kctx = mongocrypt_ctx_next_kms_ctx(ctx);
             ASSERT(!kctx);
             ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
@@ -2282,8 +2275,8 @@ static void test_rewrap_with_named_kms_provider_azure2local(_mongocrypt_tester_t
                                      "keyName" : "placeholder1-keyName",
                                      "keyVaultEndpoint" : "placeholder1-keyVaultEndpoint.com"
                                  })),
-                                 .kms_response_1 = TEST_FILE("./test/data/azure-auth/oauth-response.txt"),
-                                 .kms_response_2 = TEST_FILE("./test/data/azure-auth/encrypt-response.txt")},
+                                 .kms_response_1 = TEST_FILE("./test/data/kms-azure/oauth-response.txt"),
+                                 .kms_response_2 = TEST_FILE("./test/data/kms-azure/encrypt-response.txt")},
                &dek1);
 
     // Rewrap `dek1` with `local:name1`.
@@ -2309,7 +2302,7 @@ static void test_rewrap_with_named_kms_provider_azure2local(_mongocrypt_tester_t
             const char *endpoint;
             ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
             ASSERT_STREQUAL(endpoint, "placeholder1-identityPlatformEndpoint.com:443");
-            ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/azure-auth/oauth-response.txt")), kctx);
+            ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/kms-azure/oauth-response.txt")), kctx);
             kctx = mongocrypt_ctx_next_kms_ctx(ctx);
             ASSERT(!kctx);
             ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
@@ -2323,7 +2316,7 @@ static void test_rewrap_with_named_kms_provider_azure2local(_mongocrypt_tester_t
             const char *endpoint;
             ASSERT_OK(mongocrypt_kms_ctx_endpoint(kctx, &endpoint), kctx);
             ASSERT_STREQUAL(endpoint, "placeholder1-keyVaultEndpoint.com:443");
-            ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/azure-auth/decrypt-response.txt")), kctx);
+            ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/kms-azure/decrypt-response.txt")), kctx);
             kctx = mongocrypt_ctx_next_kms_ctx(ctx);
             ASSERT(!kctx);
             ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
