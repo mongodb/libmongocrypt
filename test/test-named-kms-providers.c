@@ -278,7 +278,7 @@ static void test_configuring_named_kms_providers(_mongocrypt_tester_t *tester) {
         mongocrypt_t *crypt = mongocrypt_new();
         mongocrypt_binary_t *kms_providers = TEST_BSON(BSON_STR({"local:name1" : {}}));
         bool ok = mongocrypt_setopt_kms_providers(crypt, kms_providers);
-        ASSERT_FAILS(ok, crypt, "expected UTF-8 or binary key");
+        ASSERT_FAILS(ok, crypt, "Unexpected empty document for named KMS provider");
         mongocrypt_destroy(crypt);
 
         // An empty document is allowed for a non-named KMS provider to configure on-demand credentials.

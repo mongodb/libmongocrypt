@@ -825,6 +825,13 @@ bool _mongocrypt_parse_kms_providers(mongocrypt_binary_t *kms_providers_definiti
                     return false;
                 }
             }
+            // Prohibit configuring with an empty document. Named KMS providers do not support on-demand credentials.
+            if (bson_empty(&field_bson)) {
+                CLIENT_ERR("Unexpected empty document for named KMS provider: '%s'. On-demand credentials are not "
+                           "supported for named KMS providers.",
+                           field_name);
+                return false;
+            }
             switch (type) {
             default:
             case MONGOCRYPT_KMS_PROVIDER_NONE: {
