@@ -162,8 +162,6 @@ kms_kmip_response_get_secretdata_test (void)
    free (actual_secretdata);
 }
 
-// zz create, encrypt, decrypt
-
 /*
 <ResponseMessage tag="0x42007b" type="Structure">
  <ResponseHeader tag="0x42007a" type="Structure">
