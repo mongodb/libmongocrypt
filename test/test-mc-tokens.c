@@ -30,9 +30,9 @@
     F(ESCDerivedFromDataToken)                                                                                         \
     F(ECCDerivedFromDataToken)                                                                                         \
     F(serverDerivedFromDataToken)                                                                                      \
-    F(EDCDerivedFromDataTokenAndCounter)                                                                               \
-    F(ESCDerivedFromDataTokenAndCounter)                                                                               \
-    F(ECCDerivedFromDataTokenAndCounter)                                                                               \
+    F(EDCDerivedFromDataTokenAndContentionFactor)                                                                      \
+    F(ESCDerivedFromDataTokenAndContentionFactor)                                                                      \
+    F(ECCDerivedFromDataTokenAndContentionFactor)                                                                      \
     F(EDCTwiceDerivedToken)                                                                                            \
     F(ESCTwiceDerivedTagToken)                                                                                         \
     F(ESCTwiceDerivedValueToken)                                                                                       \
@@ -142,14 +142,15 @@ static void _mc_token_test_run(_mongocrypt_tester_t *tester, const char *path) {
         mc_##Name##DerivedFromDataToken_new(crypt->crypto, Name##Token, &test.value, status);                          \
     ASSERT_OR_PRINT(Name##DerivedFromDataToken, status);                                                               \
     ASSERT_CMPBUF(*mc_##Name##DerivedFromDataToken_get(Name##DerivedFromDataToken), test.Name##DerivedFromDataToken);  \
-    mc_##Name##DerivedFromDataTokenAndCounter_t *Name##DerivedFromDataTokenAndCounter =                                \
-        mc_##Name##DerivedFromDataTokenAndCounter_new(crypt->crypto,                                                   \
-                                                      Name##DerivedFromDataToken,                                      \
-                                                      test.counter,                                                    \
-                                                      status);                                                         \
-    ASSERT_OR_PRINT(Name##DerivedFromDataTokenAndCounter, status);                                                     \
-    ASSERT_CMPBUF(*mc_##Name##DerivedFromDataTokenAndCounter_get(Name##DerivedFromDataTokenAndCounter),                \
-                  test.Name##DerivedFromDataTokenAndCounter);
+    mc_##Name##DerivedFromDataTokenAndContentionFactor_t *Name##DerivedFromDataTokenAndContentionFactor =              \
+        mc_##Name##DerivedFromDataTokenAndContentionFactor_new(crypt->crypto,                                          \
+                                                               Name##DerivedFromDataToken,                             \
+                                                               test.counter,                                           \
+                                                               status);                                                \
+    ASSERT_OR_PRINT(Name##DerivedFromDataTokenAndContentionFactor, status);                                            \
+    ASSERT_CMPBUF(                                                                                                     \
+        *mc_##Name##DerivedFromDataTokenAndContentionFactor_get(Name##DerivedFromDataTokenAndContentionFactor),        \
+        test.Name##DerivedFromDataTokenAndContentionFactor);
     TEST_DERIVED(EDC)
     TEST_DERIVED(ESC)
     TEST_DERIVED(ECC)
@@ -158,7 +159,7 @@ static void _mc_token_test_run(_mongocrypt_tester_t *tester, const char *path) {
 // (EDC|ESC)TwiceDerivedToken(Tag|Value)?
 #define TEST_TWICE(Name, Suffix)                                                                                       \
     mc_##Name##TwiceDerived##Suffix##_t *Name##TwiceDerived##Suffix =                                                  \
-        mc_##Name##TwiceDerived##Suffix##_new(crypt->crypto, Name##DerivedFromDataTokenAndCounter, status);            \
+        mc_##Name##TwiceDerived##Suffix##_new(crypt->crypto, Name##DerivedFromDataTokenAndContentionFactor, status);   \
     ASSERT_OR_PRINT(Name##TwiceDerived##Suffix, status);                                                               \
     ASSERT_CMPBUF(*mc_##Name##TwiceDerived##Suffix##_get(Name##TwiceDerived##Suffix), test.Name##TwiceDerived##Suffix);
     TEST_TWICE(EDC, Token);
@@ -192,9 +193,9 @@ static void _mc_token_test_run(_mongocrypt_tester_t *tester, const char *path) {
     mc_ESCTwiceDerivedValueToken_destroy(ESCTwiceDerivedValueToken);
     mc_ESCTwiceDerivedTagToken_destroy(ESCTwiceDerivedTagToken);
     mc_EDCTwiceDerivedToken_destroy(EDCTwiceDerivedToken);
-    mc_ECCDerivedFromDataTokenAndCounter_destroy(ECCDerivedFromDataTokenAndCounter);
-    mc_ESCDerivedFromDataTokenAndCounter_destroy(ESCDerivedFromDataTokenAndCounter);
-    mc_EDCDerivedFromDataTokenAndCounter_destroy(EDCDerivedFromDataTokenAndCounter);
+    mc_ECCDerivedFromDataTokenAndContentionFactor_destroy(ECCDerivedFromDataTokenAndContentionFactor);
+    mc_ESCDerivedFromDataTokenAndContentionFactor_destroy(ESCDerivedFromDataTokenAndContentionFactor);
+    mc_EDCDerivedFromDataTokenAndContentionFactor_destroy(EDCDerivedFromDataTokenAndContentionFactor);
     mc_ECCDerivedFromDataToken_destroy(ECCDerivedFromDataToken);
     mc_ESCDerivedFromDataToken_destroy(ESCDerivedFromDataToken);
     mc_EDCDerivedFromDataToken_destroy(EDCDerivedFromDataToken);

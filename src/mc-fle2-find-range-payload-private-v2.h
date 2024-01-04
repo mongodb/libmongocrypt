@@ -65,8 +65,8 @@ typedef struct {
 
 /**
  * EdgeFindTokenSetV2 is the following BSON document:
- * d: <binary> // EDCDerivedFromDataTokenAndCounter
- * s: <binary> // ESCDerivedFromDataTokenAndCounter
+ * d: <binary> // EDCDerivedFromDataTokenAndContentionFactor
+ * s: <binary> // ESCDerivedFromDataTokenAndContentionFactor
  * l: <binary> // ServerDerivedFromDataToken
  *
  * Instances of mc_EdgeFindTokenSetV2_t are expected to be owned by

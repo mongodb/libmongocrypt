@@ -69,9 +69,9 @@ typedef struct {
 
 /**
  * EdgeFindTokenSet is the following BSON document:
- * d: <binary> // EDCDerivedFromDataTokenAndCounter
- * s: <binary> // ESCDerivedFromDataTokenAndCounter
- * c: <binary> // ECCDerivedFromDataTokenAndCounter
+ * d: <binary> // EDCDerivedFromDataTokenAndContentionFactor
+ * s: <binary> // ESCDerivedFromDataTokenAndContentionFactor
+ * c: <binary> // ECCDerivedFromDataTokenAndContentionFactor
  *
  * Instances of mc_EdgeFindTokenSet_t are expected to be owned by
  * mc_FLE2FindRangePayload_t and are freed in

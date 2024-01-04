@@ -18,9 +18,9 @@ Each document is a single-depth set of key value pairs. All values are 32 octet 
 | EDCDerivedFromDataToken | HMAC(EDCToken, value) |
 | ESCDerivedFromDataToken | HMAC(ESCToken, value) |
 | ECCDerivedFromDataToken | HMAC(ECCToken, value) |
-| EDCDerivedFromDataTokenAndCounter| HMAC(EDCDerivedFromDataToken, counter) |
-| ESCDerivedFromDataTokenAndCounter| HMAC(ESCDerivedFromDataToken, counter) |
-| ECCDerivedFromDataTokenAndCounter| HMAC(ECCDerivedFromDataToken, counter) |
+| EDCDerivedFromDataTokenAndContentionFactor| HMAC(EDCDerivedFromDataToken, counter) |
+| ESCDerivedFromDataTokenAndContentionFactor| HMAC(ESCDerivedFromDataToken, counter) |
+| ECCDerivedFromDataTokenAndContentionFactor| HMAC(ECCDerivedFromDataToken, counter) |
 | serverDerivedFromDataToken | HMAC(serverTokenDerivationLevel1Token, value) |
 | serverCountAndContentionFactorEncryptionToken | HMAC(serverDerivedFromDataToken, 1) |
 | serverZerosEncryptionToken | HMAC(serverDerivedFromDataToken, 2) |

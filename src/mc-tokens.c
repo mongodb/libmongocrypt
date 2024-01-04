@@ -97,39 +97,46 @@ IMPL_TOKEN_NEW(mc_ESCDerivedFromDataToken, mc_ESCToken_get(ESCToken), v)
 DEF_TOKEN_TYPE(mc_ECCDerivedFromDataToken, const mc_ECCToken_t *ECCToken, const _mongocrypt_buffer_t *v)
 IMPL_TOKEN_NEW(mc_ECCDerivedFromDataToken, mc_ECCToken_get(ECCToken), v)
 
-DEF_TOKEN_TYPE(mc_EDCTwiceDerivedToken, const mc_EDCDerivedFromDataTokenAndCounter_t *EDCDerivedFromDataTokenAndCounter)
+DEF_TOKEN_TYPE(mc_EDCTwiceDerivedToken,
+               const mc_EDCDerivedFromDataTokenAndContentionFactor_t *EDCDerivedFromDataTokenAndContentionFactor)
 IMPL_TOKEN_NEW_CONST(mc_EDCTwiceDerivedToken,
-                     mc_EDCDerivedFromDataTokenAndCounter_get(EDCDerivedFromDataTokenAndCounter),
+                     mc_EDCDerivedFromDataTokenAndContentionFactor_get(EDCDerivedFromDataTokenAndContentionFactor),
                      1)
 
 DEF_TOKEN_TYPE(mc_ESCTwiceDerivedTagToken,
-               const mc_ESCDerivedFromDataTokenAndCounter_t *ESCDerivedFromDataTokenAndCounter)
+               const mc_ESCDerivedFromDataTokenAndContentionFactor_t *ESCDerivedFromDataTokenAndContentionFactor)
 IMPL_TOKEN_NEW_CONST(mc_ESCTwiceDerivedTagToken,
-                     mc_ESCDerivedFromDataTokenAndCounter_get(ESCDerivedFromDataTokenAndCounter),
+                     mc_ESCDerivedFromDataTokenAndContentionFactor_get(ESCDerivedFromDataTokenAndContentionFactor),
                      1)
 DEF_TOKEN_TYPE(mc_ESCTwiceDerivedValueToken,
-               const mc_ESCDerivedFromDataTokenAndCounter_t *ESCDerivedFromDataTokenAndCounter)
+               const mc_ESCDerivedFromDataTokenAndContentionFactor_t *ESCDerivedFromDataTokenAndContentionFactor)
 IMPL_TOKEN_NEW_CONST(mc_ESCTwiceDerivedValueToken,
-                     mc_ESCDerivedFromDataTokenAndCounter_get(ESCDerivedFromDataTokenAndCounter),
+                     mc_ESCDerivedFromDataTokenAndContentionFactor_get(ESCDerivedFromDataTokenAndContentionFactor),
                      2)
 
 DEF_TOKEN_TYPE(mc_ServerDataEncryptionLevel1Token, const _mongocrypt_buffer_t *RootKey)
 IMPL_TOKEN_NEW_CONST(mc_ServerDataEncryptionLevel1Token, RootKey, 3)
 
-DEF_TOKEN_TYPE(mc_EDCDerivedFromDataTokenAndCounter,
+DEF_TOKEN_TYPE(mc_EDCDerivedFromDataTokenAndContentionFactor,
                const mc_EDCDerivedFromDataToken_t *EDCDerivedFromDataToken,
                uint64_t u)
-IMPL_TOKEN_NEW_CONST(mc_EDCDerivedFromDataTokenAndCounter, mc_EDCDerivedFromDataToken_get(EDCDerivedFromDataToken), u)
+IMPL_TOKEN_NEW_CONST(mc_EDCDerivedFromDataTokenAndContentionFactor,
+                     mc_EDCDerivedFromDataToken_get(EDCDerivedFromDataToken),
+                     u)
 
-DEF_TOKEN_TYPE(mc_ESCDerivedFromDataTokenAndCounter,
+DEF_TOKEN_TYPE(mc_ESCDerivedFromDataTokenAndContentionFactor,
                const mc_ESCDerivedFromDataToken_t *ESCDerivedFromDataToken,
                uint64_t u)
-IMPL_TOKEN_NEW_CONST(mc_ESCDerivedFromDataTokenAndCounter, mc_ESCDerivedFromDataToken_get(ESCDerivedFromDataToken), u)
+IMPL_TOKEN_NEW_CONST(mc_ESCDerivedFromDataTokenAndContentionFactor,
+                     mc_ESCDerivedFromDataToken_get(ESCDerivedFromDataToken),
+                     u)
 
-DEF_TOKEN_TYPE(mc_ECCDerivedFromDataTokenAndCounter,
+DEF_TOKEN_TYPE(mc_ECCDerivedFromDataTokenAndContentionFactor,
                const mc_ECCDerivedFromDataToken_t *ECCDerivedFromDataToken,
                uint64_t u)
-IMPL_TOKEN_NEW_CONST(mc_ECCDerivedFromDataTokenAndCounter, mc_ECCDerivedFromDataToken_get(ECCDerivedFromDataToken), u)
+IMPL_TOKEN_NEW_CONST(mc_ECCDerivedFromDataTokenAndContentionFactor,
+                     mc_ECCDerivedFromDataToken_get(ECCDerivedFromDataToken),
+                     u)
 
 /* FLE2v2 */
 
