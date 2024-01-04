@@ -43,7 +43,7 @@ typedef struct {
 #define DECLARE_FIELD(f) _mongocrypt_buffer_t f;
     FOREACH_FIELD(DECLARE_FIELD)
 #undef DECLARE_FIELD
-    uint64_t counter;
+    uint64_t contentionFactor;
 } _mc_token_test;
 
 static void _mc_token_test_cleanup(_mc_token_test *test) {
@@ -67,7 +67,7 @@ static void _mc_token_test_run(_mongocrypt_tester_t *tester, const char *path) {
     ASSERT(bson_init_static(&test_bson, test_bin->data, test_bin->len));
     ASSERT(bson_validate(&test_bson, BSON_VALIDATE_NONE, NULL));
 
-    bool hasCounter = false;
+    bool hasContentionFactor = false;
     _mc_token_test test = {{0}};
     bson_iter_t it;
     ASSERT(bson_iter_init(&it, &test_bson));
@@ -86,11 +86,11 @@ static void _mc_token_test_run(_mongocrypt_tester_t *tester, const char *path) {
         FOREACH_FIELD(PARSE_FIELD)
 #undef PARSE_FIELD
         /* else */
-        if (!strcmp(field, "counter")) {
-            ASSERT_OR_PRINT_MSG(!hasCounter, "Duplicate field 'counter' in test");
+        if (!strcmp(field, "contentionFactor")) {
+            ASSERT_OR_PRINT_MSG(!hasContentionFactor, "Duplicate field 'contentionFactor' in test");
             ASSERT(BSON_ITER_HOLDS_INT32(&it) || BSON_ITER_HOLDS_INT64(&it));
-            test.counter = bson_iter_as_int64(&it);
-            hasCounter = true;
+            test.contentionFactor = bson_iter_as_int64(&it);
+            hasContentionFactor = true;
         } else {
             TEST_ERROR("Unknown field '%s'", field);
         }
@@ -99,7 +99,7 @@ static void _mc_token_test_run(_mongocrypt_tester_t *tester, const char *path) {
 #define CHECK_FIELD(f) ASSERT_OR_PRINT_MSG(test.f.data, "Missing field '" #f "' in test");
     FOREACH_FIELD(CHECK_FIELD)
 #undef CHECK_FIELD
-    ASSERT_OR_PRINT_MSG(hasCounter, "Missing field 'counter' in test");
+    ASSERT_OR_PRINT_MSG(hasContentionFactor, "Missing field 'contentionFactor' in test");
 
     // Run the actual test.
     mongocrypt_status_t *status = mongocrypt_status_new();
@@ -136,7 +136,7 @@ static void _mc_token_test_run(_mongocrypt_tester_t *tester, const char *path) {
     TEST_COLL_TOKEN(ECOC)
 #undef TEST_COLL_TOKEN
 
-// (EDC|ESC|ECC)DerivedFromDataToken(AndCounter)?
+// (EDC|ESC|ECC)DerivedFromDataToken(AndContentionFactor)?
 #define TEST_DERIVED(Name)                                                                                             \
     mc_##Name##DerivedFromDataToken_t *Name##DerivedFromDataToken =                                                    \
         mc_##Name##DerivedFromDataToken_new(crypt->crypto, Name##Token, &test.value, status);                          \
@@ -145,7 +145,7 @@ static void _mc_token_test_run(_mongocrypt_tester_t *tester, const char *path) {
     mc_##Name##DerivedFromDataTokenAndContentionFactor_t *Name##DerivedFromDataTokenAndContentionFactor =              \
         mc_##Name##DerivedFromDataTokenAndContentionFactor_new(crypt->crypto,                                          \
                                                                Name##DerivedFromDataToken,                             \
-                                                               test.counter,                                           \
+                                                               test.contentionFactor,                                  \
                                                                status);                                                \
     ASSERT_OR_PRINT(Name##DerivedFromDataTokenAndContentionFactor, status);                                            \
     ASSERT_CMPBUF(                                                                                                     \

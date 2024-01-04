@@ -1,7 +1,7 @@
 {
    "root": "6eda88c8496ec990f5d5518dd2ad6f3d9c33b6055904b120f12de82911fbd933",
    "value": "c07c0df51257948e1a0fc70dd4568e3af99b23b3434c9858237ca7db62db9766",
-   "counter": 1234567890,
+   "contentionFactor": 1234567890,
    "collectionsLevel1Token": "ff2103ff205a36f39704f643c270c129919f008c391d9589a6d2c86a7429d0d3",
    "serverDataEncryptionLevel1Token": "d915ccc1eb81687fb5fc5b799f48c99fbe17e7a011a46a48901b9ae3d790656b",
    "serverTokenDerivationLevel1Token": "1adc114b462741e6ac9f52eacf3dcb8cbca19827693c571d9418fda570c29d82",
