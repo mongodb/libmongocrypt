@@ -224,7 +224,7 @@ class TestMongoCrypt(unittest.TestCase):
             options = MongoCryptOptions(kms_dict)
             with self.assertRaisesRegex(
                     MongoCryptError,
-                    "unable to parse base64 from UTF-8 field %s.%s" % (
+                    "`%s`: unable to parse base64 from UTF-8 field %s" % (
                             f1, f2)):
                 MongoCrypt(options, callback)
 
