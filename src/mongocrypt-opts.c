@@ -850,7 +850,10 @@ bool _mongocrypt_parse_kms_providers(mongocrypt_binary_t *kms_providers_definiti
                 break;
             }
             case MONGOCRYPT_KMS_PROVIDER_LOCAL: {
-                _mongocrypt_opts_kms_provider_local_t local = {0};
+                _mongocrypt_opts_kms_provider_local_t local = {
+                    // specify .key to avoid erroneous missing-braces warning in GCC. Refer:
+                    // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=53119
+                    .key = {0}};
                 if (!_mongocrypt_opts_kms_provider_local_parse(&local, field_name, &field_bson, status)) {
                     _mongocrypt_opts_kms_provider_local_cleanup(&local);
                     return false;
