@@ -128,7 +128,7 @@ if [ $(command -v docker) ]; then
     fi
 
     # Build the manylinux2014 aarch64 wheel.
-    get_libmongocrypt rhel-82-arm64 libmongocrypt/nocrypto/lib/libmongocrypt.so
+    get_libmongocrypt rhel-82-arm64 libmongocrypt/nocrypto/lib64/libmongocrypt.so
     build_manylinux_wheel quay.io/pypa/manylinux2014_aarch64:2023-12-05-e9f0345
 fi
 
