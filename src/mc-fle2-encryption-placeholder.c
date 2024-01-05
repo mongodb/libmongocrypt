@@ -123,8 +123,8 @@ bool mc_FLE2EncryptionPlaceholder_parse(mc_FLE2EncryptionPlaceholder_t *out,
                 CLIENT_ERR("invalid marking, 'cm' must be an int64");
                 goto fail;
             }
-            out->maxContentionCounter = bson_iter_int64(&iter);
-            if (!mc_validate_contention(out->maxContentionCounter, status)) {
+            out->maxContentionFactor = bson_iter_int64(&iter);
+            if (!mc_validate_contention(out->maxContentionFactor, status)) {
                 goto fail;
             }
         }

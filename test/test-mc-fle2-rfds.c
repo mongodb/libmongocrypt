@@ -197,7 +197,7 @@ static void test_mc_FLE2RangeFindDriverSpec_to_placeholders(_mongocrypt_tester_t
     user_key_id.subtype = BSON_SUBTYPE_UUID;
     index_key_id.subtype = BSON_SUBTYPE_UUID;
 
-    int64_t maxContentionCounter = 4;
+    int64_t maxContentionFactor = 4;
     int64_t sparsity = 1;
     int32_t indexMin = 5;
     int32_t indexMax = 200;
@@ -354,7 +354,7 @@ static void test_mc_FLE2RangeFindDriverSpec_to_placeholders(_mongocrypt_tester_t
                                                                    .secondOp = test->p1.secondOp,
                                                                    .indexMin = TMP_ITER(indexMin),
                                                                    .indexMax = TMP_ITER(indexMax),
-                                                                   .maxContentionCounter = maxContentionCounter,
+                                                                   .maxContentionFactor = maxContentionFactor,
                                                                    .sparsity = sparsity};
 
                 ASSERT_OK_STATUS(mc_makeRangeFindPlaceholder(&p1_args_full, &p1, status), status);
@@ -373,7 +373,7 @@ static void test_mc_FLE2RangeFindDriverSpec_to_placeholders(_mongocrypt_tester_t
                                                                    .secondOp = test->p2.secondOp,
                                                                    .indexMin = TMP_ITER(indexMin),
                                                                    .indexMax = TMP_ITER(indexMax),
-                                                                   .maxContentionCounter = maxContentionCounter,
+                                                                   .maxContentionFactor = maxContentionFactor,
                                                                    .sparsity = sparsity};
 
                 ASSERT_OK_STATUS(mc_makeRangeFindPlaceholder(&p2_args_full, &p2, status), status);
@@ -386,7 +386,7 @@ static void test_mc_FLE2RangeFindDriverSpec_to_placeholders(_mongocrypt_tester_t
         bson_t out = BSON_INITIALIZER;
         bool ok = mc_FLE2RangeFindDriverSpec_to_placeholders(&spec,
                                                              &range_opts,
-                                                             maxContentionCounter,
+                                                             maxContentionFactor,
                                                              &user_key_id,
                                                              &index_key_id,
                                                              payloadId,

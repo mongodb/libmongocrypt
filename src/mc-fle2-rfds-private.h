@@ -52,7 +52,7 @@ bool mc_FLE2RangeFindDriverSpec_parse(mc_FLE2RangeFindDriverSpec_t *spec,
 // `out` must be initialized by caller.
 bool mc_FLE2RangeFindDriverSpec_to_placeholders(mc_FLE2RangeFindDriverSpec_t *spec,
                                                 const mc_RangeOpts_t *range_opts,
-                                                int64_t maxContentionCounter,
+                                                int64_t maxContentionFactor,
                                                 const _mongocrypt_buffer_t *user_key_id,
                                                 const _mongocrypt_buffer_t *index_key_id,
                                                 int32_t payloadId,
@@ -73,7 +73,7 @@ typedef struct {
     mc_FLE2RangeOperator_t secondOp;
     bson_iter_t indexMin;
     bson_iter_t indexMax;
-    int64_t maxContentionCounter;
+    int64_t maxContentionFactor;
     int64_t sparsity;
     mc_optional_uint32_t precision;
 } mc_makeRangeFindPlaceholder_args_t;

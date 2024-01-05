@@ -24,7 +24,7 @@
  *
  * v is a BSON value. It is the bytes after "e_name" in "element" in
  * https://bsonspec.org/spec.html.
- * u is a "contention factor" counter. It is a uint64_t.
+ * u is a "contention factor". It is a uint64_t.
  * HMAC is the HMAC-SHA-256 function.
  * Integers are represented as uint64_t in little-endian.
  *
@@ -40,17 +40,17 @@
  * ESCDerivedFromDataToken = HMAC(ESCToken, v)
  * ECCDerivedFromDataToken = HMAC(ECCToken, v)
  *
- * EDCDerivedFromDataTokenAndCounter = HMAC(EDCDerivedFromDataToken, u)
- * ESCDerivedFromDataTokenAndCounter = HMAC(ESCDerivedFromDataToken, u)
- * ECCDerivedFromDataTokenAndCounter = HMAC(ECCDerivedFromDataToken, u)
+ * EDCDerivedFromDataTokenAndContentionFactor = HMAC(EDCDerivedFromDataToken, u)
+ * ESCDerivedFromDataTokenAndContentionFactor = HMAC(ESCDerivedFromDataToken, u)
+ * ECCDerivedFromDataTokenAndContentionFactor = HMAC(ECCDerivedFromDataToken, u)
  *
- * EDCTwiceDerivedToken      = HMAC(EDCDerivedFromDataTokenAndCounter, 1)
+ * EDCTwiceDerivedToken      = HMAC(EDCDerivedFromDataTokenAndContentionFactor, 1)
 
- * ESCTwiceDerivedTagToken   = HMAC(ESCDerivedFromDataTokenAndCounter, 1)
- * ESCTwiceDerivedValueToken = HMAC(ESCDerivedFromDataTokenAndCounter, 2)
+ * ESCTwiceDerivedTagToken   = HMAC(ESCDerivedFromDataTokenAndContentionFactor, 1)
+ * ESCTwiceDerivedValueToken = HMAC(ESCDerivedFromDataTokenAndContentionFactor, 2)
 
- * ECCTwiceDerivedTagToken   = HMAC(ECCDerivedFromDataTokenAndCounter, 1)
- * ECCTwiceDerivedValueToken = HMAC(ECCDerivedFromDataTokenAndCounter, 2)
+ * ECCTwiceDerivedTagToken   = HMAC(ECCDerivedFromDataTokenAndContentionFactor, 1)
+ * ECCTwiceDerivedValueToken = HMAC(ECCDerivedFromDataTokenAndContentionFactor, 2)
  *
  * Note: ECC related tokens are used in FLE2v1 only.
  *       Further, ECCTwiceDerivedValue(Tag|Token) have been omitted entirely.
@@ -110,22 +110,22 @@ DECL_TOKEN_TYPE(mc_EDCDerivedFromDataToken, const mc_EDCToken_t *EDCToken, const
 DECL_TOKEN_TYPE(mc_ECCDerivedFromDataToken, const mc_ECCToken_t *ECCToken, const _mongocrypt_buffer_t *v);
 DECL_TOKEN_TYPE(mc_ESCDerivedFromDataToken, const mc_ESCToken_t *ESCToken, const _mongocrypt_buffer_t *v);
 
-DECL_TOKEN_TYPE(mc_EDCDerivedFromDataTokenAndCounter,
+DECL_TOKEN_TYPE(mc_EDCDerivedFromDataTokenAndContentionFactor,
                 const mc_EDCDerivedFromDataToken_t *EDCDerivedFromDataToken,
                 uint64_t u);
-DECL_TOKEN_TYPE(mc_ESCDerivedFromDataTokenAndCounter,
+DECL_TOKEN_TYPE(mc_ESCDerivedFromDataTokenAndContentionFactor,
                 const mc_ESCDerivedFromDataToken_t *ESCDerivedFromDataToken,
                 uint64_t u);
-DECL_TOKEN_TYPE(mc_ECCDerivedFromDataTokenAndCounter,
+DECL_TOKEN_TYPE(mc_ECCDerivedFromDataTokenAndContentionFactor,
                 const mc_ECCDerivedFromDataToken_t *ECCDerivedFromDataToken,
                 uint64_t u);
 
 DECL_TOKEN_TYPE(mc_EDCTwiceDerivedToken,
-                const mc_EDCDerivedFromDataTokenAndCounter_t *EDCDerivedFromDataTokenAndCounter);
+                const mc_EDCDerivedFromDataTokenAndContentionFactor_t *EDCDerivedFromDataTokenAndContentionFactor);
 DECL_TOKEN_TYPE(mc_ESCTwiceDerivedTagToken,
-                const mc_ESCDerivedFromDataTokenAndCounter_t *ESCDerivedFromDataTokenAndCounter);
+                const mc_ESCDerivedFromDataTokenAndContentionFactor_t *ESCDerivedFromDataTokenAndContentionFactor);
 DECL_TOKEN_TYPE(mc_ESCTwiceDerivedValueToken,
-                const mc_ESCDerivedFromDataTokenAndCounter_t *ESCDerivedFromDataTokenAndCounter);
+                const mc_ESCDerivedFromDataTokenAndContentionFactor_t *ESCDerivedFromDataTokenAndContentionFactor);
 
 DECL_TOKEN_TYPE(mc_ServerDerivedFromDataToken,
                 const mc_ServerTokenDerivationLevel1Token_t *ServerTokenDerivationToken,

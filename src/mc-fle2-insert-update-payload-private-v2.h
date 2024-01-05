@@ -36,8 +36,8 @@
  * } FLE2InsertUpdatePayloadV2;
  *
  * bson is a BSON document of this form:
- * d: <binary> // EDCDerivedFromDataTokenAndCounter
- * s: <binary> // ESCDerivedFromDataTokenAndCounter
+ * d: <binary> // EDCDerivedFromDataTokenAndContentionFactor
+ * s: <binary> // ESCDerivedFromDataTokenAndContentionFactor
  * p: <binary> // Encrypted Tokens
  * u: <UUID>   // Index KeyId
  * t: <int32>  // Encrypted type
@@ -51,7 +51,7 @@
  * Encrypt(
  * key=ECOCToken,
  * plaintext=(
- *    ESCDerivedFromDataTokenAndCounter)
+ *    ESCDerivedFromDataTokenAndContentionFactor)
  * )
  *
  * v is the result of:
@@ -78,8 +78,8 @@ typedef struct {
 
 /**
  * EdgeTokenSetV2 is the following BSON document:
- * d: <binary> // EDCDerivedFromDataTokenAndCounter
- * s: <binary> // ESCDerivedFromDataTokenAndCounter
+ * d: <binary> // EDCDerivedFromDataTokenAndContentionFactor
+ * s: <binary> // ESCDerivedFromDataTokenAndContentionFactor
  * l: <binary> // ServerDerivedFromDataToken
  * p: <binary> // Encrypted Tokens
  *

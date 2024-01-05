@@ -62,7 +62,7 @@ static void _test_FLE2FindRangePayloadV2_roundtrip(_mongocrypt_tester_t *tester)
         tokenSet.escDerivedToken = expect_escDerivedToken;
         tokenSet.serverDerivedFromDataToken = expect_serverDerivedFromDataToken;
         _mc_array_append_val(&payload.payload.value.edgeFindTokenSetArray, tokenSet);
-        payload.payload.value.maxContentionCounter = (uint64_t)4;
+        payload.payload.value.maxContentionFactor = (uint64_t)4;
     }
 
     payload.payload.set = true;

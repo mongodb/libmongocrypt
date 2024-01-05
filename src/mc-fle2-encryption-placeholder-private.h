@@ -116,7 +116,7 @@ typedef struct {
     bson_iter_t v_iter;
     _mongocrypt_buffer_t index_key_id;
     _mongocrypt_buffer_t user_key_id;
-    int64_t maxContentionCounter;
+    int64_t maxContentionFactor;
     // sparsity is the Queryable Encryption range hypergraph sparsity factor
     int64_t sparsity;
 } mc_FLE2EncryptionPlaceholder_t;

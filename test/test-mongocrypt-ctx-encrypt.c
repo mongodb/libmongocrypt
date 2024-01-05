@@ -1619,7 +1619,7 @@ static void _test_FLE2EncryptionPlaceholder_parse(_mongocrypt_tester_t *tester) 
     ASSERT_CMPBUF(placeholder.user_key_id, expect_user_key_id);
     _mongocrypt_buffer_cleanup(&expect_user_key_id);
 
-    ASSERT(placeholder.maxContentionCounter == 0);
+    ASSERT(placeholder.maxContentionFactor == 0);
 
     mc_FLE2EncryptionPlaceholder_cleanup(&placeholder);
     _mongocrypt_buffer_cleanup(&buf);

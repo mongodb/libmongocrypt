@@ -106,7 +106,7 @@ bool mc_FLE2FindRangePayloadV2_serialize(const mc_FLE2FindRangePayloadV2_t *payl
         }
 
         // Append "payload.cm".
-        if (!BSON_APPEND_INT64(&payload_bson, "cm", payload->payload.value.maxContentionCounter)) {
+        if (!BSON_APPEND_INT64(&payload_bson, "cm", payload->payload.value.maxContentionFactor)) {
             return false;
         }
 

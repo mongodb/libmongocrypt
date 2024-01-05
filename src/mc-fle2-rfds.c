@@ -383,7 +383,7 @@ bool mc_makeRangeFindPlaceholder(mc_makeRangeFindPlaceholder_args_t *args,
     TRY(_mongocrypt_buffer_append(args->index_key_id, p, "ki", 2));
     TRY(_mongocrypt_buffer_append(args->user_key_id, p, "ku", 2));
     TRY(BSON_APPEND_DOCUMENT(p, "v", v));
-    TRY(BSON_APPEND_INT64(p, "cm", args->maxContentionCounter));
+    TRY(BSON_APPEND_INT64(p, "cm", args->maxContentionFactor));
     TRY(BSON_APPEND_INT64(p, "s", args->sparsity));
 #undef TRY
 
@@ -403,7 +403,7 @@ fail:
 
 bool mc_FLE2RangeFindDriverSpec_to_placeholders(mc_FLE2RangeFindDriverSpec_t *spec,
                                                 const mc_RangeOpts_t *range_opts,
-                                                int64_t maxContentionCounter,
+                                                int64_t maxContentionFactor,
                                                 const _mongocrypt_buffer_t *user_key_id,
                                                 const _mongocrypt_buffer_t *index_key_id,
                                                 int32_t payloadId,
@@ -469,7 +469,7 @@ bool mc_FLE2RangeFindDriverSpec_to_placeholders(mc_FLE2RangeFindDriverSpec_t *sp
                                                .indexMin = indexMin,
                                                .indexMax = indexMax,
                                                .precision = range_opts->precision,
-                                               .maxContentionCounter = maxContentionCounter,
+                                               .maxContentionFactor = maxContentionFactor,
                                                .sparsity = range_opts->sparsity};
 
     // First operator is the non-stub.
@@ -485,7 +485,7 @@ bool mc_FLE2RangeFindDriverSpec_to_placeholders(mc_FLE2RangeFindDriverSpec_t *sp
                                                    .payloadId = payloadId,
                                                    .firstOp = spec->firstOp,
                                                    .secondOp = spec->secondOp,
-                                                   .maxContentionCounter = maxContentionCounter,
+                                                   .maxContentionFactor = maxContentionFactor,
                                                    .sparsity = range_opts->sparsity};
 
         // First operator is the non-stub.

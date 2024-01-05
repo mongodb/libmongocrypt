@@ -30,9 +30,9 @@
     F(ESCDerivedFromDataToken)                                                                                         \
     F(ECCDerivedFromDataToken)                                                                                         \
     F(serverDerivedFromDataToken)                                                                                      \
-    F(EDCDerivedFromDataTokenAndCounter)                                                                               \
-    F(ESCDerivedFromDataTokenAndCounter)                                                                               \
-    F(ECCDerivedFromDataTokenAndCounter)                                                                               \
+    F(EDCDerivedFromDataTokenAndContentionFactor)                                                                      \
+    F(ESCDerivedFromDataTokenAndContentionFactor)                                                                      \
+    F(ECCDerivedFromDataTokenAndContentionFactor)                                                                      \
     F(EDCTwiceDerivedToken)                                                                                            \
     F(ESCTwiceDerivedTagToken)                                                                                         \
     F(ESCTwiceDerivedValueToken)                                                                                       \
@@ -43,7 +43,7 @@ typedef struct {
 #define DECLARE_FIELD(f) _mongocrypt_buffer_t f;
     FOREACH_FIELD(DECLARE_FIELD)
 #undef DECLARE_FIELD
-    uint64_t counter;
+    uint64_t contentionFactor;
 } _mc_token_test;
 
 static void _mc_token_test_cleanup(_mc_token_test *test) {
@@ -67,7 +67,7 @@ static void _mc_token_test_run(_mongocrypt_tester_t *tester, const char *path) {
     ASSERT(bson_init_static(&test_bson, test_bin->data, test_bin->len));
     ASSERT(bson_validate(&test_bson, BSON_VALIDATE_NONE, NULL));
 
-    bool hasCounter = false;
+    bool hasContentionFactor = false;
     _mc_token_test test = {{0}};
     bson_iter_t it;
     ASSERT(bson_iter_init(&it, &test_bson));
@@ -86,11 +86,11 @@ static void _mc_token_test_run(_mongocrypt_tester_t *tester, const char *path) {
         FOREACH_FIELD(PARSE_FIELD)
 #undef PARSE_FIELD
         /* else */
-        if (!strcmp(field, "counter")) {
-            ASSERT_OR_PRINT_MSG(!hasCounter, "Duplicate field 'counter' in test");
+        if (!strcmp(field, "contentionFactor")) {
+            ASSERT_OR_PRINT_MSG(!hasContentionFactor, "Duplicate field 'contentionFactor' in test");
             ASSERT(BSON_ITER_HOLDS_INT32(&it) || BSON_ITER_HOLDS_INT64(&it));
-            test.counter = bson_iter_as_int64(&it);
-            hasCounter = true;
+            test.contentionFactor = bson_iter_as_int64(&it);
+            hasContentionFactor = true;
         } else {
             TEST_ERROR("Unknown field '%s'", field);
         }
@@ -99,7 +99,7 @@ static void _mc_token_test_run(_mongocrypt_tester_t *tester, const char *path) {
 #define CHECK_FIELD(f) ASSERT_OR_PRINT_MSG(test.f.data, "Missing field '" #f "' in test");
     FOREACH_FIELD(CHECK_FIELD)
 #undef CHECK_FIELD
-    ASSERT_OR_PRINT_MSG(hasCounter, "Missing field 'counter' in test");
+    ASSERT_OR_PRINT_MSG(hasContentionFactor, "Missing field 'contentionFactor' in test");
 
     // Run the actual test.
     mongocrypt_status_t *status = mongocrypt_status_new();
@@ -136,20 +136,21 @@ static void _mc_token_test_run(_mongocrypt_tester_t *tester, const char *path) {
     TEST_COLL_TOKEN(ECOC)
 #undef TEST_COLL_TOKEN
 
-// (EDC|ESC|ECC)DerivedFromDataToken(AndCounter)?
+// (EDC|ESC|ECC)DerivedFromDataToken(AndContentionFactor)?
 #define TEST_DERIVED(Name)                                                                                             \
     mc_##Name##DerivedFromDataToken_t *Name##DerivedFromDataToken =                                                    \
         mc_##Name##DerivedFromDataToken_new(crypt->crypto, Name##Token, &test.value, status);                          \
     ASSERT_OR_PRINT(Name##DerivedFromDataToken, status);                                                               \
     ASSERT_CMPBUF(*mc_##Name##DerivedFromDataToken_get(Name##DerivedFromDataToken), test.Name##DerivedFromDataToken);  \
-    mc_##Name##DerivedFromDataTokenAndCounter_t *Name##DerivedFromDataTokenAndCounter =                                \
-        mc_##Name##DerivedFromDataTokenAndCounter_new(crypt->crypto,                                                   \
-                                                      Name##DerivedFromDataToken,                                      \
-                                                      test.counter,                                                    \
-                                                      status);                                                         \
-    ASSERT_OR_PRINT(Name##DerivedFromDataTokenAndCounter, status);                                                     \
-    ASSERT_CMPBUF(*mc_##Name##DerivedFromDataTokenAndCounter_get(Name##DerivedFromDataTokenAndCounter),                \
-                  test.Name##DerivedFromDataTokenAndCounter);
+    mc_##Name##DerivedFromDataTokenAndContentionFactor_t *Name##DerivedFromDataTokenAndContentionFactor =              \
+        mc_##Name##DerivedFromDataTokenAndContentionFactor_new(crypt->crypto,                                          \
+                                                               Name##DerivedFromDataToken,                             \
+                                                               test.contentionFactor,                                  \
+                                                               status);                                                \
+    ASSERT_OR_PRINT(Name##DerivedFromDataTokenAndContentionFactor, status);                                            \
+    ASSERT_CMPBUF(                                                                                                     \
+        *mc_##Name##DerivedFromDataTokenAndContentionFactor_get(Name##DerivedFromDataTokenAndContentionFactor),        \
+        test.Name##DerivedFromDataTokenAndContentionFactor);
     TEST_DERIVED(EDC)
     TEST_DERIVED(ESC)
     TEST_DERIVED(ECC)
@@ -158,7 +159,7 @@ static void _mc_token_test_run(_mongocrypt_tester_t *tester, const char *path) {
 // (EDC|ESC)TwiceDerivedToken(Tag|Value)?
 #define TEST_TWICE(Name, Suffix)                                                                                       \
     mc_##Name##TwiceDerived##Suffix##_t *Name##TwiceDerived##Suffix =                                                  \
-        mc_##Name##TwiceDerived##Suffix##_new(crypt->crypto, Name##DerivedFromDataTokenAndCounter, status);            \
+        mc_##Name##TwiceDerived##Suffix##_new(crypt->crypto, Name##DerivedFromDataTokenAndContentionFactor, status);   \
     ASSERT_OR_PRINT(Name##TwiceDerived##Suffix, status);                                                               \
     ASSERT_CMPBUF(*mc_##Name##TwiceDerived##Suffix##_get(Name##TwiceDerived##Suffix), test.Name##TwiceDerived##Suffix);
     TEST_TWICE(EDC, Token);
@@ -192,9 +193,9 @@ static void _mc_token_test_run(_mongocrypt_tester_t *tester, const char *path) {
     mc_ESCTwiceDerivedValueToken_destroy(ESCTwiceDerivedValueToken);
     mc_ESCTwiceDerivedTagToken_destroy(ESCTwiceDerivedTagToken);
     mc_EDCTwiceDerivedToken_destroy(EDCTwiceDerivedToken);
-    mc_ECCDerivedFromDataTokenAndCounter_destroy(ECCDerivedFromDataTokenAndCounter);
-    mc_ESCDerivedFromDataTokenAndCounter_destroy(ESCDerivedFromDataTokenAndCounter);
-    mc_EDCDerivedFromDataTokenAndCounter_destroy(EDCDerivedFromDataTokenAndCounter);
+    mc_ECCDerivedFromDataTokenAndContentionFactor_destroy(ECCDerivedFromDataTokenAndContentionFactor);
+    mc_ESCDerivedFromDataTokenAndContentionFactor_destroy(ESCDerivedFromDataTokenAndContentionFactor);
+    mc_EDCDerivedFromDataTokenAndContentionFactor_destroy(EDCDerivedFromDataTokenAndContentionFactor);
     mc_ECCDerivedFromDataToken_destroy(ECCDerivedFromDataToken);
     mc_ESCDerivedFromDataToken_destroy(ESCDerivedFromDataToken);
     mc_EDCDerivedFromDataToken_destroy(EDCDerivedFromDataToken);

@@ -1744,7 +1744,7 @@ static bool _fle2_finalize_explicit(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *
     }
 
     if (ctx->opts.contention_factor.set) {
-        marking.fle2.maxContentionCounter = ctx->opts.contention_factor.value;
+        marking.fle2.maxContentionFactor = ctx->opts.contention_factor.value;
     } else if (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_EQUALITY) {
         _mongocrypt_ctx_fail_w_msg(ctx, "contention factor required for indexed algorithm");
         goto fail;
