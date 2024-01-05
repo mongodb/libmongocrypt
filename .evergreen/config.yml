@@ -1278,6 +1278,7 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-node
   - test-java
+  - test-python
   - name: publish-packages
     distros:
     - rhel70-small
@@ -1320,6 +1321,7 @@ buildvariants:
     packager_arch: aarch64
   tasks:
   - build-and-test-and-upload
+  - test-python
   - name: publish-packages
     distros:
     - rhel70-small
