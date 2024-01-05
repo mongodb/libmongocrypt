@@ -1278,7 +1278,6 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-node
   - test-java
-  - test-python
   - name: publish-packages
     distros:
     - rhel70-small
