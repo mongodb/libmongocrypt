@@ -5,6 +5,8 @@ Changes in Version 1.8.0
 ------------------------
 
 - Update from manylinux2010 to manylinux2014 wheels.
+- Bundle libmongocrypt 1.8.4 in release wheels.
+- Add support for manylinux_2_28_aarch64 wheels.
 
 Changes in Version 1.7.0
 ------------------------
