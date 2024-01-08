@@ -57,82 +57,83 @@ struct _mongocrypt_kms_ctx_t {
 bool _mongocrypt_kms_ctx_init_aws_decrypt(mongocrypt_kms_ctx_t *kms,
                                           _mongocrypt_opts_kms_providers_t *kms_providers,
                                           _mongocrypt_key_doc_t *key,
-                                          _mongocrypt_log_t *log,
                                           _mongocrypt_crypto_t *crypto,
-                                          const char *kmsid) MONGOCRYPT_WARN_UNUSED_RESULT;
+                                          const char *kmsid,
+                                          _mongocrypt_log_t *log) MONGOCRYPT_WARN_UNUSED_RESULT;
 
 bool _mongocrypt_kms_ctx_init_aws_encrypt(mongocrypt_kms_ctx_t *kms,
                                           _mongocrypt_opts_kms_providers_t *kms_providers,
                                           struct __mongocrypt_ctx_opts_t *ctx_opts,
                                           _mongocrypt_buffer_t *decrypted_key_material,
-                                          _mongocrypt_log_t *log,
                                           _mongocrypt_crypto_t *crypto,
-                                          const char *kmsid) MONGOCRYPT_WARN_UNUSED_RESULT;
+                                          const char *kmsid,
+                                          _mongocrypt_log_t *log) MONGOCRYPT_WARN_UNUSED_RESULT;
 
 bool _mongocrypt_kms_ctx_result(mongocrypt_kms_ctx_t *kms, _mongocrypt_buffer_t *out) MONGOCRYPT_WARN_UNUSED_RESULT;
 
 void _mongocrypt_kms_ctx_cleanup(mongocrypt_kms_ctx_t *kms);
 
 bool _mongocrypt_kms_ctx_init_azure_auth(mongocrypt_kms_ctx_t *kms,
-                                         _mongocrypt_log_t *log,
                                          const mc_kms_creds_t *kc,
                                          _mongocrypt_endpoint_t *key_vault_endpoint,
-                                         const char *kmsid) MONGOCRYPT_WARN_UNUSED_RESULT;
+                                         const char *kmsid,
+                                         _mongocrypt_log_t *log) MONGOCRYPT_WARN_UNUSED_RESULT;
 
 bool _mongocrypt_kms_ctx_init_azure_wrapkey(mongocrypt_kms_ctx_t *kms,
-                                            _mongocrypt_log_t *log,
                                             _mongocrypt_opts_kms_providers_t *kms_providers,
                                             struct __mongocrypt_ctx_opts_t *ctx_opts,
                                             const char *access_token,
                                             _mongocrypt_buffer_t *plaintext_key_material,
-                                            const char *kmsid) MONGOCRYPT_WARN_UNUSED_RESULT;
+                                            const char *kmsid,
+                                            _mongocrypt_log_t *log) MONGOCRYPT_WARN_UNUSED_RESULT;
 
 bool _mongocrypt_kms_ctx_init_azure_unwrapkey(mongocrypt_kms_ctx_t *kms,
                                               _mongocrypt_opts_kms_providers_t *kms_providers,
                                               const char *access_token,
                                               _mongocrypt_key_doc_t *key,
-                                              _mongocrypt_log_t *log,
-                                              const char *kmsid) MONGOCRYPT_WARN_UNUSED_RESULT;
+                                              const char *kmsid,
+                                              _mongocrypt_log_t *log) MONGOCRYPT_WARN_UNUSED_RESULT;
 
 bool _mongocrypt_kms_ctx_init_gcp_auth(mongocrypt_kms_ctx_t *kms,
-                                       _mongocrypt_log_t *log,
                                        _mongocrypt_opts_t *crypt_opts,
                                        const mc_kms_creds_t *kc,
                                        _mongocrypt_endpoint_t *kms_endpoint,
-                                       const char *kmsid) MONGOCRYPT_WARN_UNUSED_RESULT;
+                                       const char *kmsid,
+                                       _mongocrypt_log_t *log) MONGOCRYPT_WARN_UNUSED_RESULT;
 
 bool _mongocrypt_kms_ctx_init_gcp_encrypt(mongocrypt_kms_ctx_t *kms,
-                                          _mongocrypt_log_t *log,
                                           _mongocrypt_opts_kms_providers_t *kms_providers,
                                           struct __mongocrypt_ctx_opts_t *ctx_opts,
                                           const char *access_token,
                                           _mongocrypt_buffer_t *plaintext_key_material,
-                                          const char *kmsid) MONGOCRYPT_WARN_UNUSED_RESULT;
+                                          const char *kmsid,
+                                          _mongocrypt_log_t *log) MONGOCRYPT_WARN_UNUSED_RESULT;
 
 bool _mongocrypt_kms_ctx_init_gcp_decrypt(mongocrypt_kms_ctx_t *kms,
                                           _mongocrypt_opts_kms_providers_t *kms_providers,
                                           const char *access_token,
                                           _mongocrypt_key_doc_t *key,
-                                          _mongocrypt_log_t *log,
-                                          const char *kmsid) MONGOCRYPT_WARN_UNUSED_RESULT;
+                                          const char *kmsid,
+                                          _mongocrypt_log_t *log) MONGOCRYPT_WARN_UNUSED_RESULT;
 
 bool _mongocrypt_kms_ctx_init_kmip_register(mongocrypt_kms_ctx_t *kms,
                                             const _mongocrypt_endpoint_t *endpoint,
                                             const uint8_t *secretdata,
                                             uint32_t secretdata_len,
-                                            _mongocrypt_log_t *log,
-                                            const char *kmsid) MONGOCRYPT_WARN_UNUSED_RESULT;
+
+                                            const char *kmsid,
+                                            _mongocrypt_log_t *log) MONGOCRYPT_WARN_UNUSED_RESULT;
 
 bool _mongocrypt_kms_ctx_init_kmip_activate(mongocrypt_kms_ctx_t *kms,
                                             const _mongocrypt_endpoint_t *endpoint,
                                             const char *unique_identifier,
-                                            _mongocrypt_log_t *log,
-                                            const char *kmsid) MONGOCRYPT_WARN_UNUSED_RESULT;
+                                            const char *kmsid,
+                                            _mongocrypt_log_t *log) MONGOCRYPT_WARN_UNUSED_RESULT;
 
 bool _mongocrypt_kms_ctx_init_kmip_get(mongocrypt_kms_ctx_t *kms,
                                        const _mongocrypt_endpoint_t *endpoint,
                                        const char *unique_identifier,
-                                       _mongocrypt_log_t *log,
-                                       const char *kmsid) MONGOCRYPT_WARN_UNUSED_RESULT;
+                                       const char *kmsid,
+                                       _mongocrypt_log_t *log) MONGOCRYPT_WARN_UNUSED_RESULT;
 
 #endif /* MONGOCRYPT_KMX_CTX_PRIVATE_H */

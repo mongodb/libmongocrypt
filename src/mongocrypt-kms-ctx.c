@@ -142,9 +142,9 @@ _init_common(mongocrypt_kms_ctx_t *kms, _mongocrypt_log_t *log, _kms_request_typ
 bool _mongocrypt_kms_ctx_init_aws_decrypt(mongocrypt_kms_ctx_t *kms,
                                           _mongocrypt_opts_kms_providers_t *kms_providers,
                                           _mongocrypt_key_doc_t *key,
-                                          _mongocrypt_log_t *log,
                                           _mongocrypt_crypto_t *crypto,
-                                          const char *kmsid) {
+                                          const char *kmsid,
+                                          _mongocrypt_log_t *log) {
     BSON_ASSERT_PARAM(kms);
     BSON_ASSERT_PARAM(key);
     BSON_ASSERT_PARAM(kms_providers);
@@ -277,9 +277,9 @@ bool _mongocrypt_kms_ctx_init_aws_encrypt(mongocrypt_kms_ctx_t *kms,
                                           _mongocrypt_opts_kms_providers_t *kms_providers,
                                           _mongocrypt_ctx_opts_t *ctx_opts,
                                           _mongocrypt_buffer_t *plaintext_key_material,
-                                          _mongocrypt_log_t *log,
                                           _mongocrypt_crypto_t *crypto,
-                                          const char *kmsid) {
+                                          const char *kmsid,
+                                          _mongocrypt_log_t *log) {
     BSON_ASSERT_PARAM(kms);
     BSON_ASSERT_PARAM(ctx_opts);
     BSON_ASSERT_PARAM(kms_providers);
@@ -1006,10 +1006,10 @@ bool mongocrypt_kms_ctx_endpoint(mongocrypt_kms_ctx_t *kms, const char **endpoin
 }
 
 bool _mongocrypt_kms_ctx_init_azure_auth(mongocrypt_kms_ctx_t *kms,
-                                         _mongocrypt_log_t *log,
                                          const mc_kms_creds_t *kc,
                                          _mongocrypt_endpoint_t *key_vault_endpoint,
-                                         const char *kmsid) {
+                                         const char *kmsid,
+                                         _mongocrypt_log_t *log) {
     BSON_ASSERT_PARAM(kms);
     BSON_ASSERT_PARAM(kc);
 
@@ -1079,12 +1079,12 @@ fail:
 }
 
 bool _mongocrypt_kms_ctx_init_azure_wrapkey(mongocrypt_kms_ctx_t *kms,
-                                            _mongocrypt_log_t *log,
                                             _mongocrypt_opts_kms_providers_t *kms_providers,
                                             struct __mongocrypt_ctx_opts_t *ctx_opts,
                                             const char *access_token,
                                             _mongocrypt_buffer_t *plaintext_key_material,
-                                            const char *kmsid) {
+                                            const char *kmsid,
+                                            _mongocrypt_log_t *log) {
     BSON_ASSERT_PARAM(kms);
     BSON_ASSERT_PARAM(ctx_opts);
     BSON_ASSERT_PARAM(plaintext_key_material);
@@ -1145,8 +1145,8 @@ bool _mongocrypt_kms_ctx_init_azure_unwrapkey(mongocrypt_kms_ctx_t *kms,
                                               _mongocrypt_opts_kms_providers_t *kms_providers,
                                               const char *access_token,
                                               _mongocrypt_key_doc_t *key,
-                                              _mongocrypt_log_t *log,
-                                              const char *kmsid) {
+                                              const char *kmsid,
+                                              _mongocrypt_log_t *log) {
     BSON_ASSERT_PARAM(kms);
     BSON_ASSERT_PARAM(key);
 
@@ -1244,11 +1244,11 @@ static bool _sign_rsaes_pkcs1_v1_5_trampoline(void *ctx,
 }
 
 bool _mongocrypt_kms_ctx_init_gcp_auth(mongocrypt_kms_ctx_t *kms,
-                                       _mongocrypt_log_t *log,
                                        _mongocrypt_opts_t *crypt_opts,
                                        const mc_kms_creds_t *kc,
                                        _mongocrypt_endpoint_t *kms_endpoint,
-                                       const char *kmsid) {
+                                       const char *kmsid,
+                                       _mongocrypt_log_t *log) {
     BSON_ASSERT_PARAM(kms);
     BSON_ASSERT_PARAM(kc);
     BSON_ASSERT_PARAM(crypt_opts);
@@ -1330,12 +1330,12 @@ fail:
 }
 
 bool _mongocrypt_kms_ctx_init_gcp_encrypt(mongocrypt_kms_ctx_t *kms,
-                                          _mongocrypt_log_t *log,
                                           _mongocrypt_opts_kms_providers_t *kms_providers,
                                           struct __mongocrypt_ctx_opts_t *ctx_opts,
                                           const char *access_token,
                                           _mongocrypt_buffer_t *plaintext_key_material,
-                                          const char *kmsid) {
+                                          const char *kmsid,
+                                          _mongocrypt_log_t *log) {
     BSON_ASSERT_PARAM(kms);
     BSON_ASSERT_PARAM(ctx_opts);
     BSON_ASSERT_PARAM(kms_providers);
@@ -1404,8 +1404,8 @@ bool _mongocrypt_kms_ctx_init_gcp_decrypt(mongocrypt_kms_ctx_t *kms,
                                           _mongocrypt_opts_kms_providers_t *kms_providers,
                                           const char *access_token,
                                           _mongocrypt_key_doc_t *key,
-                                          _mongocrypt_log_t *log,
-                                          const char *kmsid) {
+                                          const char *kmsid,
+                                          _mongocrypt_log_t *log) {
     BSON_ASSERT_PARAM(kms);
     BSON_ASSERT_PARAM(kms_providers);
     BSON_ASSERT_PARAM(access_token);
@@ -1472,8 +1472,8 @@ bool _mongocrypt_kms_ctx_init_kmip_register(mongocrypt_kms_ctx_t *kms_ctx,
                                             const _mongocrypt_endpoint_t *endpoint,
                                             const uint8_t *secretdata,
                                             uint32_t secretdata_len,
-                                            _mongocrypt_log_t *log,
-                                            const char *kmsid) {
+                                            const char *kmsid,
+                                            _mongocrypt_log_t *log) {
     BSON_ASSERT_PARAM(kms_ctx);
     BSON_ASSERT_PARAM(endpoint);
     BSON_ASSERT_PARAM(secretdata);
@@ -1509,8 +1509,8 @@ done:
 bool _mongocrypt_kms_ctx_init_kmip_activate(mongocrypt_kms_ctx_t *kms_ctx,
                                             const _mongocrypt_endpoint_t *endpoint,
                                             const char *unique_identifier,
-                                            _mongocrypt_log_t *log,
-                                            const char *kmsid) {
+                                            const char *kmsid,
+                                            _mongocrypt_log_t *log) {
     BSON_ASSERT_PARAM(kms_ctx);
     BSON_ASSERT_PARAM(endpoint);
     BSON_ASSERT_PARAM(unique_identifier);
@@ -1546,8 +1546,8 @@ done:
 bool _mongocrypt_kms_ctx_init_kmip_get(mongocrypt_kms_ctx_t *kms_ctx,
                                        const _mongocrypt_endpoint_t *endpoint,
                                        const char *unique_identifier,
-                                       _mongocrypt_log_t *log,
-                                       const char *kmsid) {
+                                       const char *kmsid,
+                                       _mongocrypt_log_t *log) {
     BSON_ASSERT_PARAM(kms_ctx);
     BSON_ASSERT_PARAM(endpoint);
     BSON_ASSERT_PARAM(unique_identifier);

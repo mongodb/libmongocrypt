@@ -590,9 +590,9 @@ bool _mongocrypt_key_broker_add_doc(_mongocrypt_key_broker_t *kb,
         if (!_mongocrypt_kms_ctx_init_aws_decrypt(&key_returned->kms,
                                                   kms_providers,
                                                   key_doc,
-                                                  &kb->crypt->log,
                                                   kb->crypt->crypto,
-                                                  key_doc->kek.kmsid)) {
+                                                  key_doc->kek.kmsid,
+                                                  &kb->crypt->log)) {
             mongocrypt_kms_ctx_status(&key_returned->kms, kb->status);
             _key_broker_fail(kb);
             goto done;
@@ -610,11 +610,11 @@ bool _mongocrypt_key_broker_add_doc(_mongocrypt_key_broker_t *kb,
             if (!mc_mapof_kmsid_to_authrequest_has(kb->auth_requests, key_doc->kek.kmsid)) {
                 auth_request_t *ar = auth_request_new();
                 if (!_mongocrypt_kms_ctx_init_azure_auth(&ar->kms,
-                                                         &kb->crypt->log,
                                                          &kc,
                                                          /* The key vault endpoint is used to determine the scope. */
                                                          key_doc->kek.provider.azure.key_vault_endpoint,
-                                                         key_doc->kek.kmsid)) {
+                                                         key_doc->kek.kmsid,
+                                                         &kb->crypt->log)) {
                     mongocrypt_kms_ctx_status(&ar->kms, kb->status);
                     _key_broker_fail(kb);
                     auth_request_destroy(ar);
@@ -628,8 +628,8 @@ bool _mongocrypt_key_broker_add_doc(_mongocrypt_key_broker_t *kb,
                                                           kms_providers,
                                                           access_token,
                                                           key_doc,
-                                                          &kb->crypt->log,
-                                                          key_returned->doc->kek.kmsid)) {
+                                                          key_returned->doc->kek.kmsid,
+                                                          &kb->crypt->log)) {
                 mongocrypt_kms_ctx_status(&key_returned->kms, kb->status);
                 _key_broker_fail(kb);
                 goto done;
@@ -648,11 +648,11 @@ bool _mongocrypt_key_broker_add_doc(_mongocrypt_key_broker_t *kb,
             if (!mc_mapof_kmsid_to_authrequest_has(kb->auth_requests, key_doc->kek.kmsid)) {
                 auth_request_t *ar = auth_request_new();
                 if (!_mongocrypt_kms_ctx_init_gcp_auth(&ar->kms,
-                                                       &kb->crypt->log,
                                                        &kb->crypt->opts,
                                                        &kc,
                                                        key_doc->kek.provider.gcp.endpoint,
-                                                       key_doc->kek.kmsid)) {
+                                                       key_doc->kek.kmsid,
+                                                       &kb->crypt->log)) {
                     mongocrypt_kms_ctx_status(&ar->kms, kb->status);
                     _key_broker_fail(kb);
                     auth_request_destroy(ar);
@@ -666,8 +666,8 @@ bool _mongocrypt_key_broker_add_doc(_mongocrypt_key_broker_t *kb,
                                                       kms_providers,
                                                       access_token,
                                                       key_doc,
-                                                      &kb->crypt->log,
-                                                      key_returned->doc->kek.kmsid)) {
+                                                      key_returned->doc->kek.kmsid,
+                                                      &kb->crypt->log)) {
                 mongocrypt_kms_ctx_status(&key_returned->kms, kb->status);
                 _key_broker_fail(kb);
                 goto done;
@@ -697,8 +697,8 @@ bool _mongocrypt_key_broker_add_doc(_mongocrypt_key_broker_t *kb,
         if (!_mongocrypt_kms_ctx_init_kmip_get(&key_returned->kms,
                                                endpoint,
                                                unique_identifier,
-                                               &kb->crypt->log,
-                                               key_doc->kek.kmsid)) {
+                                               key_doc->kek.kmsid,
+                                               &kb->crypt->log)) {
             mongocrypt_kms_ctx_status(&key_returned->kms, kb->status);
             _key_broker_fail(kb);
             goto done;
@@ -882,8 +882,8 @@ bool _mongocrypt_key_broker_kms_done(_mongocrypt_key_broker_t *kb, _mongocrypt_o
                                                               kms_providers,
                                                               access_token,
                                                               key_returned->doc,
-                                                              &kb->crypt->log,
-                                                              key_returned->doc->kek.kmsid)) {
+                                                              key_returned->doc->kek.kmsid,
+                                                              &kb->crypt->log)) {
                     mongocrypt_kms_ctx_status(&key_returned->kms, kb->status);
                     bson_free(access_token);
                     return _key_broker_fail(kb);
@@ -908,8 +908,8 @@ bool _mongocrypt_key_broker_kms_done(_mongocrypt_key_broker_t *kb, _mongocrypt_o
                                                           kms_providers,
                                                           access_token,
                                                           key_returned->doc,
-                                                          &kb->crypt->log,
-                                                          key_returned->doc->kek.kmsid)) {
+                                                          key_returned->doc->kek.kmsid,
+                                                          &kb->crypt->log)) {
                     mongocrypt_kms_ctx_status(&key_returned->kms, kb->status);
                     bson_free(access_token);
                     return _key_broker_fail(kb);

@@ -364,7 +364,7 @@ typedef struct {
  *
  * @param status is an optional status to set an error message if `mcr_dll_open` fails.
  */
-static _loaded_csfle _try_load_csfle(const char *filepath, _mongocrypt_log_t *log, mongocrypt_status_t *status) {
+static _loaded_csfle _try_load_csfle(const char *filepath, mongocrypt_status_t *status, _mongocrypt_log_t *log) {
     // Try to open the dynamic lib
     mcr_dll lib = mcr_dll_open(filepath);
     // Check for errors, which are represented by strings
@@ -478,7 +478,7 @@ static _loaded_csfle _try_find_csfle(mongocrypt_t *crypt) {
             // Do not allow a plain filename to go through, as that will cause the
             // DLL load to search the system.
             mstr_assign(&csfle_cand_filepath, mpath_absolute(csfle_cand_filepath.view, MPATH_NATIVE));
-            candidate_csfle = _try_load_csfle(csfle_cand_filepath.data, &crypt->log, crypt->status);
+            candidate_csfle = _try_load_csfle(csfle_cand_filepath.data, crypt->status, &crypt->log);
         }
     } else {
         // No override path was specified, so try to find it on the provided
@@ -500,7 +500,7 @@ static _loaded_csfle _try_find_csfle(mongocrypt_t *crypt) {
                 }
             }
             // Try to load the file:
-            candidate_csfle = _try_load_csfle(csfle_cand_filepath.data, &crypt->log, NULL /* status */);
+            candidate_csfle = _try_load_csfle(csfle_cand_filepath.data, NULL /* status */, &crypt->log);
             if (candidate_csfle.okay) {
                 // Stop searching:
                 break;
