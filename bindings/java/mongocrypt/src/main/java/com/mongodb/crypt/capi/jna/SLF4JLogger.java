@@ -16,7 +16,7 @@
  *
  */
 
-package com.mongodb.crypt.capi;
+package com.mongodb.crypt.capi.jna;
 
 import org.slf4j.LoggerFactory;
 

@@ -15,31 +15,35 @@
  *
  */
 
-package com.mongodb.crypt.capi;
+package com.mongodb.crypt.capi.jna;
 
-import com.mongodb.crypt.capi.CAPI.mongocrypt_binary_t;
-import com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_t;
-import com.mongodb.crypt.capi.CAPI.mongocrypt_kms_ctx_t;
+import com.mongodb.crypt.capi.MongoCryptContext;
+import com.mongodb.crypt.capi.MongoCryptException;
+import com.mongodb.crypt.capi.MongoKeyDecryptor;
+import com.mongodb.crypt.capi.jna.CAPI.mongocrypt_binary_t;
+import com.mongodb.crypt.capi.jna.CAPI.mongocrypt_ctx_t;
+import com.mongodb.crypt.capi.jna.CAPI.mongocrypt_kms_ctx_t;
 import org.bson.BsonDocument;
 import org.bson.RawBsonDocument;
 
-import static com.mongodb.crypt.capi.CAPI.mongocrypt_binary_destroy;
-import static com.mongodb.crypt.capi.CAPI.mongocrypt_binary_new;
-import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_destroy;
-import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_finalize;
-import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_kms_done;
-import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_mongo_done;
-import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_mongo_feed;
-import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_mongo_op;
-import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_next_kms_ctx;
-import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_provide_kms_providers;
-import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_state;
-import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_status;
-import static com.mongodb.crypt.capi.CAPI.mongocrypt_status_destroy;
-import static com.mongodb.crypt.capi.CAPI.mongocrypt_status_new;
-import static com.mongodb.crypt.capi.CAPI.mongocrypt_status_t;
-import static com.mongodb.crypt.capi.CAPIHelper.toBinary;
-import static com.mongodb.crypt.capi.CAPIHelper.toDocument;
+import static com.mongodb.crypt.capi.jna.CAPI.mongocrypt_binary_destroy;
+import static com.mongodb.crypt.capi.jna.CAPI.mongocrypt_binary_new;
+import static com.mongodb.crypt.capi.jna.CAPI.mongocrypt_ctx_destroy;
+import static com.mongodb.crypt.capi.jna.CAPI.mongocrypt_ctx_finalize;
+import static com.mongodb.crypt.capi.jna.CAPI.mongocrypt_ctx_kms_done;
+import static com.mongodb.crypt.capi.jna.CAPI.mongocrypt_ctx_mongo_done;
+import static com.mongodb.crypt.capi.jna.CAPI.mongocrypt_ctx_mongo_feed;
+import static com.mongodb.crypt.capi.jna.CAPI.mongocrypt_ctx_mongo_op;
+import static com.mongodb.crypt.capi.jna.CAPI.mongocrypt_ctx_next_kms_ctx;
+import static com.mongodb.crypt.capi.jna.CAPI.mongocrypt_ctx_provide_kms_providers;
+import static com.mongodb.crypt.capi.jna.CAPI.mongocrypt_ctx_state;
+import static com.mongodb.crypt.capi.jna.CAPI.mongocrypt_ctx_status;
+import static com.mongodb.crypt.capi.jna.CAPI.mongocrypt_status_destroy;
+import static com.mongodb.crypt.capi.jna.CAPI.mongocrypt_status_new;
+import static com.mongodb.crypt.capi.jna.CAPI.mongocrypt_status_t;
+import static com.mongodb.crypt.capi.jna.CAPIHelper.toBinary;
+import static com.mongodb.crypt.capi.jna.CAPIHelper.toCryptException;
+import static com.mongodb.crypt.capi.jna.CAPIHelper.toDocument;
 import static org.bson.assertions.Assertions.isTrue;
 import static org.bson.assertions.Assertions.notNull;
 
@@ -153,7 +157,7 @@ class MongoCryptContextImpl implements MongoCryptContext {
     static void throwExceptionFromStatus(final mongocrypt_ctx_t wrapped) {
         mongocrypt_status_t status = mongocrypt_status_new();
         mongocrypt_ctx_status(wrapped, status);
-        MongoCryptException e = new MongoCryptException(status);
+        MongoCryptException e = toCryptException(status);
         mongocrypt_status_destroy(status);
         throw e;
     }

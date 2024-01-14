@@ -15,9 +15,10 @@
  *
  */
 
-package com.mongodb.crypt.capi;
+package com.mongodb.crypt.capi.jna;
 
-import com.mongodb.crypt.capi.CAPI.mongocrypt_binary_t;
+import com.mongodb.crypt.capi.MongoCryptException;
+import com.mongodb.crypt.capi.jna.CAPI.mongocrypt_binary_t;
 import com.sun.jna.Pointer;
 import org.bson.BsonBinaryWriter;
 import org.bson.BsonDocument;
@@ -31,10 +32,10 @@ import org.bson.io.BasicOutputBuffer;
 
 import java.nio.ByteBuffer;
 
-import static com.mongodb.crypt.capi.CAPI.mongocrypt_binary_data;
-import static com.mongodb.crypt.capi.CAPI.mongocrypt_binary_len;
-import static com.mongodb.crypt.capi.CAPI.mongocrypt_binary_new_from_data;
+import static com.mongodb.crypt.capi.jna.CAPI.mongocrypt_binary_new_from_data;
+import static com.mongodb.crypt.capi.jna.CAPI.mongocrypt_status_code;
 import static java.lang.String.format;
+import static org.bson.assertions.Assertions.isTrue;
 
 final class CAPIHelper {
 
@@ -89,6 +90,14 @@ final class CAPIHelper {
         }
         Pointer outPointer = binary.data();
         outPointer.write(0, bytes, 0, bytes.length);
+    }
+
+    static MongoCryptException toCryptException(final CAPI.mongocrypt_status_t status) {
+        isTrue("status not ok", !CAPI.mongocrypt_status_ok(status));
+        String msg = CAPI.mongocrypt_status_message(status, null).toString();
+        int code = mongocrypt_status_code(status);
+
+        return new MongoCryptException(msg, code);
     }
 
     private CAPIHelper() {

@@ -15,19 +15,19 @@
  *
  */
 
-package com.mongodb.crypt.capi;
+package com.mongodb.crypt.capi.jna;
 
-import com.mongodb.crypt.capi.CAPI.cstring;
-import com.mongodb.crypt.capi.CAPI.mongocrypt_binary_t;
-import com.mongodb.crypt.capi.CAPI.mongocrypt_random_fn;
-import com.mongodb.crypt.capi.CAPI.mongocrypt_status_t;
+import com.mongodb.crypt.capi.jna.CAPI.cstring;
+import com.mongodb.crypt.capi.jna.CAPI.mongocrypt_binary_t;
+import com.mongodb.crypt.capi.jna.CAPI.mongocrypt_random_fn;
+import com.mongodb.crypt.capi.jna.CAPI.mongocrypt_status_t;
 import com.sun.jna.Pointer;
 
 import java.security.SecureRandom;
 
-import static com.mongodb.crypt.capi.CAPI.MONGOCRYPT_STATUS_ERROR_CLIENT;
-import static com.mongodb.crypt.capi.CAPI.mongocrypt_status_set;
-import static com.mongodb.crypt.capi.CAPIHelper.writeByteArrayToBinary;
+import static com.mongodb.crypt.capi.jna.CAPI.MONGOCRYPT_STATUS_ERROR_CLIENT;
+import static com.mongodb.crypt.capi.jna.CAPI.mongocrypt_status_set;
+import static com.mongodb.crypt.capi.jna.CAPIHelper.writeByteArrayToBinary;
 
 class SecureRandomCallback implements mongocrypt_random_fn {
     private final SecureRandom secureRandom;

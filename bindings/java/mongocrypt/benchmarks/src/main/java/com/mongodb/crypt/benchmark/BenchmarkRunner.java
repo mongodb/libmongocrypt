@@ -18,6 +18,8 @@
 package com.mongodb.crypt.benchmark;
 
 import com.mongodb.crypt.capi.*;
+import com.mongodb.crypt.capi.jna.CAPI;
+import com.mongodb.crypt.capi.jna.MongoCrypts;
 import org.bson.*;
 
 import java.io.*;

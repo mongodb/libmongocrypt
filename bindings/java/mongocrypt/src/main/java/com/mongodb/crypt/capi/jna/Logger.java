@@ -16,7 +16,7 @@
  *
  */
 
-package com.mongodb.crypt.capi;
+package com.mongodb.crypt.capi.jna;
 
 /**
  * Not part of the public API

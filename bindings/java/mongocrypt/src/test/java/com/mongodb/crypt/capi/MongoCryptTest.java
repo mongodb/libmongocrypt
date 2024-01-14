@@ -18,12 +18,12 @@
 package com.mongodb.crypt.capi;
 
 import com.mongodb.crypt.capi.MongoCryptContext.State;
+import com.mongodb.crypt.capi.jna.MongoCrypts;
 import org.bson.BsonBinary;
 import org.bson.BsonBinarySubType;
 import org.bson.BsonDocument;
 import org.bson.BsonString;
 import org.bson.RawBsonDocument;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
@@ -109,7 +109,7 @@ public class MongoCryptTest {
 
     @Test
     public void testEmptyAwsCredentials() throws URISyntaxException, IOException {
-        MongoCrypt mongoCrypt = MongoCrypts.create(MongoCryptOptions
+        MongoCrypt mongoCrypt = createMongoCrypt(MongoCryptOptions
                 .builder()
                 .kmsProviderOptions(new BsonDocument("aws", new BsonDocument()))
                 .needsKmsCredentialsStateEnabled(true)
@@ -299,7 +299,7 @@ public class MongoCryptTest {
     }
 
     private MongoCrypt createMongoCrypt() {
-        return MongoCrypts.create(MongoCryptOptions
+        return createMongoCrypt(MongoCryptOptions
                 .builder()
                 .awsKmsProviderOptions(MongoAwsKmsProviderOptions.builder()
                         .accessKeyId("example")
@@ -309,6 +309,10 @@ public class MongoCryptTest {
                         .localMasterKey(ByteBuffer.wrap(new byte[96]))
                         .build())
                 .build());
+    }
+
+    private MongoCrypt createMongoCrypt(final MongoCryptOptions options) {
+        return MongoCrypts.create(options);
     }
 
     private static BsonDocument getResourceAsDocument(final String fileName)  {

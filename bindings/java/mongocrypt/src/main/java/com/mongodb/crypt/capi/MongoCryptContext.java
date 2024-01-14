@@ -17,6 +17,7 @@
 
 package com.mongodb.crypt.capi;
 
+import com.mongodb.crypt.capi.jna.CAPI;
 import org.bson.BsonDocument;
 import org.bson.RawBsonDocument;
 
@@ -73,7 +74,7 @@ public interface MongoCryptContext extends Closeable {
             this.index = index;
         }
 
-        static State fromIndex(final int index) {
+        public static State fromIndex(final int index) {
             for (State state : State.values()) {
                 if (state.index == index) {
                     return state;

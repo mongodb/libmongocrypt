@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-present MongoDB, Inc.
+ * Copyright 2008-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,24 +15,17 @@
  *
  */
 
-package com.mongodb.crypt.capi;
+package com.mongodb.crypt.capi.jna;
 
-/**
- * The entry point to the MongoCrypt library.
- */
-public class MongoCrypts {
+import com.sun.jna.Memory;
 
-    /**
-     * Create a {@code MongoCrypt} instance.
-     *
-     * <p>
-     * Make sure that JNA is able to find the shared library, most likely by setting the jna.library.path system property
-     * </p>
-     *
-     * @param options the options
-     * @return the instance
-     */
-    public static MongoCrypt create(MongoCryptOptions options) {
-        return new MongoCryptImpl(options);
+// Subclass of JNA's Memory class so that we can call its protected dispose method
+class DisposableMemory extends Memory {
+    DisposableMemory(final int size) {
+        super(size);
+    }
+
+    public void dispose() {
+        super.dispose();
     }
 }

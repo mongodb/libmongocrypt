@@ -15,29 +15,31 @@
  *
  */
 
-package com.mongodb.crypt.capi;
+package com.mongodb.crypt.capi.jna;
 
-import com.mongodb.crypt.capi.CAPI.mongocrypt_binary_t;
-import com.mongodb.crypt.capi.CAPI.mongocrypt_kms_ctx_t;
-import com.mongodb.crypt.capi.CAPI.mongocrypt_status_t;
+import com.mongodb.crypt.capi.MongoCryptException;
+import com.mongodb.crypt.capi.MongoKeyDecryptor;
+import com.mongodb.crypt.capi.jna.CAPI.mongocrypt_binary_t;
+import com.mongodb.crypt.capi.jna.CAPI.mongocrypt_kms_ctx_t;
+import com.mongodb.crypt.capi.jna.CAPI.mongocrypt_status_t;
 import com.sun.jna.Pointer;
 import com.sun.jna.ptr.PointerByReference;
 
 import java.nio.ByteBuffer;
 
-import static com.mongodb.crypt.capi.CAPI.mongocrypt_binary_destroy;
-import static com.mongodb.crypt.capi.CAPI.mongocrypt_binary_new;
-import static com.mongodb.crypt.capi.CAPI.mongocrypt_kms_ctx_bytes_needed;
-import static com.mongodb.crypt.capi.CAPI.mongocrypt_kms_ctx_endpoint;
-import static com.mongodb.crypt.capi.CAPI.mongocrypt_kms_ctx_feed;
-import static com.mongodb.crypt.capi.CAPI.mongocrypt_kms_ctx_get_kms_provider;
-import static com.mongodb.crypt.capi.CAPI.mongocrypt_kms_ctx_message;
-import static com.mongodb.crypt.capi.CAPI.mongocrypt_kms_ctx_status;
-import static com.mongodb.crypt.capi.CAPI.mongocrypt_status;
-import static com.mongodb.crypt.capi.CAPI.mongocrypt_status_destroy;
-import static com.mongodb.crypt.capi.CAPI.mongocrypt_status_new;
-import static com.mongodb.crypt.capi.CAPIHelper.toBinary;
-import static com.mongodb.crypt.capi.CAPIHelper.toByteBuffer;
+import static com.mongodb.crypt.capi.jna.CAPI.mongocrypt_binary_destroy;
+import static com.mongodb.crypt.capi.jna.CAPI.mongocrypt_binary_new;
+import static com.mongodb.crypt.capi.jna.CAPI.mongocrypt_kms_ctx_bytes_needed;
+import static com.mongodb.crypt.capi.jna.CAPI.mongocrypt_kms_ctx_endpoint;
+import static com.mongodb.crypt.capi.jna.CAPI.mongocrypt_kms_ctx_feed;
+import static com.mongodb.crypt.capi.jna.CAPI.mongocrypt_kms_ctx_get_kms_provider;
+import static com.mongodb.crypt.capi.jna.CAPI.mongocrypt_kms_ctx_message;
+import static com.mongodb.crypt.capi.jna.CAPI.mongocrypt_kms_ctx_status;
+import static com.mongodb.crypt.capi.jna.CAPI.mongocrypt_status_destroy;
+import static com.mongodb.crypt.capi.jna.CAPI.mongocrypt_status_new;
+import static com.mongodb.crypt.capi.jna.CAPIHelper.toBinary;
+import static com.mongodb.crypt.capi.jna.CAPIHelper.toByteBuffer;
+import static com.mongodb.crypt.capi.jna.CAPIHelper.toCryptException;
 import static org.bson.assertions.Assertions.notNull;
 
 class MongoKeyDecryptorImpl implements MongoKeyDecryptor {
@@ -97,7 +99,7 @@ class MongoKeyDecryptorImpl implements MongoKeyDecryptor {
     private void throwExceptionFromStatus() {
         mongocrypt_status_t status = mongocrypt_status_new();
         mongocrypt_kms_ctx_status(wrapped, status);
-        MongoCryptException e = new MongoCryptException(status);
+        MongoCryptException e = toCryptException(status);
         mongocrypt_status_destroy(status);
         throw e;
     }
