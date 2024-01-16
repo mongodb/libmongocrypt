@@ -531,9 +531,22 @@ static bool _state_need_kms(_state_machine_t *state_machine, bson_error_t *error
 
         iov.iov_base = (char *)mongocrypt_binary_data(http_req);
         iov.iov_len = mongocrypt_binary_len(http_req);
-
         if (state_machine->trace) {
-            MONGOC_DEBUG("--> sending KMS message: \n%.*s", (int)iov.iov_len, (char *)iov.iov_base);
+            MONGOC_DEBUG("--> sending KMS message:");
+            const char *kms_provider = mongocrypt_kms_ctx_get_kms_provider(kms_ctx, NULL);
+            if (0 == strcmp(kms_provider, "kmip")) {
+                // Print KMIP protocol as hex.
+                uint8_t *as_u8_ptr = iov.iov_base;
+                for (size_t i = 0; i < iov.iov_len; i++) {
+                    printf("%02x", as_u8_ptr[i]);
+                }
+            } else {
+                // Print HTTP protocol as text.
+                char *as_char_ptr = iov.iov_base;
+                BSON_ASSERT(iov.iov_len <= INT_MAX);
+                printf("%.*s", (int)iov.iov_len, as_char_ptr);
+            }
+            printf("\n");
         }
 
         if (!_mongoc_stream_writev_full(tls_stream, &iov, 1, sockettimeout, error)) {
@@ -541,6 +554,9 @@ static bool _state_need_kms(_state_machine_t *state_machine, bson_error_t *error
         }
 
         /* Read and feed reply. */
+        if (state_machine->trace) {
+            MONGOC_DEBUG("<-- read KMS reply:");
+        }
         while (mongocrypt_kms_ctx_bytes_needed(kms_ctx) > 0) {
 #define BUFFER_SIZE 1024
             uint8_t buf[BUFFER_SIZE];
@@ -571,7 +587,19 @@ static bool _state_need_kms(_state_machine_t *state_machine, bson_error_t *error
             }
 
             if (state_machine->trace) {
-                MONGOC_DEBUG("<-- read KMS reply: %.*s", (int)read_ret, (char *)buf);
+                const char *kms_provider = mongocrypt_kms_ctx_get_kms_provider(kms_ctx, NULL);
+                if (0 == strcmp(kms_provider, "kmip")) {
+                    // Print KMIP protocol as hex.
+                    for (ssize_t i = 0; i < read_ret; i++) {
+                        printf("%02x", buf[i]);
+                    }
+                } else {
+                    char *as_char_ptr = (char *)buf;
+                    // Print HTTP protocol as text.
+                    BSON_ASSERT(read_ret >= 0);
+                    BSON_ASSERT(read_ret <= INT_MAX);
+                    printf("%.*s", (int)read_ret, as_char_ptr);
+                }
             }
 
             mongocrypt_binary_destroy(http_reply);
@@ -580,6 +608,9 @@ static bool _state_need_kms(_state_machine_t *state_machine, bson_error_t *error
                 _test_kms_ctx_check_error(kms_ctx, error, true);
                 goto fail;
             }
+        }
+        if (state_machine->trace) {
+            printf("\n");
         }
         kms_ctx = mongocrypt_ctx_next_kms_ctx(state_machine->ctx);
     }

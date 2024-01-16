@@ -158,8 +158,10 @@ char *_mongocrypt_new_json_string_from_binary(mongocrypt_binary_t *binary);
 bool _mongocrypt_needs_credentials(mongocrypt_t *crypt);
 
 /* _mongocrypt_needs_credentials returns true if @crypt was configured to
- * request credentials for @provider. */
-bool _mongocrypt_needs_credentials_for_provider(mongocrypt_t *crypt, _mongocrypt_kms_provider_t provider);
+ * request credentials for @provider and optional @name. @name may be NULL. */
+bool _mongocrypt_needs_credentials_for_provider(mongocrypt_t *crypt,
+                                                _mongocrypt_kms_provider_t provider,
+                                                const char *name);
 
 /**
  * Enable/disable the use of FLE2v2 payload types for write.

@@ -1,0 +1,16 @@
+HTTP/1.1 200 OK
+Cache-Control: no-cache
+Pragma: no-cache
+Content-Type: application/json; charset=utf-8
+Expires: -1
+x-ms-keyvault-region: eastus
+x-ms-request-id: 180ebf78-d158-4349-bdc3-b6868fdcb7d0
+x-ms-keyvault-service-version: 1.9.1054.1
+x-ms-keyvault-network-info: conn_type=Ipv4;addr=98.110.73.14;act_addr_fam=InterNetwork;
+X-Content-Type-Options: nosniff
+Strict-Transport-Security: max-age=31536000;includeSubDomains
+Date: Tue, 21 Nov 2023 13:35:21 GMT
+Connection: close
+Content-Length: 455
+
+{"kid":"https://key-vault-csfle.vault.azure.net/keys/key-name-csfle/bf035425d3f44c51bb22244b7f58e350","value":"3hrs0cMlsmS7DDN2GNzR8n-CF59mzvrMTP3_dmBV1zzREob5muan2rYCcs7MU1k_ANZGaP4lWuDDVFuzwMTbhioFu64ypBDdMcKJ1VXMiKKNia1KgxJyDhDcc9Mq1fROvf5zXuceSBm1LjRenTMieBnFfO-V24cyDnj7KLdbdQHuf49RMHCWN7yq_vQ35Hobvzh1AO5WLB4MJUJLYh1r3BI2CNhMQT45L9Jkn_A4sTyKWfCpdVYgsi6XOv8bYSgM3fqhZnrtp2Q8cNY-_Nft08px8RGuLTLIzdrLyrtZ6dwpv7tWyamBJYxB4AQNKSiuKLxyvYLIxwQGasZrcfQqUQ"}

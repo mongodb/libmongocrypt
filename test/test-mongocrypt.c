@@ -269,7 +269,7 @@ void _mongocrypt_tester_satisfy_kms(_mongocrypt_tester_t *tester, mongocrypt_kms
 
     BSON_ASSERT(mongocrypt_kms_ctx_endpoint(kms, &endpoint));
     BSON_ASSERT(endpoint == strstr(endpoint, "kms.") && strstr(endpoint, ".amazonaws.com"));
-    mongocrypt_kms_ctx_feed(kms, TEST_FILE("./test/example/kms-decrypt-reply.txt"));
+    mongocrypt_kms_ctx_feed(kms, TEST_FILE("./test/data/kms-aws/decrypt-response.txt"));
     BSON_ASSERT(0 == mongocrypt_kms_ctx_bytes_needed(kms));
 }
 
@@ -726,7 +726,7 @@ static void _test_setopt_kms_providers(_mongocrypt_tester_t *tester) {
          "'privateKey': {'$binary': {'base64': 'AAAA', 'subType': '00'}} }}"},
         /* endpoint is not required. */
         {"{'gcp': {'email': 'test', 'privateKey': 'AAAA' }}"},
-        {"{'gcp': {'privateKey': 'AAAA'}}", "expected UTF-8 gcp.email"},
+        {"{'gcp': {'privateKey': 'AAAA'}}", "Failed to parse KMS provider `gcp`: expected UTF-8 email"},
         {"{'gcp': {'email': 'test', 'privateKey': 'invalid base64' }}", "unable to parse base64"},
         {"{'gcp': {'endpoint': 'example', 'email': 'test', 'privateKey': "
          "'AAAA'}}",
@@ -886,6 +886,7 @@ int main(int argc, char **argv) {
     _mongocrypt_tester_install_mc_reader(&tester);
     _mongocrypt_tester_install_mc_writer(&tester);
     _mongocrypt_tester_install_opts(&tester);
+    _mongocrypt_tester_install_named_kms_providers(&tester);
 
 #ifdef MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO
     char osversion[32];

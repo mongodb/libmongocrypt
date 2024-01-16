@@ -70,6 +70,12 @@ bool kms_ctx_feed_all(mongocrypt_kms_ctx_t *kms_ctx, const uint8_t *data, uint32
     while (mongocrypt_kms_ctx_bytes_needed(kms_ctx) > 0) {
         uint32_t len = mongocrypt_kms_ctx_bytes_needed(kms_ctx);
 
+        // Cap `len` to the total input length.
+        // `mongocrypt_kms_ctx_bytes_needed` may request more bytes than is in the response.
+        // The HTTP response parser defaults to requesting 1024 bytes initially.
+        if (len > datalen - offset) {
+            len = datalen - offset;
+        }
         ASSERT_CMPINT(offset + len, <=, datalen);
         bytes = mongocrypt_binary_new_from_data((uint8_t *)data + offset, len);
         if (!mongocrypt_kms_ctx_feed(kms_ctx, bytes)) {

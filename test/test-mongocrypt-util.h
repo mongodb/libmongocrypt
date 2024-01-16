@@ -31,6 +31,9 @@ char *data_to_hex(const uint8_t *data, size_t len);
 /* bson_iter_bson iterates a document or array into a bson_t. */
 void bson_iter_bson(bson_iter_t *iter, bson_t *bson);
 
+// `kms_ctx_feed_all` repeatedly calls `mongocrypt_kms_ctx_feed`.
+// Returns false on a failed call to `mongocrypt_kms_ctx_feed`.
+// Useful for KMIP. The KMIP response parser expects two calls: (length, then data).
 bool kms_ctx_feed_all(mongocrypt_kms_ctx_t *kms_ctx, const uint8_t *data, uint32_t datalen);
 
 #endif /* TEST_MONGOCRYPT_UTIL_H */

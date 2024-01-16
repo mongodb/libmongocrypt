@@ -107,6 +107,7 @@ static bool _kms_kmip_start(mongocrypt_ctx_t *ctx, const mc_kms_creds_t *kc) {
                                                     endpoint,
                                                     secretdata.data,
                                                     secretdata.len,
+                                                    ctx->opts.kek.kmsid,
                                                     &ctx->crypt->log)) {
             mongocrypt_kms_ctx_status(&dkctx->kms, ctx->status);
             goto fail;
@@ -121,6 +122,7 @@ static bool _kms_kmip_start(mongocrypt_ctx_t *ctx, const mc_kms_creds_t *kc) {
         if (!_mongocrypt_kms_ctx_init_kmip_activate(&dkctx->kms,
                                                     endpoint,
                                                     dkctx->kmip_unique_identifier,
+                                                    ctx->opts.kek.kmsid,
                                                     &ctx->crypt->log)) {
             mongocrypt_kms_ctx_status(&dkctx->kms, ctx->status);
             goto fail;
@@ -134,6 +136,7 @@ static bool _kms_kmip_start(mongocrypt_ctx_t *ctx, const mc_kms_creds_t *kc) {
         if (!_mongocrypt_kms_ctx_init_kmip_get(&dkctx->kms,
                                                endpoint,
                                                dkctx->kmip_unique_identifier,
+                                               ctx->opts.kek.kmsid,
                                                &ctx->crypt->log)) {
             mongocrypt_kms_ctx_status(&dkctx->kms, ctx->status);
             goto fail;
@@ -214,8 +217,9 @@ static bool _kms_start(mongocrypt_ctx_t *ctx) {
                                                   kms_providers,
                                                   &ctx->opts,
                                                   &dkctx->plaintext_key_material,
-                                                  &ctx->crypt->log,
-                                                  ctx->crypt->crypto)) {
+                                                  ctx->crypt->crypto,
+                                                  ctx->opts.kek.kmsid,
+                                                  &ctx->crypt->log)) {
             mongocrypt_kms_ctx_status(&dkctx->kms, ctx->status);
             _mongocrypt_ctx_fail(ctx);
             goto done;
@@ -231,20 +235,22 @@ static bool _kms_start(mongocrypt_ctx_t *ctx) {
         }
         if (access_token) {
             if (!_mongocrypt_kms_ctx_init_azure_wrapkey(&dkctx->kms,
-                                                        &ctx->crypt->log,
                                                         kms_providers,
                                                         &ctx->opts,
                                                         access_token,
-                                                        &dkctx->plaintext_key_material)) {
+                                                        &dkctx->plaintext_key_material,
+                                                        ctx->opts.kek.kmsid,
+                                                        &ctx->crypt->log)) {
                 mongocrypt_kms_ctx_status(&dkctx->kms, ctx->status);
                 _mongocrypt_ctx_fail(ctx);
                 goto done;
             }
         } else {
             if (!_mongocrypt_kms_ctx_init_azure_auth(&dkctx->kms,
-                                                     &ctx->crypt->log,
                                                      &kc,
-                                                     ctx->opts.kek.provider.azure.key_vault_endpoint)) {
+                                                     ctx->opts.kek.provider.azure.key_vault_endpoint,
+                                                     ctx->opts.kek.kmsid,
+                                                     &ctx->crypt->log)) {
                 mongocrypt_kms_ctx_status(&dkctx->kms, ctx->status);
                 _mongocrypt_ctx_fail(ctx);
                 goto done;
@@ -260,21 +266,23 @@ static bool _kms_start(mongocrypt_ctx_t *ctx) {
         }
         if (access_token) {
             if (!_mongocrypt_kms_ctx_init_gcp_encrypt(&dkctx->kms,
-                                                      &ctx->crypt->log,
                                                       kms_providers,
                                                       &ctx->opts,
                                                       access_token,
-                                                      &dkctx->plaintext_key_material)) {
+                                                      &dkctx->plaintext_key_material,
+                                                      ctx->opts.kek.kmsid,
+                                                      &ctx->crypt->log)) {
                 mongocrypt_kms_ctx_status(&dkctx->kms, ctx->status);
                 _mongocrypt_ctx_fail(ctx);
                 goto done;
             }
         } else {
             if (!_mongocrypt_kms_ctx_init_gcp_auth(&dkctx->kms,
-                                                   &ctx->crypt->log,
                                                    &ctx->crypt->opts,
                                                    &kc,
-                                                   ctx->opts.kek.provider.gcp.endpoint)) {
+                                                   ctx->opts.kek.provider.gcp.endpoint,
+                                                   ctx->opts.kek.kmsid,
+                                                   &ctx->crypt->log)) {
                 mongocrypt_kms_ctx_status(&dkctx->kms, ctx->status);
                 _mongocrypt_ctx_fail(ctx);
                 goto done;
@@ -494,7 +502,7 @@ bool mongocrypt_ctx_datakey_init(mongocrypt_ctx_t *ctx) {
         }
     }
 
-    if (_mongocrypt_needs_credentials_for_provider(ctx->crypt, ctx->opts.kek.kms_provider)) {
+    if (_mongocrypt_needs_credentials_for_provider(ctx->crypt, ctx->opts.kek.kms_provider, ctx->opts.kek.kmsid_name)) {
         ctx->state = MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS;
     } else if (!_kms_start(ctx)) {
         goto done;
