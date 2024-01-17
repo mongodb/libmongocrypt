@@ -179,11 +179,11 @@ install (
 # users during find_package()
 if (USE_SHARED_LIBBSON)
    target_link_libraries (_mongocrypt-libbson_for_shared INTERFACE $<BUILD_INTERFACE:bson_shared>)
+   target_link_libraries (_mongocrypt-libbson_for_static INTERFACE $<BUILD_INTERFACE:bson_shared>)
 else ()
    target_link_libraries (_mongocrypt-libbson_for_shared INTERFACE $<BUILD_INTERFACE:bson_static>)
+   target_link_libraries (_mongocrypt-libbson_for_static INTERFACE $<BUILD_INTERFACE:bson_static>)
 endif ()
-# libbson_for_static always links to the static libbson:
-target_link_libraries (_mongocrypt-libbson_for_static INTERFACE $<BUILD_INTERFACE:bson_static>)
 
 if (TARGET mongoc_static)
    # And an alias to the mongoc target for use in some test cases

@@ -380,6 +380,7 @@ target_compile_definitions (intel_dfp_obj PUBLIC
 # Suppress warnings in the Intel library, as it generates a lot that aren't of interest
 target_compile_options (intel_dfp_obj PRIVATE -w)
 target_include_directories(intel_dfp_obj PUBLIC ${intel_dfp_SOURCE_DIR}/LIBRARY/src)
+set_target_properties (intel_dfp_obj PROPERTIES C_VISIBILITY_PRESET hidden)
 
 # Define an interface library that attaches the built TUs to the consumer
 add_library (_mongocrypt_intel_dfp INTERFACE)

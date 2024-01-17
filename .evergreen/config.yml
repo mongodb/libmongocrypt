@@ -496,6 +496,7 @@ tasks:
   - func: "fetch source"
   - func: "build csharp and test"
     vars:
+      compile_env: ${compile_env|} LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS="-DENABLE_CSHARP=ON"
       test_env: PROJECT_DIRECTORY=${project_directory}
 
 - name: build-and-test-node

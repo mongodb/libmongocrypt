@@ -90,11 +90,6 @@ else ()
 endif ()
 
 add_library (
-   kms_message SHARED
-   ${KMS_MESSAGE_SOURCES}
-)
-
-add_library (
    kms_message_static STATIC
    ${KMS_MESSAGE_SOURCES}
 )
@@ -105,26 +100,14 @@ if (NOT WIN32 AND ENABLE_PIC AND "${FPIC_LOCATION}" EQUAL "-1")
    message ("Adding -fPIC to compilation of kms_message_static components")
 endif ()
 
-add_library (
-   kms_message_obj OBJECT
-   ${KMS_MESSAGE_SOURCES}
-)
-
-target_compile_definitions (kms_message_obj PRIVATE ${KMS_MESSAGE_DEFINITIONS})
-
 if (NOT DISABLE_NATIVE_CRYPTO)
    if (WIN32)
-      target_link_libraries(kms_message "bcrypt" "crypt32")
-      target_link_libraries(kms_message_static "bcrypt" "crypt32")
+      target_link_libraries (kms_message_static "bcrypt" "crypt32")
    elseif (APPLE)
-      target_link_libraries (kms_message "-framework Security -framework CoreFoundation")
       target_link_libraries (kms_message_static "-framework Security -framework CoreFoundation")
    else()
       include (FindOpenSSL)
-      target_link_libraries(kms_message "${OPENSSL_LIBRARIES}")
-      target_include_directories(kms_message SYSTEM PRIVATE "${OPENSSL_INCLUDE_DIR}")
-      target_link_libraries(kms_message_static "${OPENSSL_LIBRARIES}")
-      target_include_directories(kms_message_static SYSTEM PRIVATE "${OPENSSL_INCLUDE_DIR}")
+      target_link_libraries (kms_message_static OpenSSL::Crypto OpenSSL::SSL)
    endif()
 endif ()
 
@@ -137,22 +120,9 @@ if ( MSVC )
     set(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} /W3 /wd4273 /wd4996 /D_CRT_SECURE_NO_WARNINGS")
 endif()
 
-set_target_properties (kms_message PROPERTIES
-   SOVERSION 0
-   VERSION "0.0.0"
-   OUTPUT_NAME "kms_message"
-)
-
 set_target_properties (kms_message_static PROPERTIES
-   SOVERSION 0
-   VERSION "0.0.0"
    OUTPUT_NAME "kms_message-static"
-)
-
-target_compile_definitions (kms_message PRIVATE KMS_MSG_COMPILATION)
-target_compile_definitions (kms_message PRIVATE ${KMS_MESSAGE_DEFINITIONS})
-set_property (TARGET kms_message APPEND PROPERTY
-   COMPATIBLE_INTERFACE_STRING kms_message_MAJOR_VERSION
+   C_VISIBILITY_PRESET hidden
 )
 
 target_compile_definitions (kms_message_static PRIVATE KMS_MSG_COMPILATION)
@@ -162,20 +132,52 @@ set_property (TARGET kms_message_static APPEND PROPERTY
    COMPATIBLE_INTERFACE_STRING kms_message_MAJOR_VERSION
    )
 
+if (ENABLE_SHARED)
+   add_library (
+      kms_message SHARED
+      ${KMS_MESSAGE_SOURCES}
+   )
+
+   if (NOT DISABLE_NATIVE_CRYPTO)
+      if (WIN32)
+         target_link_libraries (kms_message "bcrypt" "crypt32")
+      elseif (APPLE)
+         target_link_libraries (kms_message "-framework Security -framework CoreFoundation")
+      else()
+         target_link_libraries (kms_message OpenSSL::Crypto OpenSSL::SSL)
+      endif()
+   endif ()
+
+   target_compile_definitions (kms_message PRIVATE KMS_MSG_COMPILATION)
+   target_compile_definitions (kms_message PRIVATE ${KMS_MESSAGE_DEFINITIONS})
+   set_target_properties (kms_message PROPERTIES
+      SOVERSION 0
+      VERSION "0.0.0"
+      OUTPUT_NAME "kms_message"
+   )
+
+   set_property (TARGET kms_message APPEND PROPERTY
+      COMPATIBLE_INTERFACE_STRING kms_message_MAJOR_VERSION
+      )
+endif ()
+
 include (CMakePackageConfigHelpers)
 if (ENABLE_STATIC)
-   set (TARGETS_TO_INSTALL kms_message kms_message_static)
-else ()
-   set (TARGETS_TO_INSTALL kms_message)
+   list (APPEND TARGETS_TO_INSTALL kms_message_static)
 endif ()
-install (
-   TARGETS ${TARGETS_TO_INSTALL}
-   EXPORT kms_message_targets
-   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-   INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-)
+if (ENABLE_SHARED)
+   list (APPEND TARGETS_TO_INSTALL kms_message)
+endif ()
+if (TARGETS_TO_INSTALL)
+   install (
+      TARGETS ${TARGETS_TO_INSTALL}
+      EXPORT kms_message_targets
+      LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+      ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+      RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+      INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+   )
+endif ()
 
 install (
    FILES
@@ -246,7 +248,7 @@ install (
 )
 
 # cannot run tests without crypto
-if (NOT DISABLE_NATIVE_CRYPTO)
+if (NOT DISABLE_NATIVE_CRYPTO AND BUILD_TESTING)
    add_executable (
       test_kms_request
       ${KMS_MESSAGE_SOURCES}
@@ -266,8 +268,7 @@ if (NOT DISABLE_NATIVE_CRYPTO)
       target_link_libraries (test_kms_request "-framework Security -framework CoreFoundation")
    else()
       include (FindOpenSSL)
-      target_link_libraries(test_kms_request "${OPENSSL_LIBRARIES}")
-      target_include_directories(test_kms_request SYSTEM PRIVATE "${OPENSSL_INCLUDE_DIR}")
+      target_link_libraries(test_kms_request OpenSSL::Crypto OpenSSL::SSL)
    endif()
 
    add_test (
@@ -278,9 +279,9 @@ if (NOT DISABLE_NATIVE_CRYPTO)
 endif ()
 
 # build online_tests if OpenSSL is available (to create TLS connections).
-if(DISABLE_NATIVE_CRYPTO)
+if (DISABLE_NATIVE_CRYPTO)
    message ("test_kms_azure_online target disabled: Not building with native crypto.")
-elseif(ENABLE_ONLINE_TESTS)
+elseif (ENABLE_ONLINE_TESTS AND BUILD_TESTING)
    add_executable(test_kms_azure_online test/test_kms_azure_online.c test/test_kms_util.c test/test_kms_online_util.c)
    target_include_directories(test_kms_azure_online PRIVATE ${PROJECT_SOURCE_DIR}/src)
    target_compile_definitions(test_kms_azure_online PRIVATE ${KMS_MESSAGE_DEFINITIONS})
