@@ -46,10 +46,7 @@ namespace MongoDB.Libmongocrypt
         /// <value>
         /// The data.
         /// </value>
-        public IntPtr Data
-        {
-            get { return Library.mongocrypt_binary_data(_handle); }
-        }
+        public IntPtr Data => Marshal.ReadIntPtr(_handle.DangerousGetHandle());
 
         /// <summary>
         /// Gets the length.
@@ -57,10 +54,7 @@ namespace MongoDB.Libmongocrypt
         /// <value>
         /// The length.
         /// </value>
-        public uint Length
-        {
-            get { return Library.mongocrypt_binary_len(_handle); }
-        }
+        public uint Length => (uint)Marshal.ReadInt32(_handle.DangerousGetHandle(), IntPtr.Size);
 
         internal BinarySafeHandle Handle => _handle;
 
