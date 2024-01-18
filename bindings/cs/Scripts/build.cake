@@ -11,16 +11,16 @@ var configuration = Argument("configuration", "Release");
 
 var gitVersion = GitVersion();
 
-var buildDirectory = MakeAbsolute(Directory(GetSettingValue("buildDirectory", "./build")));
+var buildDirectory = MakeAbsolute(Directory(GetSettingValue("buildDirectory", "c:\\build")));
 var libmongocryptAllDirectory=buildDirectory.Combine("libmongocrypt-all");
 var downloadedMongocryptDirectory=buildDirectory.Combine("downloadedMongocryptDirectory");
 var localReleaseVersion = "0.0.0-local";
 var releaseVersion = GetSettingValue("releaseVersion", localReleaseVersion);
-var fork = GetSettingValue("fork", "https://github.com/adelinowona/libmongocrypt.git");
-var branch = GetSettingValue("branch", "csharp4846");
+var fork = GetSettingValue("fork", "https://github.com/mongodb/libmongocrypt.git");
+var branch = GetSettingValue("branch", "master");
 
-// 1.8.2 - latest libmongocrypt release
-var libmongocryptAllUrl = GetSettingValue("url", "https://mciuploads.s3.amazonaws.com/libmongocrypt/all/1.8.2/libmongocrypt-all.tar.gz");
+// 1.8.4 - latest libmongocrypt release
+var libmongocryptAllUrl = GetSettingValue("url", "https://mciuploads.s3.amazonaws.com/libmongocrypt/all/1.8.4/libmongocrypt-all.tar.gz");
 
 var csharpBindingsGitTagName = $"csharp-v{releaseVersion}";
 var csharpBindingsDirectory = buildDirectory.Combine(csharpBindingsGitTagName);
