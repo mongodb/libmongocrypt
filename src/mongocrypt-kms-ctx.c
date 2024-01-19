@@ -1842,6 +1842,9 @@ const char *mongocrypt_kms_ctx_get_kms_provider(mongocrypt_kms_ctx_t *kms, uint3
     case MONGOCRYPT_KMS_GCP_DECRYPT: return set_and_ret("gcp", len);
     case MONGOCRYPT_KMS_KMIP_REGISTER:
     case MONGOCRYPT_KMS_KMIP_ACTIVATE:
+    case MONGOCRYPT_KMS_KMIP_CREATE:
+    case MONGOCRYPT_KMS_KMIP_ENCRYPT:
+    case MONGOCRYPT_KMS_KMIP_DECRYPT:
     case MONGOCRYPT_KMS_KMIP_GET: return set_and_ret("kmip", len);
     }
 }
