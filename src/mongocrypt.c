@@ -891,6 +891,14 @@ bool mongocrypt_init(mongocrypt_t *crypt) {
     return _try_enable_csfle(crypt);
 }
 
+bool mongocrypt_is_crypto_available(void) {
+#ifdef MONGOCRYPT_ENABLE_CRYPTO
+    return true;
+#else
+    return false;
+#endif
+}
+
 bool mongocrypt_status(mongocrypt_t *crypt, mongocrypt_status_t *out) {
     BSON_ASSERT_PARAM(crypt);
 

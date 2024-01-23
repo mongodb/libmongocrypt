@@ -759,6 +759,16 @@ void _test_fle2_crypto_via_ecb_hook(_mongocrypt_tester_t *tester) {
 }
 #endif
 
+static void test_is_crypto_available_with_crypto_required(_mongocrypt_tester_t *tester) {
+    // libmongocrypt is built with native crypto.
+    ASSERT(mongocrypt_is_crypto_available());
+}
+
+static void test_is_crypto_available_with_crypto_prohibited(_mongocrypt_tester_t *tester) {
+    // libmongocrypt is not built with native crypto.
+    ASSERT(!mongocrypt_is_crypto_available());
+}
+
 void _mongocrypt_tester_install_crypto_hooks(_mongocrypt_tester_t *tester) {
     INSTALL_TEST_CRYPTO(_test_crypto_hooks_encryption, CRYPTO_OPTIONAL);
     INSTALL_TEST_CRYPTO(_test_crypto_hooks_decryption, CRYPTO_OPTIONAL);
@@ -769,6 +779,8 @@ void _mongocrypt_tester_install_crypto_hooks(_mongocrypt_tester_t *tester) {
     INSTALL_TEST_CRYPTO(_test_crypto_hooks_explicit_err, CRYPTO_OPTIONAL);
     INSTALL_TEST_CRYPTO(_test_crypto_hooks_explicit_sha256_err, CRYPTO_OPTIONAL);
     INSTALL_TEST_CRYPTO(_test_crypto_hook_sign_rsaes_pkcs1_v1_5, CRYPTO_OPTIONAL);
+    INSTALL_TEST_CRYPTO(test_is_crypto_available_with_crypto_required, CRYPTO_REQUIRED);
+    INSTALL_TEST_CRYPTO(test_is_crypto_available_with_crypto_prohibited, CRYPTO_PROHIBITED);
 #ifdef MONGOCRYPT_ENABLE_CRYPTO_LIBCRYPTO
     INSTALL_TEST(_test_fle2_crypto_via_ecb_hook);
 #endif
