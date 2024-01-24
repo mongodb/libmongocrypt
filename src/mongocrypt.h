@@ -54,8 +54,6 @@ const char *mongocrypt_version(uint32_t *len);
  * If libmongocrypt was not built with native crypto support, setting crypto
  * hooks is required.
  *
- * @param[in] crypt The @ref mongocrypt_t object.
- *
  * @returns True if libmongocrypt was built with native crypto support.
  */
 MONGOCRYPT_EXPORT
