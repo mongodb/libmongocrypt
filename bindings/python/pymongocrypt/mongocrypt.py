@@ -51,6 +51,10 @@ class MongoCryptOptions(object):
               - `kmip`: Map with "endpoint" as a string.
               - `local`: Map with "key" as a 96-byte array or the equivalent
                 base64-encoded string.
+
+            KMS providers may be specified with an optional name suffix
+            separated by a colon, for example "kmip:name". Named KMS providers
+            do not support automatic credential lookup.
           - `schema_map`: Optional map of collection namespace ("db.coll") to
             JSON Schema.  By default, a collection's JSONSchema is periodically
             polled with the listCollections command. But a JSONSchema may be
