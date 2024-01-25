@@ -130,9 +130,13 @@ class TestMongoCryptOptions(unittest.TestCase):
             MongoCryptOptions({})
         for invalid_kms_providers in [
                 {'aws': {'accessKeyId': 'foo'}},
-                {'aws': {'secretAccessKey': 'foo'}}]:
+                {'aws': {'secretAccessKey': 'foo'}},
+                {'aws:foo': {'accessKeyId': 'foo'}},
+                {'aws:foo': {'secretAccessKey': 'foo'}},
+        ]:
+            name = next(iter(invalid_kms_providers))
             with self.assertRaisesRegex(
-                    ValueError, r"kms_providers\['aws'\] must contain "
+                    ValueError, rf"kms_providers\[{name!r}\] must contain "
                                 "'accessKeyId' and 'secretAccessKey'"):
                 MongoCryptOptions(invalid_kms_providers)
         with self.assertRaisesRegex(
@@ -144,6 +148,12 @@ class TestMongoCryptOptions(unittest.TestCase):
                            r"instance of bytes or str"):
             MongoCryptOptions({'gcp': {'email': "foo@bar.baz",
                                        "privateKey": None}})
+        with self.assertRaisesRegex(
+                ValueError, r"kms_providers\['kmip'\] must contain 'endpoint'"):
+            MongoCryptOptions({'kmip': {}})
+        with self.assertRaisesRegex(
+                TypeError, r"kms_providers\['kmip'\]\['endpoint'\] must be an instance of str"):
+            MongoCryptOptions({'kmip': {'endpoint': None}})
 
         valid_kms = {'aws': {'accessKeyId': '', 'secretAccessKey': ''}}
         with self.assertRaisesRegex(
@@ -224,7 +234,7 @@ class TestMongoCrypt(unittest.TestCase):
             options = MongoCryptOptions(kms_dict)
             with self.assertRaisesRegex(
                     MongoCryptError,
-                    f"`{f1}`: unable to parse base64 from UTF-8 field {f2}"):
+                    "unable to parse base64 from UTF-8 field"):
                 MongoCrypt(options, callback)
 
         # Case 4: pass key as base64-encoded string (invalid)

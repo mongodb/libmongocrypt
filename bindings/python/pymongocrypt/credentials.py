@@ -107,9 +107,19 @@ def _ask_for_kms_credentials(kms_providers):
 
     This is a separate function so it can be overridden in unit tests."""
     global _azure_creds_cache
-    on_demand_aws = 'aws' in kms_providers and not len(kms_providers['aws'])
-    on_demand_gcp = 'gcp' in kms_providers and not len(kms_providers['gcp'])
-    on_demand_azure = 'azure' in kms_providers and not len(kms_providers['azure'])
+    on_demand_aws = []
+    on_demand_gcp = []
+    on_demand_azure = []
+    for name, provider in kms_providers.items():
+        # Account for provider names like "local:myname".
+        provider_type = name.split(":")[0]
+        if not len(provider):
+            if provider_type == 'aws':
+                on_demand_aws.append(name)
+            elif provider_type == 'gcp':
+                on_demand_gcp.append(name)
+            elif provider_type == 'azure':
+                on_demand_azure.append(name)
 
     if not any([on_demand_aws, on_demand_gcp, on_demand_azure]):
         return {}
@@ -124,13 +134,18 @@ def _ask_for_kms_credentials(kms_providers):
         creds_dict = {"accessKeyId": aws_creds.username, "secretAccessKey": aws_creds.password}
         if aws_creds.token:
             creds_dict["sessionToken"] = aws_creds.token
-        creds['aws'] = creds_dict
+        for name in on_demand_aws:
+            creds[name] = creds_dict
     if on_demand_gcp:
-        creds['gcp'] = _get_gcp_credentials()
+        gcp_creds = _get_gcp_credentials()
+        for name in on_demand_gcp:
+            creds[name] = gcp_creds
     if on_demand_azure:
         try:
-            creds['azure'] = _get_azure_credentials()
+            azure_creds = _get_azure_credentials()
         except Exception:
             _azure_creds_cache = None
             raise
+        for name in on_demand_azure:
+            creds[name] = azure_creds
     return creds

@@ -147,7 +147,8 @@ class ExplicitEncrypter(object):
 
         :Parameters:
           - `kms_provider`: The KMS provider to use. Supported values are
-            "aws", "azure", "gcp", "kmip", and "local".
+            "aws", "azure", "gcp", "kmip", "local", or a named provider like
+            "kmip:name".
           - `master_key`: See class:`DataKeyOpts`.
           - `key_alt_names` (optional): An optional list of string alternate
             names used to reference a key. If a key is created with alternate
