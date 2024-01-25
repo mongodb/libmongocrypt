@@ -92,7 +92,7 @@ class TestMongoCryptOptions(unittest.TestCase):
         schema_map = bson_data('schema-map.json')
         valid = [
             ({'local': {'key': b'1' * 96}}, None),
-            ({ 'aws' : {} }, schema_map),
+            ({'aws': {}}, schema_map),
             ({'aws': {'accessKeyId': '', 'secretAccessKey': ''}}, schema_map),
             ({'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'foo'}}, None),
             ({'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'foo',
@@ -109,8 +109,14 @@ class TestMongoCryptOptions(unittest.TestCase):
             ({'gcp': {'email': 'foo@bar.baz',
                       'privateKey': to_base64(b'1')}}, None),
             ({'gcp': {'email': 'foo@bar.baz',
-                      'privateKey': Binary(b'1')}}, None)
+                      'privateKey': Binary(b'1')}}, None),
+            ({'kmip': {'endpoint': 'localhost'}}, None),
         ]
+        # Add tests for named KMS providers.
+        for kms_providers, schema_map in valid:
+            for name, val in list(kms_providers.items()):
+                kms_providers[f'{name}:named'] = val
+
         for kms_providers, schema_map in valid:
             opts = MongoCryptOptions(kms_providers, schema_map)
             self.assertEqual(opts.kms_providers, kms_providers, msg=kms_providers)
@@ -727,12 +733,20 @@ class TestExplicitEncryption(unittest.TestCase):
     def test_data_key_creation(self):
         mock_key_vault = KeyVaultCallback(
             kms_reply=http_data('kms-encrypt-reply.txt'))
-        encrypter = ExplicitEncrypter(mock_key_vault, self.mongo_crypt_opts())
+        opts = MongoCryptOptions({
+            'aws': {'accessKeyId': 'example', 'secretAccessKey': 'example'},
+            'aws:named': {'accessKeyId': 'example', 'secretAccessKey': 'example'},
+            'local': {'key': b'\x00' * 96},
+            'local:named': {'key': b'\x01' * 96},
+        })
+        encrypter = ExplicitEncrypter(mock_key_vault, opts)
         self.addCleanup(encrypter.close)
 
         valid_args = [
             ('local', None, ['first', 'second']),
+            ('local:named', None, ['local:named']),
             ('aws', {'region': 'region', 'key': 'cmk'}, ['third', 'forth']),
+            ('aws:named', {'region': 'region', 'key': 'cmk'}, ['aws:named']),
             # Unicode region and key
             ('aws', {'region': u'region-unicode', 'key': u'cmk-unicode'}, []),
             # Endpoint
