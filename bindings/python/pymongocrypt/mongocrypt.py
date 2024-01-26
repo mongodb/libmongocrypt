@@ -601,36 +601,37 @@ class DataKeyContext(MongoCryptContext):
             if kms_provider not in kms_providers:
                 raise ValueError('unknown kms_provider: %s' % (kms_provider,))
 
+            # Account for provider names like "local:myname".
+            provider_type = kms_provider.split(":")[0]
             if opts is None or opts.master_key is None:
-                if kms_provider in ['kmip', 'local']:
+                if provider_type in ['kmip', 'local']:
                     master_key = {}
                 else:
                     raise ValueError(
-                        'master_key is required for kms_provider: "%s"' % (
-                            kms_provider,))
+                        f'master_key is required for kms_provider: {kms_provider!r}')
             else:
                 master_key = opts.master_key.copy()
 
-            if kms_provider == 'aws':
+            if provider_type == 'aws':
                 if ('region' not in master_key or
                         'key' not in master_key):
                     raise ValueError(
                         'master_key must include "region" and "key" for '
-                        'kms_provider: "aws"')
-            elif kms_provider == 'azure':
+                        f'kms_provider: {kms_provider!r}')
+            elif provider_type == 'azure':
                 if ('keyName' not in master_key or
                         'keyVaultEndpoint' not in master_key):
                     raise ValueError(
                         'master key must include "keyName" and '
-                        '"keyVaultEndpoint" for kms_provider: "azure"')
-            elif kms_provider == 'gcp':
+                        f'"keyVaultEndpoint" for kms_provider: {kms_provider!r}')
+            elif provider_type == 'gcp':
                 if ('projectId' not in master_key or
                         'location' not in master_key or
                         'keyRing' not in master_key or
                         'keyName' not in master_key):
                     raise ValueError(
                         'master key must include "projectId", "location",'
-                        '"keyRing", and "keyName" for kms_provider: "gcp"')
+                        f'"keyRing", and "keyName" for kms_provider: {kms_provider!r}')
 
             master_key['provider'] = kms_provider
             with MongoCryptBinaryIn(
