@@ -598,7 +598,7 @@ class DataKeyContext(MongoCryptContext):
         """
         super(DataKeyContext, self).__init__(ctx, kms_providers)
         try:
-            if kms_provider not in ['aws', 'gcp', 'azure', 'kmip', 'local']:
+            if kms_provider not in kms_providers:
                 raise ValueError('unknown kms_provider: %s' % (kms_provider,))
 
             if opts is None or opts.master_key is None:
