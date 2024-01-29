@@ -144,7 +144,7 @@ To install the latest unstable development package, change `1.8` to `development
 First, import the public key used to sign the package repositories:
 
 ```
-sudo sh -c 'curl -s --location https://www.mongodb.org/static/pgp/libmongocrypt.asc | gpg --dearmor >/etc/apt/trusted.gpg.d/libmongocrypt.gpg'
+sudo sh -c 'curl -s --location https://pgp.mongodb.com/libmongocrypt.asc | gpg --dearmor >/etc/apt/trusted.gpg.d/libmongocrypt.gpg'
 ```
 
 Second, create a list entry for the repository.  For Ubuntu systems (be sure to change `<release>` to `xenial`, `bionic`, `focal`, or `jammy`, as appropriate to your system):
@@ -184,7 +184,7 @@ name=libmongocrypt repository
 baseurl=https://libmongocrypt.s3.amazonaws.com/yum/redhat/$releasever/libmongocrypt/1.8/x86_64
 gpgcheck=1
 enabled=1
-gpgkey=https://www.mongodb.org/static/pgp/libmongocrypt.asc
+gpgkey=https://pgp.mongodb.com/libmongocrypt.asc
 ```
 
 Then install the libmongocrypt packages:
@@ -203,7 +203,7 @@ name=libmongocrypt repository
 baseurl=https://libmongocrypt.s3.amazonaws.com/yum/amazon/2023/libmongocrypt/1.8/x86_64
 gpgcheck=1
 enabled=1
-gpgkey=https://www.mongodb.org/static/pgp/libmongocrypt.asc
+gpgkey=https://pgp.mongodb.com/libmongocrypt.asc
 ```
 
 Then install the libmongocrypt packages:
@@ -222,7 +222,7 @@ name=libmongocrypt repository
 baseurl=https://libmongocrypt.s3.amazonaws.com/yum/amazon/2/libmongocrypt/1.8/x86_64
 gpgcheck=1
 enabled=1
-gpgkey=https://www.mongodb.org/static/pgp/libmongocrypt.asc
+gpgkey=https://pgp.mongodb.com/libmongocrypt.asc
 ```
 
 Then install the libmongocrypt packages:
@@ -241,7 +241,7 @@ name=libmongocrypt repository
 baseurl=https://libmongocrypt.s3.amazonaws.com/yum/amazon/2013.03/libmongocrypt/1.8/x86_64
 gpgcheck=1
 enabled=1
-gpgkey=https://www.mongodb.org/static/pgp/libmongocrypt.asc
+gpgkey=https://pgp.mongodb.com/libmongocrypt.asc
 ```
 
 Then install the libmongocrypt packages:
@@ -255,7 +255,7 @@ sudo yum install -y libmongocrypt
 First, import the public key used to sign the package repositories:
 
 ```
-sudo rpm --import https://www.mongodb.org/static/pgp/libmongocrypt.asc
+sudo rpm --import https://pgp.mongodb.com/libmongocrypt.asc
 ```
 
 Second, add the repository (be sure to change `<release>` to `12` or `15`, as appropriate to your system):
