@@ -51,6 +51,10 @@ class MongoCryptOptions(object):
               - `kmip`: Map with "endpoint" as a string.
               - `local`: Map with "key" as a 96-byte array or the equivalent
                 base64-encoded string.
+
+            KMS providers may be specified with an optional name suffix
+            separated by a colon, for example "kmip:name". Named KMS providers
+            do not support automatic credential lookup.
           - `schema_map`: Optional map of collection namespace ("db.coll") to
             JSON Schema.  By default, a collection's JSONSchema is periodically
             polled with the listCollections command. But a JSONSchema may be
@@ -93,59 +97,42 @@ class MongoCryptOptions(object):
         if not kms_providers:
             raise ValueError('at least one KMS provider must be configured')
 
-        if 'aws' in kms_providers:
-            aws = kms_providers["aws"]
-            if not isinstance(aws, dict):
-                raise ValueError("kms_providers['aws'] must be a dict")
-            if len(aws):
-                if "accessKeyId" not in aws or "secretAccessKey" not in aws:
-                    raise ValueError("kms_providers['aws'] must contain "
-                                     "'accessKeyId' and 'secretAccessKey'")
-
-        if 'azure' in kms_providers:
-            azure = kms_providers["azure"]
-            if not isinstance(azure, dict):
-                raise ValueError("kms_providers['azure'] must be a dict")
-            if len(azure):
-                if 'clientId' not in azure or 'clientSecret' not in azure:
-                    raise ValueError("kms_providers['azure'] must contain "
-                                     "'clientId' and 'clientSecret'")
-
-        if 'gcp' in kms_providers:
-            gcp = kms_providers['gcp']
-            if not isinstance(gcp, dict):
-                raise ValueError("kms_providers['gcp'] must be a dict")
-            if len(gcp):
-                if 'email' not in gcp or 'privateKey' not in gcp:
-                    raise ValueError("kms_providers['gcp'] must contain "
-                                     "'email' and 'privateKey'")
-                if not isinstance(kms_providers['gcp']['privateKey'],
-                                  (bytes, unicode_type)):
-                    raise TypeError("kms_providers['gcp']['privateKey'] must "
-                                    "be an instance of bytes or str")
-
-        if 'kmip' in kms_providers:
-            kmip = kms_providers['kmip']
-            if not isinstance(kmip, dict):
-                raise ValueError("kms_providers['kmip'] must be a dict")
-            if 'endpoint' not in kmip:
-                raise ValueError("kms_providers['kmip'] must contain "
-                                 "'endpoint'")
-            if not isinstance(kms_providers['kmip']['endpoint'],
-                              (str, unicode_type)):
-                raise TypeError("kms_providers['kmip']['endpoint'] must "
-                                "be an instance of str")
-
-        if 'local' in kms_providers:
-            local = kms_providers['local']
-            if not isinstance(local, dict):
-                raise ValueError("kms_providers['local'] must be a dict")
-            if 'key' not in local:
-                raise ValueError("kms_providers['local'] must contain 'key'")
-            if not isinstance(kms_providers['local']['key'],
-                              (bytes, unicode_type)):
-                raise TypeError("kms_providers['local']['key'] must be an "
-                                "instance of bytes or str")
+        for name, provider in kms_providers.items():
+            # Account for provider names like "local:myname".
+            provider_type = name.split(":")[0]
+            if provider_type in ('aws', 'gcp', 'azure', 'kmip', 'local'):
+                if not isinstance(provider, dict):
+                    raise ValueError(f"kms_providers[{name!r}] must be a dict")
+            if provider_type == 'aws':
+                if len(provider):
+                    if "accessKeyId" not in provider or "secretAccessKey" not in provider:
+                        raise ValueError(f"kms_providers[{name!r}] must contain "
+                                         "'accessKeyId' and 'secretAccessKey'")
+            elif provider_type == 'azure':
+                if len(provider):
+                    if 'clientId' not in provider or 'clientSecret' not in provider:
+                        raise ValueError(f"kms_providers[{name!r}] must contain "
+                                         "'clientId' and 'clientSecret'")
+            elif provider_type == 'gcp':
+                if len(provider):
+                    if 'email' not in provider or 'privateKey' not in provider:
+                        raise ValueError(f"kms_providers[{name!r}] must contain "
+                                         "'email' and 'privateKey'")
+                    if not isinstance(provider['privateKey'], (bytes, unicode_type)):
+                        raise TypeError(f"kms_providers[{name!r}]['privateKey'] must "
+                                        "be an instance of bytes or str")
+            elif provider_type == 'kmip':
+                if 'endpoint' not in provider:
+                    raise ValueError(f"kms_providers[{name!r}] must contain 'endpoint'")
+                if not isinstance(provider['endpoint'], (str, unicode_type)):
+                    raise TypeError(f"kms_providers[{name!r}]['endpoint'] must "
+                                    "be an instance of str")
+            elif provider_type == 'local':
+                if 'key' not in provider:
+                    raise ValueError(f"kms_providers[{name!r}] must contain 'key'")
+                if not isinstance(provider['key'], (bytes, unicode_type)):
+                    raise TypeError(f"kms_providers[{name!r}]['key'] must be an "
+                                    "instance of bytes or str")
 
         if schema_map is not None and not isinstance(schema_map, bytes):
             raise TypeError("schema_map must be bytes or None")
@@ -611,39 +598,40 @@ class DataKeyContext(MongoCryptContext):
         """
         super(DataKeyContext, self).__init__(ctx, kms_providers)
         try:
-            if kms_provider not in ['aws', 'gcp', 'azure', 'kmip', 'local']:
+            if kms_provider not in kms_providers:
                 raise ValueError('unknown kms_provider: %s' % (kms_provider,))
 
+            # Account for provider names like "local:myname".
+            provider_type = kms_provider.split(":")[0]
             if opts is None or opts.master_key is None:
-                if kms_provider in ['kmip', 'local']:
+                if provider_type in ['kmip', 'local']:
                     master_key = {}
                 else:
                     raise ValueError(
-                        'master_key is required for kms_provider: "%s"' % (
-                            kms_provider,))
+                        f'master_key is required for kms_provider: {kms_provider!r}')
             else:
                 master_key = opts.master_key.copy()
 
-            if kms_provider == 'aws':
+            if provider_type == 'aws':
                 if ('region' not in master_key or
                         'key' not in master_key):
                     raise ValueError(
                         'master_key must include "region" and "key" for '
-                        'kms_provider: "aws"')
-            elif kms_provider == 'azure':
+                        f'kms_provider: {kms_provider!r}')
+            elif provider_type == 'azure':
                 if ('keyName' not in master_key or
                         'keyVaultEndpoint' not in master_key):
                     raise ValueError(
                         'master key must include "keyName" and '
-                        '"keyVaultEndpoint" for kms_provider: "azure"')
-            elif kms_provider == 'gcp':
+                        f'"keyVaultEndpoint" for kms_provider: {kms_provider!r}')
+            elif provider_type == 'gcp':
                 if ('projectId' not in master_key or
                         'location' not in master_key or
                         'keyRing' not in master_key or
                         'keyName' not in master_key):
                     raise ValueError(
                         'master key must include "projectId", "location",'
-                        '"keyRing", and "keyName" for kms_provider: "gcp"')
+                        f'"keyRing", and "keyName" for kms_provider: {kms_provider!r}')
 
             master_key['provider'] = kms_provider
             with MongoCryptBinaryIn(

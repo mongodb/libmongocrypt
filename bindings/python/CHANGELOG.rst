@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Changes in Version 1.9.0
+------------------------
+
+- Add support for named KMS providers like "local:name1".
+  This feature requires libmongocrypt >= 1.9.0.
+
 Changes in Version 1.8.0
 ------------------------
 

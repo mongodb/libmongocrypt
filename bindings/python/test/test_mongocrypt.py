@@ -92,7 +92,7 @@ class TestMongoCryptOptions(unittest.TestCase):
         schema_map = bson_data('schema-map.json')
         valid = [
             ({'local': {'key': b'1' * 96}}, None),
-            ({ 'aws' : {} }, schema_map),
+            ({'aws': {}}, schema_map),
             ({'aws': {'accessKeyId': '', 'secretAccessKey': ''}}, schema_map),
             ({'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'foo'}}, None),
             ({'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'foo',
@@ -109,8 +109,14 @@ class TestMongoCryptOptions(unittest.TestCase):
             ({'gcp': {'email': 'foo@bar.baz',
                       'privateKey': to_base64(b'1')}}, None),
             ({'gcp': {'email': 'foo@bar.baz',
-                      'privateKey': Binary(b'1')}}, None)
+                      'privateKey': Binary(b'1')}}, None),
+            ({'kmip': {'endpoint': 'localhost'}}, None),
         ]
+        # Add tests for named KMS providers.
+        for kms_providers, schema_map in valid:
+            for name, val in list(kms_providers.items()):
+                kms_providers[f'{name}:named'] = val
+
         for kms_providers, schema_map in valid:
             opts = MongoCryptOptions(kms_providers, schema_map)
             self.assertEqual(opts.kms_providers, kms_providers, msg=kms_providers)
@@ -130,9 +136,13 @@ class TestMongoCryptOptions(unittest.TestCase):
             MongoCryptOptions({})
         for invalid_kms_providers in [
                 {'aws': {'accessKeyId': 'foo'}},
-                {'aws': {'secretAccessKey': 'foo'}}]:
+                {'aws': {'secretAccessKey': 'foo'}},
+                {'aws:foo': {'accessKeyId': 'foo'}},
+                {'aws:foo': {'secretAccessKey': 'foo'}},
+        ]:
+            name = next(iter(invalid_kms_providers))
             with self.assertRaisesRegex(
-                    ValueError, r"kms_providers\['aws'\] must contain "
+                    ValueError, rf"kms_providers\[{name!r}\] must contain "
                                 "'accessKeyId' and 'secretAccessKey'"):
                 MongoCryptOptions(invalid_kms_providers)
         with self.assertRaisesRegex(
@@ -144,6 +154,12 @@ class TestMongoCryptOptions(unittest.TestCase):
                            r"instance of bytes or str"):
             MongoCryptOptions({'gcp': {'email': "foo@bar.baz",
                                        "privateKey": None}})
+        with self.assertRaisesRegex(
+                ValueError, r"kms_providers\['kmip'\] must contain 'endpoint'"):
+            MongoCryptOptions({'kmip': {}})
+        with self.assertRaisesRegex(
+                TypeError, r"kms_providers\['kmip'\]\['endpoint'\] must be an instance of str"):
+            MongoCryptOptions({'kmip': {'endpoint': None}})
 
         valid_kms = {'aws': {'accessKeyId': '', 'secretAccessKey': ''}}
         with self.assertRaisesRegex(
@@ -224,7 +240,7 @@ class TestMongoCrypt(unittest.TestCase):
             options = MongoCryptOptions(kms_dict)
             with self.assertRaisesRegex(
                     MongoCryptError,
-                    f"`{f1}`: unable to parse base64 from UTF-8 field {f2}"):
+                    "unable to parse base64 from UTF-8 field"):
                 MongoCrypt(options, callback)
 
         # Case 4: pass key as base64-encoded string (invalid)
@@ -717,12 +733,20 @@ class TestExplicitEncryption(unittest.TestCase):
     def test_data_key_creation(self):
         mock_key_vault = KeyVaultCallback(
             kms_reply=http_data('kms-encrypt-reply.txt'))
-        encrypter = ExplicitEncrypter(mock_key_vault, self.mongo_crypt_opts())
+        opts = MongoCryptOptions({
+            'aws': {'accessKeyId': 'example', 'secretAccessKey': 'example'},
+            'aws:named': {'accessKeyId': 'example', 'secretAccessKey': 'example'},
+            'local': {'key': b'\x00' * 96},
+            'local:named': {'key': b'\x01' * 96},
+        })
+        encrypter = ExplicitEncrypter(mock_key_vault, opts)
         self.addCleanup(encrypter.close)
 
         valid_args = [
             ('local', None, ['first', 'second']),
+            ('local:named', None, ['local:named']),
             ('aws', {'region': 'region', 'key': 'cmk'}, ['third', 'forth']),
+            ('aws:named', {'region': 'region', 'key': 'cmk'}, ['aws:named']),
             # Unicode region and key
             ('aws', {'region': u'region-unicode', 'key': u'cmk-unicode'}, []),
             # Endpoint
