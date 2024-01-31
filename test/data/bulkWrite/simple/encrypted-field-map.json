@@ -1,0 +1,24 @@
+{
+   "db.test": {
+      "escCollection": "enxcol_.test.esc",
+      "ecocCollection": "enxcol_.test.ecoc",
+      "fields": [
+         {
+            "keyId": {
+               "$binary": {
+                  "base64": "YWFhYWFhYWFhYWFhYWFhYQ==",
+                  "subType": "04"
+               }
+            },
+            "path": "encrypted",
+            "bsonType": "int",
+            "queries": {
+               "queryType": "equality",
+               "contention": {
+                  "$numberLong": "0"
+               }
+            }
+         }
+      ]
+   }
+}

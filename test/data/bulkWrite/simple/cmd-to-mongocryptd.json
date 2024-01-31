@@ -1,0 +1,50 @@
+{
+    "bulkWrite": {
+        "$numberInt": "1"
+    },
+    "ops": [
+        {
+            "insert": 0,
+            "document": {
+                "plainText": "sample",
+                "encrypted": {
+                    "$numberInt": "123"
+                }
+            }
+        }
+    ],
+    "nsInfo": [
+        {
+            "ns": "db.test",
+            "encryptionInformation": {
+                "type": {
+                    "$numberInt": "1"
+                },
+                "schema": {
+                    "db.test": {
+                        "escCollection": "enxcol_.test.esc",
+                        "ecocCollection": "enxcol_.test.ecoc",
+                        "fields": [
+                            {
+                                "keyId": {
+                                    "$binary": {
+                                        "base64": "YWFhYWFhYWFhYWFhYWFhYQ==",
+                                        "subType": "04"
+                                    }
+                                },
+                                "path": "encrypted",
+                                "bsonType": "int",
+                                "queries": {
+                                    "queryType": "equality",
+                                    "contention": {
+                                        "$numberLong": "0"
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    ]
+}

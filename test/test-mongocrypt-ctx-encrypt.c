@@ -4659,6 +4659,87 @@ static void _test_fle1_collmod_without_jsonSchema(_mongocrypt_tester_t *tester) 
     mongocrypt_destroy(crypt);
 }
 
+#define BSON_STR(...) #__VA_ARGS__
+
+static void _test_bulkWrite(_mongocrypt_tester_t *tester) {
+    if (!_aes_ctr_is_supported_by_os) {
+        printf("Common Crypto with no CTR support detected. Required by QEv2 encryption. Skipping.");
+        return;
+    }
+
+    // local_kek is the KEK used to encrypt the keyMaterial in ./test/data/key-document-local.json
+    const char *local_kek = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+                            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+
+    // Test a bulkWrite with one namespace.
+    {
+        mongocrypt_t *crypt = mongocrypt_new();
+
+        mongocrypt_setopt_kms_providers(
+            crypt,
+            TEST_BSON(BSON_STR({"local" : {"key" : {"$binary" : {"base64" : "%s", "subType" : "00"}}}}), local_kek));
+
+        ASSERT_OK(mongocrypt_setopt_encrypted_field_config_map(
+                      crypt,
+                      TEST_FILE("./test/data/bulkWrite/simple/encrypted-field-map.json")),
+                  crypt);
+        ASSERT_OK(mongocrypt_init(crypt), crypt);
+
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "admin", -1, TEST_FILE("./test/data/bulkWrite/simple/cmd.json")),
+                  ctx);
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+        {
+            mongocrypt_binary_t *cmd_to_mongocryptd = mongocrypt_binary_new();
+
+            ASSERT_OK(mongocrypt_ctx_mongo_op(ctx, cmd_to_mongocryptd), ctx);
+            ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TEST_FILE("./test/data/bulkWrite/simple/cmd-to-mongocryptd.json"),
+                                                cmd_to_mongocryptd);
+            mongocrypt_binary_destroy(cmd_to_mongocryptd);
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TEST_FILE("./test/data/bulkWrite/simple/mongocryptd-reply.json")),
+                      ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+        {
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TEST_FILE("./test/data/key-document-local.json")), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
+        {
+            mongocrypt_binary_t *out = mongocrypt_binary_new();
+            ASSERT_OK(mongocrypt_ctx_finalize(ctx, out), ctx);
+
+            // Match results.
+            bson_t out_bson;
+            ASSERT(_mongocrypt_binary_to_bson(out, &out_bson));
+            mongocrypt_binary_t *pattern = TEST_FILE("./test/data/bulkWrite/simple/encrypted-payload-pattern.json");
+            bson_t pattern_bson;
+            ASSERT(_mongocrypt_binary_to_bson(pattern, &pattern_bson));
+            _assert_match_bson(&out_bson, &pattern_bson);
+
+            mongocrypt_binary_destroy(out);
+        }
+
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+
+    // Test a bulkWrite with two inserts.
+
+    // Test a bulkWrite with one update.
+
+    // Test a bulkWrite with two namespaces (not supported by server).
+
+    // Test a bulkWrite with two updates (not supported by server).
+
+    // Test a bulkWrite with one namespace and CSFLE (not supported by server)
+}
+
 void _mongocrypt_tester_install_ctx_encrypt(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_explicit_encrypt_init);
     INSTALL_TEST(_test_encrypt_init);
@@ -4738,4 +4819,5 @@ void _mongocrypt_tester_install_ctx_encrypt(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_encrypt_fle2_find_range_payload_decimal128);
     INSTALL_TEST(_test_encrypt_fle2_find_range_payload_decimal128_precision);
 #endif
+    INSTALL_TEST(_test_bulkWrite);
 }
