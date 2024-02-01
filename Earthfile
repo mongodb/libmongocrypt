@@ -400,3 +400,35 @@ create-deb-packages-and-repos:
         PACKAGER_ARCH=$packager_arch \
         bash libmongocrypt/.evergreen/create-packages-and-repos.sh
     SAVE ARTIFACT libmongocrypt/repo AS LOCAL repo
+
+# `test-deb-packages-from-ppa` tests Debian and Ubuntu packages installed on the PPA.
+#   • --env=[...] (default "deb11")
+#     · Set the environment for the build. Only debian-like environments are supported.
+#   • --distro=[...] (default "debian bullseye")
+#     · Has the form: "(debian|ubuntu) (name)". Must match distro set for `--env`.
+#   • --version=[...] (default "development"). The libmongocrypt package version.
+#     · May refer to a release branch (e.g. "1.8"). Release branch packages are updated on a tagged release.
+#     · "development" packages are updated by the `publish-packages` tasks every commit.
+test-deb-packages-from-ppa:
+    ARG env="deb11"
+    ARG distro="debian bullseye"
+    ARG version="development"
+    FROM +env.$env
+    WORKDIR /s
+    RUN __install apt-transport-https
+    # Install libmongocrypt following install steps described in README.md:
+    RUN sh -c 'curl -s --location https://pgp.mongodb.com/libmongocrypt.asc | gpg --dearmor >/etc/apt/trusted.gpg.d/libmongocrypt.gpg'
+    RUN echo "deb https://libmongocrypt.s3.amazonaws.com/apt/$distro/libmongocrypt/$version main" | tee /etc/apt/sources.list.d/libmongocrypt.list
+    RUN apt-get update
+    RUN apt-get install -y libmongocrypt-dev
+    # Test using libmongocrypt:
+    RUN __install gcc
+    RUN echo "
+        #include <stdio.h>
+        #include <mongocrypt/mongocrypt.h>
+        int main(void) {
+            const char *ver = mongocrypt_version(NULL);
+            printf (\"Using libmongocrypt %s\", ver);
+        }" > test.c
+    RUN gcc -o test.out test.c $(pkg-config --libs --cflags libmongocrypt)
+    RUN ./test.out
