@@ -179,6 +179,11 @@ ENV_DEBIAN:
     COMMAND
     ARG --required version
     FROM +init --base=docker.io/library/debian:$version
+    IF [ $version = "9.2" ]
+        # Update source list for archived Debian stretch packages.
+        # Refer: https://unix.stackexchange.com/a/743865/260858
+        RUN echo "deb http://archive.debian.org/debian stretch main" > /etc/apt/sources.list
+    END
     DO +DEBIAN_SETUP
 
 env.deb9:
