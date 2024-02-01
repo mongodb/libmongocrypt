@@ -4671,6 +4671,71 @@ static void _test_bulkWrite(_mongocrypt_tester_t *tester) {
     const char *local_kek = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
                             "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
 
+    // Test initializing bulkWrite commands.
+    {
+        mongocrypt_t *crypt = mongocrypt_new();
+        mongocrypt_setopt_kms_providers(
+            crypt,
+            TEST_BSON(BSON_STR({"local" : {"key" : {"$binary" : {"base64" : "%s", "subType" : "00"}}}}), local_kek));
+
+        ASSERT_OK(mongocrypt_setopt_encrypted_field_config_map(
+                      crypt,
+                      TEST_FILE("./test/data/bulkWrite/simple/encrypted-field-map.json")),
+                  crypt);
+        ASSERT_OK(mongocrypt_init(crypt), crypt);
+
+        // Successful case.
+        {
+            mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+            mongocrypt_binary_t *cmd = TEST_BSON(BSON_STR({"bulkWrite" : 1, "nsInfo" : [ {"ns" : "db.coll"} ]}));
+            ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "admin", -1, cmd), ctx);
+            mongocrypt_ctx_destroy(ctx);
+        }
+
+        // No `nsInfo`.
+        {
+            mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+            mongocrypt_binary_t *cmd = TEST_BSON(BSON_STR({"bulkWrite" : 1}));
+            ASSERT_FAILS(mongocrypt_ctx_encrypt_init(ctx, "admin", -1, cmd), ctx, "failed to find namespace");
+            mongocrypt_ctx_destroy(ctx);
+        }
+
+        // `nsInfo` is not an array.
+        {
+            mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+            mongocrypt_binary_t *cmd = TEST_BSON(BSON_STR({"bulkWrite" : 1, "nsInfo" : {"foo" : "bar"}}));
+            ASSERT_FAILS(mongocrypt_ctx_encrypt_init(ctx, "admin", -1, cmd), ctx, "failed to find namespace");
+            mongocrypt_ctx_destroy(ctx);
+        }
+
+        // `nsInfo.ns` is not correct form.
+        {
+            mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+            mongocrypt_binary_t *cmd = TEST_BSON(BSON_STR({"bulkWrite" : 1, "nsInfo" : [ {"ns" : "invalid"} ]}));
+            ASSERT_FAILS(mongocrypt_ctx_encrypt_init(ctx, "admin", -1, cmd), ctx, "expected namespace to contain dot");
+            mongocrypt_ctx_destroy(ctx);
+        }
+
+        // `nsInfo` is empty.
+        {
+            mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+            mongocrypt_binary_t *cmd = TEST_BSON(BSON_STR({"bulkWrite" : 1, "nsInfo" : []}));
+            ASSERT_FAILS(mongocrypt_ctx_encrypt_init(ctx, "admin", -1, cmd), ctx, "failed to find namespace");
+            mongocrypt_ctx_destroy(ctx);
+        }
+
+        // `nsInfo` has more than one entry.
+        {
+            mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+            mongocrypt_binary_t *cmd =
+                TEST_BSON(BSON_STR({"bulkWrite" : 1, "nsInfo" : [ {"ns" : "db.coll"}, {"ns" : "db.coll2"} ]}));
+            ASSERT_FAILS(mongocrypt_ctx_encrypt_init(ctx, "admin", -1, cmd), ctx, "found more than one");
+            mongocrypt_ctx_destroy(ctx);
+        }
+
+        mongocrypt_destroy(crypt);
+    }
+
     // Test a bulkWrite with one namespace.
     {
         mongocrypt_t *crypt = mongocrypt_new();
