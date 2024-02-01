@@ -111,6 +111,29 @@ functions:
         content_type: '${content_type|application/x-gzip}'
         optional: true
 
+  "create .deb packages and repos via earthly":
+    - command: "shell.exec"
+      params:
+        shell: bash
+        working_dir: libmongocrypt
+        script: |
+          ./.evergreen/earthly.sh +create-deb-packages-and-repos --env=${earthly_env} --packager_distro=${packager_distro} --packager_arch=${packager_arch}
+    - command: archive.targz_pack
+      params:
+        target: libmongocrypt-distro-packages.tar.gz
+        source_dir: libmongocrypt/repo
+        include: [./**]
+    - command: s3.put
+      params:
+        aws_key: '${aws_key}'
+        aws_secret: '${aws_secret}'
+        remote_file: '${project}/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt-distro-packages.tar.gz'
+        bucket: mciuploads
+        permissions: public-read
+        local_file: 'libmongocrypt-distro-packages.tar.gz'
+        content_type: '${content_type|application/x-gzip}'
+        optional: true
+
   "run clang-tidy":
     - command: "shell.exec"
       params:
@@ -247,6 +270,46 @@ functions:
           export BARQUE_API_KEY=${barque_api_key}
           EOF
 
+  "publish packages":
+    - command: shell.exec
+      params:
+        working_dir: libmongocrypt
+        shell: bash
+        script: |-
+          [ -f ~/.notary_env.sh ] && . ~/.notary_env.sh
+          set -o xtrace
+          set -o errexit
+          set -o verbose
+
+          if [ "${is_patch}" = "true" ]; then
+            echo "patch build, skipping packaging publication"
+            exit 0
+          fi
+
+          if [ "${has_packages|}" != "true" ] ; then
+            echo "'has_packages' is not 'true', skipping package publication"
+            exit 0
+          fi
+
+          # Some venv-activate scripts are not nounset-clean
+          set +u
+
+          # Need requests and poster for notary-client.py
+          python -m virtualenv venv
+          cd venv
+          . bin/activate
+          ./bin/pip install requests
+          ./bin/pip install poster
+          ./bin/pip install pycrypto
+          cd ..
+          # Get the current version of libmongocrypt.
+          pkg_version="$(python etc/calc_release_version.py)"
+          CURATOR_RELEASE=${curator_release|"e0b5f66fc89ec0acddcd40ea5f447a8300ded2b9"}
+          curl -L -O http://boxes.10gen.com/build/curator/curator-dist-rhel70-$CURATOR_RELEASE.tar.gz
+          tar -zxvf curator-dist-rhel70-$CURATOR_RELEASE.tar.gz
+          ./curator version
+          ./curator repo submit --config etc/repo_config.yaml --distro ${packager_distro} --edition org --version $pkg_version --arch ${packager_arch} --service https://barque.corp.mongodb.com/ --packages https://mciuploads.s3.amazonaws.com/${project}/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt-distro-packages.tar.gz
+
   "build csharp and test":
     - command: "shell.exec"
       params:
@@ -374,6 +437,18 @@ tasks:
   - func: "build and test"
   - func: "tar and upload libmongocrypt libraries"
   - func: "create packages and repos"
+
+- name: build-deb-packages-with-earthly
+  commands:
+  - func: "fetch source"
+  - func: "create .deb packages and repos via earthly"
+
+- name: publish-deb-packages-with-earthly
+  depends_on: build-deb-packages-with-earthly
+  commands:
+  - func: "fetch source"
+  - func: "setup packaging credentials"
+  - func: "publish packages"
 
 - name: clang-tidy
   commands:
@@ -1546,3 +1621,18 @@ buildvariants:
   tasks:
   - benchmark-java
   - benchmark-python
+
+- name: debian11-arm64-earthly
+  display_name: "Debian 11 arm64 (via Earthly)"
+  expansions:
+    has_packages: true
+    packager_distro: debian11
+    packager_arch: arm64
+    earthly_env: deb11
+  tasks:
+  - name: build-deb-packages-with-earthly
+    # Use an arm64 distro to match the intended target architecture of .deb packages.
+    run_on: ubuntu2204-arm64-small
+  - name: publish-deb-packages-with-earthly
+    # Use a distro suitable for running curator to publish .deb packages.
+    run_on: ubuntu2004-small
