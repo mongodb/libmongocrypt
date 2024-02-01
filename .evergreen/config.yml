@@ -1636,3 +1636,33 @@ buildvariants:
   - name: publish-deb-packages-with-earthly
     # Use a distro suitable for running curator to publish .deb packages.
     run_on: ubuntu2004-small
+
+- name: debian10-arm64-earthly
+  display_name: "Debian 10 arm64 (via Earthly)"
+  expansions:
+    has_packages: true
+    packager_distro: debian10
+    packager_arch: arm64
+    earthly_env: deb10
+  tasks:
+  - name: build-deb-packages-with-earthly
+    # Use an arm64 distro to match the intended target architecture of .deb packages.
+    run_on: ubuntu2204-arm64-small
+  - name: publish-deb-packages-with-earthly
+    # Use a distro suitable for running curator to publish .deb packages.
+    run_on: ubuntu2004-small
+
+- name: debian9-arm64-earthly
+  display_name: "Debian 9 arm64 (via Earthly)"
+  expansions:
+    has_packages: true
+    packager_distro: debian92
+    packager_arch: arm64
+    earthly_env: deb9
+  tasks:
+  - name: build-deb-packages-with-earthly
+    # Use an arm64 distro to match the intended target architecture of .deb packages.
+    run_on: ubuntu2204-arm64-small
+  - name: publish-deb-packages-with-earthly
+    # Use a distro suitable for running curator to publish .deb packages.
+    run_on: ubuntu2004-small
