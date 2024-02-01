@@ -815,15 +815,15 @@ def make_rpm(distro, build_os, arch, spec, srcdir):
         "-D",
         "debug_package %{nil}",
         "-D",
-        f"_arch {arch}",
+        "_arch {}".format(arch),
         "-D",
-        f"_topdir {topdir}",
+        "_topdir {}".format(topdir),
         "-D",
-        f"dist .{distro.release_dist(build_os)}",
+        "dist .{}".format(distro.release_dist(build_os)),
         "-D",
-        f"dynamic_version {spec.pversion(distro)}",
+        "dynamic_version {}".format(spec.pversion(distro)),
         "-D",
-        f"dynamic_release {spec.prelease()}",
+        "dynamic_release {}".format(spec.prelease()),
     ]
 
     # Versions of RPM after 4.4 ignore our BuildRoot tag so we need to
