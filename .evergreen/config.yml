@@ -242,9 +242,9 @@ functions:
         shell: bash
         script: |
           set -o errexit
-          # if [ "${is_patch}" = "true" ]; then
-          #   exit 0
-          # fi
+          if [ "${is_patch}" = "true" ]; then
+            exit 0
+          fi
 
           # set AWS credentials
           rm -rf ~/.aws
@@ -281,10 +281,10 @@ functions:
           set -o errexit
           set -o verbose
 
-          # if [ "${is_patch}" = "true" ]; then
-          #   echo "patch build, skipping packaging publication"
-          #   exit 0
-          # fi
+          if [ "${is_patch}" = "true" ]; then
+            echo "patch build, skipping packaging publication"
+            exit 0
+          fi
 
           if [ "${has_packages|}" != "true" ] ; then
             echo "'has_packages' is not 'true', skipping package publication"
