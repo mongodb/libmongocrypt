@@ -2347,6 +2347,59 @@ bool mongocrypt_ctx_explicit_encrypt_expression_init(mongocrypt_ctx_t *ctx, mong
     return true;
 }
 
+static bool _check_cmd_for_auto_encrypt_bulkWrite(mongocrypt_binary_t *cmd,
+                                                  char **target_db,
+                                                  char **target_coll,
+                                                  mongocrypt_status_t *status) {
+    BSON_ASSERT_PARAM(cmd);
+    BSON_ASSERT_PARAM(target_db);
+    BSON_ASSERT_PARAM(target_coll);
+
+    bson_t as_bson;
+    bson_iter_t cmd_iter;
+
+    if (!_mongocrypt_binary_to_bson(cmd, &as_bson) || !bson_iter_init(&cmd_iter, &as_bson)) {
+        CLIENT_ERR("invalid command BSON");
+        return false;
+    }
+
+    bson_iter_t ns_iter = cmd_iter;
+    if (!bson_iter_find_descendant(&ns_iter, "nsInfo.0.ns", &ns_iter)) {
+        CLIENT_ERR("failed to find namespace in `bulkWrite` command");
+        return false;
+    }
+
+    if (!BSON_ITER_HOLDS_UTF8(&ns_iter)) {
+        CLIENT_ERR("expected namespace to be UTF8, got: %s", mc_bson_type_to_string(bson_iter_type(&ns_iter)));
+        return false;
+    }
+
+    const char *ns = bson_iter_utf8(&ns_iter, NULL /* length */);
+    // Parse `ns` into "<db>.<coll>"
+    const char *dot = strstr(ns, ".");
+    if (!dot) {
+        CLIENT_ERR("expected namespace to contain dot, got: %s", ns);
+        return false;
+    }
+    *target_coll = bson_strdup(dot + 1);
+    // Get the database from the `ns` field (which may differ from `db_name`).
+    ptrdiff_t db_len = dot - ns;
+    if ((uint64_t)db_len > SIZE_MAX) {
+        CLIENT_ERR("unexpected database length exceeds %zu", SIZE_MAX);
+        return false;
+    }
+    *target_db = bson_strndup(ns, (size_t)db_len);
+
+    // Ensure only one `nsInfo` element is present.
+    // Query analysis (mongocryptd/crypt_shared) currently only supports one namespace.
+    if (bson_has_field(&as_bson, "nsInfo.1")) {
+        CLIENT_ERR("expected one namespace in `bulkWrite`, but found more than one. Only one namespace is supported.");
+        return false;
+    }
+
+    return true;
+}
+
 static bool
 _check_cmd_for_auto_encrypt(mongocrypt_binary_t *cmd, bool *bypass, char **collname, mongocrypt_status_t *status) {
     bson_t as_bson;
@@ -2531,7 +2584,6 @@ static bool needs_ismaster_check(mongocrypt_ctx_t *ctx) {
 bool mongocrypt_ctx_encrypt_init(mongocrypt_ctx_t *ctx, const char *db, int32_t db_len, mongocrypt_binary_t *cmd) {
     _mongocrypt_ctx_encrypt_t *ectx;
     _mongocrypt_ctx_opts_spec_t opts_spec;
-    bool bypass;
 
     if (!ctx) {
         return false;
@@ -2575,27 +2627,41 @@ bool mongocrypt_ctx_encrypt_init(mongocrypt_ctx_t *ctx, const char *db, int32_t 
         return _mongocrypt_ctx_fail(ctx);
     }
 
-    if (!_check_cmd_for_auto_encrypt(cmd, &bypass, &ectx->coll_name, ctx->status)) {
-        return _mongocrypt_ctx_fail(ctx);
-    }
-
-    if (bypass) {
-        ctx->nothing_to_do = true;
-        ctx->state = MONGOCRYPT_CTX_READY;
-        return true;
-    }
-
-    /* if _check_cmd_for_auto_encrypt did not bypass or error, a collection name
-     * must have been set. */
-    if (!ectx->coll_name) {
-        return _mongocrypt_ctx_fail_w_msg(ctx, "unexpected error: did not bypass or error but no collection name");
-    }
-
     if (!_mongocrypt_validate_and_copy_string(db, db_len, &ectx->db_name) || 0 == strlen(ectx->db_name)) {
         return _mongocrypt_ctx_fail_w_msg(ctx, "invalid db");
     }
 
-    ectx->ns = bson_strdup_printf("%s.%s", ectx->db_name, ectx->coll_name);
+    if (0 == strcmp(ectx->cmd_name, "bulkWrite")) {
+        // Handle `bulkWrite` as a special case.
+        // `bulkWrite` includes the target namespaces in an `nsInfo` field.
+        // Only one target namespace is supported.
+        char *target_db = NULL;
+        if (!_check_cmd_for_auto_encrypt_bulkWrite(cmd, &target_db, &ectx->coll_name, ctx->status)) {
+            bson_free(target_db);
+            return _mongocrypt_ctx_fail(ctx);
+        }
+
+        ectx->ns = bson_strdup_printf("%s.%s", target_db, ectx->coll_name);
+        bson_free(target_db);
+    } else {
+        bool bypass;
+        if (!_check_cmd_for_auto_encrypt(cmd, &bypass, &ectx->coll_name, ctx->status)) {
+            return _mongocrypt_ctx_fail(ctx);
+        }
+
+        if (bypass) {
+            ctx->nothing_to_do = true;
+            ctx->state = MONGOCRYPT_CTX_READY;
+            return true;
+        }
+
+        /* if _check_cmd_for_auto_encrypt did not bypass or error, a collection name
+         * must have been set. */
+        if (!ectx->coll_name) {
+            return _mongocrypt_ctx_fail_w_msg(ctx, "unexpected error: did not bypass or error but no collection name");
+        }
+        ectx->ns = bson_strdup_printf("%s.%s", ectx->db_name, ectx->coll_name);
+    }
 
     if (ctx->opts.kek.provider.aws.region || ctx->opts.kek.provider.aws.cmk) {
         return _mongocrypt_ctx_fail_w_msg(ctx, "aws masterkey options must not be set");
