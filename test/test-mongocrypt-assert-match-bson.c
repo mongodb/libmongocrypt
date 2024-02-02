@@ -360,7 +360,7 @@ bool match_bson_with_ctx(const bson_t *doc, const bson_t *pattern, match_ctx_t *
                 goto fail;
             }
         } else if (!found) {
-            match_err(&derived, "not found");
+            match_err(&derived, "key '%s' not found", key);
             goto fail;
         } else if (is_empty_operator) {
             if (empty != is_empty_doc_or_array(&doc_value)) {
