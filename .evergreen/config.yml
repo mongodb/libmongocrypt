@@ -113,29 +113,6 @@ functions:
         content_type: '${content_type|application/x-gzip}'
         optional: true
 
-  "create .deb packages and repos via earthly":
-    - command: "shell.exec"
-      params:
-        shell: bash
-        working_dir: libmongocrypt
-        script: |
-          ./.evergreen/earthly.sh +create-deb-packages-and-repos --env=${earthly_env} --packager_distro=${packager_distro} --packager_arch=${packager_arch}
-    - command: archive.targz_pack
-      params:
-        target: libmongocrypt-distro-packages.tar.gz
-        source_dir: libmongocrypt/repo
-        include: [./**]
-    - command: s3.put
-      params:
-        aws_key: '${aws_key}'
-        aws_secret: '${aws_secret}'
-        remote_file: '${project}/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt-distro-packages.tar.gz'
-        bucket: mciuploads
-        permissions: public-read
-        local_file: 'libmongocrypt-distro-packages.tar.gz'
-        content_type: '${content_type|application/x-gzip}'
-        optional: true
-
   "run clang-tidy":
     - command: "shell.exec"
       params:
@@ -435,7 +412,10 @@ tasks:
 - name: build-deb-packages-with-earthly
   commands:
   - func: "fetch source"
-  - func: "create .deb packages and repos via earthly"
+  - func: "earthly"
+    vars:
+      args: +create-deb-packages-and-repos --env=${earthly_env} --packager_distro=${packager_distro} --packager_arch=${packager_arch}
+  - func: "upload packages and repos"
 
 - name: publish-deb-packages-with-earthly
   depends_on: build-deb-packages-with-earthly
