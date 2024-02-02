@@ -95,6 +95,8 @@ functions:
               "PACKAGER_ARCH=${packager_arch}" \
               ${compile_env|} \
             bash libmongocrypt/.evergreen/create-packages-and-repos.sh
+  
+  "upload packages and repos":
     - command: archive.targz_pack
       params:
         target: libmongocrypt-distro-packages.tar.gz
@@ -428,6 +430,7 @@ tasks:
   - func: "build and test"
   - func: "tar and upload libmongocrypt libraries"
   - func: "create packages and repos"
+  - func: "upload packages and repos"
 
 - name: build-deb-packages-with-earthly
   commands:
