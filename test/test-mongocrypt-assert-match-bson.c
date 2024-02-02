@@ -637,6 +637,10 @@ static bool match_bson_arrays(const bson_t *array, const bson_t *pattern, match_
         derive(ctx, &derived, bson_iter_key(&array_iter));
 
         if (!match_bson_value(array_value, pattern_value, &derived)) {
+            // Propagate error message.
+            if (strlen(derived.errmsg) > 0) {
+                memcpy(ctx->errmsg, derived.errmsg, sizeof(derived.errmsg));
+            }
             return false;
         }
     }
