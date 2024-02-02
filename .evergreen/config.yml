@@ -226,15 +226,6 @@ functions:
         bucket: mciuploads
         extract_to: all/${variant_name}
 
-  "download distro package tarball":
-    - command: s3.get
-      params:
-        aws_key: '${aws_key}'
-        aws_secret: '${aws_secret}'
-        remote_file: '${project}/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt-distro-packages.tar.gz'
-        bucket: mciuploads
-        extract_to: libmongocrypt/repo
-
   "setup packaging credentials":
     - command: shell.exec
       params:
@@ -847,7 +838,6 @@ tasks:
   depends_on: build-and-test-and-upload
   commands:
     - func: "fetch source"
-    - func: "download distro package tarball"
     - func: "setup packaging credentials"
     - func: "publish packages"
 - name: windows-upload-check
