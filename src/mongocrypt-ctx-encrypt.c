@@ -212,8 +212,82 @@ static bool _fle2_insert_encryptionInformation(const mongocrypt_ctx_t *ctx,
     /* deleteTokens may be NULL */
     BSON_ASSERT_PARAM(coll_name);
 
+    // For `bulkWrite`, append `encryptionInformation` inside the `nsInfo.0` document.
+    if (0 == strcmp(cmd_name, "bulkWrite")) {
+        // Get the single `nsInfo` document from the input command.
+        bson_t nsInfo; // Non-owning.
+        {
+            bson_iter_t nsInfo_iter;
+            if (!bson_iter_init(&nsInfo_iter, cmd)) {
+                CLIENT_ERR("failed to iterate command");
+                goto fail;
+            }
+            if (!bson_iter_find_descendant(&nsInfo_iter, "nsInfo.0", &nsInfo_iter)) {
+                CLIENT_ERR("expected one namespace in `bulkWrite`, but found zero.");
+                goto fail;
+            }
+            if (bson_has_field(cmd, "nsInfo.1")) {
+                CLIENT_ERR(
+                    "expected one namespace in `bulkWrite`, but found more than one. Only one namespace is supported.");
+                goto fail;
+            }
+            if (!mc_iter_document_as_bson(&nsInfo_iter, &nsInfo, status)) {
+                goto fail;
+            }
+            // Ensure `nsInfo` does not already have an `encryptionInformation` field.
+            if (bson_has_field(&nsInfo, "encryptionInformation")) {
+                CLIENT_ERR("unexpected `encryptionInformation` present in input `nsInfo`.");
+                goto fail;
+            }
+        }
+
+        // Copy input and append `encryptionInformation` to `nsInfo`.
+        {
+            // Append everything from input except `nsInfo`.
+            bson_copy_to_excluding_noinit(cmd, &out, "nsInfo", NULL);
+            // Append `nsInfo` array.
+            bson_t nsInfo_array;
+            if (!BSON_APPEND_ARRAY_BEGIN(&out, "nsInfo", &nsInfo_array)) {
+                CLIENT_ERR("unable to begin appending 'nsInfo' array");
+                goto fail;
+            }
+            bson_t nsInfo_array_0;
+            if (!BSON_APPEND_DOCUMENT_BEGIN(&nsInfo_array, "0", &nsInfo_array_0)) {
+                CLIENT_ERR("unable to append 'nsInfo.0' document");
+                goto fail;
+            }
+            // Copy everything from input `nsInfo`.
+            bson_concat(&nsInfo_array_0, &nsInfo);
+            // And append `encryptionInformation`.
+            if (!_fle2_append_encryptionInformation(ctx,
+                                                    &nsInfo_array_0,
+                                                    ns,
+                                                    encryptedFieldConfig,
+                                                    deleteTokens,
+                                                    coll_name,
+                                                    status)) {
+                goto fail;
+            }
+            if (!bson_append_document_end(&nsInfo_array, &nsInfo_array_0)) {
+                CLIENT_ERR("unable to end appending 'nsInfo' document in array");
+            }
+            if (!bson_append_array_end(&out, &nsInfo_array)) {
+                CLIENT_ERR("unable to end appending 'nsInfo' array");
+                goto fail;
+            }
+            // Overwrite `cmd`.
+            bson_destroy(cmd);
+            if (!bson_steal(cmd, &out)) {
+                CLIENT_ERR("failed to steal BSON with encryptionInformation");
+                goto fail;
+            }
+        }
+
+        goto success;
+    }
+
     if (0 != strcmp(cmd_name, "explain") || cmd_target == MC_TO_MONGOCRYPTD) {
-        // All commands except "explain" expect "encryptionInformation"
+        // All commands except "explain" and "bulkWrite" expect "encryptionInformation"
         // at top-level. "explain" sent to mongocryptd expects
         // "encryptionInformation" at top-level.
         if (!_fle2_append_encryptionInformation(ctx, cmd, ns, encryptedFieldConfig, deleteTokens, coll_name, status)) {
@@ -1377,8 +1451,60 @@ _fle2_strip_encryptionInformation(const char *cmd_name, bson_t *cmd /* in and ou
     BSON_ASSERT_PARAM(cmd_name);
     BSON_ASSERT_PARAM(cmd);
 
-    if (0 != strcmp(cmd_name, "explain")) {
+    if (0 != strcmp(cmd_name, "explain") && 0 != strcmp(cmd_name, "bulkWrite")) {
         bson_copy_to_excluding_noinit(cmd, &stripped, "encryptionInformation", NULL);
+        goto success;
+    }
+
+    if (0 == strcmp(cmd_name, "bulkWrite")) {
+        // Get the single `nsInfo` document from the input command.
+        bson_t nsInfo; // Non-owning.
+        {
+            bson_iter_t nsInfo_iter;
+            if (!bson_iter_init(&nsInfo_iter, cmd)) {
+                CLIENT_ERR("failed to iterate command");
+                goto fail;
+            }
+            if (!bson_iter_find_descendant(&nsInfo_iter, "nsInfo.0", &nsInfo_iter)) {
+                CLIENT_ERR("expected one namespace in `bulkWrite`, but found zero.");
+                goto fail;
+            }
+            if (bson_has_field(cmd, "nsInfo.1")) {
+                CLIENT_ERR(
+                    "expected one namespace in `bulkWrite`, but found more than one. Only one namespace is supported.");
+                goto fail;
+            }
+            if (!mc_iter_document_as_bson(&nsInfo_iter, &nsInfo, status)) {
+                goto fail;
+            }
+        }
+
+        // Copy input and exclude `encryptionInformation` from `nsInfo`.
+        {
+            // Append everything from input except `nsInfo`.
+            bson_copy_to_excluding_noinit(cmd, &stripped, "nsInfo", NULL);
+            // Append `nsInfo` array.
+            bson_t nsInfo_array;
+            if (!BSON_APPEND_ARRAY_BEGIN(&stripped, "nsInfo", &nsInfo_array)) {
+                CLIENT_ERR("unable to begin appending 'nsInfo' array");
+                goto fail;
+            }
+            bson_t nsInfo_array_0;
+            if (!BSON_APPEND_DOCUMENT_BEGIN(&nsInfo_array, "0", &nsInfo_array_0)) {
+                CLIENT_ERR("unable to append 'nsInfo.0' document");
+                goto fail;
+            }
+            // Copy everything from input `nsInfo` and exclude `encryptionInformation`.
+            bson_copy_to_excluding_noinit(&nsInfo, &nsInfo_array_0, "encryptionInformation", NULL);
+            if (!bson_append_document_end(&nsInfo_array, &nsInfo_array_0)) {
+                CLIENT_ERR("unable to end appending 'nsInfo' document in array");
+            }
+            if (!bson_append_array_end(&stripped, &nsInfo_array)) {
+                CLIENT_ERR("unable to end appending 'nsInfo' array");
+                goto fail;
+            }
+        }
+
         goto success;
     }
 
