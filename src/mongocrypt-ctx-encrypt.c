@@ -339,7 +339,7 @@ static bool _fle2_insert_encryptionInformation(const mongocrypt_ctx_t *ctx,
     bson_copy_to_excluding_noinit(cmd, &out, "explain", NULL);
     bson_destroy(cmd);
     if (!bson_steal(cmd, &out)) {
-        CLIENT_ERR("failed to steal BSON without encryptionInformation");
+        CLIENT_ERR("failed to steal BSON with encryptionInformation");
         goto fail;
     }
 
