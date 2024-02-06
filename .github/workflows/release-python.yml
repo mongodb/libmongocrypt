@@ -32,7 +32,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: 3.8
           cache: 'pip'
@@ -42,7 +42,7 @@ jobs:
       - name: Build and test dist files
         run: bash ./release.sh
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: dist-${{ matrix.os }}
           path: ./bindings/python/dist/*.*
@@ -54,13 +54,13 @@ jobs:
     name: Collect dist files
     steps:
       - name: Download all workflow run artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
       - name: Flatten directory
         working-directory: .
         run: |
           find . -mindepth 2 -type f -exec mv {} . \;
           find . -type d -empty -delete
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: all-dist-${{ github.head_ref || github.ref_name }}
           path: "./*"
@@ -75,7 +75,7 @@ jobs:
       id-token: write
     steps:
     - name: Download all the dists
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: all-dist-${{ github.head_ref || github.ref_name }}
         path: dist/
