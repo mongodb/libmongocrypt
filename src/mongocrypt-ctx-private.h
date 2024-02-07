@@ -133,6 +133,12 @@ typedef struct {
     char *coll_name;
     char *db_name;
     char *ns;
+
+    // `target_db` is the target database for the operation. May be associated with jsonSchema (CSFLE) or
+    // encryptedFields (QE). For `bulkWrite`, the target namespace database may differ from `db_name`.
+    // If `target_db` is NULL, the target namespace database is the same as `db_name`.
+    char *target_db;
+
     _mongocrypt_buffer_t list_collections_filter;
     _mongocrypt_buffer_t schema;
     /* TODO CDRIVER-3150: audit + rename these buffers.

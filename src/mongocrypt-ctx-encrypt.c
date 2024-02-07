@@ -640,6 +640,19 @@ static bool _mongo_done_collinfo(mongocrypt_ctx_t *ctx) {
     return _try_run_csfle_marking(ctx);
 }
 
+static const char *_mongo_db_collinfo(mongocrypt_ctx_t *ctx) {
+    _mongocrypt_ctx_encrypt_t *ectx;
+
+    BSON_ASSERT_PARAM(ctx);
+
+    ectx = (_mongocrypt_ctx_encrypt_t *)ctx;
+    if (!ectx->target_db) {
+        _mongocrypt_ctx_fail_w_msg(ctx, "Expected target database for `listCollections`, but none exists.");
+        return NULL;
+    }
+    return ectx->target_db;
+}
+
 static bool _fle2_mongo_op_markings(mongocrypt_ctx_t *ctx, bson_t *out) {
     _mongocrypt_ctx_encrypt_t *ectx;
     bson_t cmd_bson = BSON_INITIALIZER, encrypted_field_config_bson = BSON_INITIALIZER;
@@ -2011,6 +2024,7 @@ static void _cleanup(mongocrypt_ctx_t *ctx) {
     ectx = (_mongocrypt_ctx_encrypt_t *)ctx;
     bson_free(ectx->ns);
     bson_free(ectx->db_name);
+    bson_free(ectx->target_db);
     bson_free(ectx->coll_name);
     _mongocrypt_buffer_cleanup(&ectx->list_collections_filter);
     _mongocrypt_buffer_cleanup(&ectx->schema);
@@ -2122,6 +2136,10 @@ static bool _try_schema_from_cache(mongocrypt_ctx_t *ctx) {
     } else {
         /* we need to get it. */
         ctx->state = MONGOCRYPT_CTX_NEED_MONGO_COLLINFO;
+        if (ectx->target_db) {
+            // Target database may differ from command database. Request collection info from target database.
+            ctx->state = MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB;
+        }
     }
 
     bson_destroy(collinfo);
@@ -2731,6 +2749,7 @@ bool mongocrypt_ctx_encrypt_init(mongocrypt_ctx_t *ctx, const char *db, int32_t 
     ctx->vtable.mongo_op_collinfo = _mongo_op_collinfo;
     ctx->vtable.mongo_feed_collinfo = _mongo_feed_collinfo;
     ctx->vtable.mongo_done_collinfo = _mongo_done_collinfo;
+    ctx->vtable.mongo_db_collinfo = _mongo_db_collinfo;
     ctx->vtable.mongo_op_collinfo = _mongo_op_collinfo;
     ctx->vtable.mongo_op_markings = _mongo_op_markings;
     ctx->vtable.mongo_feed_markings = _mongo_feed_markings;
@@ -2765,6 +2784,7 @@ bool mongocrypt_ctx_encrypt_init(mongocrypt_ctx_t *ctx, const char *db, int32_t 
         }
 
         ectx->ns = bson_strdup_printf("%s.%s", target_db, ectx->coll_name);
+        ectx->target_db = bson_strdup(target_db);
         bson_free(target_db);
     } else {
         bool bypass;
@@ -2885,6 +2905,10 @@ static bool mongocrypt_ctx_encrypt_ismaster_done(mongocrypt_ctx_t *ctx) {
         /* Otherwise, we need the the driver to fetch the schema. */
         if (_mongocrypt_buffer_empty(&ectx->schema)) {
             ctx->state = MONGOCRYPT_CTX_NEED_MONGO_COLLINFO;
+            if (ectx->target_db) {
+                // Target database may differ from command database. Request collection info from target database.
+                ctx->state = MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB;
+            }
         }
     }
 
