@@ -662,6 +662,7 @@ fail:
 const char *_state_string(mongocrypt_ctx_state_t state) {
     switch (state) {
     case MONGOCRYPT_CTX_ERROR: return "MONGOCRYPT_CTX_ERROR";
+    case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB: return "MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB";
     case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO: return "MONGOCRYPT_CTX_NEED_MONGO_COLLINFO";
     case MONGOCRYPT_CTX_NEED_MONGO_MARKINGS: return "MONGOCRYPT_CTX_NEED_MONGO_MARKINGS";
     case MONGOCRYPT_CTX_NEED_MONGO_KEYS: return "MONGOCRYPT_CTX_NEED_MONGO_KEYS";
@@ -697,6 +698,9 @@ bool _csfle_state_machine_run(_state_machine_t *state_machine, bson_t *result, b
         switch (mongocrypt_ctx_state(state_machine->ctx)) {
         default:
         case MONGOCRYPT_CTX_ERROR: _test_ctx_check_error(state_machine->ctx, error, true); goto fail;
+        case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB:
+            ERREXIT("Obtaining collection infos on separate databases is not yet supported");
+            break;
         case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO:
             if (!_state_need_mongo_collinfo(state_machine, error)) {
                 goto fail;

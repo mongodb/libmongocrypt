@@ -379,6 +379,7 @@ bool mongocrypt_ctx_mongo_op(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
     }
 
     switch (ctx->state) {
+    case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB:
     case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO: CHECK_AND_CALL(mongo_op_collinfo, ctx, out);
     case MONGOCRYPT_CTX_NEED_MONGO_MARKINGS: CHECK_AND_CALL(mongo_op_markings, ctx, out);
     case MONGOCRYPT_CTX_NEED_MONGO_KEYS: CHECK_AND_CALL(mongo_op_keys, ctx, out);
@@ -412,6 +413,7 @@ bool mongocrypt_ctx_mongo_feed(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in) {
     }
 
     switch (ctx->state) {
+    case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB:
     case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO: CHECK_AND_CALL(mongo_feed_collinfo, ctx, in);
     case MONGOCRYPT_CTX_NEED_MONGO_MARKINGS: CHECK_AND_CALL(mongo_feed_markings, ctx, in);
     case MONGOCRYPT_CTX_NEED_MONGO_KEYS: CHECK_AND_CALL(mongo_feed_keys, ctx, in);
@@ -433,6 +435,7 @@ bool mongocrypt_ctx_mongo_done(mongocrypt_ctx_t *ctx) {
     }
 
     switch (ctx->state) {
+    case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB:
     case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO: CHECK_AND_CALL(mongo_done_collinfo, ctx);
     case MONGOCRYPT_CTX_NEED_MONGO_MARKINGS: CHECK_AND_CALL(mongo_done_markings, ctx);
     case MONGOCRYPT_CTX_NEED_MONGO_KEYS: CHECK_AND_CALL(mongo_done_keys, ctx);
@@ -476,6 +479,7 @@ mongocrypt_kms_ctx_t *mongocrypt_ctx_next_kms_ctx(mongocrypt_ctx_t *ctx) {
     case MONGOCRYPT_CTX_ERROR: return NULL;
     case MONGOCRYPT_CTX_DONE:
     case MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS:
+    case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB:
     case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO:
     case MONGOCRYPT_CTX_NEED_MONGO_KEYS:
     case MONGOCRYPT_CTX_NEED_MONGO_MARKINGS:
@@ -547,6 +551,7 @@ bool mongocrypt_ctx_kms_done(mongocrypt_ctx_t *ctx) {
     case MONGOCRYPT_CTX_ERROR: return false;
     case MONGOCRYPT_CTX_DONE:
     case MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS:
+    case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB:
     case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO:
     case MONGOCRYPT_CTX_NEED_MONGO_KEYS:
     case MONGOCRYPT_CTX_NEED_MONGO_MARKINGS:
@@ -577,6 +582,7 @@ bool mongocrypt_ctx_finalize(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
     case MONGOCRYPT_CTX_DONE:
     case MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS:
     case MONGOCRYPT_CTX_NEED_KMS:
+    case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB:
     case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO:
     case MONGOCRYPT_CTX_NEED_MONGO_KEYS:
     case MONGOCRYPT_CTX_NEED_MONGO_MARKINGS:

@@ -965,9 +965,10 @@ bool mongocrypt_ctx_rewrap_many_datakey_init(mongocrypt_ctx_t *ctx, mongocrypt_b
  */
 typedef enum {
     MONGOCRYPT_CTX_ERROR = 0,
-    MONGOCRYPT_CTX_NEED_MONGO_COLLINFO = 1, /* run on main MongoClient */
-    MONGOCRYPT_CTX_NEED_MONGO_MARKINGS = 2, /* run on mongocryptd. */
-    MONGOCRYPT_CTX_NEED_MONGO_KEYS = 3,     /* run on key vault */
+    MONGOCRYPT_CTX_NEED_MONGO_COLLINFO = 1,         /* run on main MongoClient */
+    MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB = 8, /* run on main MongoClient */
+    MONGOCRYPT_CTX_NEED_MONGO_MARKINGS = 2,         /* run on mongocryptd. */
+    MONGOCRYPT_CTX_NEED_MONGO_KEYS = 3,             /* run on key vault */
     MONGOCRYPT_CTX_NEED_KMS = 4,
     MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS = 7, /* fetch/renew KMS credentials */
     MONGOCRYPT_CTX_READY = 5,                /* ready for encryption/decryption */
@@ -988,7 +989,7 @@ mongocrypt_ctx_state_t mongocrypt_ctx_state(mongocrypt_ctx_t *ctx);
  * is in MONGOCRYPT_CTX_NEED_MONGO_* states.
  *
  * @p op_bson is a BSON document to be used for the operation.
- * - For MONGOCRYPT_CTX_NEED_MONGO_COLLINFO it is a listCollections filter.
+ * - For MONGOCRYPT_CTX_NEED_MONGO_COLLINFO(_WITH_DB) it is a listCollections filter.
  * - For MONGOCRYPT_CTX_NEED_MONGO_KEYS it is a find filter.
  * - For MONGOCRYPT_CTX_NEED_MONGO_MARKINGS it is a command to send to
  * mongocryptd.
@@ -1012,7 +1013,7 @@ bool mongocrypt_ctx_mongo_op(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *op_bson
  * depending on the operation.
  *
  * reply is a BSON document result being fed back for this operation.
- * - For MONGOCRYPT_CTX_NEED_MONGO_COLLINFO it is a doc from a listCollections
+ * - For MONGOCRYPT_CTX_NEED_MONGO_COLLINFO(_WITH_DB) it is a doc from a listCollections
  * cursor. (Note, if listCollections returned no result, do not call this
  * function.)
  * - For MONGOCRYPT_CTX_NEED_MONGO_KEYS it is a doc from a find cursor.

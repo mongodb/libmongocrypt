@@ -151,6 +151,7 @@ void _run_state_machine(mongocrypt_ctx_t *ctx, bson_t *result) {
     while (!done) {
         state = mongocrypt_ctx_state(ctx);
         switch (state) {
+        case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB:
         case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO:
             output = mongocrypt_binary_new();
             CHECK(mongocrypt_ctx_mongo_op(ctx, output));
