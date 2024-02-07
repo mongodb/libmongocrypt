@@ -2737,9 +2737,6 @@ bool mongocrypt_ctx_encrypt_init(mongocrypt_ctx_t *ctx, const char *db, int32_t 
     ctx->vtable.mongo_done_markings = _mongo_done_markings;
     ctx->vtable.finalize = _finalize;
     ctx->vtable.cleanup = _cleanup;
-    ctx->vtable.mongo_op_collinfo = _mongo_op_collinfo;
-    ctx->vtable.mongo_feed_collinfo = _mongo_feed_collinfo;
-    ctx->vtable.mongo_done_collinfo = _mongo_done_collinfo;
     ectx->bypass_query_analysis = ctx->crypt->opts.bypass_query_analysis;
 
     if (!cmd || !cmd->data) {
