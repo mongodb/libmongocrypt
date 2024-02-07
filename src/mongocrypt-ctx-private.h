@@ -84,6 +84,7 @@ typedef struct __mongocrypt_ctx_opts_t {
 
 /* All derived contexts may override these methods. */
 typedef struct {
+    const char *(*mongo_db_collinfo)(mongocrypt_ctx_t *ctx);
     bool (*mongo_op_collinfo)(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out);
     bool (*mongo_feed_collinfo)(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in);
     bool (*mongo_done_collinfo)(mongocrypt_ctx_t *ctx);

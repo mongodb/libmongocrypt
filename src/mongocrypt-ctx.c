@@ -392,6 +392,38 @@ bool mongocrypt_ctx_mongo_op(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
     }
 }
 
+const char *mongocrypt_ctx_mongo_db(mongocrypt_ctx_t *ctx) {
+    if (!ctx) {
+        return NULL;
+    }
+    if (!ctx->initialized) {
+        _mongocrypt_ctx_fail_w_msg(ctx, "ctx NULL or uninitialized");
+        return NULL;
+    }
+
+    switch (ctx->state) {
+    case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB: {
+        if (!ctx->vtable.mongo_db_collinfo) {
+            _mongocrypt_ctx_fail_w_msg(ctx, "not applicable to context");
+            return NULL;
+        }
+        return ctx->vtable.mongo_db_collinfo(ctx);
+    }
+    case MONGOCRYPT_CTX_ERROR: return false;
+    case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO:
+    case MONGOCRYPT_CTX_NEED_MONGO_MARKINGS:
+    case MONGOCRYPT_CTX_NEED_MONGO_KEYS:
+    case MONGOCRYPT_CTX_DONE:
+    case MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS:
+    case MONGOCRYPT_CTX_NEED_KMS:
+    case MONGOCRYPT_CTX_READY:
+    default: {
+        _mongocrypt_ctx_fail_w_msg(ctx, "wrong state");
+        return NULL;
+    }
+    }
+}
+
 bool mongocrypt_ctx_mongo_feed(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in) {
     if (!ctx) {
         return false;
