@@ -18,33 +18,33 @@
 
 #include "mc-check-conversions-private.h"
 #include "mongocrypt-private.h"
-#include "mongocrypt-util-private.h" // mc_bson_type_to_string
+#include "mongocrypt-util-private.h"  // mc_bson_type_to_string
 
-#include <float.h> // DBL_MAX
+#include <float.h>  // DBL_MAX
 
 // Common logic for testing field name, tracking duplication, and presence.
-#define IF_FIELD(Name, ErrorPrefix)                                                                                    \
-    if (0 == strcmp(field, #Name)) {                                                                                   \
-        if (has_##Name) {                                                                                              \
-            CLIENT_ERR("%sUnexpected duplicate field '" #Name "'", ErrorPrefix);                                       \
-            return false;                                                                                              \
-        }                                                                                                              \
+#define IF_FIELD(Name, ErrorPrefix)                                              \
+    if (0 == strcmp(field, #Name)) {                                             \
+        if (has_##Name) {                                                        \
+            CLIENT_ERR("%sUnexpected duplicate field '" #Name "'", ErrorPrefix); \
+            return false;                                                        \
+        }                                                                        \
         has_##Name = true;
 
-#define END_IF_FIELD                                                                                                   \
-    continue;                                                                                                          \
+#define END_IF_FIELD \
+    continue;        \
     }
 
-#define CHECK_HAS(Name, ErrorPrefix)                                                                                   \
-    if (!has_##Name) {                                                                                                 \
-        CLIENT_ERR("%sMissing field '" #Name "'", ErrorPrefix);                                                        \
-        return false;                                                                                                  \
+#define CHECK_HAS(Name, ErrorPrefix)                            \
+    if (!has_##Name) {                                          \
+        CLIENT_ERR("%sMissing field '" #Name "'", ErrorPrefix); \
+        return false;                                           \
     }
 
-bool mc_RangeOpts_parse(mc_RangeOpts_t *ro, const bson_t *in, mongocrypt_status_t *status) {
+bool mc_RangeOpts_parse(mc_RangeOpts_t* ro, const bson_t* in, mongocrypt_status_t* status) {
     bson_iter_t iter;
     bool has_min = false, has_max = false, has_sparsity = false, has_precision = false;
-    const char *const error_prefix = "Error parsing RangeOpts: ";
+    const char* const error_prefix = "Error parsing RangeOpts: ";
 
     BSON_ASSERT_PARAM(ro);
     BSON_ASSERT_PARAM(in);
@@ -59,7 +59,7 @@ bool mc_RangeOpts_parse(mc_RangeOpts_t *ro, const bson_t *in, mongocrypt_status_
     }
 
     while (bson_iter_next(&iter)) {
-        const char *field = bson_iter_key(&iter);
+        const char* field = bson_iter_key(&iter);
         BSON_ASSERT(field);
 
         IF_FIELD(min, error_prefix)
@@ -114,9 +114,10 @@ bool mc_RangeOpts_parse(mc_RangeOpts_t *ro, const bson_t *in, mongocrypt_status_
 
         bson_type_t minType = bson_iter_type(&ro->min.value);
         if (minType != BSON_TYPE_DOUBLE && minType != BSON_TYPE_DECIMAL128) {
-            CLIENT_ERR("expected 'precision' to be set with double or decimal128 "
-                       "index, but got: %s min",
-                       mc_bson_type_to_string(minType));
+            CLIENT_ERR(
+                "expected 'precision' to be set with double or decimal128 "
+                "index, but got: %s min",
+                mc_bson_type_to_string(minType));
             return false;
         }
 
@@ -127,21 +128,24 @@ bool mc_RangeOpts_parse(mc_RangeOpts_t *ro, const bson_t *in, mongocrypt_status_
 
         bson_type_t maxType = bson_iter_type(&ro->max.value);
         if (maxType != BSON_TYPE_DOUBLE && maxType != BSON_TYPE_DECIMAL128) {
-            CLIENT_ERR("expected 'precision' to be set with double or decimal128 "
-                       "index, but got: %s max",
-                       mc_bson_type_to_string(maxType));
+            CLIENT_ERR(
+                "expected 'precision' to be set with double or decimal128 "
+                "index, but got: %s max",
+                mc_bson_type_to_string(maxType));
             return false;
         }
     }
 
     // Expect min and max to match types.
     if (ro->min.set && ro->max.set) {
-        bson_type_t minType = bson_iter_type(&ro->min.value), maxType = bson_iter_type(&ro->max.value);
+        bson_type_t minType = bson_iter_type(&ro->min.value),
+                    maxType = bson_iter_type(&ro->max.value);
         if (minType != maxType) {
-            CLIENT_ERR("expected 'min' and 'max' to be same type, but got: %s "
-                       "min and %s max",
-                       mc_bson_type_to_string(minType),
-                       mc_bson_type_to_string(maxType));
+            CLIENT_ERR(
+                "expected 'min' and 'max' to be same type, but got: %s "
+                "min and %s max",
+                mc_bson_type_to_string(minType),
+                mc_bson_type_to_string(maxType));
             return false;
         }
     }
@@ -152,7 +156,8 @@ bool mc_RangeOpts_parse(mc_RangeOpts_t *ro, const bson_t *in, mongocrypt_status_
             bson_type_t minType = bson_iter_type(&ro->min.value);
             if (minType == BSON_TYPE_DOUBLE || minType == BSON_TYPE_DECIMAL128) {
                 if (!has_precision) {
-                    CLIENT_ERR("expected 'precision' to be set with 'min' for %s", mc_bson_type_to_string(minType));
+                    CLIENT_ERR("expected 'precision' to be set with 'min' for %s",
+                               mc_bson_type_to_string(minType));
                     return false;
                 }
             }
@@ -162,7 +167,8 @@ bool mc_RangeOpts_parse(mc_RangeOpts_t *ro, const bson_t *in, mongocrypt_status_
             bson_type_t maxType = bson_iter_type(&ro->max.value);
             if (maxType == BSON_TYPE_DOUBLE || maxType == BSON_TYPE_DECIMAL128) {
                 if (!has_precision) {
-                    CLIENT_ERR("expected 'precision' to be set with 'max' for %s", mc_bson_type_to_string(maxType));
+                    CLIENT_ERR("expected 'precision' to be set with 'max' for %s",
+                               mc_bson_type_to_string(maxType));
                     return false;
                 }
             }
@@ -172,16 +178,16 @@ bool mc_RangeOpts_parse(mc_RangeOpts_t *ro, const bson_t *in, mongocrypt_status_
     return true;
 }
 
-bool mc_RangeOpts_to_FLE2RangeInsertSpec(const mc_RangeOpts_t *ro,
-                                         const bson_t *v,
-                                         bson_t *out,
-                                         mongocrypt_status_t *status) {
+bool mc_RangeOpts_to_FLE2RangeInsertSpec(const mc_RangeOpts_t* ro,
+                                         const bson_t* v,
+                                         bson_t* out,
+                                         mongocrypt_status_t* status) {
     BSON_ASSERT_PARAM(ro);
     BSON_ASSERT_PARAM(v);
     BSON_ASSERT_PARAM(out);
     BSON_ASSERT(status || true);
 
-    const char *const error_prefix = "Error making FLE2RangeInsertSpec: ";
+    const char* const error_prefix = "Error making FLE2RangeInsertSpec: ";
     bson_iter_t v_iter;
     if (!bson_iter_init_find(&v_iter, v, "v")) {
         CLIENT_ERR("Unable to find 'v' in input");
@@ -220,11 +226,11 @@ bool mc_RangeOpts_to_FLE2RangeInsertSpec(const mc_RangeOpts_t *ro,
     return true;
 }
 
-bool mc_RangeOpts_appendMin(const mc_RangeOpts_t *ro,
+bool mc_RangeOpts_appendMin(const mc_RangeOpts_t* ro,
                             bson_type_t valueType,
-                            const char *fieldName,
-                            bson_t *out,
-                            mongocrypt_status_t *status) {
+                            const char* fieldName,
+                            bson_t* out,
+                            mongocrypt_status_t* status) {
     BSON_ASSERT_PARAM(ro);
     BSON_ASSERT_PARAM(fieldName);
     BSON_ASSERT_PARAM(out);
@@ -232,10 +238,11 @@ bool mc_RangeOpts_appendMin(const mc_RangeOpts_t *ro,
 
     if (ro->min.set) {
         if (bson_iter_type(&ro->min.value) != valueType) {
-            CLIENT_ERR("expected matching 'min' and value type. Got range option "
-                       "'min' of type %s and value of type %s",
-                       mc_bson_type_to_string(bson_iter_type(&ro->min.value)),
-                       mc_bson_type_to_string(valueType));
+            CLIENT_ERR(
+                "expected matching 'min' and value type. Got range option "
+                "'min' of type %s and value of type %s",
+                mc_bson_type_to_string(bson_iter_type(&ro->min.value)),
+                mc_bson_type_to_string(valueType));
             return false;
         }
         if (!bson_append_iter(out, fieldName, -1, &ro->min.value)) {
@@ -245,8 +252,10 @@ bool mc_RangeOpts_appendMin(const mc_RangeOpts_t *ro,
         return true;
     }
 
-    if (valueType == BSON_TYPE_INT32 || valueType == BSON_TYPE_INT64 || valueType == BSON_TYPE_DATE_TIME) {
-        CLIENT_ERR("Range option 'min' is required for type: %s", mc_bson_type_to_string(valueType));
+    if (valueType == BSON_TYPE_INT32 || valueType == BSON_TYPE_INT64 ||
+        valueType == BSON_TYPE_DATE_TIME) {
+        CLIENT_ERR("Range option 'min' is required for type: %s",
+                   mc_bson_type_to_string(valueType));
         return false;
     } else if (valueType == BSON_TYPE_DOUBLE) {
         if (!BSON_APPEND_DOUBLE(out, fieldName, -DBL_MAX)) {
@@ -260,11 +269,12 @@ bool mc_RangeOpts_appendMin(const mc_RangeOpts_t *ro,
             CLIENT_ERR("failed to append BSON");
             return false;
         }
-#else  // ↑↑↑↑↑↑↑↑ With Decimal128 / Without ↓↓↓↓↓↓↓↓↓↓
-        CLIENT_ERR("unsupported BSON type (Decimal128) for range: libmongocrypt "
-                   "was built without extended Decimal128 support");
+#else   // ↑↑↑↑↑↑↑↑ With Decimal128 / Without ↓↓↓↓↓↓↓↓↓↓
+        CLIENT_ERR(
+            "unsupported BSON type (Decimal128) for range: libmongocrypt "
+            "was built without extended Decimal128 support");
         return false;
-#endif // MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
+#endif  // MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
     } else {
         CLIENT_ERR("unsupported BSON type: %s for range", mc_bson_type_to_string(valueType));
         return false;
@@ -272,11 +282,11 @@ bool mc_RangeOpts_appendMin(const mc_RangeOpts_t *ro,
     return true;
 }
 
-bool mc_RangeOpts_appendMax(const mc_RangeOpts_t *ro,
+bool mc_RangeOpts_appendMax(const mc_RangeOpts_t* ro,
                             bson_type_t valueType,
-                            const char *fieldName,
-                            bson_t *out,
-                            mongocrypt_status_t *status) {
+                            const char* fieldName,
+                            bson_t* out,
+                            mongocrypt_status_t* status) {
     BSON_ASSERT_PARAM(ro);
     BSON_ASSERT_PARAM(fieldName);
     BSON_ASSERT_PARAM(out);
@@ -284,10 +294,11 @@ bool mc_RangeOpts_appendMax(const mc_RangeOpts_t *ro,
 
     if (ro->max.set) {
         if (bson_iter_type(&ro->max.value) != valueType) {
-            CLIENT_ERR("expected matching 'max' and value type. Got range option "
-                       "'max' of type %s and value of type %s",
-                       mc_bson_type_to_string(bson_iter_type(&ro->max.value)),
-                       mc_bson_type_to_string(valueType));
+            CLIENT_ERR(
+                "expected matching 'max' and value type. Got range option "
+                "'max' of type %s and value of type %s",
+                mc_bson_type_to_string(bson_iter_type(&ro->max.value)),
+                mc_bson_type_to_string(valueType));
             return false;
         }
         if (!bson_append_iter(out, fieldName, -1, &ro->max.value)) {
@@ -297,8 +308,10 @@ bool mc_RangeOpts_appendMax(const mc_RangeOpts_t *ro,
         return true;
     }
 
-    if (valueType == BSON_TYPE_INT32 || valueType == BSON_TYPE_INT64 || valueType == BSON_TYPE_DATE_TIME) {
-        CLIENT_ERR("Range option 'max' is required for type: %s", mc_bson_type_to_string(valueType));
+    if (valueType == BSON_TYPE_INT32 || valueType == BSON_TYPE_INT64 ||
+        valueType == BSON_TYPE_DATE_TIME) {
+        CLIENT_ERR("Range option 'max' is required for type: %s",
+                   mc_bson_type_to_string(valueType));
         return false;
     } else if (valueType == BSON_TYPE_DOUBLE) {
         if (!BSON_APPEND_DOUBLE(out, fieldName, DBL_MAX)) {
@@ -312,11 +325,12 @@ bool mc_RangeOpts_appendMax(const mc_RangeOpts_t *ro,
             CLIENT_ERR("failed to append BSON");
             return false;
         }
-#else  // ↑↑↑↑↑↑↑↑ With Decimal128 / Without ↓↓↓↓↓↓↓↓↓↓
-        CLIENT_ERR("unsupported BSON type (Decimal128) for range: libmongocrypt "
-                   "was built without extended Decimal128 support");
+#else   // ↑↑↑↑↑↑↑↑ With Decimal128 / Without ↓↓↓↓↓↓↓↓↓↓
+        CLIENT_ERR(
+            "unsupported BSON type (Decimal128) for range: libmongocrypt "
+            "was built without extended Decimal128 support");
         return false;
-#endif // MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
+#endif  // MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
     } else {
         CLIENT_ERR("unsupported BSON type: %s for range", mc_bson_type_to_string(valueType));
         return false;
@@ -324,7 +338,7 @@ bool mc_RangeOpts_appendMax(const mc_RangeOpts_t *ro,
     return true;
 }
 
-void mc_RangeOpts_cleanup(mc_RangeOpts_t *ro) {
+void mc_RangeOpts_cleanup(mc_RangeOpts_t* ro) {
     if (!ro) {
         return;
     }
