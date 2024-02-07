@@ -17,6 +17,8 @@
 #include "mc-rangeopts-private.h"
 
 #include "mc-check-conversions-private.h"
+#include "mc-range-edge-generation-private.h"  // mc_count_leading_zeros_XX
+#include "mc-range-encoding-private.h"         // mc_getTypeInfoXX
 #include "mongocrypt-private.h"
 #include "mongocrypt-util-private.h"  // mc_bson_type_to_string
 
@@ -43,7 +45,8 @@
 
 bool mc_RangeOpts_parse(mc_RangeOpts_t* ro, const bson_t* in, mongocrypt_status_t* status) {
     bson_iter_t iter;
-    bool has_min = false, has_max = false, has_sparsity = false, has_precision = false;
+    bool has_min = false, has_max = false, has_sparsity = false, has_precision = false,
+         has_trimFactor = false;
     const char* const error_prefix = "Error parsing RangeOpts: ";
 
     BSON_ASSERT_PARAM(ro);
@@ -96,6 +99,22 @@ bool mc_RangeOpts_parse(mc_RangeOpts_t* ro, const bson_t* in, mongocrypt_status_
         }
         END_IF_FIELD
 
+        IF_FIELD(trimFactor, error_prefix) {
+            if (!BSON_ITER_HOLDS_INT32(&iter)) {
+                CLIENT_ERR("%sExpected int32 for trimFactor, got: %s",
+                           error_prefix,
+                           mc_bson_type_to_string(bson_iter_type(&iter)));
+                return false;
+            };
+            int32_t val = bson_iter_int32(&iter);
+            if (val < 0) {
+                CLIENT_ERR("%s'trimFactor' must be non-negative", error_prefix);
+                return false;
+            }
+            ro->trimFactor = OPT_U32((uint32_t)val);
+        }
+        END_IF_FIELD
+
         CLIENT_ERR("%sUnrecognized field: '%s'", error_prefix, field);
         return false;
     }
@@ -104,6 +123,7 @@ bool mc_RangeOpts_parse(mc_RangeOpts_t* ro, const bson_t* in, mongocrypt_status_
     CHECK_HAS(sparsity, error_prefix);
     // Do not error if precision is not present. Precision is optional and only
     // applies to double/decimal128.
+    // Do not error if trimFactor is not present. It is optional.
 
     // Expect precision only to be set for double or decimal128.
     if (has_precision) {
@@ -175,6 +195,9 @@ bool mc_RangeOpts_parse(mc_RangeOpts_t* ro, const bson_t* in, mongocrypt_status_
         }
     }
 
+    // At this point, we do not know the type of the field if min and max are unspecified. Wait to
+    // validate trimFactor.
+
     return true;
 }
 
@@ -219,6 +242,11 @@ bool mc_RangeOpts_to_FLE2RangeInsertSpec(const mc_RangeOpts_t* ro,
             return false;
         }
     }
+
+    if (!mc_RangeOpts_appendTrimFactor(ro, bson_iter_type(&v_iter), "trimFactor", &child, status)) {
+        return false;
+    }
+
     if (!bson_append_document_end(out, &child)) {
         CLIENT_ERR("%sError appending to BSON", error_prefix);
         return false;
@@ -333,6 +361,169 @@ bool mc_RangeOpts_appendMax(const mc_RangeOpts_t* ro,
 #endif  // MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
     } else {
         CLIENT_ERR("unsupported BSON type: %s for range", mc_bson_type_to_string(valueType));
+        return false;
+    }
+    return true;
+}
+
+// Used to calculate max trim factor. Returns the number of bits required to represent any number in
+// the domain.
+bool mc_getNumberOfBits(const mc_RangeOpts_t* ro,
+                        bson_type_t valueType,
+                        uint32_t* bitsOut,
+                        mongocrypt_status_t* status) {
+    BSON_ASSERT_PARAM(ro);
+    BSON_ASSERT_PARAM(bitsOut);
+
+    switch (valueType) {
+        // For each type, we use getTypeInfo to get the total number of values in the domain (-1)
+        // which tells us how many bits are needed to represent the whole domain.
+        case BSON_TYPE_INT32: {
+            int32_t value;
+            mc_optional_int32_t rmin, rmax;
+            if (ro->min.set) {
+                value = bson_iter_int32(&ro->min.value);
+                rmin = OPT_I32(value);
+                rmax = OPT_I32(bson_iter_int32(&ro->max.value));
+            } else {
+                value = 0;
+                rmin.set = false;
+                rmax.set = false;
+            }
+            mc_getTypeInfo32_args_t args = {value, rmin, rmax};
+            mc_OSTType_Int32 out;
+            if (!mc_getTypeInfo32(args, &out, status)) {
+                return false;
+            }
+            *bitsOut = 32 - mc_count_leading_zeros_u32(out.max);
+            return true;
+        }
+        case BSON_TYPE_INT64: {
+            int64_t value;
+            mc_optional_int64_t rmin, rmax;
+            if (ro->min.set) {
+                value = bson_iter_int64(&ro->min.value);
+                rmin = OPT_I64(value);
+                rmax = OPT_I64(bson_iter_int64(&ro->max.value));
+            } else {
+                value = 0;
+                rmin.set = false;
+                rmax.set = false;
+            }
+            mc_getTypeInfo64_args_t args = {value, rmin, rmax};
+            mc_OSTType_Int64 out;
+            if (!mc_getTypeInfo64(args, &out, status)) {
+                return false;
+            }
+            *bitsOut = 64 - mc_count_leading_zeros_u64(out.max);
+            return true;
+        }
+        case BSON_TYPE_DATE_TIME: {
+            int64_t value;
+            mc_optional_int64_t rmin, rmax;
+            if (ro->min.set) {
+                value = bson_iter_date_time(&ro->min.value);
+                rmin = OPT_I64(value);
+                rmax = OPT_I64(bson_iter_date_time(&ro->max.value));
+            } else {
+                value = 0;
+                rmin.set = false;
+                rmax.set = false;
+            }
+            mc_getTypeInfo64_args_t args = {value, rmin, rmax};
+            mc_OSTType_Int64 out;
+            if (!mc_getTypeInfo64(args, &out, status)) {
+                return false;
+            }
+            *bitsOut = 64 - mc_count_leading_zeros_u64(out.max);
+            return true;
+        }
+        case BSON_TYPE_DOUBLE: {
+            double value;
+            mc_optional_double_t rmin, rmax;
+            mc_optional_uint32_t prec = ro->precision;
+            if (ro->min.set) {
+                value = bson_iter_double(&ro->min.value);
+                rmin = OPT_DOUBLE(value);
+                rmax = OPT_DOUBLE(bson_iter_double(&ro->max.value));
+
+            } else {
+                value = 0;
+                rmin.set = false;
+                rmax.set = false;
+            }
+            mc_getTypeInfoDouble_args_t args = {value, rmin, rmax, prec};
+            mc_OSTType_Double out;
+            if (!mc_getTypeInfoDouble(args, &out, status)) {
+                return false;
+            }
+            *bitsOut = 64 - mc_count_leading_zeros_u64(out.max);
+            return true;
+        }
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
+        case BSON_TYPE_DECIMAL128: {
+            mc_dec128 value;
+            mc_optional_dec128_t rmin, rmax;
+            mc_optional_uint32_t prec = ro->precision;
+            if (ro->min.set) {
+                value = bson_iter_decimal128(&ro->min.value);
+                rmin = OPT_MC_DEC128(value);
+                rmax = OPT_MC_DEC128(bson_iter_decimal128(&ro->max.value));
+
+            } else {
+                value = MC_DEC128_ZERO;
+                rmin.set = false;
+                rmax.set = false;
+            }
+            mc_getTypeInfoDecimal128_args_t args = {value, rmin, rmax, prec};
+            mc_OSTType_Decimal128 out;
+            if (!mc_getTypeInfoDecimal128(args, &out, status)) {
+                return false;
+            }
+            *bitsOut = 128 - mc_count_leading_zeros_u128(out.max);
+            return true;
+        }
+#endif
+        default:
+            CLIENT_ERR("unsupported BSON type: %s for range", mc_bson_type_to_string(valueType));
+            return false;
+    }
+}
+
+bool mc_RangeOpts_appendTrimFactor(const mc_RangeOpts_t* ro,
+                                   bson_type_t valueType,
+                                   const char* fieldName,
+                                   bson_t* out,
+                                   mongocrypt_status_t* status) {
+    BSON_ASSERT_PARAM(ro);
+    BSON_ASSERT_PARAM(fieldName);
+    BSON_ASSERT_PARAM(out);
+    BSON_ASSERT(status || true);
+
+    if (!ro->trimFactor.set) {
+        if (!BSON_APPEND_INT32(out, fieldName, 0)) {
+            CLIENT_ERR("failed to append BSON");
+            return false;
+        }
+        return true;
+    }
+
+    uint32_t nbits;
+    if (!mc_getNumberOfBits(ro, valueType, &nbits, status)) {
+        return false;
+    }
+    // if nbits = 0, we want to allow trim factor = 0.
+    uint32_t test = nbits ? nbits : 1;
+    if (ro->trimFactor.value >= test) {
+        CLIENT_ERR(
+            "Trim factor (%d) must be less than the total number of bits (%d) used to represent "
+            "any element in the domain.",
+            ro->trimFactor.value,
+            nbits);
+        return false;
+    }
+    if (!BSON_APPEND_INT32(out, fieldName, ro->trimFactor.value)) {
+        CLIENT_ERR("failed to append BSON");
         return false;
     }
     return true;
