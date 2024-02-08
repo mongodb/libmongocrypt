@@ -521,7 +521,7 @@ bool mc_RangeOpts_appendTrimFactor(const mc_RangeOpts_t* ro,
             nbits);
         return false;
     }
-    if (!BSON_APPEND_INT32(out, fieldName, ro->trimFactor.value)) {
+    if (!BSON_APPEND_INT32(out, fieldName, (int32_t)ro->trimFactor.value)) {
         CLIENT_ERR("failed to append BSON");
         return false;
     }
