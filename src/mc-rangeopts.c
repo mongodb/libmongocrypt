@@ -466,10 +466,9 @@ bool mc_getNumberOfBits(const mc_RangeOpts_t* ro,
             mc_optional_dec128_t rmin, rmax;
             mc_optional_uint32_t prec = ro->precision;
             if (ro->min.set) {
-                value = bson_iter_decimal128(&ro->min.value);
+                value = mc_dec128_from_bson_iter(&ro->min.value);
                 rmin = OPT_MC_DEC128(value);
-                rmax = OPT_MC_DEC128(bson_iter_decimal128(&ro->max.value));
-
+                rmax = OPT_MC_DEC128(mc_dec128_from_bson_iter(&ro->max.value));
             } else {
                 value = MC_DEC128_ZERO;
                 rmin.set = false;
@@ -512,6 +511,7 @@ bool mc_RangeOpts_appendTrimFactor(const mc_RangeOpts_t* ro,
     if (!mc_getNumberOfBits(ro, valueType, &nbits, status)) {
         return false;
     }
+    printf("nbits %d\n", nbits);
     // if nbits = 0, we want to allow trim factor = 0.
     uint32_t test = nbits ? nbits : 1;
     if (ro->trimFactor.value >= test) {
