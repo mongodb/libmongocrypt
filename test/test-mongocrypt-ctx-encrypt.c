@@ -4674,6 +4674,7 @@ static void _test_bulkWrite(_mongocrypt_tester_t *tester) {
     // Test initializing bulkWrite commands.
     {
         mongocrypt_t *crypt = mongocrypt_new();
+        mongocrypt_setopt_use_need_mongo_collinfo_with_db_state(crypt);
         mongocrypt_setopt_kms_providers(
             crypt,
             TEST_BSON(BSON_STR({"local" : {"key" : {"$binary" : {"base64" : "%s", "subType" : "00"}}}}), local_kek));
@@ -4797,6 +4798,7 @@ static void _test_bulkWrite(_mongocrypt_tester_t *tester) {
     // Test a bulkWrite with remote encryptedFields.
     {
         mongocrypt_t *crypt = mongocrypt_new();
+        mongocrypt_setopt_use_need_mongo_collinfo_with_db_state(crypt);
 
         mongocrypt_setopt_kms_providers(
             crypt,
@@ -4863,6 +4865,28 @@ static void _test_bulkWrite(_mongocrypt_tester_t *tester) {
 
             mongocrypt_binary_destroy(out);
         }
+
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+
+    // Test a bulkWrite with remote schema when MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB is not supported.
+    {
+        mongocrypt_t *crypt = mongocrypt_new();
+
+        mongocrypt_setopt_kms_providers(
+            crypt,
+            TEST_BSON(BSON_STR({"local" : {"key" : {"$binary" : {"base64" : "%s", "subType" : "00"}}}}), local_kek));
+
+        ASSERT_OK(mongocrypt_init(crypt), crypt);
+
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+
+        ASSERT_FAILS(
+            mongocrypt_ctx_encrypt_init(ctx, "admin", -1, TEST_FILE("./test/data/bulkWrite/simple/cmd.json")),
+            ctx,
+            "Fetching remote collection information on separate databases is not supported. Try upgrading driver, or "
+            "specify a local schemaMap or encryptedFieldsMap.");
 
         mongocrypt_ctx_destroy(ctx);
         mongocrypt_destroy(crypt);

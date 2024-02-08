@@ -1136,6 +1136,12 @@ void mongocrypt_setopt_use_need_kms_credentials_state(mongocrypt_t *crypt) {
     crypt->opts.use_need_kms_credentials_state = true;
 }
 
+void mongocrypt_setopt_use_need_mongo_collinfo_with_db_state(mongocrypt_t *crypt) {
+    BSON_ASSERT_PARAM(crypt);
+
+    crypt->opts.use_need_mongo_collinfo_with_db_state = true;
+}
+
 void mongocrypt_setopt_set_crypt_shared_lib_path_override(mongocrypt_t *crypt, const char *path) {
     BSON_ASSERT_PARAM(crypt);
     BSON_ASSERT_PARAM(path);

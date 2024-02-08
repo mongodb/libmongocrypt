@@ -474,6 +474,18 @@ MONGOCRYPT_EXPORT
 void mongocrypt_setopt_use_need_kms_credentials_state(mongocrypt_t *crypt);
 
 /**
+ * @brief Opt-into handling the MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB state.
+ *
+ * A context enters the MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB state when
+ * processing a `bulkWrite` command. The target database of the `bulkWrite` may differ from the command database
+ * ("admin").
+ *
+ * @param[in] crypt The @ref mongocrypt_t object to update
+ */
+MONGOCRYPT_EXPORT
+void mongocrypt_setopt_use_need_mongo_collinfo_with_db_state(mongocrypt_t *crypt);
+
+/**
  * Initialize new @ref mongocrypt_t object.
  *
  * Set options before using @ref mongocrypt_setopt_kms_provider_local, @ref
