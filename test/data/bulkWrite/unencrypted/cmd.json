@@ -1,0 +1,17 @@
+{
+   "bulkWrite": 1,
+   "ops": [
+      {
+         "insert": 0,
+         "document": {
+            "plainText": "sample"
+         }
+      }
+   ],
+   "nsInfo": [
+      {
+         "ns": "db.test"
+      }
+   ],
+   "$db": "admin"
+}

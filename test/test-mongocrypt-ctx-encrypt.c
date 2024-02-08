@@ -4892,6 +4892,60 @@ static void _test_bulkWrite(_mongocrypt_tester_t *tester) {
         mongocrypt_destroy(crypt);
     }
 
+    // Test a bulkWrite to an unencrypted collection.
+    {
+        mongocrypt_t *crypt = mongocrypt_new();
+        // Opt-in to handling required state for fetching remote encryptedFields with `bulkWrite`.
+        mongocrypt_setopt_use_need_mongo_collinfo_with_db_state(crypt);
+
+        mongocrypt_setopt_kms_providers(
+            crypt,
+            TEST_BSON(BSON_STR({"local" : {"key" : {"$binary" : {"base64" : "%s", "subType" : "00"}}}}), local_kek));
+
+        ASSERT_OK(mongocrypt_init(crypt), crypt);
+
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+
+        ASSERT_OK(
+            mongocrypt_ctx_encrypt_init(ctx, "admin", -1, TEST_FILE("./test/data/bulkWrite/unencrypted/cmd.json")),
+            ctx);
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB);
+        {
+            // Do not feed any response.
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+        {
+            mongocrypt_binary_t *cmd_to_mongocryptd = mongocrypt_binary_new();
+
+            ASSERT_OK(mongocrypt_ctx_mongo_op(ctx, cmd_to_mongocryptd), ctx);
+            ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TEST_FILE("./test/data/bulkWrite/unencrypted/cmd-to-mongocryptd.json"),
+                                                cmd_to_mongocryptd);
+            mongocrypt_binary_destroy(cmd_to_mongocryptd);
+            ASSERT_OK(
+                mongocrypt_ctx_mongo_feed(ctx, TEST_FILE("./test/data/bulkWrite/unencrypted/mongocryptd-reply.json")),
+                ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
+        {
+            mongocrypt_binary_t *out = mongocrypt_binary_new();
+            ASSERT_OK(mongocrypt_ctx_finalize(ctx, out), ctx);
+
+            // `expect` excludes `encryptionInformation`.
+            mongocrypt_binary_t *expect = TEST_FILE("./test/data/bulkWrite/unencrypted/payload.json");
+            ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(expect, out);
+
+            mongocrypt_binary_destroy(out);
+        }
+
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+
     // Test a bulkWrite with two inserts.
 
     // Test a bulkWrite with one update.
