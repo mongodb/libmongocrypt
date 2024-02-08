@@ -2137,6 +2137,13 @@ static bool _try_schema_from_cache(mongocrypt_ctx_t *ctx) {
         /* we need to get it. */
         ctx->state = MONGOCRYPT_CTX_NEED_MONGO_COLLINFO;
         if (ectx->target_db) {
+            if (!ctx->crypt->opts.use_need_mongo_collinfo_with_db_state) {
+                _mongocrypt_ctx_fail_w_msg(
+                    ctx,
+                    "Fetching remote collection information on separate databases is not supported. Try "
+                    "upgrading driver, or specify a local schemaMap or encryptedFieldsMap.");
+                return false;
+            }
             // Target database may differ from command database. Request collection info from target database.
             ctx->state = MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB;
         }
@@ -2906,6 +2913,13 @@ static bool mongocrypt_ctx_encrypt_ismaster_done(mongocrypt_ctx_t *ctx) {
         if (_mongocrypt_buffer_empty(&ectx->schema)) {
             ctx->state = MONGOCRYPT_CTX_NEED_MONGO_COLLINFO;
             if (ectx->target_db) {
+                if (!ctx->crypt->opts.use_need_mongo_collinfo_with_db_state) {
+                    _mongocrypt_ctx_fail_w_msg(
+                        ctx,
+                        "Fetching remote collection information on separate databases is not supported. Try "
+                        "upgrading driver, or specify a local schemaMap or encryptedFieldsMap.");
+                    return false;
+                }
                 // Target database may differ from command database. Request collection info from target database.
                 ctx->state = MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB;
             }
