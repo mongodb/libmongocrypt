@@ -511,7 +511,6 @@ bool mc_RangeOpts_appendTrimFactor(const mc_RangeOpts_t* ro,
     if (!mc_getNumberOfBits(ro, valueType, &nbits, status)) {
         return false;
     }
-    printf("nbits %d\n", nbits);
     // if nbits = 0, we want to allow trim factor = 0.
     uint32_t test = nbits ? nbits : 1;
     if (ro->trimFactor.value >= test) {

@@ -217,7 +217,8 @@ static void test_mc_RangeOpts_to_FLE2RangeInsertSpec(_mongocrypt_tester_t *teste
          .in = RAW_STRING({"trimFactor": 10, "min" : {"$numberDecimal": "0"}, "max" : {"$numberDecimal": "100"}, "precision": 1, "sparsity" : {"$numberLong" : "1"}}),
          .v = RAW_STRING({"v" : {"$numberDecimal": "0"}}),
          .expectError = "Trim factor (10) must be less than the total number of bits (10) used to represent any element in the domain."},
-        
+
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
         {.desc = "tf = 127 works for unbounded decimal (domain size = 2^128)",
          .in = RAW_STRING({"trimFactor": 127, "sparsity" : {"$numberLong" : "1"}}),
          .v = RAW_STRING({"v" : {"$numberDecimal": "0"}}),
@@ -226,7 +227,7 @@ static void test_mc_RangeOpts_to_FLE2RangeInsertSpec(_mongocrypt_tester_t *teste
          .in = RAW_STRING({"trimFactor": 128, "sparsity" : {"$numberLong" : "1"}}),
          .v = RAW_STRING({"v" : {"$numberDecimal": "0"}}),
          .expectError = "Trim factor (128) must be less than the total number of bits (128) used to represent any element in the domain."},
-
+#endif
     };
 
     for (size_t i = 0; i < sizeof(tests) / sizeof(tests[0]); i++) {
@@ -235,12 +236,8 @@ static void test_mc_RangeOpts_to_FLE2RangeInsertSpec(_mongocrypt_tester_t *teste
         mc_RangeOpts_t ro;
         printf("running test_mc_RangeOpts_to_FLE2RangeInsertSpec subtest: %s\n", test->desc);
         ASSERT_OK_STATUS(mc_RangeOpts_parse(&ro, TMP_BSON(test->in), status), status);
-        printf("parsed good\n");
-        TMP_BSON(test->v);
-        printf("ok V\n");
         bson_t out = BSON_INITIALIZER;
         bool ret = mc_RangeOpts_to_FLE2RangeInsertSpec(&ro, TMP_BSON(test->v), &out, status);
-        printf("done range ins\n");
         if (!test->expectError) {
             ASSERT_OK_STATUS(ret, status);
             ASSERT_EQUAL_BSON(TMP_BSON(test->expect), &out);
