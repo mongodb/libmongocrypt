@@ -167,9 +167,15 @@ typedef struct {
      * 2. (TODO MONGOCRYPT-414) The collection has encryptedFields in the
      * response to listCollections. encrypted_field_config is true if and only if
      * encryption is using FLE 2.0.
+     * 3. The `bulkWrite` command is processed and needs an empty encryptedFields to be processed by query analysis.
+     * (`bulkWrite` does not support empty JSON schema).
      */
     _mongocrypt_buffer_t encrypted_field_config;
     mc_EncryptedFieldConfig_t efc;
+    // `used_empty_encryptedFields` is true if the collection has no JSON schema or encryptedFields,
+    // yet an empty encryptedFields was constructed to support query analysis.
+    // When true, an empty encryptedFields is sent to query analysis, but not appended to the final command.
+    bool used_empty_encryptedFields;
     /* bypass_query_analysis is set to true to skip the
      * MONGOCRYPT_CTX_NEED_MONGO_MARKINGS state. */
     bool bypass_query_analysis;

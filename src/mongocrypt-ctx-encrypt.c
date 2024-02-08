@@ -406,6 +406,39 @@ static bool _set_schema_from_collinfo(mongocrypt_ctx_t *ctx, bson_t *collinfo) {
             _mongocrypt_ctx_fail(ctx);
             return false;
         }
+    } else if (0 == strcmp(ectx->cmd_name, "bulkWrite")) {
+        ectx->used_empty_encryptedFields = true;
+        // `bulkWrite` is a special case. Sending `bulkWrite` with `jsonSchema` to query analysis results in an error:
+        // `The bulkWrite command only supports Queryable Encryption`
+        //
+        // Add an empty encryptedFields (rather than an empty JSON schema) to ensure `bulkWrite` can be sent to query
+        // analysis.
+        bson_t empty_encryptedFields = BSON_INITIALIZER;
+        {
+            char *escCollection = bson_strdup_printf("enxcol_.%s.esc", ectx->coll_name);
+            char *ecocCollection = bson_strdup_printf("enxcol_.%s.ecoc", ectx->coll_name);
+            bson_t empty_array = BSON_INITIALIZER;
+            if (!BSON_APPEND_UTF8(&empty_encryptedFields, "escCollection", escCollection)) {
+                return _mongocrypt_ctx_fail_w_msg(ctx, "failed to append `escCollection`");
+            }
+            if (!BSON_APPEND_UTF8(&empty_encryptedFields, "ecocCollection", ecocCollection)) {
+                return _mongocrypt_ctx_fail_w_msg(ctx, "failed to append `ecocCollection`");
+            }
+            if (!BSON_APPEND_ARRAY(&empty_encryptedFields, "fields", &empty_array)) {
+                return _mongocrypt_ctx_fail_w_msg(ctx, "failed to append `fields`");
+            }
+
+            bson_destroy(&empty_array);
+            bson_free(escCollection);
+            bson_free(ecocCollection);
+        }
+
+        if (!mc_EncryptedFieldConfig_parse(&ectx->efc, &empty_encryptedFields, ctx->status)) {
+            bson_destroy(&empty_encryptedFields);
+            _mongocrypt_ctx_fail(ctx);
+            return false;
+        }
+        _mongocrypt_buffer_steal_from_bson(&ectx->encrypted_field_config, &empty_encryptedFields);
     }
 
     BSON_ASSERT(bson_iter_init(&iter, collinfo));
@@ -614,7 +647,11 @@ static bool _mongo_done_collinfo(mongocrypt_ctx_t *ctx) {
     if (_mongocrypt_buffer_empty(&ectx->schema)) {
         bson_t empty_collinfo = BSON_INITIALIZER;
 
-        /* If no collinfo was fed, cache an empty collinfo. */
+        /* If no collinfo was fed, apply and cache an empty collinfo. */
+        if (!_set_schema_from_collinfo(ctx, &empty_collinfo)) {
+            bson_destroy(&empty_collinfo);
+            return false;
+        }
         if (!_mongocrypt_cache_add_copy(&ctx->crypt->cache_collinfo, ectx->ns, &empty_collinfo, ctx->status)) {
             bson_destroy(&empty_collinfo);
             return _mongocrypt_ctx_fail(ctx);
@@ -1649,7 +1686,7 @@ static bool _fle2_finalize(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
     }
 
     /* Append a new 'encryptionInformation'. */
-    if (!result.must_omit) {
+    if (!result.must_omit && !ectx->used_empty_encryptedFields) {
         if (!_fle2_insert_encryptionInformation(ctx,
                                                 command_name,
                                                 &converted,
