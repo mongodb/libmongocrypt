@@ -375,118 +375,113 @@ bool mc_getNumberOfBits(const mc_RangeOpts_t* ro,
     BSON_ASSERT_PARAM(ro);
     BSON_ASSERT_PARAM(bitsOut);
 
-    switch (valueType) {
-        // For each type, we use getTypeInfo to get the total number of values in the domain (-1)
-        // which tells us how many bits are needed to represent the whole domain.
-        case BSON_TYPE_INT32: {
-            int32_t value;
-            mc_optional_int32_t rmin, rmax;
-            if (ro->min.set) {
-                value = bson_iter_int32(&ro->min.value);
-                rmin = OPT_I32(value);
-                rmax = OPT_I32(bson_iter_int32(&ro->max.value));
-            } else {
-                value = 0;
-                rmin.set = false;
-                rmax.set = false;
-            }
-            mc_getTypeInfo32_args_t args = {value, rmin, rmax};
-            mc_OSTType_Int32 out;
-            if (!mc_getTypeInfo32(args, &out, status)) {
-                return false;
-            }
-            *bitsOut = 32 - mc_count_leading_zeros_u32(out.max);
-            return true;
+    // For each type, we use getTypeInfo to get the total number of values in the domain (-1)
+    // which tells us how many bits are needed to represent the whole domain.
+    // note - can't use a switch statement because of -Werror=switch-enum
+    if (valueType == BSON_TYPE_INT32) {
+        int32_t value;
+        mc_optional_int32_t rmin, rmax;
+        if (ro->min.set) {
+            value = bson_iter_int32(&ro->min.value);
+            rmin = OPT_I32(value);
+            rmax = OPT_I32(bson_iter_int32(&ro->max.value));
+        } else {
+            value = 0;
+            rmin.set = false;
+            rmax.set = false;
         }
-        case BSON_TYPE_INT64: {
-            int64_t value;
-            mc_optional_int64_t rmin, rmax;
-            if (ro->min.set) {
-                value = bson_iter_int64(&ro->min.value);
-                rmin = OPT_I64(value);
-                rmax = OPT_I64(bson_iter_int64(&ro->max.value));
-            } else {
-                value = 0;
-                rmin.set = false;
-                rmax.set = false;
-            }
-            mc_getTypeInfo64_args_t args = {value, rmin, rmax};
-            mc_OSTType_Int64 out;
-            if (!mc_getTypeInfo64(args, &out, status)) {
-                return false;
-            }
-            *bitsOut = 64 - mc_count_leading_zeros_u64(out.max);
-            return true;
-        }
-        case BSON_TYPE_DATE_TIME: {
-            int64_t value;
-            mc_optional_int64_t rmin, rmax;
-            if (ro->min.set) {
-                value = bson_iter_date_time(&ro->min.value);
-                rmin = OPT_I64(value);
-                rmax = OPT_I64(bson_iter_date_time(&ro->max.value));
-            } else {
-                value = 0;
-                rmin.set = false;
-                rmax.set = false;
-            }
-            mc_getTypeInfo64_args_t args = {value, rmin, rmax};
-            mc_OSTType_Int64 out;
-            if (!mc_getTypeInfo64(args, &out, status)) {
-                return false;
-            }
-            *bitsOut = 64 - mc_count_leading_zeros_u64(out.max);
-            return true;
-        }
-        case BSON_TYPE_DOUBLE: {
-            double value;
-            mc_optional_double_t rmin, rmax;
-            mc_optional_uint32_t prec = ro->precision;
-            if (ro->min.set) {
-                value = bson_iter_double(&ro->min.value);
-                rmin = OPT_DOUBLE(value);
-                rmax = OPT_DOUBLE(bson_iter_double(&ro->max.value));
-
-            } else {
-                value = 0;
-                rmin.set = false;
-                rmax.set = false;
-            }
-            mc_getTypeInfoDouble_args_t args = {value, rmin, rmax, prec};
-            mc_OSTType_Double out;
-            if (!mc_getTypeInfoDouble(args, &out, status)) {
-                return false;
-            }
-            *bitsOut = 64 - mc_count_leading_zeros_u64(out.max);
-            return true;
-        }
-#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
-        case BSON_TYPE_DECIMAL128: {
-            mc_dec128 value;
-            mc_optional_dec128_t rmin, rmax;
-            mc_optional_uint32_t prec = ro->precision;
-            if (ro->min.set) {
-                value = mc_dec128_from_bson_iter(&ro->min.value);
-                rmin = OPT_MC_DEC128(value);
-                rmax = OPT_MC_DEC128(mc_dec128_from_bson_iter(&ro->max.value));
-            } else {
-                value = MC_DEC128_ZERO;
-                rmin.set = false;
-                rmax.set = false;
-            }
-            mc_getTypeInfoDecimal128_args_t args = {value, rmin, rmax, prec};
-            mc_OSTType_Decimal128 out;
-            if (!mc_getTypeInfoDecimal128(args, &out, status)) {
-                return false;
-            }
-            *bitsOut = 128 - mc_count_leading_zeros_u128(out.max);
-            return true;
-        }
-#endif
-        default:
-            CLIENT_ERR("unsupported BSON type: %s for range", mc_bson_type_to_string(valueType));
+        mc_getTypeInfo32_args_t args = {value, rmin, rmax};
+        mc_OSTType_Int32 out;
+        if (!mc_getTypeInfo32(args, &out, status)) {
             return false;
+        }
+        *bitsOut = 32 - (uint32_t)mc_count_leading_zeros_u32(out.max);
+        return true;
+    } else if (valueType == BSON_TYPE_INT64) {
+        int64_t value;
+        mc_optional_int64_t rmin, rmax;
+        if (ro->min.set) {
+            value = bson_iter_int64(&ro->min.value);
+            rmin = OPT_I64(value);
+            rmax = OPT_I64(bson_iter_int64(&ro->max.value));
+        } else {
+            value = 0;
+            rmin.set = false;
+            rmax.set = false;
+        }
+        mc_getTypeInfo64_args_t args = {value, rmin, rmax};
+        mc_OSTType_Int64 out;
+        if (!mc_getTypeInfo64(args, &out, status)) {
+            return false;
+        }
+        *bitsOut = 64 - (uint32_t)mc_count_leading_zeros_u64(out.max);
+        return true;
+    } else if (valueType == BSON_TYPE_DATE_TIME) {
+        int64_t value;
+        mc_optional_int64_t rmin, rmax;
+        if (ro->min.set) {
+            value = bson_iter_date_time(&ro->min.value);
+            rmin = OPT_I64(value);
+            rmax = OPT_I64(bson_iter_date_time(&ro->max.value));
+        } else {
+            value = 0;
+            rmin.set = false;
+            rmax.set = false;
+        }
+        mc_getTypeInfo64_args_t args = {value, rmin, rmax};
+        mc_OSTType_Int64 out;
+        if (!mc_getTypeInfo64(args, &out, status)) {
+            return false;
+        }
+        *bitsOut = 64 - (uint32_t)mc_count_leading_zeros_u64(out.max);
+        return true;
+    } else if (valueType == BSON_TYPE_DOUBLE) {
+        double value;
+        mc_optional_double_t rmin, rmax;
+        mc_optional_uint32_t prec = ro->precision;
+        if (ro->min.set) {
+            value = bson_iter_double(&ro->min.value);
+            rmin = OPT_DOUBLE(value);
+            rmax = OPT_DOUBLE(bson_iter_double(&ro->max.value));
+
+        } else {
+            value = 0;
+            rmin.set = false;
+            rmax.set = false;
+        }
+        mc_getTypeInfoDouble_args_t args = {value, rmin, rmax, prec};
+        mc_OSTType_Double out;
+        if (!mc_getTypeInfoDouble(args, &out, status)) {
+            return false;
+        }
+        *bitsOut = 64 - (uint32_t)mc_count_leading_zeros_u64(out.max);
+        return true;
     }
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
+    else if (valueType == BSON_TYPE_DECIMAL128) {
+        mc_dec128 value;
+        mc_optional_dec128_t rmin, rmax;
+        mc_optional_uint32_t prec = ro->precision;
+        if (ro->min.set) {
+            value = mc_dec128_from_bson_iter(&ro->min.value);
+            rmin = OPT_MC_DEC128(value);
+            rmax = OPT_MC_DEC128(mc_dec128_from_bson_iter(&ro->max.value));
+        } else {
+            value = MC_DEC128_ZERO;
+            rmin.set = false;
+            rmax.set = false;
+        }
+        mc_getTypeInfoDecimal128_args_t args = {value, rmin, rmax, prec};
+        mc_OSTType_Decimal128 out;
+        if (!mc_getTypeInfoDecimal128(args, &out, status)) {
+            return false;
+        }
+        *bitsOut = 128 - (uint32_t)mc_count_leading_zeros_u128(out.max);
+        return true;
+    }
+#endif
+    CLIENT_ERR("unsupported BSON type: %s for range", mc_bson_type_to_string(valueType));
+    return false;
 }
 
 bool mc_RangeOpts_appendTrimFactor(const mc_RangeOpts_t* ro,
