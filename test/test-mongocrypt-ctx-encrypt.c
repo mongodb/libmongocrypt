@@ -4983,6 +4983,45 @@ static void _test_bulkWrite(_mongocrypt_tester_t *tester) {
         mongocrypt_destroy(crypt);
     }
 
+    // Test a bulkWrite with bypassQueryAnalysis. Expect `encryptionInformation` is added, but query analysis is not
+    // consulted.
+    {
+        mongocrypt_t *crypt = mongocrypt_new();
+
+        mongocrypt_setopt_bypass_query_analysis(crypt);
+
+        mongocrypt_setopt_kms_providers(
+            crypt,
+            TEST_BSON(BSON_STR({"local" : {"key" : {"$binary" : {"base64" : "%s", "subType" : "00"}}}}), local_kek));
+
+        ASSERT_OK(mongocrypt_setopt_encrypted_field_config_map(
+                      crypt,
+                      TEST_FILE("./test/data/bulkWrite/simple/encrypted-field-map.json")),
+                  crypt);
+        ASSERT_OK(mongocrypt_init(crypt), crypt);
+
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "admin", -1, TEST_FILE("./test/data/bulkWrite/simple/cmd.json")),
+                  ctx);
+
+        // Query analysis is not consulted. Immediately transitions to MONGOCRYPT_CTX_READY.
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
+        {
+            mongocrypt_binary_t *out = mongocrypt_binary_new();
+            ASSERT_OK(mongocrypt_ctx_finalize(ctx, out), ctx);
+
+            // `expect` excludes `encryptionInformation`.
+            mongocrypt_binary_t *expect = TEST_FILE("./test/data/bulkWrite/bypassQueryAnalysis/payload.json");
+            ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(expect, out);
+            mongocrypt_binary_destroy(out);
+        }
+
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+
     // Test a bulkWrite with two inserts.
 
     // Test a bulkWrite with one update.
