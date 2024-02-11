@@ -5022,15 +5022,41 @@ static void _test_bulkWrite(_mongocrypt_tester_t *tester) {
         mongocrypt_destroy(crypt);
     }
 
-    // Test a bulkWrite with two inserts.
+    // Test a bulkWrite with CSFLE (not supported by server)
+    {
+        mongocrypt_t *crypt = mongocrypt_new();
 
-    // Test a bulkWrite with one update.
+        mongocrypt_setopt_kms_providers(
+            crypt,
+            TEST_BSON(BSON_STR({"local" : {"key" : {"$binary" : {"base64" : "%s", "subType" : "00"}}}}), local_kek));
 
-    // Test a bulkWrite with two namespaces (not supported by server).
+        // Associate a JSON schema to the collection to enable CSFLE.
+        ASSERT_OK(mongocrypt_setopt_schema_map(crypt, TEST_BSON(BSON_STR({"db.test" : {}}))), crypt);
+        ASSERT_OK(mongocrypt_init(crypt), crypt);
 
-    // Test a bulkWrite with two updates (not supported by server).
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
 
-    // Test a bulkWrite with one namespace and CSFLE (not supported by server)
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "admin", -1, TEST_FILE("./test/data/bulkWrite/simple/cmd.json")),
+                  ctx);
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+        {
+            mongocrypt_binary_t *cmd_to_mongocryptd = mongocrypt_binary_new();
+
+            ASSERT_OK(mongocrypt_ctx_mongo_op(ctx, cmd_to_mongocryptd), ctx);
+            ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TEST_FILE("./test/data/bulkWrite/jsonSchema/cmd-to-mongocryptd.json"),
+                                                cmd_to_mongocryptd);
+            mongocrypt_binary_destroy(cmd_to_mongocryptd);
+
+            // End the test here. At present, an error query analysis returns this error for `bulkWrite` with a
+            // `jsonSchema`: `The bulkWrite command only supports Queryable Encryption`.
+            // libmongocrypt deliberately does not error to enable possible future server support of CSFLE
+            // with bulkWrite without libmongocrypt changes.
+        }
+
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
 }
 
 void _mongocrypt_tester_install_ctx_encrypt(_mongocrypt_tester_t *tester) {
