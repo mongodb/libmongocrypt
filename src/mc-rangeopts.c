@@ -43,7 +43,7 @@
         return false;                                                                                                  \
     }
 
-bool mc_RangeOpts_parse(mc_RangeOpts_t *ro, const bson_t *in, mongocrypt_status_t *status) {
+bool mc_RangeOpts_parse(mc_RangeOpts_t *ro, const bson_t *in, bool use_range_v2, mongocrypt_status_t *status) {
     bson_iter_t iter;
     bool has_min = false, has_max = false, has_sparsity = false, has_precision = false, has_trimFactor = false;
     const char *const error_prefix = "Error parsing RangeOpts: ";
@@ -188,8 +188,15 @@ bool mc_RangeOpts_parse(mc_RangeOpts_t *ro, const bson_t *in, mongocrypt_status_
         }
     }
 
-    // At this point, we do not know the type of the field if min and max are unspecified. Wait to
-    // validate trimFactor.
+    if (ro->trimFactor.set) {
+        if (!use_range_v2) {
+            // Once `use_range_v2` is default true, this block may be removed.
+            CLIENT_ERR("trimFactor is not supported for QE range v1");
+            return false;
+        }
+        // At this point, we do not know the type of the field if min and max are unspecified. Wait to
+        // validate the value of trimFactor.
+    }
 
     return true;
 }

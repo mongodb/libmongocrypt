@@ -73,7 +73,7 @@ static void test_mc_RangeOpts_parse(_mongocrypt_tester_t *tester) {
         mongocrypt_status_t *status = mongocrypt_status_new();
         mc_RangeOpts_t ro;
         printf("running test_mc_RangeOpts_parse subtest: %s\n", test->desc);
-        bool ret = mc_RangeOpts_parse(&ro, TMP_BSON(test->in), status);
+        bool ret = mc_RangeOpts_parse(&ro, TMP_BSON(test->in), true /* use_range_v2 */, status);
         if (!test->expectError) {
             ASSERT_OK_STATUS(ret, status);
             ASSERT_CMPINT(test->expectMin.set, ==, ro.min.set);
@@ -90,6 +90,20 @@ static void test_mc_RangeOpts_parse(_mongocrypt_tester_t *tester) {
         } else {
             ASSERT_FAILS_STATUS(ret, status, test->expectError);
         }
+        mc_RangeOpts_cleanup(&ro);
+        mongocrypt_status_destroy(status);
+    }
+
+    // Test parsing range V2 options when range V2 is not enabled.
+    // Once `use_range_v2` is default true, this block may be removed.
+    {
+        mongocrypt_status_t *status = mongocrypt_status_new();
+        mc_RangeOpts_t ro;
+        bool ok = mc_RangeOpts_parse(&ro,
+                                     TMP_BSON(RAW_STRING({"trimFactor" : 1, "sparsity" : {"$numberLong" : "1"}})),
+                                     false /* use_range_v2 */,
+                                     status);
+        ASSERT_FAILS_STATUS(ok, status, "trimFactor is not supported for QE range v1");
         mc_RangeOpts_cleanup(&ro);
         mongocrypt_status_destroy(status);
     }
@@ -293,7 +307,7 @@ static void test_mc_RangeOpts_to_FLE2RangeInsertSpec(_mongocrypt_tester_t *teste
         mongocrypt_status_t *status = mongocrypt_status_new();
         mc_RangeOpts_t ro;
         printf("running test_mc_RangeOpts_to_FLE2RangeInsertSpec subtest: %s\n", test->desc);
-        ASSERT_OK_STATUS(mc_RangeOpts_parse(&ro, TMP_BSON(test->in), status), status);
+        ASSERT_OK_STATUS(mc_RangeOpts_parse(&ro, TMP_BSON(test->in), true /* use_range_v2 */, status), status);
         bson_t out = BSON_INITIALIZER;
         bool ret = mc_RangeOpts_to_FLE2RangeInsertSpec(&ro, TMP_BSON(test->v), &out, status);
         if (!test->expectError) {
