@@ -961,7 +961,7 @@ static bool _mongo_done_markings(mongocrypt_ctx_t *ctx) {
 /**
  * @brief Append $db to a command being passed to csfle.
  */
-static bool _add_dollar_db(const char *cmd_name, bson_t *cmd, const char *db_name, mongocrypt_status_t *status) {
+static bool _add_dollar_db(const char *cmd_name, bson_t *cmd, const char *cmd_db, mongocrypt_status_t *status) {
     bson_t out = BSON_INITIALIZER;
     bson_t explain = BSON_INITIALIZER;
     bson_iter_t iter;
@@ -969,10 +969,10 @@ static bool _add_dollar_db(const char *cmd_name, bson_t *cmd, const char *db_nam
 
     BSON_ASSERT_PARAM(cmd_name);
     BSON_ASSERT_PARAM(cmd);
-    BSON_ASSERT_PARAM(db_name);
+    BSON_ASSERT_PARAM(cmd_db);
 
     if (!bson_iter_init_find(&iter, cmd, "$db")) {
-        if (!BSON_APPEND_UTF8(cmd, "$db", db_name)) {
+        if (!BSON_APPEND_UTF8(cmd, "$db", cmd_db)) {
             CLIENT_ERR("failed to append '$db'");
             goto fail;
         }
@@ -1006,7 +1006,7 @@ static bool _add_dollar_db(const char *cmd_name, bson_t *cmd, const char *db_nam
         bson_copy_to(&tmp, &explain);
     }
 
-    if (!BSON_APPEND_UTF8(&explain, "$db", db_name)) {
+    if (!BSON_APPEND_UTF8(&explain, "$db", cmd_db)) {
         CLIENT_ERR("failed to append '$db'");
         goto fail;
     }
@@ -1085,7 +1085,7 @@ static bool _try_run_csfle_marking(mongocrypt_ctx_t *ctx) {
 
     const char *cmd_name = ectx->cmd_name;
 
-    if (!_add_dollar_db(cmd_name, &cmd, ectx->db_name, ctx->status)) {
+    if (!_add_dollar_db(cmd_name, &cmd, ectx->cmd_db, ctx->status)) {
         _mongocrypt_ctx_fail(ctx);
         goto fail_create_cmd;
     }
@@ -1729,7 +1729,7 @@ static bool _fle2_finalize(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
     bson_iter_t iter;
     if (bson_iter_init_find(&iter, &original_cmd_bson, "$db")) {
         if (!bson_iter_init_find(&iter, &converted, "$db")) {
-            BSON_APPEND_UTF8(&converted, "$db", ectx->db_name);
+            BSON_APPEND_UTF8(&converted, "$db", ectx->cmd_db);
         }
     }
 
@@ -2013,7 +2013,7 @@ static bool _finalize(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
         bson_iter_t iter;
         if (bson_iter_init_find(&iter, &original_cmd_bson, "$db")) {
             if (!bson_iter_init_find(&iter, &converted, "$db")) {
-                BSON_APPEND_UTF8(&converted, "$db", ectx->db_name);
+                BSON_APPEND_UTF8(&converted, "$db", ectx->cmd_db);
             }
         }
     } else {
@@ -2072,7 +2072,7 @@ static void _cleanup(mongocrypt_ctx_t *ctx) {
 
     ectx = (_mongocrypt_ctx_encrypt_t *)ctx;
     bson_free(ectx->ns);
-    bson_free(ectx->db_name);
+    bson_free(ectx->cmd_db);
     bson_free(ectx->target_db);
     bson_free(ectx->target_coll);
     _mongocrypt_buffer_cleanup(&ectx->list_collections_filter);
@@ -2582,7 +2582,7 @@ static bool _check_cmd_for_auto_encrypt_bulkWrite(mongocrypt_binary_t *cmd,
         return false;
     }
     *target_coll = bson_strdup(dot + 1);
-    // Get the database from the `ns` field (which may differ from `db_name`).
+    // Get the database from the `ns` field (which may differ from `cmd_db`).
     ptrdiff_t db_len = dot - ns;
     if ((uint64_t)db_len > SIZE_MAX) {
         CLIENT_ERR("unexpected database length exceeds %zu", SIZE_MAX);
@@ -2825,7 +2825,7 @@ bool mongocrypt_ctx_encrypt_init(mongocrypt_ctx_t *ctx, const char *db, int32_t 
         return _mongocrypt_ctx_fail(ctx);
     }
 
-    if (!_mongocrypt_validate_and_copy_string(db, db_len, &ectx->db_name) || 0 == strlen(ectx->db_name)) {
+    if (!_mongocrypt_validate_and_copy_string(db, db_len, &ectx->cmd_db) || 0 == strlen(ectx->cmd_db)) {
         return _mongocrypt_ctx_fail_w_msg(ctx, "invalid db");
     }
 
@@ -2859,7 +2859,7 @@ bool mongocrypt_ctx_encrypt_init(mongocrypt_ctx_t *ctx, const char *db, int32_t 
         if (!ectx->target_coll) {
             return _mongocrypt_ctx_fail_w_msg(ctx, "unexpected error: did not bypass or error but no collection name");
         }
-        ectx->ns = bson_strdup_printf("%s.%s", ectx->db_name, ectx->target_coll);
+        ectx->ns = bson_strdup_printf("%s.%s", ectx->cmd_db, ectx->target_coll);
     }
 
     if (ctx->opts.kek.provider.aws.region || ctx->opts.kek.provider.aws.cmk) {
@@ -2882,7 +2882,7 @@ bool mongocrypt_ctx_encrypt_init(mongocrypt_ctx_t *ctx, const char *db, int32_t 
                         "%s (%s=\"%s\", %s=%d, %s=\"%s\")",
                         BSON_FUNC,
                         "db",
-                        ectx->db_name,
+                        ectx->cmd_db,
                         "db_len",
                         db_len,
                         "cmd",

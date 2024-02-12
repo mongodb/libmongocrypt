@@ -132,12 +132,14 @@ typedef struct {
     bool explicit;
     // `target_coll` is the target namespace collection name.
     char *target_coll;
-    char *db_name;
+
+    // `cmd_db` is the command database (appended as `$db`).
+    char *cmd_db;
     char *ns;
 
     // `target_db` is the target database for the operation. May be associated with jsonSchema (CSFLE) or
-    // encryptedFields (QE). For `bulkWrite`, the target namespace database may differ from `db_name`.
-    // If `target_db` is NULL, the target namespace database is the same as `db_name`.
+    // encryptedFields (QE). For `bulkWrite`, the target namespace database may differ from `cmd_db`.
+    // If `target_db` is NULL, the target namespace database is the same as `cmd_db`.
     char *target_db;
 
     _mongocrypt_buffer_t list_collections_filter;
