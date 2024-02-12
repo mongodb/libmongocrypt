@@ -2607,15 +2607,15 @@ static bool _check_cmd_for_auto_encrypt_bulkWrite(mongocrypt_binary_t *cmd,
 }
 
 static bool
-_check_cmd_for_auto_encrypt(mongocrypt_binary_t *cmd, bool *bypass, char **collname, mongocrypt_status_t *status) {
+_check_cmd_for_auto_encrypt(mongocrypt_binary_t *cmd, bool *bypass, char **target_coll, mongocrypt_status_t *status) {
     bson_t as_bson;
-    bson_iter_t iter, ns_iter;
+    bson_iter_t iter, target_coll_iter;
     const char *cmd_name;
     bool eligible = false;
 
     BSON_ASSERT_PARAM(cmd);
     BSON_ASSERT_PARAM(bypass);
-    BSON_ASSERT_PARAM(collname);
+    BSON_ASSERT_PARAM(target_coll);
 
     *bypass = false;
 
@@ -2639,22 +2639,22 @@ _check_cmd_for_auto_encrypt(mongocrypt_binary_t *cmd, bool *bypass, char **colln
             CLIENT_ERR("explain value is not a document");
             return false;
         }
-        if (!bson_iter_recurse(&iter, &ns_iter)) {
+        if (!bson_iter_recurse(&iter, &target_coll_iter)) {
             CLIENT_ERR("malformed BSON for encrypt command");
             return false;
         }
-        if (!bson_iter_next(&ns_iter)) {
+        if (!bson_iter_next(&target_coll_iter)) {
             CLIENT_ERR("invalid empty BSON");
             return false;
         }
     } else {
-        memcpy(&ns_iter, &iter, sizeof(iter));
+        memcpy(&target_coll_iter, &iter, sizeof(iter));
     }
 
-    if (BSON_ITER_HOLDS_UTF8(&ns_iter)) {
-        *collname = bson_strdup(bson_iter_utf8(&ns_iter, NULL));
+    if (BSON_ITER_HOLDS_UTF8(&target_coll_iter)) {
+        *target_coll = bson_strdup(bson_iter_utf8(&target_coll_iter, NULL));
     } else {
-        *collname = NULL;
+        *target_coll = NULL;
     }
 
     /* check if command is eligible for auto encryption, bypassed, or ineligible.
@@ -2758,11 +2758,11 @@ _check_cmd_for_auto_encrypt(mongocrypt_binary_t *cmd, bool *bypass, char **colln
 
     /* database/client commands are ineligible. */
     if (eligible) {
-        if (!*collname) {
+        if (!*target_coll) {
             CLIENT_ERR("non-collection command not supported for auto encryption: %s", cmd_name);
             return false;
         }
-        if (0 == strlen(*collname)) {
+        if (0 == strlen(*target_coll)) {
             CLIENT_ERR("empty collection name on command: %s", cmd_name);
             return false;
         }
