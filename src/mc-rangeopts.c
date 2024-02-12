@@ -374,6 +374,7 @@ bool mc_getNumberOfBits(const mc_RangeOpts_t *ro,
         int32_t value = 0;
         mc_optional_int32_t rmin = {false, 0}, rmax = {false, 0};
         if (ro->min.set) {
+            BSON_ASSERT(ro->max.set);
             value = bson_iter_int32(&ro->min.value);
             rmin = OPT_I32(value);
             rmax = OPT_I32(bson_iter_int32(&ro->max.value));
@@ -389,6 +390,7 @@ bool mc_getNumberOfBits(const mc_RangeOpts_t *ro,
         int64_t value = 0;
         mc_optional_int64_t rmin = {false, 0}, rmax = {false, 0};
         if (ro->min.set) {
+            BSON_ASSERT(ro->max.set);
             value = bson_iter_int64(&ro->min.value);
             rmin = OPT_I64(value);
             rmax = OPT_I64(bson_iter_int64(&ro->max.value));
@@ -404,6 +406,7 @@ bool mc_getNumberOfBits(const mc_RangeOpts_t *ro,
         int64_t value = 0;
         mc_optional_int64_t rmin = {false, 0}, rmax = {false, 0};
         if (ro->min.set) {
+            BSON_ASSERT(ro->max.set);
             value = bson_iter_date_time(&ro->min.value);
             rmin = OPT_I64(value);
             rmax = OPT_I64(bson_iter_date_time(&ro->max.value));
@@ -420,6 +423,7 @@ bool mc_getNumberOfBits(const mc_RangeOpts_t *ro,
         mc_optional_double_t rmin = {false, 0}, rmax = {false, 0};
         mc_optional_uint32_t prec = ro->precision;
         if (ro->min.set) {
+            BSON_ASSERT(ro->max.set);
             value = bson_iter_double(&ro->min.value);
             rmin = OPT_DOUBLE(value);
             rmax = OPT_DOUBLE(bson_iter_double(&ro->max.value));
@@ -438,6 +442,7 @@ bool mc_getNumberOfBits(const mc_RangeOpts_t *ro,
         mc_optional_dec128_t rmin = {false, MC_DEC128_ZERO}, rmax = {false, MC_DEC128_ZERO};
         mc_optional_uint32_t prec = ro->precision;
         if (ro->min.set) {
+            BSON_ASSERT(ro->max.set);
             value = mc_dec128_from_bson_iter(&ro->min.value);
             rmin = OPT_MC_DEC128(value);
             rmax = OPT_MC_DEC128(mc_dec128_from_bson_iter(&ro->max.value));
