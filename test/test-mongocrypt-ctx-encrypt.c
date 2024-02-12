@@ -350,9 +350,7 @@ static void _test_encrypt_init(_mongocrypt_tester_t *tester) {
 
     /* Empty coll name is an error. */
     ctx = mongocrypt_ctx_new(crypt);
-    ASSERT_FAILS(mongocrypt_ctx_encrypt_init(ctx, "", -1, TEST_BSON("{'find': ''}")),
-                 ctx,
-                 "empty collection name on command");
+    ASSERT_FAILS(mongocrypt_ctx_encrypt_init(ctx, "", -1, TEST_BSON("{'find': ''}")), ctx, "invalid db");
     mongocrypt_ctx_destroy(ctx);
 
     mongocrypt_destroy(crypt);
