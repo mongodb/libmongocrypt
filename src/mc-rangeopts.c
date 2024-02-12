@@ -364,16 +364,12 @@ bool mc_getNumberOfBits(const mc_RangeOpts_t *ro,
     // which tells us how many bits are needed to represent the whole domain.
     // note - can't use a switch statement because of -Werror=switch-enum
     if (valueType == BSON_TYPE_INT32) {
-        int32_t value;
-        mc_optional_int32_t rmin, rmax;
+        int32_t value = 0;
+        mc_optional_int32_t rmin = {false, 0}, rmax = {false, 0};
         if (ro->min.set) {
             value = bson_iter_int32(&ro->min.value);
             rmin = OPT_I32(value);
             rmax = OPT_I32(bson_iter_int32(&ro->max.value));
-        } else {
-            value = 0;
-            rmin.set = false;
-            rmax.set = false;
         }
         mc_getTypeInfo32_args_t args = {value, rmin, rmax};
         mc_OSTType_Int32 out;
@@ -383,16 +379,12 @@ bool mc_getNumberOfBits(const mc_RangeOpts_t *ro,
         *bitsOut = 32 - (uint32_t)mc_count_leading_zeros_u32(out.max);
         return true;
     } else if (valueType == BSON_TYPE_INT64) {
-        int64_t value;
-        mc_optional_int64_t rmin, rmax;
+        int64_t value = 0;
+        mc_optional_int64_t rmin = {false, 0}, rmax = {false, 0};
         if (ro->min.set) {
             value = bson_iter_int64(&ro->min.value);
             rmin = OPT_I64(value);
             rmax = OPT_I64(bson_iter_int64(&ro->max.value));
-        } else {
-            value = 0;
-            rmin.set = false;
-            rmax.set = false;
         }
         mc_getTypeInfo64_args_t args = {value, rmin, rmax};
         mc_OSTType_Int64 out;
@@ -402,16 +394,12 @@ bool mc_getNumberOfBits(const mc_RangeOpts_t *ro,
         *bitsOut = 64 - (uint32_t)mc_count_leading_zeros_u64(out.max);
         return true;
     } else if (valueType == BSON_TYPE_DATE_TIME) {
-        int64_t value;
-        mc_optional_int64_t rmin, rmax;
+        int64_t value = 0;
+        mc_optional_int64_t rmin = {false, 0}, rmax = {false, 0};
         if (ro->min.set) {
             value = bson_iter_date_time(&ro->min.value);
             rmin = OPT_I64(value);
             rmax = OPT_I64(bson_iter_date_time(&ro->max.value));
-        } else {
-            value = 0;
-            rmin.set = false;
-            rmax.set = false;
         }
         mc_getTypeInfo64_args_t args = {value, rmin, rmax};
         mc_OSTType_Int64 out;
@@ -421,18 +409,13 @@ bool mc_getNumberOfBits(const mc_RangeOpts_t *ro,
         *bitsOut = 64 - (uint32_t)mc_count_leading_zeros_u64(out.max);
         return true;
     } else if (valueType == BSON_TYPE_DOUBLE) {
-        double value;
-        mc_optional_double_t rmin, rmax;
+        double value = 0;
+        mc_optional_double_t rmin = {false, 0}, rmax = {false, 0};
         mc_optional_uint32_t prec = ro->precision;
         if (ro->min.set) {
             value = bson_iter_double(&ro->min.value);
             rmin = OPT_DOUBLE(value);
             rmax = OPT_DOUBLE(bson_iter_double(&ro->max.value));
-
-        } else {
-            value = 0;
-            rmin.set = false;
-            rmax.set = false;
         }
         mc_getTypeInfoDouble_args_t args = {value, rmin, rmax, prec};
         mc_OSTType_Double out;
@@ -444,17 +427,13 @@ bool mc_getNumberOfBits(const mc_RangeOpts_t *ro,
     }
 #if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
     else if (valueType == BSON_TYPE_DECIMAL128) {
-        mc_dec128 value;
-        mc_optional_dec128_t rmin, rmax;
+        mc_dec128 value = MC_DEC128_ZERO;
+        mc_optional_dec128_t rmin = {false, MC_DEC128_ZERO}, rmax = {false, MC_DEC128_ZERO};
         mc_optional_uint32_t prec = ro->precision;
         if (ro->min.set) {
             value = mc_dec128_from_bson_iter(&ro->min.value);
             rmin = OPT_MC_DEC128(value);
             rmax = OPT_MC_DEC128(mc_dec128_from_bson_iter(&ro->max.value));
-        } else {
-            value = MC_DEC128_ZERO;
-            rmin.set = false;
-            rmax.set = false;
         }
         mc_getTypeInfoDecimal128_args_t args = {value, rmin, rmax, prec};
         mc_OSTType_Decimal128 out;
