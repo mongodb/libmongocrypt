@@ -135,11 +135,14 @@ typedef struct {
 
     // `cmd_db` is the command database (appended as `$db`).
     char *cmd_db;
-    char *ns;
 
-    // `target_db` is the target database for the operation. May be associated with jsonSchema (CSFLE) or
-    // encryptedFields (QE). For `bulkWrite`, the target namespace database may differ from `cmd_db`.
-    // If `target_db` is NULL, the target namespace database is the same as `cmd_db`.
+    // `target_ns` is the target namespace "<target_db>.<target_coll>" for the operation. May be associated with
+    // jsonSchema (CSFLE) or encryptedFields (QE). For `bulkWrite`, the target namespace database may differ from
+    // `cmd_db`.
+    char *target_ns;
+
+    // `target_db` is the target database for the operation. For `bulkWrite`, the target namespace database may differ
+    // from `cmd_db`. If `target_db` is NULL, the target namespace database is the same as `cmd_db`.
     char *target_db;
 
     _mongocrypt_buffer_t list_collections_filter;
@@ -166,7 +169,7 @@ typedef struct {
      * schema, and there were siblings. */
     bool collinfo_has_siblings;
     /* encrypted_field_config is set when:
-     * 1. `ns` is present in an encrypted_field_config_map.
+     * 1. `target_ns` is present in an encrypted_field_config_map.
      * 2. (TODO MONGOCRYPT-414) The collection has encryptedFields in the
      * response to listCollections. encrypted_field_config is true if and only if
      * encryption is using FLE 2.0.

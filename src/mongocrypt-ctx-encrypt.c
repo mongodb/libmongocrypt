@@ -94,7 +94,7 @@ static bool _fle2_append_encryptedFieldConfig(const mongocrypt_ctx_t *ctx,
 
 static bool _fle2_append_encryptionInformation(const mongocrypt_ctx_t *ctx,
                                                bson_t *dst,
-                                               const char *ns,
+                                               const char *target_ns,
                                                bson_t *encryptedFieldConfig,
                                                bson_t *deleteTokens,
                                                const char *target_coll,
@@ -104,7 +104,7 @@ static bool _fle2_append_encryptionInformation(const mongocrypt_ctx_t *ctx,
     bson_t encrypted_field_config_bson;
 
     BSON_ASSERT_PARAM(dst);
-    BSON_ASSERT_PARAM(ns);
+    BSON_ASSERT_PARAM(target_ns);
     BSON_ASSERT_PARAM(encryptedFieldConfig);
     /* deleteTokens may be NULL */
     BSON_ASSERT_PARAM(target_coll);
@@ -122,7 +122,7 @@ static bool _fle2_append_encryptionInformation(const mongocrypt_ctx_t *ctx,
         return false;
     }
 
-    if (!BSON_APPEND_DOCUMENT_BEGIN(&schema_bson, ns, &encrypted_field_config_bson)) {
+    if (!BSON_APPEND_DOCUMENT_BEGIN(&schema_bson, target_ns, &encrypted_field_config_bson)) {
         CLIENT_ERR("unable to begin appending 'encryptedFieldConfig' to "
                    "'encryptionInformation'.'schema'");
         return false;
@@ -153,8 +153,8 @@ static bool _fle2_append_encryptionInformation(const mongocrypt_ctx_t *ctx,
                        "'encryptionInformation'");
             return false;
         }
-        if (!BSON_APPEND_DOCUMENT(&delete_tokens_bson, ns, deleteTokens)) {
-            CLIENT_ERR("unable to append '%s' to 'deleteTokens'", ns);
+        if (!BSON_APPEND_DOCUMENT(&delete_tokens_bson, target_ns, deleteTokens)) {
+            CLIENT_ERR("unable to append '%s' to 'deleteTokens'", target_ns);
             return false;
         }
         if (!bson_append_document_end(&encryption_information_bson, &delete_tokens_bson)) {
@@ -178,7 +178,7 @@ typedef enum { MC_TO_CSFLE, MC_TO_MONGOCRYPTD, MC_TO_MONGOD } mc_cmd_target_t;
  *
  * @param cmd_name The name of the command.
  * @param cmd The command being rewritten. It is an input and output.
- * @param ns The <db>.<collection> namespace for the command.
+ * @param target_ns The <db>.<collection> namespace for the command.
  * @param encryptedFieldConfig The "encryptedFields" document for the
  * collection.
  * @param deleteTokens Delete tokens to append to "encryptionInformation". May
@@ -194,7 +194,7 @@ typedef enum { MC_TO_CSFLE, MC_TO_MONGOCRYPTD, MC_TO_MONGOD } mc_cmd_target_t;
 static bool _fle2_insert_encryptionInformation(const mongocrypt_ctx_t *ctx,
                                                const char *cmd_name,
                                                bson_t *cmd /* in and out */,
-                                               const char *ns,
+                                               const char *target_ns,
                                                bson_t *encryptedFieldConfig,
                                                bson_t *deleteTokens,
                                                const char *target_coll,
@@ -207,7 +207,7 @@ static bool _fle2_insert_encryptionInformation(const mongocrypt_ctx_t *ctx,
 
     BSON_ASSERT_PARAM(cmd_name);
     BSON_ASSERT_PARAM(cmd);
-    BSON_ASSERT_PARAM(ns);
+    BSON_ASSERT_PARAM(target_ns);
     BSON_ASSERT_PARAM(encryptedFieldConfig);
     /* deleteTokens may be NULL */
     BSON_ASSERT_PARAM(target_coll);
@@ -261,7 +261,7 @@ static bool _fle2_insert_encryptionInformation(const mongocrypt_ctx_t *ctx,
             // And append `encryptionInformation`.
             if (!_fle2_append_encryptionInformation(ctx,
                                                     &nsInfo_array_0,
-                                                    ns,
+                                                    target_ns,
                                                     encryptedFieldConfig,
                                                     deleteTokens,
                                                     target_coll,
@@ -292,7 +292,7 @@ static bool _fle2_insert_encryptionInformation(const mongocrypt_ctx_t *ctx,
         // "encryptionInformation" at top-level.
         if (!_fle2_append_encryptionInformation(ctx,
                                                 cmd,
-                                                ns,
+                                                target_ns,
                                                 encryptedFieldConfig,
                                                 deleteTokens,
                                                 target_coll,
@@ -335,7 +335,7 @@ static bool _fle2_insert_encryptionInformation(const mongocrypt_ctx_t *ctx,
 
     if (!_fle2_append_encryptionInformation(ctx,
                                             &explain,
-                                            ns,
+                                            target_ns,
                                             encryptedFieldConfig,
                                             deleteTokens,
                                             target_coll,
@@ -637,7 +637,7 @@ static bool _mongo_feed_collinfo(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in)
     }
 
     /* Cache the received collinfo. */
-    if (!_mongocrypt_cache_add_copy(&ctx->crypt->cache_collinfo, ectx->ns, &as_bson, ctx->status)) {
+    if (!_mongocrypt_cache_add_copy(&ctx->crypt->cache_collinfo, ectx->target_ns, &as_bson, ctx->status)) {
         return _mongocrypt_ctx_fail(ctx);
     }
 
@@ -664,7 +664,7 @@ static bool _mongo_done_collinfo(mongocrypt_ctx_t *ctx) {
             bson_destroy(&empty_collinfo);
             return false;
         }
-        if (!_mongocrypt_cache_add_copy(&ctx->crypt->cache_collinfo, ectx->ns, &empty_collinfo, ctx->status)) {
+        if (!_mongocrypt_cache_add_copy(&ctx->crypt->cache_collinfo, ectx->target_ns, &empty_collinfo, ctx->status)) {
             bson_destroy(&empty_collinfo);
             return _mongocrypt_ctx_fail(ctx);
         }
@@ -732,7 +732,7 @@ static bool _fle2_mongo_op_markings(mongocrypt_ctx_t *ctx, bson_t *out) {
     if (!_fle2_insert_encryptionInformation(ctx,
                                             cmd_name,
                                             out,
-                                            ectx->ns,
+                                            ectx->target_ns,
                                             &encrypted_field_config_bson,
                                             NULL /* deleteTokens */,
                                             ectx->target_coll,
@@ -1113,8 +1113,12 @@ static bool _try_run_csfle_marking(mongocrypt_ctx_t *ctx) {
     CHECK_CSFLE_ERROR("query_analyzer_create", fail_qa_create);
 
     uint32_t marked_bson_len = 0;
-    uint8_t *marked_bson =
-        csfle.analyze_query(qa, bson_get_data(&cmd), ectx->ns, (uint32_t)strlen(ectx->ns), &marked_bson_len, status);
+    uint8_t *marked_bson = csfle.analyze_query(qa,
+                                               bson_get_data(&cmd),
+                                               ectx->target_ns,
+                                               (uint32_t)strlen(ectx->target_ns),
+                                               &marked_bson_len,
+                                               status);
     CHECK_CSFLE_ERROR("analyze_query", fail_analyze_query);
 
     // Copy out the marked document.
@@ -1702,7 +1706,7 @@ static bool _fle2_finalize(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
         if (!_fle2_insert_encryptionInformation(ctx,
                                                 command_name,
                                                 &converted,
-                                                ectx->ns,
+                                                ectx->target_ns,
                                                 &encrypted_field_config_bson,
                                                 deleteTokens,
                                                 ectx->target_coll,
@@ -2071,7 +2075,7 @@ static void _cleanup(mongocrypt_ctx_t *ctx) {
     }
 
     ectx = (_mongocrypt_ctx_encrypt_t *)ctx;
-    bson_free(ectx->ns);
+    bson_free(ectx->target_ns);
     bson_free(ectx->cmd_db);
     bson_free(ectx->target_db);
     bson_free(ectx->target_coll);
@@ -2106,7 +2110,7 @@ static bool _try_schema_from_schema_map(mongocrypt_ctx_t *ctx) {
         return _mongocrypt_ctx_fail_w_msg(ctx, "malformed schema map");
     }
 
-    if (bson_iter_init_find(&iter, &schema_map, ectx->ns)) {
+    if (bson_iter_init_find(&iter, &schema_map, ectx->target_ns)) {
         if (!_mongocrypt_buffer_copy_from_document_iter(&ectx->schema, &iter)) {
             return _mongocrypt_ctx_fail_w_msg(ctx, "malformed schema map");
         }
@@ -2142,7 +2146,7 @@ static bool _fle2_try_encrypted_field_config_from_map(mongocrypt_ctx_t *ctx) {
         return _mongocrypt_ctx_fail_w_msg(ctx, "unable to convert encrypted_field_config_map to BSON");
     }
 
-    if (bson_iter_init_find(&iter, &encrypted_field_config_map, ectx->ns)) {
+    if (bson_iter_init_find(&iter, &encrypted_field_config_map, ectx->target_ns)) {
         if (!_mongocrypt_buffer_copy_from_document_iter(&ectx->encrypted_field_config, &iter)) {
             return _mongocrypt_ctx_fail_w_msg(ctx,
                                               "unable to copy encrypted_field_config from "
@@ -2173,7 +2177,9 @@ static bool _try_schema_from_cache(mongocrypt_ctx_t *ctx) {
 
     /* Otherwise, we need a remote schema. Check if we have a response to
      * listCollections cached. */
-    if (!_mongocrypt_cache_get(&ctx->crypt->cache_collinfo, ectx->ns /* null terminated */, (void **)&collinfo)) {
+    if (!_mongocrypt_cache_get(&ctx->crypt->cache_collinfo,
+                               ectx->target_ns /* null terminated */,
+                               (void **)&collinfo)) {
         return _mongocrypt_ctx_fail_w_msg(ctx, "failed to retrieve from cache");
     }
 
@@ -2574,21 +2580,21 @@ static bool _check_cmd_for_auto_encrypt_bulkWrite(mongocrypt_binary_t *cmd,
         return false;
     }
 
-    const char *ns = bson_iter_utf8(&ns_iter, NULL /* length */);
-    // Parse `ns` into "<db>.<coll>"
-    const char *dot = strstr(ns, ".");
+    const char *target_ns = bson_iter_utf8(&ns_iter, NULL /* length */);
+    // Parse `target_ns` into "<db>.<coll>"
+    const char *dot = strstr(target_ns, ".");
     if (!dot) {
-        CLIENT_ERR("expected namespace to contain dot, got: %s", ns);
+        CLIENT_ERR("expected namespace to contain dot, got: %s", target_ns);
         return false;
     }
     *target_coll = bson_strdup(dot + 1);
     // Get the database from the `ns` field (which may differ from `cmd_db`).
-    ptrdiff_t db_len = dot - ns;
+    ptrdiff_t db_len = dot - target_ns;
     if ((uint64_t)db_len > SIZE_MAX) {
         CLIENT_ERR("unexpected database length exceeds %zu", SIZE_MAX);
         return false;
     }
-    *target_db = bson_strndup(ns, (size_t)db_len);
+    *target_db = bson_strndup(target_ns, (size_t)db_len);
 
     // Ensure only one `nsInfo` element is present.
     // Query analysis (mongocryptd/crypt_shared) currently only supports one namespace.
@@ -2839,7 +2845,7 @@ bool mongocrypt_ctx_encrypt_init(mongocrypt_ctx_t *ctx, const char *db, int32_t 
             return _mongocrypt_ctx_fail(ctx);
         }
 
-        ectx->ns = bson_strdup_printf("%s.%s", target_db, ectx->target_coll);
+        ectx->target_ns = bson_strdup_printf("%s.%s", target_db, ectx->target_coll);
         ectx->target_db = bson_strdup(target_db);
         bson_free(target_db);
     } else {
@@ -2859,7 +2865,7 @@ bool mongocrypt_ctx_encrypt_init(mongocrypt_ctx_t *ctx, const char *db, int32_t 
         if (!ectx->target_coll) {
             return _mongocrypt_ctx_fail_w_msg(ctx, "unexpected error: did not bypass or error but no collection name");
         }
-        ectx->ns = bson_strdup_printf("%s.%s", ectx->cmd_db, ectx->target_coll);
+        ectx->target_ns = bson_strdup_printf("%s.%s", ectx->cmd_db, ectx->target_coll);
     }
 
     if (ctx->opts.kek.provider.aws.region || ctx->opts.kek.provider.aws.cmk) {
