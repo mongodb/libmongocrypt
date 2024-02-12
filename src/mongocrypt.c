@@ -153,6 +153,13 @@ bool mongocrypt_setopt_fle2v2(mongocrypt_t *crypt, bool enable) {
     return true;
 }
 
+bool mongocrypt_enable_range_v2(mongocrypt_t *crypt) {
+    ASSERT_MONGOCRYPT_PARAM_UNINIT(crypt);
+
+    crypt->opts.use_range_v2 = true;
+    return true;
+}
+
 bool mongocrypt_setopt_log_handler(mongocrypt_t *crypt, mongocrypt_log_fn_t log_fn, void *log_ctx) {
     ASSERT_MONGOCRYPT_PARAM_UNINIT(crypt);
     crypt->opts.log_fn = log_fn;
