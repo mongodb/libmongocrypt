@@ -130,7 +130,8 @@ bool _mongocrypt_ctx_fail_w_msg(mongocrypt_ctx_t *ctx, const char *msg);
 typedef struct {
     mongocrypt_ctx_t parent;
     bool explicit;
-    char *coll_name;
+    // `target_coll` is the target namespace collection name.
+    char *target_coll;
     char *db_name;
     char *ns;
 
@@ -163,7 +164,7 @@ typedef struct {
      * schema, and there were siblings. */
     bool collinfo_has_siblings;
     /* encrypted_field_config is set when:
-     * 1. <db_name>.<coll_name> is present in an encrypted_field_config_map.
+     * 1. `ns` is present in an encrypted_field_config_map.
      * 2. (TODO MONGOCRYPT-414) The collection has encryptedFields in the
      * response to listCollections. encrypted_field_config is true if and only if
      * encryption is using FLE 2.0.
