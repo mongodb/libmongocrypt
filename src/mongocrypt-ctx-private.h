@@ -130,8 +130,6 @@ bool _mongocrypt_ctx_fail_w_msg(mongocrypt_ctx_t *ctx, const char *msg);
 typedef struct {
     mongocrypt_ctx_t parent;
     bool explicit;
-    // `target_coll` is the target namespace collection name.
-    char *target_coll;
 
     // `cmd_db` is the command database (appended as `$db`).
     char *cmd_db;
@@ -144,6 +142,9 @@ typedef struct {
     // `target_db` is the target database for the operation. For `bulkWrite`, the target namespace database may differ
     // from `cmd_db`. If `target_db` is NULL, the target namespace database is the same as `cmd_db`.
     char *target_db;
+
+    // `target_coll` is the target namespace collection name.
+    char *target_coll;
 
     _mongocrypt_buffer_t list_collections_filter;
     _mongocrypt_buffer_t schema;
