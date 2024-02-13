@@ -179,6 +179,11 @@ ENV_DEBIAN:
     COMMAND
     ARG --required version
     FROM +init --base=docker.io/library/debian:$version
+    IF [ $version = "9.2" ]
+        # Update source list for archived Debian stretch packages.
+        # Refer: https://unix.stackexchange.com/a/743865/260858
+        RUN echo "deb http://archive.debian.org/debian stretch main" > /etc/apt/sources.list
+    END
     DO +DEBIAN_SETUP
 
 env.deb9:
@@ -372,3 +377,56 @@ build:
         CACHE /s/libmongocrypt/cmake-build
     END
     RUN env USE_NINJA=1 bash libmongocrypt/.evergreen/build_all.sh
+
+# `create-deb-packages-and-repos` creates the .deb packages and repo directories intended for the PPA on debian-like distros. Options:
+#   • --env=[...]
+#     · Set the environment for the build. Only debian-like environments are supported.
+#   • --packager_distro=[...] is passed to `create-packages-and-repos.sh`
+#   • --packager_arch=[...] is passed to `create-packages-and-repos.sh`
+create-deb-packages-and-repos:
+    ARG env
+    FROM +env.$env
+    DO +CACHE_WARMUP
+    DO +COPY_SOURCE
+    WORKDIR /s
+    RUN __install dh-make dpkg-dev apt-utils
+    ARG packager_distro
+    ARG packager_arch
+    RUN env \
+        WORKDIR=/s \
+        PYTHON=python3 \
+        HAS_PACKAGES=true \
+        PACKAGER_DISTRO=$packager_distro \
+        PACKAGER_ARCH=$packager_arch \
+        bash libmongocrypt/.evergreen/create-packages-and-repos.sh
+    SAVE ARTIFACT libmongocrypt/repo AS LOCAL repo
+
+# `test-deb-packages-from-ppa` tests Debian and Ubuntu packages installed on the PPA.
+#   • --env=[...] (default "deb11")
+#     · Set the environment for the build. Only debian-like environments are supported.
+#   • --distro=[...] (default "debian bullseye")
+#     · Has the form: "(debian|ubuntu) (name)". Must match distro set for `--env`.
+#   • --version=[...] (default "development"). The libmongocrypt package version.
+#     · May refer to a release branch (e.g. "1.8"). Release branch packages are updated on a tagged release.
+#     · "development" packages are updated by the `publish-packages` tasks every commit.
+test-deb-packages-from-ppa:
+    ARG env="deb11"
+    ARG distro="debian bullseye"
+    ARG version="development"
+    FROM +env.$env
+    WORKDIR /s
+    RUN __install apt-transport-https
+    # Install libmongocrypt following install steps described in README.md:
+    RUN curl -s --location https://pgp.mongodb.com/libmongocrypt.asc | gpg --dearmor >/etc/apt/trusted.gpg.d/libmongocrypt.gpg
+    RUN echo "deb https://libmongocrypt.s3.amazonaws.com/apt/$distro/libmongocrypt/$version main" | tee /etc/apt/sources.list.d/libmongocrypt.list
+    # Test using libmongocrypt:
+    RUN __install libmongocrypt-dev gcc
+    RUN echo "
+        #include <stdio.h>
+        #include <mongocrypt/mongocrypt.h>
+        int main(void) {
+            const char *ver = mongocrypt_version(NULL);
+            printf (\"Using libmongocrypt %s\", ver);
+        }" > test.c
+    RUN gcc -o test.out test.c $(pkg-config --libs --cflags libmongocrypt)
+    RUN ./test.out

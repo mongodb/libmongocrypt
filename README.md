@@ -127,7 +127,7 @@ Do the following when releasing:
    - `upload-all`
    - `windows-upload`. It is scheduled from the `windows-upload-check` task.
    - All `publish-packages` tasks.
-      - If the `publish-packages` tasks fail with an error like `[curator] 2024/01/02 13:56:17 [p=emergency]: problem submitting repobuilder job: 404 (Not Found)`, this suggests the published path does not yet exist. Barque (the Linux package publishing service) has protection to avoid unintentional publishes. File a DEVPROD ticket and assign to the team called Release Infrastructure to request the path be created. Then re-run the failing `publish-packages` task. Ask in the slack channel `#devprod-release-tools` for further help with `Barque` or `curator`.
+      - If the `publish-packages` tasks fail with an error like `[curator] 2024/01/02 13:56:17 [p=emergency]: problem submitting repobuilder job: 404 (Not Found)`, this suggests the published path does not yet exist. Barque (the Linux package publishing service) has protection to avoid unintentional publishes. File a DEVPROD ticket ([example](https://jira.mongodb.org/browse/DEVPROD-4053)) and assign to the team called Release Infrastructure to request the path be created. Then re-run the failing `publish-packages` task. Ask in the slack channel `#devprod-release-tools` for further help with `Barque` or `curator`.
 - Create the release from the GitHub releases page from the new tag.
 - Submit a PR to update the Homebrew package https://github.com/mongodb/homebrew-brew/blob/master/Formula/libmongocrypt.rb. ([Example](https://github.com/mongodb/homebrew-brew/pull/135)).
 - If this is a new minor release (e.g. `x.y.0`), file a DOCSP ticket to update the installation instructions on [Install libmongocrypt](https://www.mongodb.com/docs/manual/core/csfle/reference/libmongocrypt/). ([Example](https://jira.mongodb.org/browse/DOCSP-26877))
@@ -144,7 +144,7 @@ To install the latest unstable development package, change `1.8` to `development
 First, import the public key used to sign the package repositories:
 
 ```
-sudo sh -c 'curl -s --location https://www.mongodb.org/static/pgp/libmongocrypt.asc | gpg --dearmor >/etc/apt/trusted.gpg.d/libmongocrypt.gpg'
+sudo sh -c 'curl -s --location https://pgp.mongodb.com/libmongocrypt.asc | gpg --dearmor >/etc/apt/trusted.gpg.d/libmongocrypt.gpg'
 ```
 
 Second, create a list entry for the repository.  For Ubuntu systems (be sure to change `<release>` to `xenial`, `bionic`, `focal`, or `jammy`, as appropriate to your system):
@@ -184,7 +184,7 @@ name=libmongocrypt repository
 baseurl=https://libmongocrypt.s3.amazonaws.com/yum/redhat/$releasever/libmongocrypt/1.8/x86_64
 gpgcheck=1
 enabled=1
-gpgkey=https://www.mongodb.org/static/pgp/libmongocrypt.asc
+gpgkey=https://pgp.mongodb.com/libmongocrypt.asc
 ```
 
 Then install the libmongocrypt packages:
@@ -203,7 +203,7 @@ name=libmongocrypt repository
 baseurl=https://libmongocrypt.s3.amazonaws.com/yum/amazon/2023/libmongocrypt/1.8/x86_64
 gpgcheck=1
 enabled=1
-gpgkey=https://www.mongodb.org/static/pgp/libmongocrypt.asc
+gpgkey=https://pgp.mongodb.com/libmongocrypt.asc
 ```
 
 Then install the libmongocrypt packages:
@@ -222,7 +222,7 @@ name=libmongocrypt repository
 baseurl=https://libmongocrypt.s3.amazonaws.com/yum/amazon/2/libmongocrypt/1.8/x86_64
 gpgcheck=1
 enabled=1
-gpgkey=https://www.mongodb.org/static/pgp/libmongocrypt.asc
+gpgkey=https://pgp.mongodb.com/libmongocrypt.asc
 ```
 
 Then install the libmongocrypt packages:
@@ -241,7 +241,7 @@ name=libmongocrypt repository
 baseurl=https://libmongocrypt.s3.amazonaws.com/yum/amazon/2013.03/libmongocrypt/1.8/x86_64
 gpgcheck=1
 enabled=1
-gpgkey=https://www.mongodb.org/static/pgp/libmongocrypt.asc
+gpgkey=https://pgp.mongodb.com/libmongocrypt.asc
 ```
 
 Then install the libmongocrypt packages:
@@ -255,7 +255,7 @@ sudo yum install -y libmongocrypt
 First, import the public key used to sign the package repositories:
 
 ```
-sudo rpm --import https://www.mongodb.org/static/pgp/libmongocrypt.asc
+sudo rpm --import https://pgp.mongodb.com/libmongocrypt.asc
 ```
 
 Second, add the repository (be sure to change `<release>` to `12` or `15`, as appropriate to your system):

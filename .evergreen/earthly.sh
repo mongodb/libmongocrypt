@@ -26,6 +26,10 @@ cache_dir="$USER_CACHES_DIR/earthly-sh/$EARTHLY_VERSION"
 mkdir -p "$cache_dir"
 
 exe_filename="earthly-$OS_NAME-$arch$EXE_SUFFIX"
+if [[ "$OS_NAME" == "macos" ]]; then
+    # Earthly downloads use `darwin`.
+    exe_filename="earthly-darwin-$arch$EXE_SUFFIX"
+fi
 exe_path="$cache_dir/$exe_filename"
 
 # Download if it isn't already present
