@@ -174,4 +174,14 @@ bool _mongocrypt_needs_credentials_for_provider(mongocrypt_t *crypt,
  */
 bool mongocrypt_setopt_fle2v2(mongocrypt_t *crypt, bool enable);
 
+/**
+ * Enable use of Queryable Encryption Range V2 protocol.
+ *
+ * @param[in] crypt The @ref mongocrypt_t object.
+ *
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_status
+ */
+bool mongocrypt_enable_range_v2(mongocrypt_t *crypt);
+
 #endif /* MONGOCRYPT_PRIVATE_H */

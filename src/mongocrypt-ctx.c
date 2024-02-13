@@ -1071,7 +1071,7 @@ bool mongocrypt_ctx_setopt_algorithm_range(mongocrypt_ctx_t *ctx, mongocrypt_bin
         return _mongocrypt_ctx_fail_w_msg(ctx, "invalid BSON");
     }
 
-    if (!mc_RangeOpts_parse(&ctx->opts.rangeopts.value, &as_bson, ctx->status)) {
+    if (!mc_RangeOpts_parse(&ctx->opts.rangeopts.value, &as_bson, ctx->crypt->opts.use_range_v2, ctx->status)) {
         return _mongocrypt_ctx_fail(ctx);
     }
 

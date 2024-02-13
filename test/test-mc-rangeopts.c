@@ -28,6 +28,7 @@ static void test_mc_RangeOpts_parse(_mongocrypt_tester_t *tester) {
         mc_optional_int32_t expectMax;
         int64_t expectSparsity;
         mc_optional_uint32_t expectPrecision;
+        mc_optional_uint32_t expectTrimFactor;
     } testcase;
 
     testcase tests[] = {
@@ -62,6 +63,9 @@ static void test_mc_RangeOpts_parse(_mongocrypt_tester_t *tester) {
         {.desc = "Requires precision for double when only min is set",
          .in = RAW_STRING({"min" : 0.0, "sparsity" : {"$numberLong" : "1"}}),
          .expectError = "expected 'precision'"},
+        {.desc = "Errors on negative trim factor",
+         .in = RAW_STRING({"trimFactor" : -1, "sparsity" : {"$numberLong" : "1"}}),
+         .expectError = "'trimFactor' must be non-negative"},
     };
 
     for (size_t i = 0; i < sizeof(tests) / sizeof(tests[0]); i++) {
@@ -69,7 +73,7 @@ static void test_mc_RangeOpts_parse(_mongocrypt_tester_t *tester) {
         mongocrypt_status_t *status = mongocrypt_status_new();
         mc_RangeOpts_t ro;
         printf("running test_mc_RangeOpts_parse subtest: %s\n", test->desc);
-        bool ret = mc_RangeOpts_parse(&ro, TMP_BSON(test->in), status);
+        bool ret = mc_RangeOpts_parse(&ro, TMP_BSON(test->in), true /* use_range_v2 */, status);
         if (!test->expectError) {
             ASSERT_OK_STATUS(ret, status);
             ASSERT_CMPINT(test->expectMin.set, ==, ro.min.set);
@@ -89,6 +93,20 @@ static void test_mc_RangeOpts_parse(_mongocrypt_tester_t *tester) {
         mc_RangeOpts_cleanup(&ro);
         mongocrypt_status_destroy(status);
     }
+
+    // Test parsing range V2 options when range V2 is not enabled.
+    // Once `use_range_v2` is default true, this block may be removed.
+    {
+        mongocrypt_status_t *status = mongocrypt_status_new();
+        mc_RangeOpts_t ro;
+        bool ok = mc_RangeOpts_parse(&ro,
+                                     TMP_BSON(RAW_STRING({"trimFactor" : 1, "sparsity" : {"$numberLong" : "1"}})),
+                                     false /* use_range_v2 */,
+                                     status);
+        ASSERT_FAILS_STATUS(ok, status, "trimFactor is not supported for QE range v1");
+        mc_RangeOpts_cleanup(&ro);
+        mongocrypt_status_destroy(status);
+    }
 }
 
 static void test_mc_RangeOpts_to_FLE2RangeInsertSpec(_mongocrypt_tester_t *tester) {
@@ -104,22 +122,192 @@ static void test_mc_RangeOpts_to_FLE2RangeInsertSpec(_mongocrypt_tester_t *teste
         {.desc = "Works",
          .in = RAW_STRING({"min" : 123, "max" : 456, "sparsity" : {"$numberLong" : "1"}}),
          .v = RAW_STRING({"v" : 789}),
-         .expect = RAW_STRING({"v" : {"v" : 789, "min" : 123, "max" : 456}})},
+         .expect = RAW_STRING({"v" : {"v" : 789, "min" : 123, "max" : 456, "trimFactor" : 0}})},
         {.desc = "Works with precision",
          .in = RAW_STRING({"min" : 123.0, "max" : 456.0, "precision" : 2, "sparsity" : {"$numberLong" : "1"}}),
          .v = RAW_STRING({"v" : 789.0}),
-         .expect = RAW_STRING({"v" : {"v" : 789.0, "min" : 123.0, "max" : 456.0, "precision" : 2}})},
+         .expect = RAW_STRING({"v" : {"v" : 789.0, "min" : 123.0, "max" : 456.0, "precision" : 2, "trimFactor" : 0}})},
         {.desc = "Errors with missing 'v'",
          .in = RAW_STRING({"min" : 123, "max" : 456, "sparsity" : {"$numberLong" : "1"}}),
          .v = RAW_STRING({"foo" : "bar"}),
-         .expectError = "Unable to find 'v'"}};
+         .expectError = "Unable to find 'v'"},
+        // Tests of trim factor
+        {.desc = "tf = 0 works",
+         .in = RAW_STRING({"trimFactor" : 0, "min" : 0, "max" : 1, "sparsity" : {"$numberLong" : "1"}}),
+         .v = RAW_STRING({"v" : 0}),
+         .expect = RAW_STRING({"v" : {"v" : 0, "min" : 0, "max" : 1, "trimFactor" : 0}})},
+        {.desc = "tf = 1 fails when domain size is 2 = 2^1",
+         .in = RAW_STRING({"trimFactor" : 1, "min" : 0, "max" : 1, "sparsity" : {"$numberLong" : "1"}}),
+         .v = RAW_STRING({"v" : 0}),
+         .expectError = "Trim factor (1) must be less than the total number of bits (1) used to represent any element "
+                        "in the domain."},
+        {.desc = "tf = 1 works when domain size is 3 > 2^1",
+         .in = RAW_STRING({"trimFactor" : 1, "min" : 0, "max" : 2, "sparsity" : {"$numberLong" : "1"}}),
+         .v = RAW_STRING({"v" : 0}),
+         .expect = RAW_STRING({"v" : {"v" : 0, "min" : 0, "max" : 2, "trimFactor" : 1}})},
+        {.desc = "tf = 2 fails when domain size is 3 <= 2^2",
+         .in = RAW_STRING({"trimFactor" : 2, "min" : 0, "max" : 2, "sparsity" : {"$numberLong" : "1"}}),
+         .v = RAW_STRING({"v" : 0}),
+         .expectError = "Trim factor (2) must be less than the total number of bits (2) used to represent any element "
+                        "in the domain."},
+
+        // min = INT32_MIN, max = INT32_MAX
+        {.desc = "tf = 31 works for unbounded int32 (domain size = 2^32)",
+         .in = RAW_STRING(
+             {"trimFactor" : 31, "min" : -2147483648, "max" : 2147483647, "sparsity" : {"$numberLong" : "1"}}),
+         .v = RAW_STRING({"v" : 0}),
+         .expect = RAW_STRING({"v" : {"v" : 0, "min" : -2147483648, "max" : 2147483647, "trimFactor" : 31}})},
+        {.desc = "tf = 32 fails for unbounded int32 (domain size = 2^32)",
+         .in = RAW_STRING(
+             {"trimFactor" : 32, "min" : -2147483648, "max" : 2147483647, "sparsity" : {"$numberLong" : "1"}}),
+         .v = RAW_STRING({"v" : 0}),
+         .expectError = "Trim factor (32) must be less than the total number of bits (32) used to represent any "
+                        "element in the domain."},
+
+        // min = INT64_MIN, max = INT64_MAX
+        {.desc = "tf = 63 works for int64 with no min/max (domain size = 2^64)",
+         .in = RAW_STRING({
+             "trimFactor" : 63,
+             "min" : -9223372036854775808,
+             "max" : 9223372036854775807,
+             "sparsity" : {"$numberLong" : "1"}
+         }),
+         .v = RAW_STRING({"v" : {"$numberLong" : "0"}}),
+         .expect = RAW_STRING({
+             "v" : {
+                 "v" : {"$numberLong" : "0"},
+                 "min" : {"$numberLong" : "-9223372036854775808"},
+                 "max" : {"$numberLong" : "9223372036854775807"},
+                 "trimFactor" : 63
+             }
+         })},
+        {.desc = "tf = 64 fails for int64 with no min/max (domain size = 2^64)",
+         .in = RAW_STRING({
+             "trimFactor" : 64,
+             "min" : -9223372036854775808,
+             "max" : 9223372036854775807,
+             "sparsity" : {"$numberLong" : "1"}
+         }),
+         .v = RAW_STRING({"v" : {"$numberLong" : "0"}}),
+         .expectError = "Trim factor (64) must be less than the total number of bits (64) used to represent any "
+                        "element in the domain."},
+
+        {.desc = "tf = 63 works for date with no min/max (domain size = 2^64)",
+         .in = RAW_STRING({
+             "trimFactor" : 63,
+             "min" : {"$date" : {"$numberLong" : "-9223372036854775808"}},
+             "max" : {"$date" : {"$numberLong" : "9223372036854775807"}},
+             "sparsity" : {"$numberLong" : "1"}
+         }),
+         .v = RAW_STRING({"v" : {"$date" : {"$numberLong" : "0"}}}),
+         .expect = RAW_STRING({
+             "v" : {
+                 "v" : {"$date" : {"$numberLong" : "0"}},
+                 "min" : {"$date" : {"$numberLong" : "-9223372036854775808"}},
+                 "max" : {"$date" : {"$numberLong" : "9223372036854775807"}},
+                 "trimFactor" : 63
+             }
+         })},
+        {.desc = "tf = 64 fails for date with no min/max (domain size = 2^64)",
+         .in = RAW_STRING({
+             "trimFactor" : 64,
+             "min" : {"$date" : {"$numberLong" : "-9223372036854775808"}},
+             "max" : {"$date" : {"$numberLong" : "9223372036854775807"}},
+             "sparsity" : {"$numberLong" : "1"}
+         }),
+         .v = RAW_STRING({"v" : {"$date" : {"$numberLong" : "0"}}}),
+         .expectError = "Trim factor (64) must be less than the total number of bits (64) used to represent any "
+                        "element in the domain."},
+
+        {.desc = "tf bound check passes correctly for double with min, max, precision set (tf = 9, 2^9 < domain size < "
+                 "2^10)",
+         .in = RAW_STRING(
+             {"trimFactor" : 9, "min" : 0.0, "max" : 100.0, "precision" : 1, "sparsity" : {"$numberLong" : "1"}}),
+         .v = RAW_STRING({"v" : 0.0}),
+         .expect = RAW_STRING({"v" : {"v" : 0.0, "min" : 0.0, "max" : 100.0, "precision" : 1, "trimFactor" : 9}})},
+        {.desc = "tf bound check fails correctly for double with min, max, precision set (tf = 10, domain size < 2^10)",
+         .in = RAW_STRING(
+             {"trimFactor" : 10, "min" : 0.0, "max" : 100.0, "precision" : 1, "sparsity" : {"$numberLong" : "1"}}),
+         .v = RAW_STRING({"v" : 0.0}),
+         .expectError = "Trim factor (10) must be less than the total number of bits (10) used to represent any "
+                        "element in the domain."},
+
+        {.desc = "tf = 63 works for unbounded double (domain size = 2^64)",
+         .in = RAW_STRING({"trimFactor" : 63, "sparsity" : {"$numberLong" : "1"}}),
+         .v = RAW_STRING({"v" : 0.0}),
+         // note - when min and max are unset, they are added into the insert spec.
+         .expect = RAW_STRING({
+             "v" : {
+                 "v" : 0.0,
+                 "min" : {"$numberDouble" : "-1.7976931348623157081e+308"},
+                 "max" : {"$numberDouble" : "1.7976931348623157081e+308"},
+                 "trimFactor" : 63
+             }
+         })},
+        {.desc = "tf = 64 fails for unbounded double (domain size = 2^64))",
+         .in = RAW_STRING({"trimFactor" : 64, "sparsity" : {"$numberLong" : "1"}}),
+         .v = RAW_STRING({"v" : 0.0}),
+         .expectError = "Trim factor (64) must be less than the total number of bits (64) used to represent any "
+                        "element in the domain."},
+
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
+        {.desc = "tf bound check passes correctly for decimal with min, max, precision set (tf = 9, 2^9 < domain size "
+                 "< 2^10)",
+         .in = RAW_STRING({
+             "trimFactor" : 9,
+             "min" : {"$numberDecimal" : "0"},
+             "max" : {"$numberDecimal" : "100"},
+             "precision" : 1,
+             "sparsity" : {"$numberLong" : "1"}
+         }),
+         .v = RAW_STRING({"v" : {"$numberDecimal" : "0"}}),
+         .expect = RAW_STRING({
+             "v" : {
+                 "v" : {"$numberDecimal" : "0"},
+                 "min" : {"$numberDecimal" : "0"},
+                 "max" : {"$numberDecimal" : "100"},
+                 "precision" : 1,
+                 "trimFactor" : 9
+             }
+         })},
+        {.desc =
+             "tf bound check fails correctly for decimal with min, max, precision set (tf = 10, domain size < 2^10)",
+         .in = RAW_STRING({
+             "trimFactor" : 10,
+             "min" : {"$numberDecimal" : "0"},
+             "max" : {"$numberDecimal" : "100"},
+             "precision" : 1,
+             "sparsity" : {"$numberLong" : "1"}
+         }),
+         .v = RAW_STRING({"v" : {"$numberDecimal" : "0"}}),
+         .expectError = "Trim factor (10) must be less than the total number of bits (10) used to represent any "
+                        "element in the domain."},
+
+        {.desc = "tf = 127 works for unbounded decimal (domain size = 2^128)",
+         .in = RAW_STRING({"trimFactor" : 127, "sparsity" : {"$numberLong" : "1"}}),
+         .v = RAW_STRING({"v" : {"$numberDecimal" : "0"}}),
+         .expect = RAW_STRING({
+             "v" : {
+                 "v" : {"$numberDecimal" : "0"},
+                 "min" : {"$numberDecimal" : "-9.999999999999999999999999999999999E+6144"},
+                 "max" : {"$numberDecimal" : "9.999999999999999999999999999999999E+6144"},
+                 "trimFactor" : 127
+             }
+         })},
+        {.desc = "tf = 128 fails for unbounded decimal (domain size = 2^128)",
+         .in = RAW_STRING({"trimFactor" : 128, "sparsity" : {"$numberLong" : "1"}}),
+         .v = RAW_STRING({"v" : {"$numberDecimal" : "0"}}),
+         .expectError = "Trim factor (128) must be less than the total number of bits (128) used to represent any "
+                        "element in the domain."},
+#endif
+    };
 
     for (size_t i = 0; i < sizeof(tests) / sizeof(tests[0]); i++) {
         testcase *test = tests + i;
         mongocrypt_status_t *status = mongocrypt_status_new();
         mc_RangeOpts_t ro;
         printf("running test_mc_RangeOpts_to_FLE2RangeInsertSpec subtest: %s\n", test->desc);
-        ASSERT_OK_STATUS(mc_RangeOpts_parse(&ro, TMP_BSON(test->in), status), status);
+        ASSERT_OK_STATUS(mc_RangeOpts_parse(&ro, TMP_BSON(test->in), true /* use_range_v2 */, status), status);
         bson_t out = BSON_INITIALIZER;
         bool ret = mc_RangeOpts_to_FLE2RangeInsertSpec(&ro, TMP_BSON(test->v), &out, status);
         if (!test->expectError) {
