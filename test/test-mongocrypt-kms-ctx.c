@@ -620,8 +620,8 @@ static void _test_mongocrypt_kms_ctx_kmip_encrypt(_mongocrypt_tester_t *tester) 
     crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
     ok = _mongocrypt_kms_ctx_init_kmip_encrypt(&kms_ctx,
                                                endpoint,
-                                               "kmip",
                                                (char *)KEK_UNIQUE_IDENTIFIER,
+                                               "kmip",
                                                &plaintext,
                                                &crypt->log);
     ASSERT_OK_STATUS(ok, kms_ctx.status);
