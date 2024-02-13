@@ -740,7 +740,11 @@ static void _test_mongocrypt_kms_ctx_kmip_decrypt(_mongocrypt_tester_t *tester) 
     mongocrypt_status_t *status;
     _mongocrypt_endpoint_t *endpoint;
 
-    _mongocrypt_key_doc_t key_doc = {0};
+    /* should be _mongocrypt_key_doc_t key_doc = {0}
+     * but doesn't compile on Ubuntu 16 due to https://bugs.llvm.org/show_bug.cgi?id=21629 */
+    _mongocrypt_key_doc_t key_doc;
+    memset(&key_doc, 0, sizeof(key_doc));
+
     key_doc.kek.kms_provider = MONGOCRYPT_KMS_PROVIDER_KMIP;
     key_doc.kek.provider.kmip.delegated = true;
     key_doc.kek.provider.kmip.key_id = (char *)KEK_UNIQUE_IDENTIFIER;
