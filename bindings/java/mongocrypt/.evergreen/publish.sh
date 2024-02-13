@@ -8,14 +8,14 @@ set -o errexit  # Exit the script with error if any of the commands fail
 #            Main Program                  #
 ############################################
 
-echo ${RING_FILE_GPG_BASE64} | base64 -d > ${PROJECT_DIRECTORY}/secring.gpg
+echo ${ring_file_gpg_base64} | base64 -d > ${PROJECT_DIRECTORY}/secring.gpg
 
 trap "rm ${PROJECT_DIRECTORY}/secring.gpg; exit" EXIT HUP
 
-export ORG_GRADLE_PROJECT_nexusUsername=${NEXUS_USERNAME}
-export ORG_GRADLE_PROJECT_nexusPassword=${NEXUS_PASSWORD}
-export ORG_GRADLE_PROJECT_signing_keyId=${SIGNING_KEY_ID}
-export ORG_GRADLE_PROJECT_signing_password=${SIGNING_PASSWORD}
+export ORG_GRADLE_PROJECT_nexusUsername=${nexus_username}
+export ORG_GRADLE_PROJECT_nexusPassword=${nexus_password}
+export ORG_GRADLE_PROJECT_signing_keyId=${signing_keyId}
+export ORG_GRADLE_PROJECT_signing_password=${signing_password}
 export ORG_GRADLE_PROJECT_signing_secretKeyRingFile=${PROJECT_DIRECTORY}/secring.gpg
 
 echo "Publishing snapshot with jdk11"
