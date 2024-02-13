@@ -2839,15 +2839,11 @@ bool mongocrypt_ctx_encrypt_init(mongocrypt_ctx_t *ctx, const char *db, int32_t 
         // Handle `bulkWrite` as a special case.
         // `bulkWrite` includes the target namespaces in an `nsInfo` field.
         // Only one target namespace is supported.
-        char *target_db = NULL;
-        if (!_check_cmd_for_auto_encrypt_bulkWrite(cmd, &target_db, &ectx->target_coll, ctx->status)) {
-            bson_free(target_db);
+        if (!_check_cmd_for_auto_encrypt_bulkWrite(cmd, &ectx->target_db, &ectx->target_coll, ctx->status)) {
             return _mongocrypt_ctx_fail(ctx);
         }
 
-        ectx->target_ns = bson_strdup_printf("%s.%s", target_db, ectx->target_coll);
-        ectx->target_db = bson_strdup(target_db);
-        bson_free(target_db);
+        ectx->target_ns = bson_strdup_printf("%s.%s", ectx->target_db, ectx->target_coll);
     } else {
         bool bypass;
         if (!_check_cmd_for_auto_encrypt(cmd, &bypass, &ectx->target_coll, ctx->status)) {
