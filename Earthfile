@@ -417,7 +417,7 @@ test-deb-packages-from-ppa:
     WORKDIR /s
     RUN __install apt-transport-https
     # Install libmongocrypt following install steps described in README.md:
-    RUN sh -c 'curl -s --location https://pgp.mongodb.com/libmongocrypt.asc | gpg --dearmor >/etc/apt/trusted.gpg.d/libmongocrypt.gpg'
+    RUN curl -s --location https://pgp.mongodb.com/libmongocrypt.asc | gpg --dearmor >/etc/apt/trusted.gpg.d/libmongocrypt.gpg
     RUN echo "deb https://libmongocrypt.s3.amazonaws.com/apt/$distro/libmongocrypt/$version main" | tee /etc/apt/sources.list.d/libmongocrypt.list
     RUN apt-get update
     RUN apt-get install -y libmongocrypt-dev
