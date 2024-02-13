@@ -126,8 +126,13 @@ static bool _mongocrypt_kmip_kek_parse(_mongocrypt_kmip_kek_t *kmip,
     if (!_mongocrypt_parse_optional_utf8(def, "keyId", &kmip->key_id, status)) {
         return false;
     }
+    
+    kmip->delegated = false;
+    if (!_mongocrypt_parse_optional_bool(def, "delegated", &kmip->delegated, status)) {
+        return false;
+    }
 
-    if (!_mongocrypt_check_allowed_fields(def, NULL, status, "provider", "endpoint", "keyId")) {
+    if (!_mongocrypt_check_allowed_fields(def, NULL, status, "provider", "endpoint", "keyId", "delegated")) {
         return false;
     }
     return true;

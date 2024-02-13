@@ -118,19 +118,18 @@ static bool _kms_kmip_start(mongocrypt_ctx_t *ctx, const mc_kms_creds_t *kc) {
             if (!_mongocrypt_random(ctx->crypt->crypto, &secretdata, MONGOCRYPT_KEY_LEN, ctx->status)) {
                 goto fail;
             }
-        }
 
-        if (!_mongocrypt_kms_ctx_init_kmip_register(&dkctx->kms,
-                                                    endpoint,
-                                                    secretdata.data,
-                                                    secretdata.len,
-                                                    ctx->opts.kek.kmsid,
-                                                    &ctx->crypt->log)) {
-            mongocrypt_kms_ctx_status(&dkctx->kms, ctx->status);
-            goto fail;
+            if (!_mongocrypt_kms_ctx_init_kmip_register(&dkctx->kms,
+                                                        endpoint,
+                                                        secretdata.data,
+                                                        secretdata.len,
+                                                        ctx->opts.kek.kmsid,
+                                                        &ctx->crypt->log)) {
+                mongocrypt_kms_ctx_status(&dkctx->kms, ctx->status);
+                goto fail;
+            }
         }
         ctx->state = MONGOCRYPT_CTX_NEED_KMS;
-
         goto success;
     }
 
