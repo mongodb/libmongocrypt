@@ -75,14 +75,14 @@ dependencies {
  */
 
 // Returns a String representing the output of `git describe`
-val gitDescribe by lazy {
+val gitDescribe : String = System.getProperties().computeIfAbsent("gitDescribe") {
     val describeStdOut = ByteArrayOutputStream()
     exec {
         commandLine = listOf("git", "describe", "--tags", "--always", "--dirty")
         standardOutput = describeStdOut
     }
     describeStdOut.toString().trim()
-}
+}.toString()
 
 val isJavaTag by lazy { gitDescribe.startsWith("java") }
 val gitVersion by lazy { gitDescribe.subSequence(gitDescribe.toCharArray().indexOfFirst { it.isDigit() }, gitDescribe.length).toString() }
