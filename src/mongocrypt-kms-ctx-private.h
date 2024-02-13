@@ -142,16 +142,19 @@ bool _mongocrypt_kms_ctx_init_kmip_get(mongocrypt_kms_ctx_t *kms,
 
 bool _mongocrypt_kms_ctx_init_kmip_create(mongocrypt_kms_ctx_t *kms,
                                           const _mongocrypt_endpoint_t *endpoint,
+                                          const char* kmsid,
                                           _mongocrypt_log_t *log);
 
 bool _mongocrypt_kms_ctx_init_kmip_encrypt(mongocrypt_kms_ctx_t *kms,
                                            const _mongocrypt_endpoint_t *endpoint,
                                            const char *unique_identifier,
+                                           const char *kmsid,
                                            _mongocrypt_buffer_t *plaintext,
                                            _mongocrypt_log_t *log);
 
 bool _mongocrypt_kms_ctx_init_kmip_decrypt(mongocrypt_kms_ctx_t *kms,
                                            const _mongocrypt_endpoint_t *endpoint,
+                                           const char *kmsid,
                                            _mongocrypt_key_doc_t *key,
                                            _mongocrypt_log_t *log);
 

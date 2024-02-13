@@ -1717,12 +1717,13 @@ done:
 
 bool _mongocrypt_kms_ctx_init_kmip_create(mongocrypt_kms_ctx_t *kms_ctx,
                                           const _mongocrypt_endpoint_t *endpoint,
+                                          const char *kmsid,
                                           _mongocrypt_log_t *log) {
     BSON_ASSERT_PARAM(kms_ctx);
     BSON_ASSERT_PARAM(endpoint);
     bool ret = false;
 
-    _init_common(kms_ctx, log, MONGOCRYPT_KMS_KMIP_CREATE);
+    _init_common(kms_ctx, log, MONGOCRYPT_KMS_KMIP_CREATE, kmsid);
     mongocrypt_status_t *status = kms_ctx->status;
     kms_ctx->endpoint = bson_strdup(endpoint->host_and_port);
     _mongocrypt_apply_default_port(&kms_ctx->endpoint, DEFAULT_KMIP_PORT);
@@ -1749,13 +1750,14 @@ done:
 bool _mongocrypt_kms_ctx_init_kmip_encrypt(mongocrypt_kms_ctx_t *kms_ctx,
                                            const _mongocrypt_endpoint_t *endpoint,
                                            const char *unique_identifier,
+                                           const char *kmsid,
                                            _mongocrypt_buffer_t *plaintext,
                                            _mongocrypt_log_t *log) {
     BSON_ASSERT_PARAM(kms_ctx);
     BSON_ASSERT_PARAM(endpoint);
     bool ret = false;
 
-    _init_common(kms_ctx, log, MONGOCRYPT_KMS_KMIP_ENCRYPT);
+    _init_common(kms_ctx, log, MONGOCRYPT_KMS_KMIP_ENCRYPT, kmsid);
     mongocrypt_status_t *status = kms_ctx->status;
     kms_ctx->endpoint = bson_strdup(endpoint->host_and_port);
     _mongocrypt_apply_default_port(&kms_ctx->endpoint, DEFAULT_KMIP_PORT);
@@ -1782,13 +1784,14 @@ done:
 
 bool _mongocrypt_kms_ctx_init_kmip_decrypt(mongocrypt_kms_ctx_t *kms_ctx,
                                            const _mongocrypt_endpoint_t *endpoint,
+                                           const char *kmsid,
                                            _mongocrypt_key_doc_t *key,
                                            _mongocrypt_log_t *log) {
     BSON_ASSERT_PARAM(kms_ctx);
     BSON_ASSERT_PARAM(endpoint);
     bool ret = false;
 
-    _init_common(kms_ctx, log, MONGOCRYPT_KMS_KMIP_DECRYPT);
+    _init_common(kms_ctx, log, MONGOCRYPT_KMS_KMIP_DECRYPT, kmsid);
     mongocrypt_status_t *status = kms_ctx->status;
     kms_ctx->endpoint = bson_strdup(endpoint->host_and_port);
     _mongocrypt_apply_default_port(&kms_ctx->endpoint, DEFAULT_KMIP_PORT);

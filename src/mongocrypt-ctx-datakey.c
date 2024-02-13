@@ -107,7 +107,7 @@ static bool _kms_kmip_start(mongocrypt_ctx_t *ctx, const mc_kms_creds_t *kc) {
         /* User did not set a 'keyId'. */
         if (delegated) {
             /* Step 1. Send a KMIP Create request for a new AES-256 symmetric key. */
-            if (!_mongocrypt_kms_ctx_init_kmip_create(&dkctx->kms, endpoint, &ctx->crypt->log)) {
+            if (!_mongocrypt_kms_ctx_init_kmip_create(&dkctx->kms, endpoint, ctx->opts.kek.kmsid, &ctx->crypt->log)) {
                 mongocrypt_kms_ctx_status(&dkctx->kms, ctx->status);
                 goto fail;
             }
@@ -118,6 +118,7 @@ static bool _kms_kmip_start(mongocrypt_ctx_t *ctx, const mc_kms_creds_t *kc) {
             if (!_mongocrypt_random(ctx->crypt->crypto, &secretdata, MONGOCRYPT_KEY_LEN, ctx->status)) {
                 goto fail;
             }
+        }
 
         if (!_mongocrypt_kms_ctx_init_kmip_register(&dkctx->kms,
                                                     endpoint,
@@ -166,6 +167,7 @@ static bool _kms_kmip_start(mongocrypt_ctx_t *ctx, const mc_kms_creds_t *kc) {
         if (!_mongocrypt_kms_ctx_init_kmip_encrypt(&dkctx->kms,
                                                    endpoint,
                                                    dkctx->kmip_unique_identifier,
+                                                   ctx->opts.kek.kmsid,
                                                    &dkctx->plaintext_key_material,
                                                    &ctx->crypt->log)) {
             mongocrypt_kms_ctx_status(&dkctx->kms, ctx->status);

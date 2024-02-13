@@ -696,13 +696,21 @@ bool _mongocrypt_key_broker_add_doc(_mongocrypt_key_broker_t *kb,
         }
 
         if (key_returned->doc->kek.provider.kmip.delegated) {
-            if (!_mongocrypt_kms_ctx_init_kmip_decrypt(&key_returned->kms, endpoint, key_doc, &kb->crypt->log)) {
+            if (!_mongocrypt_kms_ctx_init_kmip_decrypt(&key_returned->kms,
+                                                       endpoint,
+                                                       key_doc->kek.kmsid,
+                                                       key_doc,
+                                                       &kb->crypt->log)) {
                 mongocrypt_kms_ctx_status(&key_returned->kms, kb->status);
                 _key_broker_fail(kb);
                 goto done;
             }
         } else {
-            if (!_mongocrypt_kms_ctx_init_kmip_get(&key_returned->kms, endpoint, unique_identifier, key_doc->kek.kmsid, &kb->crypt->log)) {
+            if (!_mongocrypt_kms_ctx_init_kmip_get(&key_returned->kms,
+                                                   endpoint,
+                                                   unique_identifier,
+                                                   key_doc->kek.kmsid,
+                                                   &kb->crypt->log)) {
                 mongocrypt_kms_ctx_status(&key_returned->kms, kb->status);
                 _key_broker_fail(kb);
                 goto done;
