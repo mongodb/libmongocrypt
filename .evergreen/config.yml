@@ -184,10 +184,10 @@ functions:
     - command: shell.exec
       params:
         script: |-
-          # if [ "${is_patch}" = "true" ]; then
-          #   echo "Patch build detected, skipping"
-          #   exit 0
-          # fi
+          if [ "${is_patch}" = "true" ]; then
+            echo "Patch build detected, skipping"
+            exit 0
+          fi
           export PROJECT_DIRECTORY=${project_directory}
           export NEXUS_USERNAME=${nexus_username}
           export NEXUS_PASSWORD=${nexus_password}
