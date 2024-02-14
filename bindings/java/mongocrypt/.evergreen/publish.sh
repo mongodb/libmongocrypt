@@ -42,4 +42,4 @@ SYSTEM_PROPERTIES="-Dorg.gradle.internal.publish.checksums.insecure=true -Dorg.g
 }
 
 ./gradlew -version
-./gradlew ${SYSTEM_PROPERTIES} --stacktrace --info  publishToSonatype
+./gradlew ${SYSTEM_PROPERTIES} --stacktrace --info  downloadJava
