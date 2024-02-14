@@ -11,5 +11,7 @@ else
    export JAVA_HOME=/opt/java/jdk8
 fi
 
+gitDescribe="$(git describe --tags --always --dirty)"
+
 ./gradlew -version
-./gradlew clean downloadJnaLibs check --info -DgitRevision=${GIT_REVISION}
+./gradlew clean downloadJnaLibs check --info -DgitRevision=${GIT_REVISION} -DgitDescribe=${gitDescribe}
