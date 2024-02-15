@@ -116,7 +116,7 @@ Do the following when releasing:
 - Update CHANGELOG.md with the version being released.
 - Check out the release branch. For a release `x.y.z`, the release branch is `rx.y`. If this is a new minor release (`x.y.0`), create the release branch.
 - If this is a new minor release (e.g. `x.y.0`):
-   - Update the Linux distribution package installation instructions in the below sections to refer to the new version x.y.
+   - Update the Linux distribution package installation instructions in the below sections to refer to the new version `x.y`.
    - Update the [libmongocrypt-release](https://evergreen.mongodb.com/projects##libmongocrypt-release) Evergreen project (requires auth) to set `Branch Name` to `rx.y`.
 - Commit the changes on the `rx.y` branch with a message like "Update CHANGELOG.md for x.y.z".
 - Tag the commit with `git tag -a <tag>`.
