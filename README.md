@@ -119,8 +119,8 @@ Do the following when releasing:
    - Update the Linux distribution package installation instructions in the below sections to refer to the new version x.y.
    - Update the [libmongocrypt-release](https://evergreen.mongodb.com/projects##libmongocrypt-release) Evergreen project (requires auth) to set `Branch Name` to `rx.y`.
 - Commit the changes on the `rx.y` branch with a message like "Update CHANGELOG.md for x.y.z".
-- Commit, create a new git tag, like `1.0.0-rc123` or `1.0.0`, and push.
-   - Push both the branch ref and tag ref in the same command: `git push origin master 1.0.0-rc123` or `git push origin r1.0 1.0.0`
+- Tag the commit with `git tag -a <tag>`.
+   - Push both the branch ref and tag ref in the same command: `git push origin master 1.8.0-alpha0` or `git push origin r1.8 1.8.4`
    - Pushing the branch ref and the tag ref in the same command eliminates the possibility of a race condition in Evergreen (for building resources based on the presence of a release tag)
    - Note that in the future (e.g., if we move to a PR-based workflow for releases, or if we simply want to take better advantage of advanced Evergreen features), it is possible to use Evergreen's "Trigger Versions With Git Tags" feature by updating both `config.yml` and the project's settings in Evergreen
 - Ensure the version on Evergreen with the tagged commit is scheduled. The following tasks must pass to complete the release:
