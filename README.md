@@ -114,10 +114,10 @@ Version numbers of libmongocrypt must follow the format 1.[0-9].[0-9] for releas
 #### Steps to release ####
 Do the following when releasing:
 - Update CHANGELOG.md with the version being released.
+- Check out the release branch. For a release `x.y.z`, the release branch is `rx.y`. If this is a new minor release (`x.y.0`), create the release branch.
 - If this is a new minor release (e.g. `x.y.0`):
    - Update the Linux distribution package installation instructions in the below sections to refer to the new version x.y.
    - Commit these changes (on `master`) so that both the `master` branch and the new branch you are about to create refer to the new branch (note that this means you will commit changes to this file, and `CHANGELOG.md`)
-   - Create a branch named `rx.y`.
    - Update the [libmongocrypt-release](https://evergreen.mongodb.com/projects##libmongocrypt-release) Evergreen project (requires auth) to set `Branch Name` to `rx.y`.
 - Commit, create a new git tag, like `1.0.0-rc123` or `1.0.0`, and push.
    - Push both the branch ref and tag ref in the same command: `git push origin master 1.0.0-rc123` or `git push origin r1.0 1.0.0`
