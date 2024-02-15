@@ -202,6 +202,7 @@ static void test_mc_FLE2RangeFindDriverSpec_to_placeholders(_mongocrypt_tester_t
     int32_t indexMin = 5;
     int32_t indexMax = 200;
     int32_t payloadId = 123;
+    int32_t trimFactor = 1;
 
     typedef struct {
         const char *desc;
@@ -323,7 +324,7 @@ static void test_mc_FLE2RangeFindDriverSpec_to_placeholders(_mongocrypt_tester_t
     };
 
     bson_t *range_opts_bson =
-        TMP_BSON("{'min': %d, 'max': %d, 'sparsity': {'$numberLong': '%d'}}", indexMin, indexMax, sparsity);
+        TMP_BSON("{'min': %d, 'max': %d, 'sparsity': {'$numberLong': '%d'}, 'trimFactor': %d}", indexMin, indexMax, sparsity, trimFactor);
 
     ASSERT_OK_STATUS(mc_RangeOpts_parse(&range_opts, range_opts_bson, true /* use_range_v2 */, status), status);
 
@@ -355,7 +356,8 @@ static void test_mc_FLE2RangeFindDriverSpec_to_placeholders(_mongocrypt_tester_t
                                                                    .indexMin = TMP_ITER(indexMin),
                                                                    .indexMax = TMP_ITER(indexMax),
                                                                    .maxContentionFactor = maxContentionFactor,
-                                                                   .sparsity = sparsity};
+                                                                   .sparsity = sparsity,
+                                                                   .trimFactor = OPT_U32(trimFactor)};
 
                 ASSERT_OK_STATUS(mc_makeRangeFindPlaceholder(&p1_args_full, &p1, status), status);
             }
@@ -374,7 +376,8 @@ static void test_mc_FLE2RangeFindDriverSpec_to_placeholders(_mongocrypt_tester_t
                                                                    .indexMin = TMP_ITER(indexMin),
                                                                    .indexMax = TMP_ITER(indexMax),
                                                                    .maxContentionFactor = maxContentionFactor,
-                                                                   .sparsity = sparsity};
+                                                                   .sparsity = sparsity,
+                                                                   .trimFactor = OPT_U32(trimFactor)};
 
                 ASSERT_OK_STATUS(mc_makeRangeFindPlaceholder(&p2_args_full, &p2, status), status);
             }

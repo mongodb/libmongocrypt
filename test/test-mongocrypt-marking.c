@@ -274,6 +274,131 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
          }),
          .expectedMinCover = "0\n"
                              "100000\n"},
+        {.description = "Int32 mincover=root no trimming",
+         .findSpecJSON = RAW_STRING({
+             "lowerBound" : {"$numberDouble" : "-Infinity"},
+             "lbIncluded" : true,
+             "upperBound" : {"$numberDouble" : "Infinity"},
+             "ubIncluded" : true,
+             "indexMin" : {"$numberInt" : "0"},
+             "indexMax" : {"$numberInt" : "31"}
+         }),
+         .expectedMinCover = "root\n"},
+        {.description = "Int32 mincover=root TF=1",
+         .findSpecJSON = RAW_STRING({
+             "lowerBound" : {"$numberDouble" : "-Infinity"},
+             "lbIncluded" : true,
+             "upperBound" : {"$numberDouble" : "Infinity"},
+             "ubIncluded" : true,
+             "indexMin" : {"$numberInt" : "0"},
+             "indexMax" : {"$numberInt" : "31"},
+             "trimFactor": 1
+         }),
+         .expectedMinCover = "0\n"
+                             "1\n"},
+        {.description = "Int32 mincover=root TF=3",
+         .findSpecJSON = RAW_STRING({
+             "lowerBound" : {"$numberDouble" : "-Infinity"},
+             "lbIncluded" : true,
+             "upperBound" : {"$numberDouble" : "Infinity"},
+             "ubIncluded" : true,
+             "indexMin" : {"$numberInt" : "0"},
+             "indexMax" : {"$numberInt" : "31"},
+             "trimFactor": 3
+         }),
+         .expectedMinCover = "000\n"
+                             "001\n"
+                             "010\n"
+                             "011\n"
+                             "100\n"
+                             "101\n"
+                             "110\n"
+                             "111\n"},
+        {.description = "Int32 infinite both bounds SP=2",
+         .findSpecJSON = RAW_STRING({
+             "lowerBound" : {"$numberDouble" : "-Infinity"},
+             "lbIncluded" : true,
+             "upperBound" : {"$numberDouble" : "Infinity"},
+             "ubIncluded" : true,
+             "indexMin" : {"$numberInt" : "0"},
+             "indexMax" : {"$numberInt" : "32"}
+         }),
+         .sparsity = OPT_I64(2),
+         .expectedMinCover = "00\n"
+                             "01\n"
+                             "100000\n"},
+        {.description = "Int32 infinite both bounds TF=1",
+         .findSpecJSON = RAW_STRING({
+             "lowerBound" : {"$numberDouble" : "-Infinity"},
+             "lbIncluded" : true,
+             "upperBound" : {"$numberDouble" : "Infinity"},
+             "ubIncluded" : true,
+             "indexMin" : {"$numberInt" : "0"},
+             "indexMax" : {"$numberInt" : "32"},
+             "trimFactor": 1
+         }),
+         .expectedMinCover = "0\n"
+                             "100000\n"},
+        {.description = "Int32 infinite both bounds TF=2",
+         .findSpecJSON = RAW_STRING({
+             "lowerBound" : {"$numberDouble" : "-Infinity"},
+             "lbIncluded" : true,
+             "upperBound" : {"$numberDouble" : "Infinity"},
+             "ubIncluded" : true,
+             "indexMin" : {"$numberInt" : "0"},
+             "indexMax" : {"$numberInt" : "32"},
+             "trimFactor": 2
+         }),
+         .expectedMinCover = "00\n"
+                             "01\n"
+                             "100000\n"},
+        
+        {.description = "Int32 infinite both bounds TF=3",
+         .findSpecJSON = RAW_STRING({
+             "lowerBound" : {"$numberDouble" : "-Infinity"},
+             "lbIncluded" : true,
+             "upperBound" : {"$numberDouble" : "Infinity"},
+             "ubIncluded" : true,
+             "indexMin" : {"$numberInt" : "0"},
+             "indexMax" : {"$numberInt" : "32"},
+             "trimFactor": 3
+         }),
+         .expectedMinCover = "000\n"
+                             "001\n"
+                             "010\n"
+                             "011\n"
+                             "100000\n"},
+        {.description = "Int32 infinite both bounds SP=2 TF=3",
+         .findSpecJSON = RAW_STRING({
+             "lowerBound" : {"$numberDouble" : "-Infinity"},
+             "lbIncluded" : true,
+             "upperBound" : {"$numberDouble" : "Infinity"},
+             "ubIncluded" : true,
+             "indexMin" : {"$numberInt" : "0"},
+             "indexMax" : {"$numberInt" : "32"},
+             "trimFactor": 3
+         }),
+         .sparsity = OPT_I64(2),
+         .expectedMinCover = "0000\n"
+                             "0001\n"
+                             "0010\n"
+                             "0011\n"
+                             "0100\n"
+                             "0101\n"
+                             "0110\n"
+                             "0111\n"
+                             "100000\n"},
+        {.description = "Too large trim factor fails",
+         .findSpecJSON = RAW_STRING({
+             "lowerBound" : {"$numberDouble" : "-Infinity"},
+             "lbIncluded" : true,
+             "upperBound" : {"$numberDouble" : "Infinity"},
+             "ubIncluded" : true,
+             "indexMin" : {"$numberInt" : "0"},
+             "indexMax" : {"$numberInt" : "32"},
+             "trimFactor": 6
+         }),
+         .expectedError = "Trim factor must be less than the number of bits (6) used to represent an element of the domain"},
         {.description = "Int64 Bounds included",
          .findSpecJSON = RAW_STRING({
              "lowerBound" : {"$numberLong" : "0"},
@@ -672,7 +797,7 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
         ASSERT(bson_iter_init_find(&findSpecIter, findSpecDoc, "findSpec"));
 
         mc_FLE2RangeFindSpec_t findSpec;
-        ASSERT_OK_STATUS(mc_FLE2RangeFindSpec_parse(&findSpec, &findSpecIter, status), status);
+        ASSERT_OK_STATUS(mc_FLE2RangeFindSpec_parse(&findSpec, &findSpecIter, true /* use_range_v2 */, status), status);
 
         size_t sparsity = 1;
         if (test->sparsity.set) {

@@ -37,6 +37,7 @@ typedef struct {
     mc_optional_int32_t min;
     mc_optional_int32_t max;
     size_t sparsity;
+    uint32_t trimFactor;
     const char *expectMincoverStrings[MAX_MINCOVER_STRINGS];
     const char *expectError;
 } Int32Test;
@@ -99,7 +100,8 @@ static mc_mincover_t *_test_getMincover32(void *tests, size_t idx, mongocrypt_st
                                                             .includeUpperBound = test->includeUpperBound,
                                                             .min = test->min,
                                                             .max = test->max,
-                                                            .sparsity = test->sparsity},
+                                                            .sparsity = test->sparsity,
+                                                            .trimFactor = test->trimFactor},
                                status);
 }
 
@@ -429,6 +431,41 @@ static void _test_getMincoverInt32(_mongocrypt_tester_t *tester) {
          .max = OPT_I32_C(7),
          .sparsity = 1,
          .expectError = "less than or equal to the maximum value"},
+        {.lowerBound = 0,
+         .includeLowerBound = true,
+         .upperBound = 7,
+         .includeUpperBound = true,
+         .min = OPT_I32_C(0),
+         .max = OPT_I32_C(7),
+         .sparsity = 1,
+         .expectMincoverStrings = {"root"}},
+        {.lowerBound = 0,
+         .includeLowerBound = true,
+         .upperBound = 7,
+         .includeUpperBound = true,
+         .min = OPT_I32_C(0),
+         .max = OPT_I32_C(7),
+         .sparsity = 1,
+         .trimFactor = 1,
+         .expectMincoverStrings = {"0", "1"}},
+        {.lowerBound = 0,
+         .includeLowerBound = true,
+         .upperBound = 7,
+         .includeUpperBound = true,
+         .min = OPT_I32_C(0),
+         .max = OPT_I32_C(7),
+         .sparsity = 1,
+         .trimFactor = 2,
+         .expectMincoverStrings = {"00", "01", "10", "11"}},
+        {.lowerBound = 0,
+         .includeLowerBound = true,
+         .upperBound = 7,
+         .includeUpperBound = true,
+         .min = OPT_I32_C(0),
+         .max = OPT_I32_C(7),
+         .sparsity = 1,
+         .trimFactor = 3,
+         .expectError = "Trim factor must be less than the number of bits (3) used to represent an element of the domain"},
 
 #include "./data/range-min-cover/mincover_int32.cstruct"
 

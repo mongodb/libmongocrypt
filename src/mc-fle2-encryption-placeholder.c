@@ -195,10 +195,11 @@ bool mc_validate_sparsity(int64_t sparsity, mongocrypt_status_t *status) {
 
 static bool mc_FLE2RangeFindSpecEdgesInfo_parse(mc_FLE2RangeFindSpecEdgesInfo_t *out,
                                                 const bson_iter_t *in,
+                                                bool use_range_v2,
                                                 mongocrypt_status_t *status) {
     bson_iter_t iter;
     bool has_lowerBound = false, has_lbIncluded = false, has_upperBound = false, has_ubIncluded = false,
-         has_indexMin = false, has_indexMax = false, has_precision = false;
+         has_indexMin = false, has_indexMax = false, has_precision = false, has_trimFactor = false;
 
     BSON_ASSERT_PARAM(out);
     BSON_ASSERT_PARAM(in);
@@ -272,6 +273,23 @@ static bool mc_FLE2RangeFindSpecEdgesInfo_parse(mc_FLE2RangeFindSpecEdgesInfo_t 
             out->precision = OPT_U32((uint32_t)val);
         }
         END_IF_FIELD
+
+        IF_FIELD(trimFactor) {
+            if (!BSON_ITER_HOLDS_INT32(&iter)) {
+                CLIENT_ERR("invalid FLE2RangeFindSpecEdgesInfo: 'trimFactor' must "
+                           "be an int32");
+                goto fail;
+            }
+            int32_t val = bson_iter_int32(&iter);
+            if (val < 0) {
+                CLIENT_ERR("invalid FLE2RangeFindSpecEdgesInfo: 'trimFactor' must be"
+                           "non-negative");
+                goto fail;
+            }
+
+            out->trimFactor = OPT_U32((uint32_t)val);
+        }
+        END_IF_FIELD
     }
 
     CHECK_HAS(lowerBound)
@@ -282,13 +300,21 @@ static bool mc_FLE2RangeFindSpecEdgesInfo_parse(mc_FLE2RangeFindSpecEdgesInfo_t 
     CHECK_HAS(indexMax)
     // Do not error if precision is not present. Precision optional and only
     // applies to double/decimal128.
+
+    if (out->trimFactor.set && !use_range_v2) {
+        // Once `use_range_v2` is default true, this block may be removed.
+        CLIENT_ERR("invalid FLE2RangeFindSpecEdgesInfo: 'trimFactor' is not supported for QE range v1");
+        return false;
+    }
+    // Do not error if trim factor is not present. It is optional as it requires a feature flag,
+    // and defaults to 0.
     return true;
 
 fail:
     return false;
 }
 
-bool mc_FLE2RangeFindSpec_parse(mc_FLE2RangeFindSpec_t *out, const bson_iter_t *in, mongocrypt_status_t *status) {
+bool mc_FLE2RangeFindSpec_parse(mc_FLE2RangeFindSpec_t *out, const bson_iter_t *in, bool use_range_v2, mongocrypt_status_t *status) {
     BSON_ASSERT_PARAM(out);
     BSON_ASSERT_PARAM(in);
 
@@ -308,7 +334,7 @@ bool mc_FLE2RangeFindSpec_parse(mc_FLE2RangeFindSpec_t *out, const bson_iter_t *
         BSON_ASSERT(field);
 
         IF_FIELD(edgesInfo) {
-            if (!mc_FLE2RangeFindSpecEdgesInfo_parse(&out->edgesInfo.value, &iter, status)) {
+            if (!mc_FLE2RangeFindSpecEdgesInfo_parse(&out->edgesInfo.value, &iter, use_range_v2, status)) {
                 goto fail;
             }
             out->edgesInfo.set = true;
@@ -369,14 +395,14 @@ fail:
     return false;
 }
 
-bool mc_FLE2RangeInsertSpec_parse(mc_FLE2RangeInsertSpec_t *out, const bson_iter_t *in, mongocrypt_status_t *status) {
+bool mc_FLE2RangeInsertSpec_parse(mc_FLE2RangeInsertSpec_t *out, const bson_iter_t *in, bool use_range_v2, mongocrypt_status_t *status) {
     BSON_ASSERT_PARAM(out);
     BSON_ASSERT_PARAM(in);
 
     *out = (mc_FLE2RangeInsertSpec_t){{0}};
 
     bson_iter_t iter = *in;
-    bool has_v = false, has_min = false, has_max = false, has_precision = false;
+    bool has_v = false, has_min = false, has_max = false, has_precision = false, has_trimFactor = false;
 
     if (!BSON_ITER_HOLDS_DOCUMENT(&iter)) {
         CLIENT_ERR("invalid FLE2RangeInsertSpec: must be an iterator to a document");
@@ -405,17 +431,33 @@ bool mc_FLE2RangeInsertSpec_parse(mc_FLE2RangeInsertSpec_t *out, const bson_iter
 
         IF_FIELD(precision) {
             if (!BSON_ITER_HOLDS_INT32(&iter)) {
-                CLIENT_ERR("invalid FLE2RangeFindSpecEdgesInfo: 'precision' must "
+                CLIENT_ERR("invalid FLE2RangeInsertSpec: 'precision' must "
                            "be an int32");
                 goto fail;
             }
             int32_t val = bson_iter_int32(&iter);
             if (val < 0) {
-                CLIENT_ERR("invalid FLE2RangeFindSpecEdgesInfo: 'precision' must be"
+                CLIENT_ERR("invalid FLE2RangeInsertSpec: 'precision' must be"
                            "non-negative");
                 goto fail;
             }
             out->precision = OPT_U32((uint32_t)val);
+        }
+        END_IF_FIELD
+
+        IF_FIELD(trimFactor) {
+            if (!BSON_ITER_HOLDS_INT32(&iter)) {
+                CLIENT_ERR("invalid FLE2RangeInsertSpec: 'trimFactor' must "
+                           "be an int32");
+                goto fail;
+            }
+            int32_t val = bson_iter_int32(&iter);
+            if (val < 0) {
+                CLIENT_ERR("invalid FLE2RangeInsertSpec: 'trimFactor' must be"
+                           "non-negative");
+                goto fail;
+            }
+            out->trimFactor = OPT_U32((uint32_t)val);
         }
         END_IF_FIELD
     }
@@ -425,6 +467,14 @@ bool mc_FLE2RangeInsertSpec_parse(mc_FLE2RangeInsertSpec_t *out, const bson_iter
     CHECK_HAS(max)
     // Do not error if precision is not present. Precision optional and only
     // applies to double/decimal128.
+
+    if (out->trimFactor.set && !use_range_v2) {
+        // Once `use_range_v2` is default true, this block may be removed.
+        CLIENT_ERR("invalid FLE2RangeInsertSpec: trimFactor is not supported for QE range v1");
+        return false;
+    }
+    // Do not error if trim factor is not present. It is optional as it requires a feature flag,
+    // and defaults to 0.
     return true;
 
 fail:

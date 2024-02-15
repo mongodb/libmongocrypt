@@ -191,7 +191,7 @@ bool mc_RangeOpts_parse(mc_RangeOpts_t *ro, const bson_t *in, bool use_range_v2,
     if (ro->trimFactor.set) {
         if (!use_range_v2) {
             // Once `use_range_v2` is default true, this block may be removed.
-            CLIENT_ERR("trimFactor is not supported for QE range v1");
+            CLIENT_ERR("%strimFactor is not supported for QE range v1", error_prefix);
             return false;
         }
         // At this point, we do not know the type of the field if min and max are unspecified. Wait to
@@ -471,12 +471,9 @@ bool mc_RangeOpts_appendTrimFactor(const mc_RangeOpts_t *ro,
     BSON_ASSERT(status || true);
 
     if (!ro->trimFactor.set) {
-        if (!BSON_APPEND_INT32(out, fieldName, 0)) {
-            CLIENT_ERR("failed to append BSON");
-            return false;
-        }
         return true;
     }
+    BSON_ASSERT(ro->trimFactor.value <= INT32_MAX);
 
     uint32_t nbits;
     if (!mc_getNumberOfBits(ro, valueType, &nbits, status)) {
