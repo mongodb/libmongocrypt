@@ -18,8 +18,8 @@ export ORG_GRADLE_PROJECT_signing_keyId=${SIGNING_KEY_ID}
 export ORG_GRADLE_PROJECT_signing_password=${SIGNING_PASSWORD}
 export ORG_GRADLE_PROJECT_signing_secretKeyRingFile=${PROJECT_DIRECTORY}/secring.gpg
 
-echo "Publishing snapshot with jdk8"
-export JAVA_HOME="/opt/java/jdk8"
+echo "Publishing snapshot with jdk11"
+export JAVA_HOME="/opt/java/jdk11"
 
 SYSTEM_PROPERTIES="-Dorg.gradle.internal.publish.checksums.insecure=true -Dorg.gradle.internal.http.connectionTimeout=120000 -Dorg.gradle.internal.http.socketTimeout=120000"
 
