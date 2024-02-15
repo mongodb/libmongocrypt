@@ -1,4 +1,10 @@
 # ChangeLog
+## 1.9.0
+### New features
+- Support named KMS providers.
+- Add `arm64` Debian packages
+## Fixed
+- Fix `arm64` Alpine build.
 ## 1.8.4
 ### Fixed
 - Fix `aarch64` packages for RHEL 8, RHEL 9, Amazon 2023, and Amazon 2
