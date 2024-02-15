@@ -80,7 +80,8 @@ static void _test_getEdgesInt32(_mongocrypt_tester_t *tester) {
          .max = OPT_I32_C(7),
          .sparsity = 1,
          .trimFactor = 3,
-         .expectError = "trimFactor must be less than the number of bits (3) used to represent an element of the domain"},
+         .expectError =
+             "trimFactor must be less than the number of bits (3) used to represent an element of the domain"},
         {.value = 2,
          .min = OPT_I32_C(0),
          .max = OPT_I32_C(7),

@@ -314,7 +314,10 @@ fail:
     return false;
 }
 
-bool mc_FLE2RangeFindSpec_parse(mc_FLE2RangeFindSpec_t *out, const bson_iter_t *in, bool use_range_v2, mongocrypt_status_t *status) {
+bool mc_FLE2RangeFindSpec_parse(mc_FLE2RangeFindSpec_t *out,
+                                const bson_iter_t *in,
+                                bool use_range_v2,
+                                mongocrypt_status_t *status) {
     BSON_ASSERT_PARAM(out);
     BSON_ASSERT_PARAM(in);
 
@@ -395,7 +398,10 @@ fail:
     return false;
 }
 
-bool mc_FLE2RangeInsertSpec_parse(mc_FLE2RangeInsertSpec_t *out, const bson_iter_t *in, bool use_range_v2, mongocrypt_status_t *status) {
+bool mc_FLE2RangeInsertSpec_parse(mc_FLE2RangeInsertSpec_t *out,
+                                  const bson_iter_t *in,
+                                  bool use_range_v2,
+                                  mongocrypt_status_t *status) {
     BSON_ASSERT_PARAM(out);
     BSON_ASSERT_PARAM(in);
 

@@ -901,8 +901,9 @@ static mc_edges_t *get_edges(mc_FLE2RangeInsertSpec_t *insertSpec, size_t sparsi
     }
 
     else if (value_type == BSON_TYPE_DOUBLE) {
-        mc_getEdgesDouble_args_t args = {.value = bson_iter_double(&insertSpec->v), .sparsity = sparsity,
-                                                          .trimFactor = trimFactor};
+        mc_getEdgesDouble_args_t args = {.value = bson_iter_double(&insertSpec->v),
+                                         .sparsity = sparsity,
+                                         .trimFactor = trimFactor};
         if (insertSpec->precision.set) {
             // If precision is set, pass min/max/precision to mc_getEdgesDouble.
             // Do not pass min/max if precision is not set. All three must be set
@@ -1405,7 +1406,7 @@ mc_get_mincover_from_FLE2RangeFindSpec(mc_FLE2RangeFindSpec_t *findSpec, size_t 
         BSON_ASSERT(bson_iter_type(&upperBound) == BSON_TYPE_INT32);
         BSON_ASSERT(bson_iter_type(&findSpec->edgesInfo.value.indexMin) == BSON_TYPE_INT32);
         BSON_ASSERT(bson_iter_type(&findSpec->edgesInfo.value.indexMax) == BSON_TYPE_INT32);
-        
+
         return mc_getMincoverInt32(
             (mc_getMincoverInt32_args_t){.lowerBound = bson_iter_int32(&lowerBound),
                                          .includeLowerBound = includeLowerBound,

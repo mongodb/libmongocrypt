@@ -465,7 +465,8 @@ static void _test_getMincoverInt32(_mongocrypt_tester_t *tester) {
          .max = OPT_I32_C(7),
          .sparsity = 1,
          .trimFactor = 3,
-         .expectError = "Trim factor must be less than the number of bits (3) used to represent an element of the domain"},
+         .expectError =
+             "Trim factor must be less than the number of bits (3) used to represent an element of the domain"},
 
 #include "./data/range-min-cover/mincover_int32.cstruct"
 

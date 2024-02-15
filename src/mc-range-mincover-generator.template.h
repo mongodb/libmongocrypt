@@ -135,7 +135,8 @@ static inline DECORATE_NAME(MinCoverGenerator)
     }
     size_t maxlen = (size_t)BITS - DECORATE_NAME(mc_count_leading_zeros)(max);
     if (trimFactor != 0 && trimFactor >= maxlen) {
-        CLIENT_ERR("Trim factor must be less than the number of bits (%ld) used to represent an element of the domain", maxlen);
+        CLIENT_ERR("Trim factor must be less than the number of bits (%ld) used to represent an element of the domain",
+                   maxlen);
         return NULL;
     }
     DECORATE_NAME(MinCoverGenerator) *mcg = bson_malloc0(sizeof(DECORATE_NAME(MinCoverGenerator)));

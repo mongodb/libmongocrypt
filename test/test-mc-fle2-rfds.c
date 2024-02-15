@@ -323,8 +323,11 @@ static void test_mc_FLE2RangeFindDriverSpec_to_placeholders(_mongocrypt_tester_t
 
     };
 
-    bson_t *range_opts_bson =
-        TMP_BSON("{'min': %d, 'max': %d, 'sparsity': {'$numberLong': '%d'}, 'trimFactor': %d}", indexMin, indexMax, sparsity, trimFactor);
+    bson_t *range_opts_bson = TMP_BSON("{'min': %d, 'max': %d, 'sparsity': {'$numberLong': '%d'}, 'trimFactor': %d}",
+                                       indexMin,
+                                       indexMax,
+                                       sparsity,
+                                       trimFactor);
 
     ASSERT_OK_STATUS(mc_RangeOpts_parse(&range_opts, range_opts_bson, true /* use_range_v2 */, status), status);
 

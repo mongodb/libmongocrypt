@@ -76,7 +76,7 @@ static void test_mc_RangeOpts_parse(_mongocrypt_tester_t *tester) {
         {.desc = "Errors on negative trim factor",
          .in = RAW_STRING({"trimFactor" : -1, "sparsity" : {"$numberLong" : "1"}}),
          .useRangeV2 = true,
-        .expectError = "'trimFactor' must be non-negative"},
+         .expectError = "'trimFactor' must be non-negative"},
     };
 
     for (size_t i = 0; i < sizeof(tests) / sizeof(tests[0]); i++) {

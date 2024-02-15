@@ -292,7 +292,7 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
              "ubIncluded" : true,
              "indexMin" : {"$numberInt" : "0"},
              "indexMax" : {"$numberInt" : "31"},
-             "trimFactor": 1
+             "trimFactor" : 1
          }),
          .expectedMinCover = "0\n"
                              "1\n"},
@@ -304,7 +304,7 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
              "ubIncluded" : true,
              "indexMin" : {"$numberInt" : "0"},
              "indexMax" : {"$numberInt" : "31"},
-             "trimFactor": 3
+             "trimFactor" : 3
          }),
          .expectedMinCover = "000\n"
                              "001\n"
@@ -335,7 +335,7 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
              "ubIncluded" : true,
              "indexMin" : {"$numberInt" : "0"},
              "indexMax" : {"$numberInt" : "32"},
-             "trimFactor": 1
+             "trimFactor" : 1
          }),
          .expectedMinCover = "0\n"
                              "100000\n"},
@@ -347,12 +347,12 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
              "ubIncluded" : true,
              "indexMin" : {"$numberInt" : "0"},
              "indexMax" : {"$numberInt" : "32"},
-             "trimFactor": 2
+             "trimFactor" : 2
          }),
          .expectedMinCover = "00\n"
                              "01\n"
                              "100000\n"},
-        
+
         {.description = "Int32 infinite both bounds TF=3",
          .findSpecJSON = RAW_STRING({
              "lowerBound" : {"$numberDouble" : "-Infinity"},
@@ -361,7 +361,7 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
              "ubIncluded" : true,
              "indexMin" : {"$numberInt" : "0"},
              "indexMax" : {"$numberInt" : "32"},
-             "trimFactor": 3
+             "trimFactor" : 3
          }),
          .expectedMinCover = "000\n"
                              "001\n"
@@ -376,7 +376,7 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
              "ubIncluded" : true,
              "indexMin" : {"$numberInt" : "0"},
              "indexMax" : {"$numberInt" : "32"},
-             "trimFactor": 3
+             "trimFactor" : 3
          }),
          .sparsity = OPT_I64(2),
          .expectedMinCover = "0000\n"
@@ -396,9 +396,10 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
              "ubIncluded" : true,
              "indexMin" : {"$numberInt" : "0"},
              "indexMax" : {"$numberInt" : "32"},
-             "trimFactor": 6
+             "trimFactor" : 6
          }),
-         .expectedError = "Trim factor must be less than the number of bits (6) used to represent an element of the domain"},
+         .expectedError =
+             "Trim factor must be less than the number of bits (6) used to represent an element of the domain"},
         {.description = "Int64 Bounds included",
          .findSpecJSON = RAW_STRING({
              "lowerBound" : {"$numberLong" : "0"},

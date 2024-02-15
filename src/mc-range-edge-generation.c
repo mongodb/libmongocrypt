@@ -37,8 +37,10 @@ static mc_edges_t *mc_edges_new(const char *leaf, size_t sparsity, uint32_t trim
 
     const size_t leaf_len = strlen(leaf);
     if (trimFactor != 0 && trimFactor >= leaf_len) {
-        // We append a total of leaf_len + 1 (for the root) - trimFactor edges. When this number is equal to 1, we degenerate into equality, which is not desired, so trimFactor must be less than leaf_len.
-        CLIENT_ERR("trimFactor must be less than the number of bits (%ld) used to represent an element of the domain", leaf_len);
+        // We append a total of leaf_len + 1 (for the root) - trimFactor edges. When this number is equal to 1, we
+        // degenerate into equality, which is not desired, so trimFactor must be less than leaf_len.
+        CLIENT_ERR("trimFactor must be less than the number of bits (%ld) used to represent an element of the domain",
+                   leaf_len);
         return NULL;
     }
 
@@ -46,7 +48,7 @@ static mc_edges_t *mc_edges_new(const char *leaf, size_t sparsity, uint32_t trim
     edges->sparsity = sparsity;
     _mc_array_init(&edges->edges, sizeof(char *));
 
-    if(trimFactor == 0) {
+    if (trimFactor == 0) {
         char *root = bson_strdup("root");
         _mc_array_append_val(&edges->edges, root);
     }
