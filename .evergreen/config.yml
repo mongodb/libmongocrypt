@@ -183,17 +183,19 @@ functions:
           ./libmongocrypt/.evergreen/print-env-info.sh
     - command: shell.exec
       params:
+        include_expansions_in_env:
+          - nexus_username
+          - nexus_password
+          - signing_password
+          - signing_keyId
+          - ring_file_gpg_base64
+
         script: |-
           if [ "${is_patch}" = "true" ]; then
             echo "Patch build detected, skipping"
             exit 0
           fi
           export PROJECT_DIRECTORY=${project_directory}
-          export NEXUS_USERNAME=${nexus_username}
-          export NEXUS_PASSWORD=${nexus_password}
-          export SIGNING_PASSWORD=${signing_password}
-          export SIGNING_KEY_ID=${signing_keyId}
-          export RING_FILE_GPG_BASE64=${ring_file_gpg_base64}
           cd ./libmongocrypt/bindings/java/mongocrypt && ${test_env|} ./.evergreen/publish.sh
 
   "download tarball":
