@@ -264,7 +264,7 @@ kms_kmip_request_create_new (void *reserved) {
     <RequestHeader tag="0x420077" type="Structure">
      <ProtocolVersion tag="0x420069" type="Structure">
       <ProtocolVersionMajor tag="0x42006a" type="Integer" value="1"/>
-      <ProtocolVersionMinor tag="0x42006b" type="Integer" value="0"/>
+      <ProtocolVersionMinor tag="0x42006b" type="Integer" value="2"/>
      </ProtocolVersion>
      <BatchCount tag="0x42000d" type="Integer" value="1"/>
     </RequestHeader>
@@ -314,15 +314,6 @@ kms_kmip_request_create_new (void *reserved) {
    /* 0x02 == symmetric key */
    kmip_writer_write_enumeration(writer, KMIP_TAG_ObjectType, 0x02);
 
-   /*
-   Template-Attributes are deprecated in KMIP 1.3. Instead, use:
-
-   kmip_writer_begin_struct(writer, KMIP_TAG_Attributes)
-   kmip_writer_write_enumeration(writer, KMIP_TAG_CryptographicAlgorithm, 3);
-   kmip_writer_write_integer(writer, KMIP_TAG_CryptographicLength, 256);
-   kmip_writer_write_integer(writer, KMIP_TAG_CryptographicUsageMask, 4 | 8);
-   kmip_writer_end_struct(writer);
-   */
    {
       kmip_writer_begin_struct (writer, KMIP_TAG_TemplateAttribute);
 

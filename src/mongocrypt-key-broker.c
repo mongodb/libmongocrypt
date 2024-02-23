@@ -493,7 +493,6 @@ bool _mongocrypt_key_broker_add_doc(_mongocrypt_key_broker_t *kb,
     key_returned_t *key_returned;
     _mongocrypt_kms_provider_t kek_provider;
     char *access_token = NULL;
-    _mongocrypt_buffer_t iv = {0};
 
     BSON_ASSERT_PARAM(kb);
     BSON_ASSERT_PARAM(kms_providers);

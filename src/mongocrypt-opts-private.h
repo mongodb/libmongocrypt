@@ -152,8 +152,7 @@ bool _mongocrypt_parse_optional_utf8(const bson_t *bson, const char *dotkey, cha
 /*
  * Parse an optional boolean value from BSON.
  * @dotkey may be a dot separated key like: "a.b.c".
- * @*out is set to a copy of the value if found, NULL otherwise. Caller must
- * clean up with bson_free (*out).
+ * @*out is set to a copy of the value if found, false otherwise.
  * Returns true if no error occured.
  */
 bool _mongocrypt_parse_optional_bool(const bson_t *bson, const char *dotkey, bool *out, mongocrypt_status_t *status);

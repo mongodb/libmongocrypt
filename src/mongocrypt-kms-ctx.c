@@ -918,13 +918,16 @@ static bool _ctx_done_kmip_encrypt(mongocrypt_kms_ctx_t *kms_ctx) {
     }
 
     iv = kms_kmip_response_get_iv(res, &iv_len);
-    if (!ciphertext) {
+    if (!iv) {
         CLIENT_ERR("Error getting IV from KMIP Encrypt response: %s", kms_response_get_error(res));
+        bson_free (ciphertext);
         goto done;
     }
 
     if (iv_len != MONGOCRYPT_IV_LEN) {
         CLIENT_ERR("KMIP IV response has unexpected length: %zu", iv_len);
+        bson_free(ciphertext);
+        goto done;
     }
 
     if (!_mongocrypt_buffer_steal_from_data_and_size(&data_buf, ciphertext, ciphertext_len)) {
@@ -940,7 +943,10 @@ static bool _ctx_done_kmip_encrypt(mongocrypt_kms_ctx_t *kms_ctx) {
     }
 
     const _mongocrypt_buffer_t results_buf[2] = {iv_buf, data_buf};
-    _mongocrypt_buffer_concat(&kms_ctx->result, results_buf, 2);
+    if (!_mongocrypt_buffer_concat(&kms_ctx->result, results_buf, 2)) {
+        CLIENT_ERR("Error concatenating IV and ciphertext");
+        goto done;
+    }
 
     ret = true;
 
@@ -1731,7 +1737,7 @@ bool _mongocrypt_kms_ctx_init_kmip_create(mongocrypt_kms_ctx_t *kms_ctx,
     kms_ctx->req = kms_kmip_request_create_new(NULL /* reserved */);
 
     if (kms_request_get_error(kms_ctx->req)) {
-        CLIENT_ERR("Error creating KMIP encrypt request: %s", kms_request_get_error(kms_ctx->req));
+        CLIENT_ERR("Error creating KMIP create request: %s", kms_request_get_error(kms_ctx->req));
         goto done;
     }
 
@@ -1755,6 +1761,7 @@ bool _mongocrypt_kms_ctx_init_kmip_encrypt(mongocrypt_kms_ctx_t *kms_ctx,
                                            _mongocrypt_log_t *log) {
     BSON_ASSERT_PARAM(kms_ctx);
     BSON_ASSERT_PARAM(endpoint);
+    BSON_ASSERT_PARAM(plaintext);
     bool ret = false;
 
     _init_common(kms_ctx, log, MONGOCRYPT_KMS_KMIP_ENCRYPT, kmsid);
@@ -1789,6 +1796,7 @@ bool _mongocrypt_kms_ctx_init_kmip_decrypt(mongocrypt_kms_ctx_t *kms_ctx,
                                            _mongocrypt_log_t *log) {
     BSON_ASSERT_PARAM(kms_ctx);
     BSON_ASSERT_PARAM(endpoint);
+    BSON_ASSERT_PARAM(key);
     bool ret = false;
 
     _init_common(kms_ctx, log, MONGOCRYPT_KMS_KMIP_DECRYPT, kmsid);

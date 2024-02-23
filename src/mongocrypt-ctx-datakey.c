@@ -93,7 +93,7 @@ static bool _kms_kmip_start(mongocrypt_ctx_t *ctx, const mc_kms_creds_t *kc) {
      * 2. Send a KMIP Activate request with that keyId
      * 3. Send a KMIP Encrypt request to encrypt the DEK
      *
-     * Steps 2 and 3 are skipped if the user provided a keyId
+     * Steps 1 and 2 are skipped if the user provided a keyId
      */
 
     if (user_supplied_keyid && !dkctx->kmip_unique_identifier) {
@@ -387,9 +387,6 @@ static bool _kms_done(mongocrypt_ctx_t *ctx) {
         return _kms_start(ctx);
     } else if (dkctx->kms.req_type == MONGOCRYPT_KMS_KMIP_ENCRYPT) {
         _mongocrypt_buffer_copy_to(&dkctx->kms.result, &dkctx->encrypted_key_material);
-        return _kms_start(ctx);
-    } else if (dkctx->kms.req_type == MONGOCRYPT_KMS_KMIP_DECRYPT) {
-        _mongocrypt_buffer_copy_to(&dkctx->kms.result, &dkctx->plaintext_key_material);
         return _kms_start(ctx);
     }
 
