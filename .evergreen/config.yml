@@ -1241,6 +1241,7 @@ buildvariants:
     has_packages: true
     packager_distro: debian12
     packager_arch: x86_64
+    python: python3
   tasks:
   - build-and-test-and-upload
   - name: publish-packages
