@@ -123,15 +123,15 @@ For example::
 macOS::
 
   $ # Set PYMONGOCRYPT_LIB for macOS:
-  $ export PYMONGOCRYPT_LIB=$(pwd)/libmongocrypt-all/macos/nocrypto/lib/libmongocrypt.dylib
+  $ export PYMONGOCRYPT_LIB=$(pwd)/libmongocrypt-all/macos/lib/libmongocrypt.dylib
   $ python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
   1.2.1
 
 Windows::
 
   $ # Set PYMONGOCRYPT_LIB for Windows:
-  $ chmod +x $(pwd)/libmongocrypt-all/windows-test/nocrypto/bin/mongocrypt.dll
-  $ export PYMONGOCRYPT_LIB=$(pwd)/libmongocrypt-all/windows-test/nocrypto/bin/mongocrypt.dll
+  $ chmod +x $(pwd)/libmongocrypt-all/windows-test/bin/mongocrypt.dll
+  $ export PYMONGOCRYPT_LIB=$(pwd)/libmongocrypt-all/windows-test/bin/mongocrypt.dll
   $ python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
   1.2.1
 
