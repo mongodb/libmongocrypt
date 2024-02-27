@@ -57,7 +57,8 @@ static mc_edges_t *mc_edges_new(const char *leaf, size_t sparsity, uint32_t trim
     _mc_array_append_val(&edges->edges, leaf_copy);
 
     // Start loop at max(trimFactor, 1). The full leaf is unconditionally appended after loop.
-    for (size_t i = trimFactor > 0 ? trimFactor : 1; i < leaf_len; i++) {
+    size_t startLevel = trimFactor > 0 ? trimFactor : 1;
+    for (size_t i = startLevel; i < leaf_len; i++) {
         if (i % sparsity == 0) {
             char *edge = bson_malloc(i + 1);
             bson_strncpy(edge, leaf, i + 1);
