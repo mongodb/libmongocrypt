@@ -12,8 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import copy
+import sys
+import platform
 
+from packaging.version import Version
 
 from pymongocrypt.binary import (MongoCryptBinaryIn,
                                  MongoCryptBinaryOut)
@@ -222,6 +224,11 @@ class MongoCrypt(object):
                     self.__crypt, sign_rsaes_pkcs1_v1_5, ffi.NULL):
                 self.__raise_from_status()
 
+            if not lib.mongocrypt_setopt_aes_256_ctr(
+                    self.__crypt, aes_256_ctr_encrypt, aes_256_ctr_decrypt, ffi.NULL):
+                self.__raise_from_status()
+        elif sys.platform == 'darwin' and Version(platform.mac_ver()[0]) < Version("10.15"):
+            # MONGOCRYPT-440 libmongocrypt does not support AES-CTR on macOS < 10.15.
             if not lib.mongocrypt_setopt_aes_256_ctr(
                     self.__crypt, aes_256_ctr_encrypt, aes_256_ctr_decrypt, ffi.NULL):
                 self.__raise_from_status()
