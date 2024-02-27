@@ -6,7 +6,7 @@ Changes in Version 1.9.0
 
 - Add support for named KMS providers like "local:name1".
   This feature requires libmongocrypt >= 1.9.0.
-- Use libmongocrypt native crypto when available for better performance.
+- Use libmongocrypt native crypto when available which results in 10-50x better performance.
   On Linux, it is recommended to download the platform specific build and
   set PYMONGOCRYPT_LIB to the crypto-enabled libmongocrypt.so.
 - Bundle the crypto-enabled libmongocrypt builds in macOS and Windows wheels for better performance.
