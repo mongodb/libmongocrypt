@@ -114,33 +114,43 @@ For example::
   $ curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt/all/master/latest/libmongocrypt-all.tar.gz
   $ mkdir libmongocrypt-all && tar xzf libmongocrypt-all.tar.gz -C libmongocrypt-all
   $ ls libmongocrypt-all
-  amazon2             rhel-62-64-bit      rhel72-zseries-test ubuntu1604-arm64
-  debian10            rhel-67-s390x       suse12-64           ubuntu1804-64
-  debian92            rhel-70-64-bit      suse12-s390x        ubuntu1804-arm64
-  linux-64-amazon-ami rhel-71-ppc64el     suse15-64           windows-test
-  macos               rhel-80-64-bit      ubuntu1604
+  amazon2             debian92            rhel-80-64-bit      rhel72-zseries-test ubuntu1804-arm64
+  amazon2-arm64       linux-64-amazon-ami rhel-81-ppc64el     suse12-64           ubuntu2004-64
+  amazon2023          macos               rhel-82-arm64       suse15-64           ubuntu2004-arm64
+  amazon2023-arm64    rhel-62-64-bit      rhel-83-zseries     ubuntu1604          ubuntu2204-64
+  debian10            rhel-70-64-bit      rhel-91-64-bit      ubuntu1604-arm64    ubuntu2204-arm64
+  debian11            rhel-71-ppc64el     rhel-91-arm64       ubuntu1804-64       windows-test
 
 macOS::
 
   $ # Set PYMONGOCRYPT_LIB for macOS:
-  $ export PYMONGOCRYPT_LIB=$(pwd)/libmongocrypt-all/macos/nocrypto/lib/libmongocrypt.dylib
+  $ export PYMONGOCRYPT_LIB=$(pwd)/libmongocrypt-all/macos/lib/libmongocrypt.dylib
   $ python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
-  1.2.1
+  1.9.0
 
 Windows::
 
   $ # Set PYMONGOCRYPT_LIB for Windows:
-  $ chmod +x $(pwd)/libmongocrypt-all/windows-test/nocrypto/bin/mongocrypt.dll
-  $ export PYMONGOCRYPT_LIB=$(pwd)/libmongocrypt-all/windows-test/nocrypto/bin/mongocrypt.dll
+  $ chmod +x $(pwd)/libmongocrypt-all/windows-test/bin/mongocrypt.dll
+  $ export PYMONGOCRYPT_LIB=$(pwd)/libmongocrypt-all/windows-test/bin/mongocrypt.dll
   $ python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
-  1.2.1
+  1.9.0
 
-Linux::
+Linux: set the libmongocrypt build for your platform, for example for Ubuntu 22.04 x86_64::
+
+  $ # Set PYMONGOCRYPT_LIB for Ubuntu 22.04 x86_64:
+  $ export PYMONGOCRYPT_LIB=$(pwd)/libmongocrypt-all/ubuntu2204-64/lib/libmongocrypt.so
+  $ python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
+  1.9.0
+
+Note if your Linux platform is not available, the generic RHEL 6.2 x86_64 "nocrypto" build
+should still be compatible however the "nocrypto" build will result in lower performance
+for encryption and decryption::
 
   $ # Set PYMONGOCRYPT_LIB for RHEL 6.2 x86_64:
   $ export PYMONGOCRYPT_LIB=$(pwd)/libmongocrypt-all/rhel-62-64-bit/nocrypto/lib64/libmongocrypt.so
   $ python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
-  1.2.1
+  1.9.0
 
 Dependencies
 ============
@@ -178,7 +188,7 @@ variables, like ``LD_LIBRARY_PATH``. For example::
 
   $ export PYMONGOCRYPT_LIB='/path/to/libmongocrypt.so'
   $ python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
-  1.2.1
+  1.9.0
 
 Testing
 =======

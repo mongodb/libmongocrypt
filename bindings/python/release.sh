@@ -66,7 +66,8 @@ if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
     dos2unix .venv/Scripts/activate || true
     . ./.venv/Scripts/activate
 
-    get_libmongocrypt windows-test libmongocrypt/nocrypto/bin/mongocrypt.dll
+    # Use crypto-enabled libmongocrypt.
+    get_libmongocrypt windows-test libmongocrypt/bin/mongocrypt.dll
     build_wheel
     test_dist dist/*.whl
 fi 
@@ -76,8 +77,9 @@ if [ "Darwin" = "$(uname -s)" ]; then
     $PYTHON -m venv .venv
     . .venv/bin/activate
 
+    # Use crypto-enabled libmongocrypt.
     # Build intel wheel for Python 3.7.
-    get_libmongocrypt macos_x86_64 libmongocrypt/nocrypto/lib/libmongocrypt.dylib
+    get_libmongocrypt macos_x86_64 libmongocrypt/lib/libmongocrypt.dylib
     # See https://github.com/pypa/cibuildwheel/blob/a3e5b541dc3111166a3abdbbc90ecb195c8cb9e2/cibuildwheel/macos.py#L247
     # for information on these environment variables.
     export MACOSX_DEPLOYMENT_TARGET=10.14
@@ -88,7 +90,7 @@ if [ "Darwin" = "$(uname -s)" ]; then
     fi
     
     # Build universal2 wheel.
-    get_libmongocrypt macos libmongocrypt/nocrypto/lib/libmongocrypt.dylib
+    get_libmongocrypt macos libmongocrypt/lib/libmongocrypt.dylib
     export MACOSX_DEPLOYMENT_TARGET=11.0
     export _PYTHON_HOST_PLATFORM=macosx-11.0-universal2
     build_wheel

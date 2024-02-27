@@ -12,8 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import copy
+import sys
+import platform
 
+from packaging.version import Version
 
 from pymongocrypt.binary import (MongoCryptBinaryIn,
                                  MongoCryptBinaryOut)
@@ -205,18 +207,31 @@ class MongoCrypt(object):
         if self.__opts.bypass_query_analysis:
             lib.mongocrypt_setopt_bypass_query_analysis(self.__crypt)
 
-        if not lib.mongocrypt_setopt_crypto_hooks(
-                self.__crypt, aes_256_cbc_encrypt, aes_256_cbc_decrypt,
-                secure_random, hmac_sha_512, hmac_sha_256, sha_256, ffi.NULL):
-            self.__raise_from_status()
+        # Prefer using the native crypto binding when we know it's available.
+        try:
+            crypto_available = lib.mongocrypt_is_crypto_available()
+        except AttributeError:
+            # libmongocrypt < 1.9
+            crypto_available = False
 
-        if not lib.mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5(
-                self.__crypt, sign_rsaes_pkcs1_v1_5, ffi.NULL):
-            self.__raise_from_status()
+        if not crypto_available:
+            if not lib.mongocrypt_setopt_crypto_hooks(
+                    self.__crypt, aes_256_cbc_encrypt, aes_256_cbc_decrypt,
+                    secure_random, hmac_sha_512, hmac_sha_256, sha_256, ffi.NULL):
+                self.__raise_from_status()
 
-        if not lib.mongocrypt_setopt_aes_256_ctr(
-                self.__crypt, aes_256_ctr_encrypt, aes_256_ctr_decrypt, ffi.NULL):
-            self.__raise_from_status()
+            if not lib.mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5(
+                    self.__crypt, sign_rsaes_pkcs1_v1_5, ffi.NULL):
+                self.__raise_from_status()
+
+            if not lib.mongocrypt_setopt_aes_256_ctr(
+                    self.__crypt, aes_256_ctr_encrypt, aes_256_ctr_decrypt, ffi.NULL):
+                self.__raise_from_status()
+        elif sys.platform == 'darwin' and Version(platform.mac_ver()[0]) < Version("10.15"):
+            # MONGOCRYPT-440 libmongocrypt does not support AES-CTR on macOS < 10.15.
+            if not lib.mongocrypt_setopt_aes_256_ctr(
+                    self.__crypt, aes_256_ctr_encrypt, aes_256_ctr_decrypt, ffi.NULL):
+                self.__raise_from_status()
 
         if self.__opts.crypt_shared_lib_path is not None:
             lib.mongocrypt_setopt_set_crypt_shared_lib_path_override(
