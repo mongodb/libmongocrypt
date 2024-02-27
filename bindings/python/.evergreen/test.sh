@@ -47,7 +47,7 @@ elif [ "Darwin" = "$(uname -s)" ]; then
       --version latest --out ../crypt_shared/
 else
     export PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/nocrypto/lib64/libmongocrypt.so
-    PYMONGOCRYPT_LIB_CRYPTO=${MONGOCRYPT_DIR}/lib/libmongocrypt.dylib
+    PYMONGOCRYPT_LIB_CRYPTO=${MONGOCRYPT_DIR}/lib/libmongocrypt.so
     
     export CRYPT_SHARED_PATH="../crypt_shared/lib/mongo_crypt_v1.so"
     MACHINE=$(uname -m)
