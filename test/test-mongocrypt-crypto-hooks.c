@@ -17,6 +17,7 @@
 #include "mongocrypt-config.h"
 #include "mongocrypt-crypto-private.h"
 #include "mongocrypt-private.h"
+#include "test-mongocrypt-crypto-std-hooks.h"
 
 #include "test-mongocrypt.h"
 
@@ -769,6 +770,120 @@ static void test_is_crypto_available_with_crypto_prohibited(_mongocrypt_tester_t
     ASSERT(!mongocrypt_is_crypto_available());
 }
 
+static int ctr_encrypt_count;
+
+static bool _aes_256_ctr_encrypt_and_count(void *ctx,
+                                           mongocrypt_binary_t *key,
+                                           mongocrypt_binary_t *iv,
+                                           mongocrypt_binary_t *in,
+                                           mongocrypt_binary_t *out,
+                                           uint32_t *bytes_written,
+                                           mongocrypt_status_t *status) {
+    ctr_encrypt_count++;
+    return _std_hook_native_crypto_aes_256_ctr_encrypt(ctx, key, iv, in, out, bytes_written, status);
+}
+
+static int ctr_decrypt_count;
+
+static bool _aes_256_ctr_decrypt_and_count(void *ctx,
+                                           mongocrypt_binary_t *key,
+                                           mongocrypt_binary_t *iv,
+                                           mongocrypt_binary_t *in,
+                                           mongocrypt_binary_t *out,
+                                           uint32_t *bytes_written,
+                                           mongocrypt_status_t *status) {
+    ctr_decrypt_count++;
+    return _std_hook_native_crypto_aes_256_ctr_decrypt(ctx, key, iv, in, out, bytes_written, status);
+}
+
+static void test_setting_only_ctr_hook(_mongocrypt_tester_t *tester) {
+    // Test that the CTR hook can be set without setting other crypto hooks.
+    // This enables supporting macOS <= 10.14 in bindings using libmongocrypt with native crypto.
+    // macOS <= 10.14 does not support native CTR encryption.
+
+    if (!_aes_ctr_is_supported_by_os) {
+        printf("Common Crypto with no CTR support detected. Skipping.");
+        return;
+    }
+
+    // Configure KMS providers with local KEK used to encrypt key documents.
+    mongocrypt_binary_t *kms_providers =
+        TEST_BSON("{'local' : { 'key': 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+                  "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'}}");
+    _mongocrypt_buffer_t key_id1, key_id2;
+    _mongocrypt_buffer_copy_from_hex(&key_id1, "12345678123498761234123456789012");
+    _mongocrypt_buffer_copy_from_hex(&key_id2, "ABCDEFAB123498761234123456789012");
+
+    mongocrypt_t *crypt = mongocrypt_new();
+    ASSERT_OK(
+        mongocrypt_setopt_aes_256_ctr(crypt, _aes_256_ctr_encrypt_and_count, _aes_256_ctr_decrypt_and_count, NULL),
+        crypt);
+    ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, kms_providers), crypt);
+    ASSERT_OK(mongocrypt_init(crypt), crypt);
+
+    // Encrypt with an algorithm using the CTR hook.
+    ctr_encrypt_count = 0;
+    {
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+        ASSERT_OK(mongocrypt_ctx_setopt_key_id(ctx, _mongocrypt_buffer_as_binary(&key_id1)), ctx);
+        ASSERT_OK(mongocrypt_ctx_setopt_contention_factor(ctx, 1), ctx);
+        ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_INDEXED_STR, -1), ctx);
+        ASSERT_OK(mongocrypt_ctx_explicit_encrypt_init(ctx, TEST_BSON("{'v' : 123}")), ctx);
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+        ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx,
+                                            TEST_FILE("./test/data/keys/"
+                                                      "12345678123498761234123456789012-local-"
+                                                      "document.json")),
+                  ctx);
+        ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
+        mongocrypt_binary_t *ciphertext = mongocrypt_binary_new();
+        ASSERT_OK(mongocrypt_ctx_finalize(ctx, ciphertext), ctx);
+        mongocrypt_binary_destroy(ciphertext);
+        mongocrypt_ctx_destroy(ctx);
+    }
+    // CTR encrypt hook is called.
+    ASSERT_CMPINT(ctr_encrypt_count, ==, 1);
+
+    // Decrypt with an algorithm using the CTR hook.
+    ctr_decrypt_count = 0;
+    {
+        // `ieev_payload_base64` is an IEEV payload, which uses the CTR hook to decrypt.
+        const char *ieev_payload_base64 = "BxI0VngSNJh2EjQSNFZ4kBICQ7uhTd9C2oI8M1afRon0ZaYG0s6oTmt0aBZ9kO4S4mm5vId01"
+                                          "BsW7tBHytA8pDJ2IiWBCmah3OGH2M4ET7PSqekQD4gkUCo4JeEttx4yj05Ou4D6yZUmYfVKmE"
+                                          "ljge16NCxKm7Ir9gvmQsp8x1wqGBzpndA6gkqFxsxfvQ/"
+                                          "cIqOwMW9dGTTWsfKge+jYkCUIFMfms+XyC/8evQhjjA+qR6eEmV+N/"
+                                          "kwpR7Q7TJe0lwU5kw2kSe3/KiPKRZZTbn8znadvycfJ0cCWGad9SQ==";
+
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+        ASSERT_OK(mongocrypt_ctx_explicit_decrypt_init(
+                      ctx,
+                      TEST_BSON("{'v':{'$binary':{'base64': '%s','subType':'6'}}}", ieev_payload_base64)),
+                  ctx);
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+        ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx,
+                                            TEST_FILE("./test/data/keys/"
+                                                      "ABCDEFAB123498761234123456789012-local-"
+                                                      "document.json")),
+                  ctx);
+        ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
+        mongocrypt_binary_t *decrypted = mongocrypt_binary_new();
+        ASSERT_OK(mongocrypt_ctx_finalize(ctx, decrypted), ctx);
+        ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(decrypted, TEST_BSON("{'v': 'value123'}"));
+        mongocrypt_binary_destroy(decrypted);
+        mongocrypt_ctx_destroy(ctx);
+    }
+    // CTR decrypt hook is called repeatedly.
+    ASSERT_CMPINT(ctr_decrypt_count, ==, 4);
+
+    _mongocrypt_buffer_cleanup(&key_id2);
+    _mongocrypt_buffer_cleanup(&key_id1);
+    mongocrypt_destroy(crypt);
+}
+
 void _mongocrypt_tester_install_crypto_hooks(_mongocrypt_tester_t *tester) {
     INSTALL_TEST_CRYPTO(_test_crypto_hooks_encryption, CRYPTO_OPTIONAL);
     INSTALL_TEST_CRYPTO(_test_crypto_hooks_decryption, CRYPTO_OPTIONAL);
@@ -781,6 +896,7 @@ void _mongocrypt_tester_install_crypto_hooks(_mongocrypt_tester_t *tester) {
     INSTALL_TEST_CRYPTO(_test_crypto_hook_sign_rsaes_pkcs1_v1_5, CRYPTO_OPTIONAL);
     INSTALL_TEST_CRYPTO(test_is_crypto_available_with_crypto_required, CRYPTO_REQUIRED);
     INSTALL_TEST_CRYPTO(test_is_crypto_available_with_crypto_prohibited, CRYPTO_PROHIBITED);
+    INSTALL_TEST_CRYPTO(test_setting_only_ctr_hook, CRYPTO_REQUIRED);
 #ifdef MONGOCRYPT_ENABLE_CRYPTO_LIBCRYPTO
     INSTALL_TEST(_test_fle2_crypto_via_ecb_hook);
 #endif
