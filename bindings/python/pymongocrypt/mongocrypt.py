@@ -205,8 +205,14 @@ class MongoCrypt(object):
         if self.__opts.bypass_query_analysis:
             lib.mongocrypt_setopt_bypass_query_analysis(self.__crypt)
 
-        # Prefer using the native crypto binding it's available.
-        if not (hasattr(lib, "mongocrypt_is_crypto_available") and lib.mongocrypt_is_crypto_available()):
+        # Prefer using the native crypto binding when we know it's available.
+        try:
+            crypto_available = lib.mongocrypt_is_crypto_available()
+        except AttributeError:
+            # libmongocrypt < 1.9
+            crypto_available = False
+
+        if not crypto_available:
             if not lib.mongocrypt_setopt_crypto_hooks(
                     self.__crypt, aes_256_cbc_encrypt, aes_256_cbc_decrypt,
                     secure_random, hmac_sha_512, hmac_sha_256, sha_256, ffi.NULL):
