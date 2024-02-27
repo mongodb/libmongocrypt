@@ -46,7 +46,7 @@ elif [ "Darwin" = "$(uname -s)" ]; then
     python3 drivers-evergreen-tools/.evergreen/mongodl.py --component crypt_shared \
       --version latest --out ../crypt_shared/
 else
-    if [ -f "${MONGOCRYPT_DIR}/lib64/" ]; then
+    if [ -e "${MONGOCRYPT_DIR}/lib64/" ]; then
         export PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/nocrypto/lib64/libmongocrypt.so
         PYMONGOCRYPT_LIB_CRYPTO=${MONGOCRYPT_DIR}/lib64/libmongocrypt.so
     else
