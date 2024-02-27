@@ -14,6 +14,7 @@ git clone https://github.com/mongodb-labs/drivers-evergreen-tools.git
 
 if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
     PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/nocrypto/bin/mongocrypt.dll
+    PYMONGOCRYPT_LIB_CRYPTO=$(cygpath -m ${MONGOCRYPT_DIR}/bin/mongocrypt.dll)
     export PYMONGOCRYPT_LIB=$(cygpath -m $PYMONGOCRYPT_LIB)
     PYTHONS=("C:/python/Python37/python.exe"
              "C:/python/Python38/python.exe"
@@ -26,6 +27,7 @@ if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
       --version latest --out ../crypt_shared/
 elif [ "Darwin" = "$(uname -s)" ]; then
     export PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/nocrypto/lib/libmongocrypt.dylib
+    PYMONGOCRYPT_LIB_CRYPTO=${MONGOCRYPT_DIR}/lib/libmongocrypt.dylib
     MACOS_VER=$(sw_vers -productVersion)
     if [[ $MACOS_VER =~ ^10.14 ]]; then
       PYTHONS=("/Library/Frameworks/Python.framework/Versions/3.7/bin/python3"
@@ -45,6 +47,7 @@ elif [ "Darwin" = "$(uname -s)" ]; then
       --version latest --out ../crypt_shared/
 else
     export PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/nocrypto/lib64/libmongocrypt.so
+    PYMONGOCRYPT_LIB_CRYPTO=${MONGOCRYPT_DIR}/lib/libmongocrypt.dylib
     
     export CRYPT_SHARED_PATH="../crypt_shared/lib/mongo_crypt_v1.so"
     MACHINE=$(uname -m)
@@ -74,8 +77,10 @@ for PYTHON_BINARY in "${PYTHONS[@]}"; do
     createvirtualenv $PYTHON_BINARY .venv
     python -m pip install --prefer-binary -r test-requirements.txt
     python -m pip install -v -e .
-    python -m pytest -v --ignore=test/performance .
-    echo "Running tests with CSFLE on dynamic library path..."
+    echo "Running tests with crypto enabled libmongocrypt..."
+    PYMONGOCRYPT_LIB=$PYMONGOCRYPT_LIB_CRYPTO python -c 'from pymongocrypt.binding import lib;assert lib.mongocrypt_is_crypto_available(), "mongocrypt_is_crypto_available() returned False"'
+    PYMONGOCRYPT_LIB=$PYMONGOCRYPT_LIB_CRYPTO python -m pytest -v --ignore=test/performance .
+    echo "Running tests with crypt_shared on dynamic library path..."
     TEST_CRYPT_SHARED=1 DYLD_FALLBACK_LIBRARY_PATH=../crypt_shared/lib/:$DYLD_FALLBACK_LIBRARY_PATH \
       LD_LIBRARY_PATH=../crypt_shared/lib:$LD_LIBRARY_PATH \
       PATH=../crypt_shared/bin:$PATH \
