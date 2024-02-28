@@ -201,7 +201,8 @@ static void _test_getEdgesInt64(_mongocrypt_tester_t *tester) {
         mc_getEdgesInt64_args_t args = {.value = test->value,
                                         .min = test->min,
                                         .max = test->max,
-                                        .sparsity = test->sparsity};
+                                        .sparsity = test->sparsity,
+                                        .trimFactor = test->trimFactor};
         mc_edges_t *got = mc_getEdgesInt64(args, status);
         if (test->expectError != NULL) {
             ASSERT_OR_PRINT_MSG(NULL == got, "expected error, got success");
