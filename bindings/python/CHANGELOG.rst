@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Changes in Version 1.9.1
+------------------------
+
+- Fix bug in our release process which blocked uploading 1.9.0.
+
 Changes in Version 1.9.0
 ------------------------
 

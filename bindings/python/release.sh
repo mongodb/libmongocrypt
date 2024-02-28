@@ -27,13 +27,13 @@ rm -rf dist .venv build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymon
 
 function get_libmongocrypt() {
     TARGET=$1
-    NOCRYPTO_SO=$2
+    MONGOCRYPT_SO=$2
     rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
     curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt-release/$TARGET/${BRANCH}/${REVISION}/libmongocrypt.tar.gz
     mkdir libmongocrypt
     tar xzf libmongocrypt.tar.gz -C ./libmongocrypt
-    chmod +x ${NOCRYPTO_SO}
-    cp ${NOCRYPTO_SO} pymongocrypt/
+    chmod +x ${MONGOCRYPT_SO}
+    cp ${MONGOCRYPT_SO} pymongocrypt/
     rm -rf ./libmongocrypt libmongocrypt.tar.gz
 }
 
