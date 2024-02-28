@@ -172,7 +172,7 @@ static void _test_getEdgesInt64(_mongocrypt_tester_t *tester) {
          .max = OPT_I64_C(7),
          .sparsity = 2,
          .expectEdges = {"root", "010", "01"}},
-         {.value = INT64_C(2),
+        {.value = INT64_C(2),
          .min = OPT_I64_C(0),
          .max = OPT_I64_C(7),
          .sparsity = 1,
