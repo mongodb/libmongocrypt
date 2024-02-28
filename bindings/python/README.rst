@@ -77,7 +77,7 @@ PyMongoCrypt can be installed with `pip <http://pypi.python.org/pypi/pip>`_::
 
   $ python -m pip install pymongocrypt
   $ python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
-  1.2.1
+  1.9.0
 
 
 PyMongoCrypt ships wheels for macOS, Windows, and manylinux2010 that include
@@ -102,7 +102,10 @@ First, install PyMongoCrypt from source::
   $ git clone git@github.com:mongodb/libmongocrypt.git
   $ python -m pip install ./libmongocrypt/bindings/python
 
-Next, install libmongocrypt.
+Next, install libmongocrypt:
+
+Installing libmongocrypt
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 libmongocrypt is continuously built and published on evergreen.
 The latest tarball containing libmongocrypt built on all supported variants is
@@ -142,6 +145,9 @@ Linux: set the libmongocrypt build for your platform, for example for Ubuntu 22.
   $ export PYMONGOCRYPT_LIB=$(pwd)/libmongocrypt-all/ubuntu2204-64/lib/libmongocrypt.so
   $ python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
   1.9.0
+  $ # Check that native crypto is enabled for better performance:
+  $ python -c 'from pymongocrypt.binding import lib;print(lib.mongocrypt_is_crypto_available())'
+  True
 
 Note if your Linux platform is not available, the generic RHEL 6.2 x86_64 "nocrypto" build
 should still be compatible however the "nocrypto" build will result in lower performance
@@ -151,6 +157,11 @@ for encryption and decryption::
   $ export PYMONGOCRYPT_LIB=$(pwd)/libmongocrypt-all/rhel-62-64-bit/nocrypto/lib64/libmongocrypt.so
   $ python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
   1.9.0
+  $ python -c 'from pymongocrypt.binding import lib;print(lib.mongocrypt_is_crypto_available())'
+  False
+
+Other methods of installation (brew, rpm, yum, apt-get, deb, etc...) are documented here:
+https://www.mongodb.com/docs/manual/core/csfle/reference/libmongocrypt/#linux-installation
 
 Dependencies
 ============
