@@ -1130,6 +1130,16 @@ bool mongocrypt_kms_ctx_endpoint(mongocrypt_kms_ctx_t *kms, const char **endpoin
 MONGOCRYPT_EXPORT
 uint32_t mongocrypt_kms_ctx_bytes_needed(mongocrypt_kms_ctx_t *kms);
 
+
+/**
+ * Indicates how long to sleep before sending this request.
+ *
+ * @param[in] kms The @ref mongocrypt_kms_ctx_t.
+ * @returns How long to sleep in microseconds.
+ */
+MONGOCRYPT_EXPORT
+int64_t mongocrypt_kms_ctx_usleep(mongocrypt_kms_ctx_t *kms);
+
 /**
  * Feed bytes from the HTTP response.
  *
