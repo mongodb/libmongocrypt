@@ -203,8 +203,7 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
              "trimFactor" : 0
          }),
          .disableRangeV2 = true,
-         .expectedErrorAtParseTime =
-             "invalid FLE2RangeFindSpecEdgesInfo: 'trimFactor' is not supported for QE range v1"},
+         .expectedErrorAtParseTime = "'trimFactor' is not supported for QE range v1"},
         {.description = "Range V2 disabled w/ no trim factor succeeds",
          .findSpecJSON = RAW_STRING({
              "lowerBound" : {"$numberInt" : "7"},

@@ -193,7 +193,7 @@ bool mc_RangeOpts_parse(mc_RangeOpts_t *ro, const bson_t *in, bool use_range_v2,
     if (ro->trimFactor.set) {
         if (!use_range_v2) {
             // Once `use_range_v2` is default true, this block may be removed.
-            CLIENT_ERR_PREFIXED("trimFactor is not supported for QE range v1");
+            CLIENT_ERR_PREFIXED("'trimFactor' is not supported for QE range v1");
             return false;
         }
         // At this point, we do not know the type of the field if min and max are unspecified. Wait to

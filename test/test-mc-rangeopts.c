@@ -67,7 +67,7 @@ static void test_mc_RangeOpts_parse(_mongocrypt_tester_t *tester) {
         // Once `use_range_v2` is default true, this test may be removed.
         {.desc = "Fails when trim factor is set but Range V2 is disabled",
          .in = RAW_STRING({"trimFactor" : 1, "sparsity" : {"$numberLong" : "1"}}),
-         .expectError = "trimFactor is not supported for QE range v1"},
+         .expectError = "'trimFactor' is not supported for QE range v1"},
         {.desc = "Works when trim factor is set and Range V2 is enabled",
          .in = RAW_STRING({"trimFactor" : 1, "sparsity" : {"$numberLong" : "1"}}),
          .useRangeV2 = true,
