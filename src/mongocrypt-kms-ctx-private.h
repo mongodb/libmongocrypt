@@ -56,6 +56,7 @@ struct _mongocrypt_kms_ctx_t {
     char *endpoint;
     _mongocrypt_log_t *log;
     char *kmsid;
+    int64_t sleep_usec;
 };
 
 bool _mongocrypt_kms_ctx_init_aws_decrypt(mongocrypt_kms_ctx_t *kms,

@@ -142,6 +142,7 @@ _init_common(mongocrypt_kms_ctx_t *kms, _mongocrypt_log_t *log, _kms_request_typ
     kms->status = mongocrypt_status_new();
     kms->req_type = kms_type;
     _mongocrypt_buffer_init(&kms->result);
+    kms->sleep_usec = 0;
 }
 
 bool _mongocrypt_kms_ctx_init_aws_decrypt(mongocrypt_kms_ctx_t *kms,
@@ -430,6 +431,13 @@ uint32_t mongocrypt_kms_ctx_bytes_needed(mongocrypt_kms_ctx_t *kms) {
     want_bytes = kms_response_parser_wants_bytes(kms->parser, DEFAULT_MAX_KMS_BYTE_REQUEST);
     BSON_ASSERT(want_bytes >= 0);
     return (uint32_t)want_bytes;
+}
+
+int64_t mongocrypt_kms_ctx_usleep(mongocrypt_kms_ctx_t *kms) {
+    if (!kms) {
+        return 0;
+    }
+    return kms->sleep_usec;
 }
 
 static void
