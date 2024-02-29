@@ -209,6 +209,7 @@ bool mc_RangeOpts_parse(mc_RangeOpts_t *ro, const bson_t *in, bool use_range_v2,
 bool mc_RangeOpts_to_FLE2RangeInsertSpec(const mc_RangeOpts_t *ro,
                                          const bson_t *v,
                                          bson_t *out,
+                                         bool use_range_v2,
                                          mongocrypt_status_t *status) {
     BSON_ASSERT_PARAM(ro);
     BSON_ASSERT_PARAM(v);
@@ -247,10 +248,11 @@ bool mc_RangeOpts_to_FLE2RangeInsertSpec(const mc_RangeOpts_t *ro,
         }
     }
 
-    if (!mc_RangeOpts_appendTrimFactor(ro, bson_iter_type(&v_iter), "trimFactor", &child, status)) {
-        return false;
+    if (use_range_v2) {
+        if (!mc_RangeOpts_appendTrimFactor(ro, bson_iter_type(&v_iter), "trimFactor", &child, status)) {
+            return false;
+        }
     }
-
     if (!bson_append_document_end(out, &child)) {
         CLIENT_ERR_PREFIXED("Error appending to BSON");
         return false;
@@ -487,6 +489,10 @@ bool mc_RangeOpts_appendTrimFactor(const mc_RangeOpts_t *ro,
     BSON_ASSERT(status || true);
 
     if (!ro->trimFactor.set) {
+        if (!BSON_APPEND_INT32(out, fieldName, 0)) {
+            CLIENT_ERR_PREFIXED("failed to append BSON");
+            return false;
+        }
         return true;
     }
     BSON_ASSERT(ro->trimFactor.value <= INT32_MAX);

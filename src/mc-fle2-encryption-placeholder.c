@@ -301,13 +301,13 @@ static bool mc_FLE2RangeFindSpecEdgesInfo_parse(mc_FLE2RangeFindSpecEdgesInfo_t 
     // Do not error if precision is not present. Precision optional and only
     // applies to double/decimal128.
 
-    if (out->trimFactor.set && !use_range_v2) {
-        // Once `use_range_v2` is default true, this block may be removed.
+    if (use_range_v2) {
+        CHECK_HAS(trimFactor)
+    } else if (out->trimFactor.set) {
         CLIENT_ERR("invalid FLE2RangeFindSpecEdgesInfo: 'trimFactor' is not supported for QE range v1");
         return false;
     }
-    // Do not error if trim factor is not present. It is optional as it requires a feature flag,
-    // and defaults to 0.
+
     return true;
 
 fail:
@@ -474,13 +474,13 @@ bool mc_FLE2RangeInsertSpec_parse(mc_FLE2RangeInsertSpec_t *out,
     // Do not error if precision is not present. Precision optional and only
     // applies to double/decimal128.
 
-    if (out->trimFactor.set && !use_range_v2) {
-        // Once `use_range_v2` is default true, this block may be removed.
+    if (use_range_v2) {
+        CHECK_HAS(trimFactor)
+    } else if (out->trimFactor.set) {
         CLIENT_ERR("invalid FLE2RangeInsertSpec: trimFactor is not supported for QE range v1");
         return false;
     }
-    // Do not error if trim factor is not present. It is optional as it requires a feature flag,
-    // and defaults to 0.
+
     return true;
 
 fail:

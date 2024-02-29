@@ -50,7 +50,7 @@ typedef struct {
     // precision determines the number of digits after the decimal point for
     // floating point values.
     mc_optional_uint32_t precision;
-    // trimFactor determines how many root levels of the hypertree to trim.
+    // trimFactor determines how many root levels of the hypergraph to trim.
     mc_optional_uint32_t trimFactor;
 } mc_FLE2RangeFindSpecEdgesInfo_t;
 
@@ -95,7 +95,7 @@ typedef struct {
     // precision determines the number of digits after the decimal point for
     // floating point values.
     mc_optional_uint32_t precision;
-    // trimFactor determines how many root levels of the hypertree to trim.
+    // trimFactor determines how many root levels of the hypergraph to trim.
     mc_optional_uint32_t trimFactor;
 } mc_FLE2RangeInsertSpec_t;
 

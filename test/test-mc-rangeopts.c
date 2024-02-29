@@ -115,17 +115,24 @@ static void test_mc_RangeOpts_to_FLE2RangeInsertSpec(_mongocrypt_tester_t *teste
         const char *v;
         const char *expectError;
         const char *expect;
+        // Most of the tests are for trim factor, so range V2 is default enabled.
+        bool disableRangeV2;
     } testcase;
 
     testcase tests[] = {
         {.desc = "Works",
          .in = RAW_STRING({"min" : 123, "max" : 456, "sparsity" : {"$numberLong" : "1"}}),
          .v = RAW_STRING({"v" : 789}),
+         .expect = RAW_STRING({"v" : {"v" : 789, "min" : 123, "max" : 456, "trimFactor" : 0}})},
+        {.desc = "Trim factor not appended if range V2 disabled",
+         .in = RAW_STRING({"min" : 123, "max" : 456, "sparsity" : {"$numberLong" : "1"}}),
+         .v = RAW_STRING({"v" : 789}),
+         .disableRangeV2 = true,
          .expect = RAW_STRING({"v" : {"v" : 789, "min" : 123, "max" : 456}})},
         {.desc = "Works with precision",
          .in = RAW_STRING({"min" : 123.0, "max" : 456.0, "precision" : 2, "sparsity" : {"$numberLong" : "1"}}),
          .v = RAW_STRING({"v" : 789.0}),
-         .expect = RAW_STRING({"v" : {"v" : 789.0, "min" : 123.0, "max" : 456.0, "precision" : 2}})},
+         .expect = RAW_STRING({"v" : {"v" : 789.0, "min" : 123.0, "max" : 456.0, "precision" : 2, "trimFactor" : 0}})},
         {.desc = "Errors with missing 'v'",
          .in = RAW_STRING({"min" : 123, "max" : 456, "sparsity" : {"$numberLong" : "1"}}),
          .v = RAW_STRING({"foo" : "bar"}),
@@ -306,9 +313,9 @@ static void test_mc_RangeOpts_to_FLE2RangeInsertSpec(_mongocrypt_tester_t *teste
         mongocrypt_status_t *status = mongocrypt_status_new();
         mc_RangeOpts_t ro;
         printf("running test_mc_RangeOpts_to_FLE2RangeInsertSpec subtest: %s\n", test->desc);
-        ASSERT_OK_STATUS(mc_RangeOpts_parse(&ro, TMP_BSON(test->in), true /* use_range_v2 */, status), status);
+        ASSERT_OK_STATUS(mc_RangeOpts_parse(&ro, TMP_BSON(test->in), !test->disableRangeV2, status), status);
         bson_t out = BSON_INITIALIZER;
-        bool ret = mc_RangeOpts_to_FLE2RangeInsertSpec(&ro, TMP_BSON(test->v), &out, status);
+        bool ret = mc_RangeOpts_to_FLE2RangeInsertSpec(&ro, TMP_BSON(test->v), &out, !test->disableRangeV2, status);
         if (!test->expectError) {
             ASSERT_OK_STATUS(ret, status);
             ASSERT_EQUAL_BSON(TMP_BSON(test->expect), &out);

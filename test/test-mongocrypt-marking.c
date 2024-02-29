@@ -187,10 +187,25 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
         const char *expectedMinCover;
         mc_optional_int64_t sparsity;
         const char *expectedError;
+        const char *expectedErrorAtParseTime;
+        bool disableRangeV2;
     } testcase_t;
 
     testcase_t tests[] = {
-        {.description = "Int32 Bounds included",
+        {.description = "Range V2 disabled w/ trim factor fails",
+         .findSpecJSON = RAW_STRING({
+             "lowerBound" : {"$numberInt" : "7"},
+             "lbIncluded" : true,
+             "upperBound" : {"$numberInt" : "32"},
+             "ubIncluded" : true,
+             "indexMin" : {"$numberInt" : "0"},
+             "indexMax" : {"$numberInt" : "32"},
+             "trimFactor" : 0
+         }),
+         .disableRangeV2 = true,
+         .expectedErrorAtParseTime =
+             "invalid FLE2RangeFindSpecEdgesInfo: 'trimFactor' is not supported for QE range v1"},
+        {.description = "Range V2 disabled w/ no trim factor succeeds",
          .findSpecJSON = RAW_STRING({
              "lowerBound" : {"$numberInt" : "7"},
              "lbIncluded" : true,
@@ -198,6 +213,31 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
              "ubIncluded" : true,
              "indexMin" : {"$numberInt" : "0"},
              "indexMax" : {"$numberInt" : "32"}
+         }),
+         .disableRangeV2 = true,
+         .expectedMinCover = "000111\n"
+                             "001\n"
+                             "01\n"
+                             "100000\n"},
+        {.description = "Range V2 enabled w/ no trim factor fails",
+         .findSpecJSON = RAW_STRING({
+             "lowerBound" : {"$numberInt" : "7"},
+             "lbIncluded" : true,
+             "upperBound" : {"$numberInt" : "32"},
+             "ubIncluded" : true,
+             "indexMin" : {"$numberInt" : "0"},
+             "indexMax" : {"$numberInt" : "32"}
+         }),
+         .expectedErrorAtParseTime = "Missing field 'trimFactor' in placeholder"},
+        {.description = "Int32 Bounds included",
+         .findSpecJSON = RAW_STRING({
+             "lowerBound" : {"$numberInt" : "7"},
+             "lbIncluded" : true,
+             "upperBound" : {"$numberInt" : "32"},
+             "ubIncluded" : true,
+             "indexMin" : {"$numberInt" : "0"},
+             "indexMax" : {"$numberInt" : "32"},
+             "trimFactor" : 0
          }),
          .expectedMinCover = "000111\n"
                              "001\n"
@@ -211,7 +251,8 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
              "upperBound" : {"$numberInt" : "32"},
              "ubIncluded" : false,
              "indexMin" : {"$numberInt" : "0"},
-             "indexMax" : {"$numberInt" : "32"}
+             "indexMax" : {"$numberInt" : "32"},
+             "trimFactor" : 0
          }),
          .expectedMinCover = "001\n"
                              "01\n"},
@@ -222,7 +263,8 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
              "upperBound" : {"$numberInt" : "32"},
              "ubIncluded" : false,
              "indexMin" : {"$numberInt" : "0"},
-             "indexMax" : {"$numberInt" : "32"}
+             "indexMax" : {"$numberInt" : "32"},
+             "trimFactor" : 0
          }),
          .expectedMinCover = "000111\n"
                              "001\n"
@@ -234,7 +276,8 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
              "upperBound" : {"$numberInt" : "32"},
              "ubIncluded" : true,
              "indexMin" : {"$numberInt" : "0"},
-             "indexMax" : {"$numberInt" : "32"}
+             "indexMax" : {"$numberInt" : "32"},
+             "trimFactor" : 0
          }),
          .expectedMinCover = "001\n"
                              "01\n"
@@ -246,7 +289,8 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
              "upperBound" : {"$numberDouble" : "Infinity"},
              "ubIncluded" : true,
              "indexMin" : {"$numberInt" : "0"},
-             "indexMax" : {"$numberInt" : "32"}
+             "indexMax" : {"$numberInt" : "32"},
+             "trimFactor" : 0
          }),
          .expectedMinCover = "000111\n"
                              "001\n"
@@ -259,7 +303,8 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
              "upperBound" : {"$numberInt" : "8"},
              "ubIncluded" : true,
              "indexMin" : {"$numberInt" : "0"},
-             "indexMax" : {"$numberInt" : "32"}
+             "indexMax" : {"$numberInt" : "32"},
+             "trimFactor" : 0
          }),
          .expectedMinCover = "000\n"
                              "001000\n"},
@@ -270,7 +315,8 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
              "upperBound" : {"$numberDouble" : "Infinity"},
              "ubIncluded" : true,
              "indexMin" : {"$numberInt" : "0"},
-             "indexMax" : {"$numberInt" : "32"}
+             "indexMax" : {"$numberInt" : "32"},
+             "trimFactor" : 0
          }),
          .expectedMinCover = "0\n"
                              "100000\n"},
@@ -281,7 +327,8 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
              "upperBound" : {"$numberDouble" : "Infinity"},
              "ubIncluded" : true,
              "indexMin" : {"$numberInt" : "0"},
-             "indexMax" : {"$numberInt" : "31"}
+             "indexMax" : {"$numberInt" : "31"},
+             "trimFactor" : 0
          }),
          .expectedMinCover = "root\n"},
         {.description = "Int32 mincover=root TF=1",
@@ -321,7 +368,8 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
              "upperBound" : {"$numberDouble" : "Infinity"},
              "ubIncluded" : true,
              "indexMin" : {"$numberInt" : "0"},
-             "indexMax" : {"$numberInt" : "32"}
+             "indexMax" : {"$numberInt" : "32"},
+             "trimFactor" : 0
          }),
          .sparsity = OPT_I64(2),
          .expectedMinCover = "00\n"
@@ -407,7 +455,8 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
              "upperBound" : {"$numberLong" : "823"},
              "ubIncluded" : true,
              "indexMin" : {"$numberLong" : "-1000000000000000"},
-             "indexMax" : {"$numberLong" : "8070450532247928832"}
+             "indexMax" : {"$numberLong" : "8070450532247928832"},
+             "trimFactor" : 0
          }),
          .expectedMinCover = "000000000000011100011010111111010100100110001101000000\n"
                              "00000000000001110001101011111101010010011000110100000100\n"
@@ -425,7 +474,8 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
              "upperBound" : {"$numberLong" : "823"},
              "ubIncluded" : false,
              "indexMin" : {"$numberLong" : "-1000000000000000"},
-             "indexMax" : {"$numberLong" : "8070450532247928832"}
+             "indexMax" : {"$numberLong" : "8070450532247928832"},
+             "trimFactor" : 0
          }),
          .expectedMinCover = "000000000000011100011010111111010100100110001101000000000000001\n"
                              "00000000000001110001101011111101010010011000110100000000000001\n"
@@ -458,7 +508,8 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
              "upperBound" : {"$numberLong" : "823"},
              "ubIncluded" : false,
              "indexMin" : {"$numberLong" : "-1000000000000000"},
-             "indexMax" : {"$numberLong" : "8070450532247928832"}
+             "indexMax" : {"$numberLong" : "8070450532247928832"},
+             "trimFactor" : 0
          }),
          .expectedMinCover = "000000000000011100011010111111010100100110001101000000\n"
                              "00000000000001110001101011111101010010011000110100000100\n"
@@ -479,7 +530,8 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
              "upperBound" : {"$numberLong" : "823"},
              "ubIncluded" : true,
              "indexMin" : {"$numberLong" : "-1000000000000000"},
-             "indexMax" : {"$numberLong" : "8070450532247928832"}
+             "indexMax" : {"$numberLong" : "8070450532247928832"},
+             "trimFactor" : 0
          }),
          .expectedMinCover = "000000000000011100011010111111010100100110001101000000000000001\n"
                              "00000000000001110001101011111101010010011000110100000000000001\n"
@@ -508,7 +560,8 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
              "upperBound" : {"$numberDouble" : "Infinity"},
              "ubIncluded" : true,
              "indexMin" : {"$numberLong" : "0"},
-             "indexMax" : {"$numberLong" : "7"}
+             "indexMax" : {"$numberLong" : "7"},
+             "trimFactor" : 0
          }),
          .expectedMinCover = "001\n"
                              "01\n"
@@ -520,7 +573,8 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
              "upperBound" : {"$numberLong" : "5"},
              "ubIncluded" : true,
              "indexMin" : {"$numberLong" : "0"},
-             "indexMax" : {"$numberLong" : "7"}
+             "indexMax" : {"$numberLong" : "7"},
+             "trimFactor" : 0
          }),
          .expectedMinCover = "0\n"
                              "10\n"},
@@ -531,7 +585,8 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
              "upperBound" : {"$numberDouble" : "Infinity"},
              "ubIncluded" : true,
              "indexMin" : {"$numberLong" : "0"},
-             "indexMax" : {"$numberLong" : "7"}
+             "indexMax" : {"$numberLong" : "7"},
+             "trimFactor" : 0
          }),
          .expectedMinCover = "root\n"},
         {.description = "Mismatched types",
@@ -541,7 +596,8 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
              "upperBound" : {"$numberLong" : "2"},
              "ubIncluded" : true,
              "indexMin" : {"$numberLong" : "0"},
-             "indexMax" : {"$numberLong" : "7"}
+             "indexMax" : {"$numberLong" : "7"},
+             "trimFactor" : 0
          }),
          .expectedError = "expected lowerBound to match index type"},
         {.description = "Int32 exclusive lower bound > upper bound",
@@ -551,7 +607,8 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
              "upperBound" : {"$numberInt" : "7"},
              "ubIncluded" : true,
              "indexMin" : {"$numberInt" : "0"},
-             "indexMax" : {"$numberInt" : "32"}
+             "indexMax" : {"$numberInt" : "32"},
+             "trimFactor" : 0
          }),
          .expectedError = "must be less than or equal to range max"},
         {.description = "Int64 exclusive lower bound > upper bound",
@@ -561,7 +618,8 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
              "upperBound" : {"$numberLong" : "7"},
              "ubIncluded" : true,
              "indexMin" : {"$numberLong" : "0"},
-             "indexMax" : {"$numberLong" : "32"}
+             "indexMax" : {"$numberLong" : "32"},
+             "trimFactor" : 0
          }),
          .expectedError = "must be less than or equal to range max"},
         {.description = "Int32 exclusive upper bound < lower bound",
@@ -571,7 +629,8 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
              "upperBound" : {"$numberInt" : "7"},
              "ubIncluded" : false,
              "indexMin" : {"$numberInt" : "0"},
-             "indexMax" : {"$numberInt" : "32"}
+             "indexMax" : {"$numberInt" : "32"},
+             "trimFactor" : 0
          }),
          .expectedError = "must be less than or equal to range max"},
         {.description = "Int64 exclusive upper bound < lower bound",
@@ -581,7 +640,8 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
              "upperBound" : {"$numberLong" : "7"},
              "ubIncluded" : false,
              "indexMin" : {"$numberLong" : "0"},
-             "indexMax" : {"$numberLong" : "32"}
+             "indexMax" : {"$numberLong" : "32"},
+             "trimFactor" : 0
          }),
          .expectedError = "must be less than or equal to range max"},
         {.description = "Int32 exclusive bounds cross",
@@ -591,7 +651,8 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
              "upperBound" : {"$numberInt" : "7"},
              "ubIncluded" : false,
              "indexMin" : {"$numberInt" : "0"},
-             "indexMax" : {"$numberInt" : "32"}
+             "indexMax" : {"$numberInt" : "32"},
+             "trimFactor" : 0
          }),
          .expectedError = "must be less than or equal to range max"},
         {.description = "Int64 exclusive bounds cross",
@@ -601,7 +662,8 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
              "upperBound" : {"$numberLong" : "7"},
              "ubIncluded" : false,
              "indexMin" : {"$numberLong" : "0"},
-             "indexMax" : {"$numberLong" : "32"}
+             "indexMax" : {"$numberLong" : "32"},
+             "trimFactor" : 0
          }),
          .expectedError = "must be less than or equal to range max"},
         {.description = "Int32 exclusive upper bound is 0",
@@ -611,7 +673,8 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
              "upperBound" : {"$numberInt" : "0"},
              "ubIncluded" : false,
              "indexMin" : {"$numberInt" : "0"},
-             "indexMax" : {"$numberInt" : "32"}
+             "indexMax" : {"$numberInt" : "32"},
+             "trimFactor" : 0
          }),
          .expectedError = "must be greater than the range minimum"},
         {.description = "Double inclusive bounds",
@@ -621,7 +684,8 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
              "upperBound" : {"$numberDouble" : "35.25"},
              "ubIncluded" : true,
              "indexMin" : {"$numberDouble" : "0"},
-             "indexMax" : {"$numberDouble" : "1000"}
+             "indexMax" : {"$numberDouble" : "1000"},
+             "trimFactor" : 0
          }),
          .expectedMinCover = "11000000001101111\n"
                              "1100000000111\n"
@@ -637,7 +701,8 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
              "upperBound" : {"$numberDouble" : "35.25"},
              "ubIncluded" : false,
              "indexMin" : {"$numberDouble" : "0"},
-             "indexMax" : {"$numberDouble" : "1000"}
+             "indexMax" : {"$numberDouble" : "1000"},
+             "trimFactor" : 0
          }),
          .expectedMinCover = "1100000000110111100000000000000000000000000000000000000000000001\n"
                              "110000000011011110000000000000000000000000000000000000000000001\n"
@@ -697,7 +762,8 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
              "upperBound" : {"$numberDouble" : "35.25"},
              "ubIncluded" : false,
              "indexMin" : {"$numberDouble" : "0"},
-             "indexMax" : {"$numberDouble" : "1000"}
+             "indexMax" : {"$numberDouble" : "1000"},
+             "trimFactor" : 0
          }),
          .expectedMinCover = "11000000001101111\n"
                              "1100000000111\n"
@@ -711,7 +777,8 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
              "upperBound" : {"$numberDouble" : "35.25"},
              "ubIncluded" : true,
              "indexMin" : {"$numberDouble" : "0"},
-             "indexMax" : {"$numberDouble" : "1000"}
+             "indexMax" : {"$numberDouble" : "1000"},
+             "trimFactor" : 0
          }),
          .expectedMinCover = "1100000000110111100000000000000000000000000000000000000000000001\n"
                              "110000000011011110000000000000000000000000000000000000000000001\n"
@@ -798,7 +865,14 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
         ASSERT(bson_iter_init_find(&findSpecIter, findSpecDoc, "findSpec"));
 
         mc_FLE2RangeFindSpec_t findSpec;
-        ASSERT_OK_STATUS(mc_FLE2RangeFindSpec_parse(&findSpec, &findSpecIter, true /* use_range_v2 */, status), status);
+        bool res = mc_FLE2RangeFindSpec_parse(&findSpec, &findSpecIter, !test->disableRangeV2, status);
+        if (test->expectedErrorAtParseTime) {
+            ASSERT(!res);
+            ASSERT_STATUS_CONTAINS(status, test->expectedErrorAtParseTime);
+            goto cleanup;
+        } else {
+            ASSERT_OK_STATUS(res, status);
+        }
 
         size_t sparsity = 1;
         if (test->sparsity.set) {
@@ -816,6 +890,7 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
         }
         mc_mincover_destroy(mc);
 
+    cleanup:
         bson_destroy(findSpecDoc);
         bson_destroy(findSpecVal);
         mongocrypt_status_destroy(status);
