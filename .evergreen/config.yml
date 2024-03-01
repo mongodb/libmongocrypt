@@ -1219,7 +1219,7 @@ buildvariants:
     distros:
     - rhel70-small
 - name: debian11
-  display_name: "Debian 11.0"
+  display_name: "Debian 11"
   run_on: debian11-large
   expansions:
     has_packages: true
@@ -1248,7 +1248,7 @@ buildvariants:
     distros:
     - ubuntu2004-small
 - name: debian10
-  display_name: "Debian 10.0"
+  display_name: "Debian 10"
   run_on: debian10-test
   expansions:
     has_packages: true
