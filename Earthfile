@@ -46,6 +46,7 @@
     #   • deb9 - Debian 9.2
     #   • deb10 - Debian 10.0
     #   • deb11 - Debian 11.0
+    #   • deb12 - Debian 12.0
     #   • sles15 - OpenSUSE Leap 15.0
     #   • alpine - Alpine Linux 3.18
     #
@@ -200,6 +201,10 @@ env.deb-unstable:
 env.deb11:
     # A Debian 11.0 environment
     DO +ENV_DEBIAN --version 11.0
+
+env.deb12:
+    # A Debian 12.0 environment
+    DO +ENV_DEBIAN --version 12.0
 
 env.sles15:
     # An OpenSUSE Leap 15.0 environment.
