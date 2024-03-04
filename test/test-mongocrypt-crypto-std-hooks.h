@@ -40,6 +40,22 @@ bool _std_hook_native_crypto_aes_256_cbc_decrypt(void *ctx,
                                                  uint32_t *bytes_written,
                                                  mongocrypt_status_t *status);
 
+bool _std_hook_native_crypto_aes_256_ctr_encrypt(void *ctx,
+                                                 mongocrypt_binary_t *key,
+                                                 mongocrypt_binary_t *iv,
+                                                 mongocrypt_binary_t *in,
+                                                 mongocrypt_binary_t *out,
+                                                 uint32_t *bytes_written,
+                                                 mongocrypt_status_t *status);
+
+bool _std_hook_native_crypto_aes_256_ctr_decrypt(void *ctx,
+                                                 mongocrypt_binary_t *key,
+                                                 mongocrypt_binary_t *iv,
+                                                 mongocrypt_binary_t *in,
+                                                 mongocrypt_binary_t *out,
+                                                 uint32_t *bytes_written,
+                                                 mongocrypt_status_t *status);
+
 bool _std_hook_native_crypto_random(void *ctx, mongocrypt_binary_t *out, uint32_t count, mongocrypt_status_t *status);
 
 bool _std_hook_native_hmac_sha512(void *ctx,

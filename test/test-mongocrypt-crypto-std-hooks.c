@@ -54,6 +54,46 @@ bool _std_hook_native_crypto_aes_256_cbc_decrypt(void *ctx,
     return _native_crypto_aes_256_cbc_decrypt(args);
 }
 
+bool _std_hook_native_crypto_aes_256_ctr_encrypt(void *ctx,
+                                                 mongocrypt_binary_t *key,
+                                                 mongocrypt_binary_t *iv,
+                                                 mongocrypt_binary_t *in,
+                                                 mongocrypt_binary_t *out,
+                                                 uint32_t *bytes_written,
+                                                 mongocrypt_status_t *status) {
+    _mongocrypt_buffer_t key_buf;
+    _mongocrypt_buffer_from_binary(&key_buf, key);
+    _mongocrypt_buffer_t iv_buf;
+    _mongocrypt_buffer_from_binary(&iv_buf, iv);
+    _mongocrypt_buffer_t in_buf;
+    _mongocrypt_buffer_from_binary(&in_buf, in);
+    _mongocrypt_buffer_t out_buf;
+    _mongocrypt_buffer_from_binary(&out_buf, out);
+
+    aes_256_args_t args = {&key_buf, &iv_buf, &in_buf, &out_buf, bytes_written, status};
+    return _native_crypto_aes_256_ctr_encrypt(args);
+}
+
+bool _std_hook_native_crypto_aes_256_ctr_decrypt(void *ctx,
+                                                 mongocrypt_binary_t *key,
+                                                 mongocrypt_binary_t *iv,
+                                                 mongocrypt_binary_t *in,
+                                                 mongocrypt_binary_t *out,
+                                                 uint32_t *bytes_written,
+                                                 mongocrypt_status_t *status) {
+    _mongocrypt_buffer_t key_buf;
+    _mongocrypt_buffer_from_binary(&key_buf, key);
+    _mongocrypt_buffer_t iv_buf;
+    _mongocrypt_buffer_from_binary(&iv_buf, iv);
+    _mongocrypt_buffer_t in_buf;
+    _mongocrypt_buffer_from_binary(&in_buf, in);
+    _mongocrypt_buffer_t out_buf;
+    _mongocrypt_buffer_from_binary(&out_buf, out);
+
+    aes_256_args_t args = {&key_buf, &iv_buf, &in_buf, &out_buf, bytes_written, status};
+    return _native_crypto_aes_256_ctr_decrypt(args);
+}
+
 bool _std_hook_native_crypto_random(void *ctx, mongocrypt_binary_t *out, uint32_t count, mongocrypt_status_t *status) {
     _mongocrypt_buffer_t outbuf;
     _mongocrypt_buffer_from_binary(&outbuf, out);
