@@ -1322,8 +1322,7 @@ bool mongocrypt_setopt_crypto_hooks(mongocrypt_t *crypt,
  * operation.
  * @param[in] aes_256_ctr_decrypt The crypto callback function for decrypt
  * operation.
- * @param[in] ctx A context passed as an argument to the crypto callback
- * every invocation.
+ * @param[in] ctx Unused.
  * @pre @ref mongocrypt_init has not been called on @p crypt.
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_status
@@ -1343,8 +1342,7 @@ bool mongocrypt_setopt_aes_256_ctr(mongocrypt_t *crypt,
  * @param[in] crypt The @ref mongocrypt_t object.
  * @param[in] aes_256_ecb_encrypt The crypto callback function for encrypt
  * operation.
- * @param[in] ctx A context passed as an argument to the crypto callback
- * every invocation.
+ * @param[in] ctx Unused.
  * @pre @ref mongocrypt_init has not been called on @p crypt.
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_status
