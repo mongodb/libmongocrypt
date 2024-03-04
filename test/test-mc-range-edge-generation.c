@@ -32,6 +32,7 @@ typedef struct {
     // expectEdges includes a trailing NULL pointer.
     const char *expectEdges[MAX_INT32_EDGES + 1];
     const char *expectError;
+    uint32_t trimFactor;
 } Int32Test;
 
 #undef MAX_INT32_EDGES
@@ -62,6 +63,43 @@ static void _test_getEdgesInt32(_mongocrypt_tester_t *tester) {
          .expectEdges = {"root", "010", "0", "01"}},
         {.value = 2, .min = OPT_I32_C(0), .max = OPT_I32_C(7), .sparsity = 2, .expectEdges = {"root", "010", "01"}},
         {.value = 1, .sparsity = 0, .expectError = "sparsity must be 1 or larger"},
+        {.value = 2,
+         .min = OPT_I32_C(0),
+         .max = OPT_I32_C(7),
+         .sparsity = 1,
+         .trimFactor = 1,
+         .expectEdges = {"010", "0", "01"}},
+        {.value = 2,
+         .min = OPT_I32_C(0),
+         .max = OPT_I32_C(7),
+         .sparsity = 1,
+         .trimFactor = 2,
+         .expectEdges = {"010", "01"}},
+        {.value = 2,
+         .min = OPT_I32_C(0),
+         .max = OPT_I32_C(7),
+         .sparsity = 1,
+         .trimFactor = 3,
+         .expectError =
+             "trimFactor must be less than the number of bits (3) used to represent an element of the domain"},
+        {.value = 2,
+         .min = OPT_I32_C(0),
+         .max = OPT_I32_C(7),
+         .sparsity = 2,
+         .trimFactor = 0,
+         .expectEdges = {"root", "010", "01"}},
+        {.value = 2,
+         .min = OPT_I32_C(0),
+         .max = OPT_I32_C(7),
+         .sparsity = 2,
+         .trimFactor = 1,
+         .expectEdges = {"010", "01"}},
+        {.value = 2,
+         .min = OPT_I32_C(0),
+         .max = OPT_I32_C(7),
+         .sparsity = 2,
+         .trimFactor = 2,
+         .expectEdges = {"010", "01"}},
 #include "data/range-edge-generation/edges_int32.cstruct"
     };
 
@@ -71,7 +109,8 @@ static void _test_getEdgesInt32(_mongocrypt_tester_t *tester) {
         mc_getEdgesInt32_args_t args = {.value = test->value,
                                         .min = test->min,
                                         .max = test->max,
-                                        .sparsity = test->sparsity};
+                                        .sparsity = test->sparsity,
+                                        .trimFactor = test->trimFactor};
         mc_edges_t *got = mc_getEdgesInt32(args, status);
         if (test->expectError != NULL) {
             ASSERT_OR_PRINT_MSG(NULL == got, "expected error, got success");
@@ -116,6 +155,7 @@ typedef struct {
     // expectEdges includes a trailing NULL pointer.
     const char *expectEdges[MAX_INT64_EDGES + 1];
     const char *expectError;
+    uint32_t trimFactor;
 } Int64Test;
 
 #undef MAX_INT64_EDGES
@@ -132,6 +172,25 @@ static void _test_getEdgesInt64(_mongocrypt_tester_t *tester) {
          .max = OPT_I64_C(7),
          .sparsity = 2,
          .expectEdges = {"root", "010", "01"}},
+        {.value = INT64_C(2),
+         .min = OPT_I64_C(0),
+         .max = OPT_I64_C(7),
+         .sparsity = 1,
+         .trimFactor = 1,
+         .expectEdges = {"010", "0", "01"}},
+        {.value = INT64_C(2),
+         .min = OPT_I64_C(0),
+         .max = OPT_I64_C(7),
+         .sparsity = 1,
+         .trimFactor = 2,
+         .expectEdges = {"010", "01"}},
+        {.value = INT64_C(2),
+         .min = OPT_I64_C(0),
+         .max = OPT_I64_C(7),
+         .sparsity = 1,
+         .trimFactor = 3,
+         .expectError =
+             "trimFactor must be less than the number of bits (3) used to represent an element of the domain"},
         {.value = 1, .sparsity = 0, .expectError = "sparsity must be 1 or larger"},
 #include "data/range-edge-generation/edges_int64.cstruct"
     };
@@ -142,7 +201,8 @@ static void _test_getEdgesInt64(_mongocrypt_tester_t *tester) {
         mc_getEdgesInt64_args_t args = {.value = test->value,
                                         .min = test->min,
                                         .max = test->max,
-                                        .sparsity = test->sparsity};
+                                        .sparsity = test->sparsity,
+                                        .trimFactor = test->trimFactor};
         mc_edges_t *got = mc_getEdgesInt64(args, status);
         if (test->expectError != NULL) {
             ASSERT_OR_PRINT_MSG(NULL == got, "expected error, got success");
@@ -185,6 +245,7 @@ typedef struct {
     // expectEdges includes a trailing NULL pointer.
     const char *expectEdges[MAX_DOUBLE_EDGES + 1];
     const char *expectError;
+    uint32_t trimFactor;
 } DoubleTest;
 
 #undef MAX_DOUBLE_EDGES

@@ -367,6 +367,10 @@ bool mc_makeRangeFindPlaceholder(mc_makeRangeFindPlaceholder_args_t *args,
             BSON_ASSERT(args->precision.value <= INT32_MAX);
             TRY(BSON_APPEND_INT32(edgesInfo, "precision", (int32_t)args->precision.value));
         }
+        if (args->trimFactor.set) {
+            BSON_ASSERT(args->trimFactor.value <= INT32_MAX);
+            TRY(BSON_APPEND_INT32(edgesInfo, "trimFactor", (int32_t)args->trimFactor.value));
+        }
         TRY(BSON_APPEND_DOCUMENT(v, "edgesInfo", edgesInfo));
     }
 
@@ -470,7 +474,8 @@ bool mc_FLE2RangeFindDriverSpec_to_placeholders(mc_FLE2RangeFindDriverSpec_t *sp
                                                .indexMax = indexMax,
                                                .precision = range_opts->precision,
                                                .maxContentionFactor = maxContentionFactor,
-                                               .sparsity = range_opts->sparsity};
+                                               .sparsity = range_opts->sparsity,
+                                               .trimFactor = range_opts->trimFactor};
 
     // First operator is the non-stub.
     if (!mc_makeRangeFindPlaceholder(&args, &p1, status)) {

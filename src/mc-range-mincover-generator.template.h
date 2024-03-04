@@ -101,6 +101,7 @@ typedef struct {
     UINT_T _rangeMin;
     UINT_T _rangeMax;
     size_t _sparsity;
+    uint32_t _trimFactor;
     // _maxlen is the maximum bit length of edges in the mincover.
     size_t _maxlen;
 } DECORATE_NAME(MinCoverGenerator);
@@ -110,6 +111,7 @@ static inline DECORATE_NAME(MinCoverGenerator)
                                            UINT_T rangeMax,
                                            UINT_T max,
                                            size_t sparsity,
+                                           uint32_t trimFactor,
                                            mongocrypt_status_t *status) {
     BSON_ASSERT_PARAM(status);
 
@@ -131,11 +133,18 @@ static inline DECORATE_NAME(MinCoverGenerator)
         CLIENT_ERR("Sparsity must be > 0");
         return NULL;
     }
+    size_t maxlen = (size_t)BITS - DECORATE_NAME(mc_count_leading_zeros)(max);
+    if (trimFactor != 0 && trimFactor >= maxlen) {
+        CLIENT_ERR("Trim factor must be less than the number of bits (%zu) used to represent an element of the domain",
+                   maxlen);
+        return NULL;
+    }
     DECORATE_NAME(MinCoverGenerator) *mcg = bson_malloc0(sizeof(DECORATE_NAME(MinCoverGenerator)));
     mcg->_rangeMin = rangeMin;
     mcg->_rangeMax = rangeMax;
     mcg->_maxlen = (size_t)BITS - DECORATE_NAME(mc_count_leading_zeros)(max);
     mcg->_sparsity = sparsity;
+    mcg->_trimFactor = trimFactor;
     return mcg;
 }
 
@@ -164,7 +173,7 @@ static inline bool DECORATE_NAME(MinCoverGenerator_isLevelStored)(DECORATE_NAME(
                                                                   size_t maskedBits) {
     BSON_ASSERT_PARAM(mcg);
     size_t level = mcg->_maxlen - maskedBits;
-    return 0 == maskedBits || 0 == (level % mcg->_sparsity);
+    return 0 == maskedBits || (level >= mcg->_trimFactor && 0 == (level % mcg->_sparsity));
 }
 
 char *

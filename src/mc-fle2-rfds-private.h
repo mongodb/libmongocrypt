@@ -76,6 +76,7 @@ typedef struct {
     int64_t maxContentionFactor;
     int64_t sparsity;
     mc_optional_uint32_t precision;
+    mc_optional_uint32_t trimFactor;
 } mc_makeRangeFindPlaceholder_args_t;
 
 // mc_makeRangeFindPlaceholder creates a placeholder to be consumed by

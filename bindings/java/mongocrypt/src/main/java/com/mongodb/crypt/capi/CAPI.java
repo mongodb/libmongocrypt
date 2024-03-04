@@ -593,6 +593,7 @@ public class CAPI {
      *    "max": Optional&#60;BSON value&#62;,
      *    "sparsity": Int64,
      *    "precision": Optional&#60;Int32&#62;
+     *    "trimFactor": Optional&#60;Int32&#62;
      * }
      *
      * @param ctx The @ref mongocrypt_ctx_t object.

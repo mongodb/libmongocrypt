@@ -149,7 +149,8 @@ mc_mincover_t *mc_getMincoverInt32(mc_getMincoverInt32_args_t args, mongocrypt_s
         return NULL;
     }
 
-    MinCoverGenerator_u32 *mcg = MinCoverGenerator_new_u32(a.value, b.value, a.max, args.sparsity, status);
+    MinCoverGenerator_u32 *mcg =
+        MinCoverGenerator_new_u32(a.value, b.value, a.max, args.sparsity, args.trimFactor, status);
     if (!mcg) {
         return NULL;
     }
@@ -180,7 +181,8 @@ mc_mincover_t *mc_getMincoverInt64(mc_getMincoverInt64_args_t args, mongocrypt_s
         return NULL;
     }
 
-    MinCoverGenerator_u64 *mcg = MinCoverGenerator_new_u64(a.value, b.value, a.max, args.sparsity, status);
+    MinCoverGenerator_u64 *mcg =
+        MinCoverGenerator_new_u64(a.value, b.value, a.max, args.sparsity, args.trimFactor, status);
     if (!mcg) {
         return NULL;
     }
@@ -220,7 +222,8 @@ mc_mincover_t *mc_getMincoverDouble(mc_getMincoverDouble_args_t args, mongocrypt
         return NULL;
     }
 
-    MinCoverGenerator_u64 *mcg = MinCoverGenerator_new_u64(a.value, b.value, a.max, args.sparsity, status);
+    MinCoverGenerator_u64 *mcg =
+        MinCoverGenerator_new_u64(a.value, b.value, a.max, args.sparsity, args.trimFactor, status);
     if (!mcg) {
         return NULL;
     }
@@ -260,7 +263,8 @@ mc_mincover_t *mc_getMincoverDecimal128(mc_getMincoverDecimal128_args_t args, mo
         return NULL;
     }
 
-    MinCoverGenerator_u128 *mcg = MinCoverGenerator_new_u128(a.value, b.value, a.max, args.sparsity, status);
+    MinCoverGenerator_u128 *mcg =
+        MinCoverGenerator_new_u128(a.value, b.value, a.max, args.sparsity, args.trimFactor, status);
     if (!mcg) {
         return NULL;
     }
