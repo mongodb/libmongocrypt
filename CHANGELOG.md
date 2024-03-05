@@ -1,4 +1,7 @@
 # ChangeLog
+## 1.9.1
+### New features
+- Add Debian 12 packages
 ## 1.9.0
 ### New features
 - Support named KMS providers.
