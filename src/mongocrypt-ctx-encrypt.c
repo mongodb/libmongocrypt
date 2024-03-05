@@ -23,6 +23,7 @@
 #include "mongocrypt-marking-private.h"
 #include "mongocrypt-traverse-util-private.h"
 #include "mongocrypt-util-private.h" // mc_iter_document_as_bson
+#include "mongocrypt.h"
 
 /* _fle2_append_encryptedFieldConfig copies encryptedFieldConfig and applies
  * default state collection names for escCollection, eccCollection, and
@@ -1677,7 +1678,13 @@ static bool _fle2_finalize_explicit(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *
     marking.type = MONGOCRYPT_MARKING_FLE2_ENCRYPTION;
     if (ctx->opts.query_type.set) {
         switch (ctx->opts.query_type.value) {
-        case MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW:
+        case MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_DEPRECATED:
+        if(ctx->crypt->opts.use_range_v2) {
+            _mongocrypt_ctx_fail_w_msg(ctx, "Cannot use rangePreview query type with Range V2");
+            goto fail;
+        }
+        // fallthrough
+        case MONGOCRYPT_QUERY_TYPE_RANGE:
         case MONGOCRYPT_QUERY_TYPE_EQUALITY: marking.fle2.type = MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND; break;
         default: _mongocrypt_ctx_fail_w_msg(ctx, "Invalid value for EncryptOpts.queryType"); goto fail;
         }
@@ -1688,7 +1695,13 @@ static bool _fle2_finalize_explicit(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *
     switch (ctx->opts.index_type.value) {
     case MONGOCRYPT_INDEX_TYPE_EQUALITY: marking.fle2.algorithm = MONGOCRYPT_FLE2_ALGORITHM_EQUALITY; break;
     case MONGOCRYPT_INDEX_TYPE_NONE: marking.fle2.algorithm = MONGOCRYPT_FLE2_ALGORITHM_UNINDEXED; break;
-    case MONGOCRYPT_INDEX_TYPE_RANGEPREVIEW: marking.fle2.algorithm = MONGOCRYPT_FLE2_ALGORITHM_RANGE; break;
+    case MONGOCRYPT_INDEX_TYPE_RANGEPREVIEW_DEPRECATED:
+        if(ctx->crypt->opts.use_range_v2) {
+            _mongocrypt_ctx_fail_w_msg(ctx, "Cannot use rangePreview index type with Range V2");
+            goto fail;
+        }
+        // fallthrough
+    case MONGOCRYPT_INDEX_TYPE_RANGE: marking.fle2.algorithm = MONGOCRYPT_FLE2_ALGORITHM_RANGE; break;
     default:
         // This might be unreachable because of other validation. Better safe than
         // sorry.
@@ -2240,7 +2253,7 @@ static bool explicit_encrypt_init(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *ms
         return _mongocrypt_ctx_fail_w_msg(ctx, "contention factor is required for indexed algorithm");
     }
 
-    if (ctx->opts.index_type.set && ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_RANGEPREVIEW) {
+    if (ctx->opts.index_type.set && (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_RANGE || ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_RANGEPREVIEW_DEPRECATED)) {
         if (!ctx->opts.contention_factor.set) {
             return _mongocrypt_ctx_fail_w_msg(ctx, "contention factor is required for range indexed algorithm");
         }
@@ -2260,8 +2273,13 @@ static bool explicit_encrypt_init(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *ms
         bool matches = false;
 
         switch (ctx->opts.query_type.value) {
-        case MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW:
-            matches = (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_RANGEPREVIEW);
+        case MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_DEPRECATED:
+            // Don't allow deprecated query type if we are using new index type.
+            matches = (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_RANGEPREVIEW_DEPRECATED);
+            break;
+        case MONGOCRYPT_QUERY_TYPE_RANGE:
+            // New query type is compatible with both new and old index types.
+            matches = (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_RANGEPREVIEW_DEPRECATED || ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_RANGE);
             break;
         case MONGOCRYPT_QUERY_TYPE_EQUALITY:
             matches = (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_EQUALITY);
@@ -2335,7 +2353,7 @@ bool mongocrypt_ctx_explicit_encrypt_init(mongocrypt_ctx_t *ctx, mongocrypt_bina
     if (!explicit_encrypt_init(ctx, msg)) {
         return false;
     }
-    if (ctx->opts.query_type.set && ctx->opts.query_type.value == MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW) {
+    if (ctx->opts.query_type.set && (ctx->opts.query_type.value == MONGOCRYPT_QUERY_TYPE_RANGE || ctx->opts.query_type.value == MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_DEPRECATED)) {
         return _mongocrypt_ctx_fail_w_msg(ctx, "Encrypt may not be used for range queries. Use EncryptExpression.");
     }
     return true;
@@ -2345,7 +2363,7 @@ bool mongocrypt_ctx_explicit_encrypt_expression_init(mongocrypt_ctx_t *ctx, mong
     if (!explicit_encrypt_init(ctx, msg)) {
         return false;
     }
-    if (!ctx->opts.query_type.set || ctx->opts.query_type.value != MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW) {
+    if (!ctx->opts.query_type.set || !(ctx->opts.query_type.value == MONGOCRYPT_QUERY_TYPE_RANGE || ctx->opts.query_type.value == MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_DEPRECATED)) {
         return _mongocrypt_ctx_fail_w_msg(ctx, "EncryptExpression may only be used for range queries.");
     }
     return true;
