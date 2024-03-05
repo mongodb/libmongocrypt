@@ -18,6 +18,7 @@
 
 #include <stdarg.h>
 
+#include "mongocrypt.h"
 #include "mongocrypt-binary-private.h"
 #include "test-mongocrypt.h"
 
@@ -82,7 +83,14 @@ static char invalid_utf8[] = {(char)0x80, (char)0x00};
 #define ASSERT_EX_DECRYPT_INIT_OK(bin) ASSERT_OK(mongocrypt_ctx_explicit_decrypt_init(ctx, bin), ctx);
 #define ASSERT_EX_DECRYPT_INIT_FAILS(bin, msg) ASSERT_FAILS(mongocrypt_ctx_explicit_decrypt_init(ctx, bin), ctx, msg);
 
-#define REFRESH                                                                                                        \
+#define REFRESH                                                                                                  \
+    do {          \
+        mongocrypt_destroy(crypt); \
+        crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);                                                                      \
+        REFRESH_CTX;                                                                            \
+    } while (0)
+
+#define REFRESH_CTX                                                                                                        \
     do {                                                                                                               \
         mongocrypt_ctx_destroy(ctx);                                                                                   \
         ctx = mongocrypt_ctx_new(crypt);                                                                               \
@@ -869,6 +877,77 @@ static void _test_setopt_for_explicit_encrypt(_mongocrypt_tester_t *tester) {
         ASSERT_OK(mongocrypt_ctx_setopt_contention_factor(ctx, 0), ctx);
         ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "Encrypt may not be used for range queries. Use EncryptExpression.");
     }
+
+    // Can't use "rangePreview" algorithm or query type with range V2.
+    {
+        mongocrypt_destroy(crypt);
+        crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_WITH_RANGE_V2);
+        REFRESH_CTX;
+        ASSERT_KEY_ID_OK(uuid);
+        ASSERT_FAILS(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_RANGEPREVIEW_DEPRECATED_STR, -1), ctx, "'rangePreview' is deprecated");
+
+        mongocrypt_destroy(crypt);
+        crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_WITH_RANGE_V2);
+        REFRESH_CTX;
+        ASSERT_KEY_ID_OK(uuid);
+        ASSERT_FAILS(mongocrypt_ctx_setopt_query_type(ctx, MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_DEPRECATED_STR, -1), ctx, "'rangePreview' is deprecated");
+    }
+
+    /* Error if query type == "rangePreview" and algorithm == "range" for range V1. */
+    // Explanation: Algorithm "rangePreview" accepts both query type "rangePreview" (for compatibility) and "range" (new behavior), but algorithm "range" only accepts query type "range". This is because if we are using the new algorithm type, we don't need to support the deprecated name for compatibility.    
+    {
+        REFRESH;
+        ASSERT_KEY_ID_OK(uuid);
+        ASSERT_OK(mongocrypt_ctx_setopt_algorithm_range(ctx, rangeopts), ctx);
+        ASSERT_ALGORITHM_OK(MONGOCRYPT_ALGORITHM_RANGE_STR, -1);
+        ASSERT_QUERY_TYPE_OK(MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_DEPRECATED_STR, -1);
+        ASSERT_OK(mongocrypt_ctx_setopt_contention_factor(ctx, 0), ctx);
+        ASSERT_EX_ENCRYPT_EXPRESSION_INIT_FAILS(bson, "must match index_type");
+    }
+
+    /* If query type == "range" and algorithm == "rangePreview", succeeds for range V1 */
+    {
+        REFRESH;
+        ASSERT_KEY_ID_OK(uuid);
+        ASSERT_OK(mongocrypt_ctx_setopt_algorithm_range(ctx, rangeopts), ctx);
+        ASSERT_ALGORITHM_OK(MONGOCRYPT_ALGORITHM_RANGEPREVIEW_DEPRECATED_STR, -1);
+        ASSERT_QUERY_TYPE_OK(MONGOCRYPT_QUERY_TYPE_RANGE_STR, -1);
+        ASSERT_OK(mongocrypt_ctx_setopt_contention_factor(ctx, 0), ctx);
+        ASSERT_EX_ENCRYPT_EXPRESSION_INIT_OK(bson);
+    }
+
+        /* If query type == algorithm == "rangePreview", succeeds for range V1. */
+    {
+        REFRESH;
+        ASSERT_KEY_ID_OK(uuid);
+        ASSERT_OK(mongocrypt_ctx_setopt_algorithm_range(ctx, rangeopts), ctx);
+        ASSERT_ALGORITHM_OK(MONGOCRYPT_ALGORITHM_RANGEPREVIEW_DEPRECATED_STR, -1);
+        ASSERT_QUERY_TYPE_OK(MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_DEPRECATED_STR, -1);
+        ASSERT_OK(mongocrypt_ctx_setopt_contention_factor(ctx, 0), ctx);
+        ASSERT_EX_ENCRYPT_EXPRESSION_INIT_OK(bson);
+    }
+
+    /* If query type == algorithm == "range", succeeds for both V2 and V1. */
+    {
+        REFRESH;
+        ASSERT_KEY_ID_OK(uuid);
+        ASSERT_OK(mongocrypt_ctx_setopt_algorithm_range(ctx, rangeopts), ctx);
+        ASSERT_ALGORITHM_OK(MONGOCRYPT_ALGORITHM_RANGE_STR, -1);
+        ASSERT_QUERY_TYPE_OK(MONGOCRYPT_QUERY_TYPE_RANGE_STR, -1);
+        ASSERT_OK(mongocrypt_ctx_setopt_contention_factor(ctx, 0), ctx);
+        ASSERT_EX_ENCRYPT_EXPRESSION_INIT_OK(bson);
+
+        mongocrypt_destroy(crypt);
+        crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_WITH_RANGE_V2);
+        REFRESH_CTX;
+        ASSERT_KEY_ID_OK(uuid);
+        ASSERT_OK(mongocrypt_ctx_setopt_algorithm_range(ctx, rangeopts), ctx);
+        ASSERT_ALGORITHM_OK(MONGOCRYPT_ALGORITHM_RANGE_STR, -1);
+        ASSERT_QUERY_TYPE_OK(MONGOCRYPT_QUERY_TYPE_RANGE_STR, -1);
+        ASSERT_OK(mongocrypt_ctx_setopt_contention_factor(ctx, 0), ctx);
+        ASSERT_EX_ENCRYPT_EXPRESSION_INIT_OK(bson);
+    }
+
 
     /* Error if query_type is unset for
      * mongocrypt_ctx_explicit_encrypt_expression_init. */

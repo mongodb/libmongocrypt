@@ -42,6 +42,8 @@ typedef enum tester_mongocrypt_flags {
     TESTER_MONGOCRYPT_WITH_CRYPT_SHARED_LIB = 1 << 0,
     /// Enable wire protocol version v1
     TESTER_MONGOCRYPT_WITH_CRYPT_V1 = 1 << 1,
+    /// Enable range V2
+    TESTER_MONGOCRYPT_WITH_RANGE_V2 = 1 << 2,
 } tester_mongocrypt_flags;
 
 /* Arbitrary max of 2048 instances of temporary test data. Increase as needed.
