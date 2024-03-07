@@ -143,6 +143,7 @@ _init_common(mongocrypt_kms_ctx_t *kms, _mongocrypt_log_t *log, _kms_request_typ
     kms->req_type = kms_type;
     _mongocrypt_buffer_init(&kms->result);
     kms->sleep_usec = 0;
+    kms->should_retry = false;
 }
 
 bool _mongocrypt_kms_ctx_init_aws_decrypt(mongocrypt_kms_ctx_t *kms,
@@ -492,6 +493,15 @@ static bool _ctx_done_aws(mongocrypt_kms_ctx_t *kms, const char *json_field) {
         goto fail;
     }
     body = kms_response_get_body(response, &body_len);
+
+    // zz handle all of them
+    if (http_status == 429) {
+        ret = true;
+        // Set non-ok status so the parser knows to stop
+        mongocrypt_status_set(kms->status, MONGOCRYPT_STATUS_ERROR_KMS, 1, "retry", -1);
+        kms->should_retry = true;
+        goto fail;
+    }
 
     if (http_status != 200) {
         _handle_non200_http_status(http_status, body, body_len, status);
