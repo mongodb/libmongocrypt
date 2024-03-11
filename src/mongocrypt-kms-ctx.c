@@ -500,6 +500,7 @@ static bool _ctx_done_aws(mongocrypt_kms_ctx_t *kms, const char *json_field) {
         // Set non-ok status so the parser knows to stop
         mongocrypt_status_set(kms->status, MONGOCRYPT_STATUS_ERROR_KMS, 1, "retry", -1);
         kms->should_retry = true;
+        // zz track retry count
         goto fail;
     }
 
