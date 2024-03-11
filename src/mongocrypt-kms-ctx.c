@@ -143,6 +143,7 @@ _init_common(mongocrypt_kms_ctx_t *kms, _mongocrypt_log_t *log, _kms_request_typ
     kms->req_type = kms_type;
     _mongocrypt_buffer_init(&kms->result);
     kms->sleep_usec = 0;
+    kms->attempts = 0;
     kms->should_retry = false;
 }
 
@@ -464,6 +465,42 @@ _handle_non200_http_status(int http_status, const char *body, size_t body_len, m
     CLIENT_ERR("Error in KMS response. HTTP status=%d. Response body=\n%s", http_status, body);
 }
 
+static int64_t backoff_time_usec(int attempts) {
+    static bool seeded = false;
+    if (!seeded) {
+        srand((uint32_t) time(NULL));
+        seeded = true;
+    }
+
+    /* Exponential backoff with jitter. */
+    const int64_t base = 200000; /* 0.2 seconds */
+    const int64_t max = 20000000; /* 20 seconds */
+    int64_t backoff = base * (1 << attempts);
+    if (backoff > max) {
+        backoff = max;
+    }
+
+    /* Full jitter: between zero and current max */
+    return (int64_t) ((double) rand() / (double) RAND_MAX) * backoff;
+}
+
+static bool should_retry_http(int http_status) {
+    static const int RETRYABLE[] = {408, 429, 500, 502, 503, 509};
+    for (size_t i = 0; i < sizeof(RETRYABLE); i++) {
+        if (http_status == RETRYABLE[i]) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static void set_retry(mongocrypt_kms_ctx_t *kms) {
+    // Set non-ok status so the parser knows to stop
+    mongocrypt_status_set(kms->status, MONGOCRYPT_STATUS_ERROR_KMS, 1, "retrying", -1);
+    kms->should_retry = true;
+    kms->sleep_usec = backoff_time_usec(++kms->attempts);
+}
+
 /* An AWS KMS context has received full response. Parse out the result or error.
  */
 static bool _ctx_done_aws(mongocrypt_kms_ctx_t *kms, const char *json_field) {
@@ -495,12 +532,9 @@ static bool _ctx_done_aws(mongocrypt_kms_ctx_t *kms, const char *json_field) {
     body = kms_response_get_body(response, &body_len);
 
     // zz handle all of them
-    if (http_status == 429) {
+    if (should_retry_http(http_status)) {
         ret = true;
-        // Set non-ok status so the parser knows to stop
-        mongocrypt_status_set(kms->status, MONGOCRYPT_STATUS_ERROR_KMS, 1, "retry", -1);
-        kms->should_retry = true;
-        // zz track retry count
+        set_retry(kms);
         goto fail;
     }
 
@@ -683,6 +717,12 @@ static bool _ctx_done_azure_wrapkey_unwrapkey(mongocrypt_kms_ctx_t *kms) {
         goto fail;
     }
 
+    if (should_retry_http(http_status)) {
+        ret = true;
+        set_retry(kms);
+        goto fail;
+    }
+
     if (http_status != 200) {
         _handle_non200_http_status(http_status, body, body_len, status);
         goto fail;
@@ -755,6 +795,12 @@ static bool _ctx_done_gcp(mongocrypt_kms_ctx_t *kms, const char *json_field) {
         goto fail;
     }
     body = kms_response_get_body(response, &body_len);
+
+    if (should_retry_http(http_status)) {
+        ret = true;
+        set_retry(kms);
+        goto fail;
+    }
 
     if (http_status != 200) {
         _handle_non200_http_status(http_status, body, body_len, status);
