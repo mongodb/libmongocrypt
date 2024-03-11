@@ -920,7 +920,7 @@ static bool _ctx_done_kmip_encrypt(mongocrypt_kms_ctx_t *kms_ctx) {
     iv = kms_kmip_response_get_iv(res, &iv_len);
     if (!iv) {
         CLIENT_ERR("Error getting IV from KMIP Encrypt response: %s", kms_response_get_error(res));
-        bson_free (ciphertext);
+        bson_free(ciphertext);
         goto done;
     }
 
