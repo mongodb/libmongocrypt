@@ -494,6 +494,9 @@ mongocrypt_t *_mongocrypt_tester_mongocrypt(tester_mongocrypt_flags flags) {
     if (flags & TESTER_MONGOCRYPT_WITH_CRYPT_SHARED_LIB) {
         mongocrypt_setopt_append_crypt_shared_lib_search_path(crypt, "$ORIGIN");
     }
+    if (flags & TESTER_MONGOCRYPT_WITH_RANGE_V2) {
+        ASSERT(mongocrypt_enable_range_v2(crypt));
+    }
     ASSERT_OK(mongocrypt_init(crypt), crypt);
     if (flags & TESTER_MONGOCRYPT_WITH_CRYPT_SHARED_LIB) {
         if (mongocrypt_crypt_shared_lib_version(crypt) == 0) {

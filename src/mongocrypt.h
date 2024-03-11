@@ -674,10 +674,9 @@ bool mongocrypt_ctx_setopt_algorithm(mongocrypt_ctx_t *ctx, const char *algorith
 #define MONGOCRYPT_ALGORITHM_INDEXED_STR "Indexed"
 /// String constant for setopt_algorithm "Unindexed" explicit encryption
 #define MONGOCRYPT_ALGORITHM_UNINDEXED_STR "Unindexed"
-/// String constant for setopt_algorithm "rangePreview" explicit encryption
-/// NOTE: The RangePreview algorithm is experimental only. It is not intended
-/// for public use.
-#define MONGOCRYPT_ALGORITHM_RANGEPREVIEW_STR "RangePreview"
+/// String constant for setopt_algorithm "rangePreview" explicit encryption (deprecated in favor of "range")
+#define MONGOCRYPT_ALGORITHM_RANGEPREVIEW_DEPRECATED_STR "RangePreview"
+#define MONGOCRYPT_ALGORITHM_RANGE_STR "Range"
 
 /**
  * Identify the AWS KMS master key to use for creating a data key.
@@ -866,9 +865,7 @@ bool mongocrypt_ctx_explicit_encrypt_init(mongocrypt_ctx_t *ctx, mongocrypt_bina
 /**
  * Explicit helper method to encrypt a Match Expression or Aggregate Expression.
  * Contexts created for explicit encryption will not go through mongocryptd.
- * Requires query_type to be "rangePreview".
- * NOTE: The RangePreview algorithm is experimental only. It is not intended for
- * public use.
+ * Requires query_type to be "range" or "rangePreview".
  *
  * This method expects the passed-in BSON to be of the form:
  * { "v" : FLE2RangeFindDriverSpec }
@@ -1430,9 +1427,7 @@ MONGOCRYPT_EXPORT
 bool mongocrypt_ctx_setopt_query_type(mongocrypt_ctx_t *ctx, const char *query_type, int len);
 
 /**
- * Set options for explicit encryption with the "rangePreview" algorithm.
- * NOTE: The RangePreview algorithm is experimental only. It is not intended for
- * public use.
+ * Set options for explicit encryption with the "range" algorithm.
  *
  * @p opts is a BSON document of the form:
  * {
@@ -1454,8 +1449,8 @@ bool mongocrypt_ctx_setopt_algorithm_range(mongocrypt_ctx_t *ctx, mongocrypt_bin
 
 /// String constants for setopt_query_type
 #define MONGOCRYPT_QUERY_TYPE_EQUALITY_STR "equality"
-// NOTE: The RangePreview algorithm is experimental only. It is not intended for
-// public use.
-#define MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_STR "rangePreview"
+// 'rangePreview' is deprecated in favor of range.
+#define MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_DEPRECATED_STR "rangePreview"
+#define MONGOCRYPT_QUERY_TYPE_RANGE_STR "range"
 
 #endif /* MONGOCRYPT_H */
