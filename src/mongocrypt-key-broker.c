@@ -734,7 +734,6 @@ bool _mongocrypt_key_broker_add_doc(_mongocrypt_key_broker_t *kb,
 done:
     bson_free(access_token);
     _mongocrypt_key_destroy(key_doc);
-    _mongocrypt_buffer_cleanup(&iv);
     return ret;
 }
 
