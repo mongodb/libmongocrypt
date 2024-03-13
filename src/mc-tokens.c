@@ -15,6 +15,7 @@
  */
 
 #include "mc-tokens-private.h"
+#include "mongocrypt-buffer-private.h"
 
 /// Define a token type of the given name, with constructor parameters given as
 /// the remaining arguments. This macro usage should be followed by the
@@ -28,7 +29,9 @@
         _mongocrypt_buffer_t data;                                                                                     \
     };                                                                                                                 \
     /* Data-getter */                                                                                                  \
-    const _mongocrypt_buffer_t *CONCAT(Prefix, _get)(const T *self) { return &self->data; }                            \
+    const _mongocrypt_buffer_t *CONCAT(Prefix, _get)(const T *self) {                                                  \
+        return &self->data;                                                                                            \
+    }                                                                                                                  \
     /* Destructor */                                                                                                   \
     void CONCAT(Prefix, _destroy)(T * self) {                                                                          \
         if (!self) {                                                                                                   \
@@ -156,3 +159,17 @@ IMPL_TOKEN_NEW_CONST(mc_ServerCountAndContentionFactorEncryptionToken,
 
 DEF_TOKEN_TYPE(mc_ServerZerosEncryptionToken, const mc_ServerDerivedFromDataToken_t *serverDerivedFromDataToken)
 IMPL_TOKEN_NEW_CONST(mc_ServerZerosEncryptionToken, mc_ServerDerivedFromDataToken_get(serverDerivedFromDataToken), 2)
+
+// d = 17 bytes of 0, AnchorPaddingTokenRoot = HMAC(ESCToken, d)
+const uint8_t mc_AnchorPaddingTokenDValue[17] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+DEF_TOKEN_TYPE(mc_AnchorPaddingTokenRoot, const mc_ESCToken_t *ESCToken) {
+    _mongocrypt_buffer_t to_hash;
+    if (!_mongocrypt_buffer_copy_from_data_and_size(&to_hash, mc_AnchorPaddingTokenDValue, 17)) {
+        return NULL;
+    }
+    IMPL_TOKEN_NEW_1(mc_AnchorPaddingTokenRoot,
+                     mc_ESCToken_get(ESCToken),
+                     &to_hash,
+                     _mongocrypt_buffer_cleanup(&to_hash))
+}

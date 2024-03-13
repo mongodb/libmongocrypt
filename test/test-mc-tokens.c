@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 #include "mc-tokens-private.h"
+#include "test-mongocrypt-assert.h"
 #include "test-mongocrypt.h"
 
 #define FOREACH_FIELD(F)                                                                                               \
@@ -37,7 +38,8 @@
     F(ESCTwiceDerivedTagToken)                                                                                         \
     F(ESCTwiceDerivedValueToken)                                                                                       \
     F(serverCountAndContentionFactorEncryptionToken)                                                                   \
-    F(serverZerosEncryptionToken)
+    F(serverZerosEncryptionToken)                                                                                      \
+    F(AnchorPaddingTokenRoot)
 
 typedef struct {
 #define DECLARE_FIELD(f) _mongocrypt_buffer_t f;
@@ -186,7 +188,13 @@ static void _mc_token_test_run(_mongocrypt_tester_t *tester, const char *path) {
     ASSERT_OR_PRINT(serverZeros, status);
     ASSERT_CMPBUF(*mc_ServerZerosEncryptionToken_get(serverZeros), test.serverZerosEncryptionToken);
 
+    // AnchorPaddingTokenRoot
+    mc_AnchorPaddingTokenRoot_t *padding = mc_AnchorPaddingTokenRoot_new(crypt->crypto, ESCToken, status);
+    ASSERT_OR_PRINT(padding, status);
+    ASSERT_CMPBUF(*mc_AnchorPaddingTokenRoot_get(padding), test.AnchorPaddingTokenRoot);
+
     // Done.
+    mc_AnchorPaddingTokenRoot_destroy(padding);
     mc_ServerZerosEncryptionToken_destroy(serverZeros);
     mc_ServerCountAndContentionFactorEncryptionToken_destroy(serverCACFET);
     mc_ServerDerivedFromDataToken_destroy(serverDerivedFromDataToken);
