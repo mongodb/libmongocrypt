@@ -161,11 +161,15 @@ DEF_TOKEN_TYPE(mc_ServerZerosEncryptionToken, const mc_ServerDerivedFromDataToke
 IMPL_TOKEN_NEW_CONST(mc_ServerZerosEncryptionToken, mc_ServerDerivedFromDataToken_get(serverDerivedFromDataToken), 2)
 
 // d = 17 bytes of 0, AnchorPaddingTokenRoot = HMAC(ESCToken, d)
-const uint8_t mc_AnchorPaddingTokenDValue[17] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+#define ANCHOR_PADDING_TOKEN_D_LENGTH 17
+const uint8_t mc_AnchorPaddingTokenDValue[ANCHOR_PADDING_TOKEN_D_LENGTH] =
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 DEF_TOKEN_TYPE(mc_AnchorPaddingTokenRoot, const mc_ESCToken_t *ESCToken) {
     _mongocrypt_buffer_t to_hash;
-    if (!_mongocrypt_buffer_copy_from_data_and_size(&to_hash, mc_AnchorPaddingTokenDValue, 17)) {
+    if (!_mongocrypt_buffer_copy_from_data_and_size(&to_hash,
+                                                    mc_AnchorPaddingTokenDValue,
+                                                    ANCHOR_PADDING_TOKEN_D_LENGTH)) {
         return NULL;
     }
     IMPL_TOKEN_NEW_1(mc_AnchorPaddingTokenRoot,
@@ -173,3 +177,5 @@ DEF_TOKEN_TYPE(mc_AnchorPaddingTokenRoot, const mc_ESCToken_t *ESCToken) {
                      &to_hash,
                      _mongocrypt_buffer_cleanup(&to_hash))
 }
+
+#undef ANCHOR_PADDING_TOKEN_D_LENGTH
