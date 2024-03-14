@@ -26,6 +26,7 @@ struct _mc_edges_t {
     uint32_t trimFactor;
     /* edges is an array of `char*` edge strings. */
     mc_array_t edges;
+    char *leaf;
 };
 
 static mc_edges_t *mc_edges_new(const char *leaf, size_t sparsity, uint32_t trimFactor, mongocrypt_status_t *status) {
@@ -47,6 +48,7 @@ static mc_edges_t *mc_edges_new(const char *leaf, size_t sparsity, uint32_t trim
     mc_edges_t *edges = bson_malloc0(sizeof(mc_edges_t));
     edges->sparsity = sparsity;
     _mc_array_init(&edges->edges, sizeof(char *));
+    edges->leaf = bson_strdup(leaf);
 
     if (trimFactor == 0) {
         char *root = bson_strdup("root");
@@ -91,7 +93,12 @@ void mc_edges_destroy(mc_edges_t *edges) {
         bson_free(val);
     }
     _mc_array_destroy(&edges->edges);
+    bson_free(edges->leaf);
     bson_free(edges);
+}
+
+const bool mc_edges_is_leaf(const mc_edges_t *edges, const char *edge) {
+    return strcmp(edge, edges->leaf) == 0;
 }
 
 mc_bitstring mc_convert_to_bitstring_u64(uint64_t in) {

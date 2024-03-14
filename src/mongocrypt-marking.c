@@ -377,9 +377,11 @@ static bool _fle2_placeholder_aes_aead_encrypt(_mongocrypt_key_broker_t *kb,
 //                            ECCDerivedFromDataTokenAndContentionFactor)
 static bool _fle2_derive_encrypted_token(_mongocrypt_crypto_t *crypto,
                                          _mongocrypt_buffer_t *out,
+                                         bool use_range_v2,
                                          const mc_CollectionsLevel1Token_t *collectionsLevel1Token,
                                          const _mongocrypt_buffer_t *escDerivedToken,
                                          const _mongocrypt_buffer_t *eccDerivedToken,
+                                         bool is_leaf,
                                          mongocrypt_status_t *status) {
     mc_ECOCToken_t *ecocToken = mc_ECOCToken_new(crypto, collectionsLevel1Token, status);
     if (!ecocToken) {
@@ -392,7 +394,22 @@ static bool _fle2_derive_encrypted_token(_mongocrypt_crypto_t *crypto,
     const _mongocrypt_buffer_t *p = &tmp;
     if (!eccDerivedToken) {
         // FLE2v2
-        p = escDerivedToken;
+        if (use_range_v2) {
+            // Range V2; concat isLeaf
+            _mongocrypt_buffer_t isLeafBuf;
+            if (!_mongocrypt_buffer_copy_from_data_and_size(&isLeafBuf, (uint8_t[]){is_leaf}, 1)) {
+                CLIENT_ERR("failed to create is_leaf buffer");
+                _mongocrypt_buffer_cleanup(&isLeafBuf);
+                goto fail;
+            }
+            if (!_mongocrypt_buffer_concat(&tmp, (_mongocrypt_buffer_t[]){*escDerivedToken, isLeafBuf}, 2)) {
+                CLIENT_ERR("failed to allocate buffer");
+                goto fail;
+            }
+        } else {
+            p = escDerivedToken;
+        }
+
     } else {
         // FLE2v1
         const _mongocrypt_buffer_t tokens[] = {*escDerivedToken, *eccDerivedToken};
@@ -582,6 +599,7 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_common_v1(_mongocrypt_
     BSON_ASSERT_PARAM(value_iter);
     BSON_ASSERT(kb->crypt);
     BSON_ASSERT(kb->crypt->opts.use_fle2_v2 == false);
+    BSON_ASSERT(kb->crypt->opts.use_range_v2 == false);
     BSON_ASSERT(placeholder->type == MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT);
 
     _mongocrypt_crypto_t *crypto = kb->crypt->crypto;
@@ -619,9 +637,11 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_common_v1(_mongocrypt_
     // ECCDerivedFromDataTokenAndContentionFactor)
     if (!_fle2_derive_encrypted_token(crypto,
                                       &out->encryptedTokens,
+                                      false, // Can't use range V2 with FLE V1
                                       common->collectionsLevel1Token,
                                       &out->escDerivedToken,
                                       &out->eccDerivedToken,
+                                      false, // Dummy value for isLeaf, which is unused in V1
                                       status)) {
         goto fail;
     }
@@ -763,9 +783,11 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_common(_mongocrypt_key
     // p := EncryptCBC(ECOCToken, ESCDerivedFromDataTokenAndContentionFactor)
     if (!_fle2_derive_encrypted_token(crypto,
                                       &out->encryptedTokens,
+                                      kb->crypt->opts.use_range_v2,
                                       common->collectionsLevel1Token,
                                       &out->escDerivedToken,
-                                      NULL, // unused in v2
+                                      NULL,  // unused in v2
+                                      false, // TODO is this correct for isLeaf
                                       status)) {
         goto fail;
     }
@@ -963,6 +985,7 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange_v1(
     BSON_ASSERT_PARAM(status);
     BSON_ASSERT(kb->crypt);
     BSON_ASSERT(kb->crypt->opts.use_fle2_v2 == false);
+    BSON_ASSERT(kb->crypt->opts.use_range_v2 == false);
     BSON_ASSERT(marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION);
     BSON_ASSERT(marking->fle2.algorithm == MONGOCRYPT_FLE2_ALGORITHM_RANGE);
 
@@ -1034,9 +1057,11 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange_v1(
             // ECCDerivedFromDataTokenAndContentionFactor)
             if (!_fle2_derive_encrypted_token(kb->crypt->crypto,
                                               &etc.encryptedTokens,
+                                              false, // Range V2 is incompatible with FLE V1
                                               edge_tokens.collectionsLevel1Token,
                                               &etc.escDerivedToken,
                                               &etc.eccDerivedToken,
+                                              false, // Dummy value for isLeaf, unused in FLE V1
                                               status)) {
                 goto fail_loop;
             }
@@ -1135,6 +1160,7 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange(_mo
             // Create an EdgeTokenSet from each edge.
             bool loop_ok = false;
             const char *edge = mc_edges_get(edges, i);
+            bool is_leaf = mc_edges_is_leaf(edges, edge);
             _mongocrypt_buffer_t edge_buf = {0};
             _FLE2EncryptedPayloadCommon_t edge_tokens = {{0}};
             _mongocrypt_buffer_t encryptedTokens = {0};
@@ -1165,11 +1191,14 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange(_mo
             _mongocrypt_buffer_steal(&etc.serverDerivedFromDataToken, &edge_tokens.serverDerivedFromDataToken);
 
             // p := EncryptCBC(ECOCToken, ESCDerivedFromDataTokenAndContentionFactor)
+            // NEW in Range V2: p := EncryptCBC(ECOCToken, ESCDerivedFromDataTokenAndContentionFactor || isLeaf)
             if (!_fle2_derive_encrypted_token(kb->crypt->crypto,
                                               &etc.encryptedTokens,
+                                              kb->crypt->opts.use_range_v2,
                                               edge_tokens.collectionsLevel1Token,
                                               &etc.escDerivedToken,
                                               NULL, // ecc unsed in FLE2v2
+                                              is_leaf,
                                               status)) {
                 goto fail_loop;
             }
