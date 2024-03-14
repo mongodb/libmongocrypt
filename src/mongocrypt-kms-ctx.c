@@ -927,18 +927,21 @@ static bool _ctx_done_kmip_encrypt(mongocrypt_kms_ctx_t *kms_ctx) {
     if (iv_len != MONGOCRYPT_IV_LEN) {
         CLIENT_ERR("KMIP IV response has unexpected length: %zu", iv_len);
         bson_free(ciphertext);
+        bson_free(iv);
         goto done;
     }
 
     if (!_mongocrypt_buffer_steal_from_data_and_size(&data_buf, ciphertext, ciphertext_len)) {
         CLIENT_ERR("Error storing KMS Encrypt result");
         bson_free(ciphertext);
+        bson_free(iv);
         goto done;
     }
 
     if (!_mongocrypt_buffer_steal_from_data_and_size(&iv_buf, iv, iv_len)) {
         CLIENT_ERR("Error storing KMS Encrypt IV");
         bson_free(ciphertext);
+        bson_free(iv);
         goto done;
     }
 
@@ -952,6 +955,8 @@ static bool _ctx_done_kmip_encrypt(mongocrypt_kms_ctx_t *kms_ctx) {
 
 done:
     kms_response_destroy(res);
+    _mongocrypt_buffer_cleanup(&iv_buf);
+    _mongocrypt_buffer_cleanup(&data_buf);
     return ret;
 }
 
