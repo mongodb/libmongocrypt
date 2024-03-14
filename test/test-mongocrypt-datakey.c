@@ -280,8 +280,7 @@ static void _test_datakey_kms_per_ctx_credentials_local(_mongocrypt_tester_t *te
     mongocrypt_binary_t *bin;
     bson_t key_bson;
     bson_iter_t iter;
-    const char *local_kek = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
-                            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+    char *local_kek = repeat_char('A', MONGOCRYPT_KEY_LEN);
 
     crypt = mongocrypt_new();
     mongocrypt_setopt_use_need_kms_credentials_state(crypt);
@@ -310,6 +309,7 @@ static void _test_datakey_kms_per_ctx_credentials_local(_mongocrypt_tester_t *te
     mongocrypt_binary_destroy(bin);
     mongocrypt_ctx_destroy(ctx);
     mongocrypt_destroy(crypt);
+    bson_free(local_kek);
 }
 
 static void _test_datakey_custom_key_material(_mongocrypt_tester_t *tester) {

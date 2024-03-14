@@ -36,4 +36,7 @@ void bson_iter_bson(bson_iter_t *iter, bson_t *bson);
 // Useful for KMIP. The KMIP response parser expects two calls: (length, then data).
 bool kms_ctx_feed_all(mongocrypt_kms_ctx_t *kms_ctx, const uint8_t *data, uint32_t datalen);
 
+// `repeat_char` returns a string of a repeated character.
+char *repeat_char(char c, size_t count);
+
 #endif /* TEST_MONGOCRYPT_UTIL_H */

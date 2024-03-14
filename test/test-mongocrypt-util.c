@@ -91,3 +91,14 @@ bool kms_ctx_feed_all(mongocrypt_kms_ctx_t *kms_ctx, const uint8_t *data, uint32
 
     return true;
 }
+
+// `repeat_char` returns a string of a repeated character.
+char *repeat_char(char c, size_t count) {
+    char *str = bson_malloc(sizeof(char) * (count + 1));
+    size_t i;
+    for (i = 0; i < (count + 1); i++) {
+        str[i] = c;
+    }
+    str[i] = '\0';
+    return str;
+}
