@@ -1383,6 +1383,17 @@ MONGOCRYPT_EXPORT
 void mongocrypt_setopt_bypass_query_analysis(mongocrypt_t *crypt);
 
 /**
+ * @brief Opt-into use of Queryable Encryption Range V2 protocol.
+ *
+ * @param[in] crypt The @ref mongocrypt_t object.
+ *
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_status
+ */
+MONGOCRYPT_EXPORT
+bool mongocrypt_setopt_use_range_v2(mongocrypt_t *crypt);
+
+/**
  * Set the contention factor used for explicit encryption.
  * The contention factor is only used for indexed Queryable Encryption.
  *
