@@ -6,6 +6,13 @@ set -euo pipefail
 
 : "${EARTHLY_VERSION:=0.7.8}"
 
+# Bring in the debian/ directory from the debian/unstable branch
+pushd "$(dirname "${BASH_SOURCE[0]}")/../"
+    (git remote | grep -q upstream) || git remote add upstream https://github.com/mongodb/libmongocrypt
+    git fetch upstream
+    git checkout $(git rev-parse upstream/debian/unstable) -- debian
+popd
+
 # Calc the arch of the executable we want
 arch="$(uname -m)"
 case "$arch" in
