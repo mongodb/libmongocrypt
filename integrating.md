@@ -137,6 +137,23 @@ A result from a listCollections cursor.
 
 auto encrypt
 
+#### State: `MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB` ####
+
+**libmongocrypt needs**...
+
+Results from a listCollections cursor from a specified database.
+
+**Driver needs to...**
+
+1.  Run listCollections on the encrypted MongoClient with the filter
+    provided by `mongocrypt_ctx_mongo_op` on the database provided by `mongocrypt_ctx_mongo_db`.
+2.  Return the first result (if any) with `mongocrypt_ctx_mongo_feed` or proceed to the next step if nothing was returned.
+3.  Call `mongocrypt_ctx_mongo_done`
+
+**Applies to...**
+
+A context initialized with `mongocrypt_ctx_encrypt_init` for automatic encryption. This state is only entered when `mongocrypt_setopt_use_need_mongo_collinfo_with_db_state` is called to opt-in.
+
 #### State: `MONGOCRYPT_CTX_NEED_MONGO_MARKINGS` ####
 
 **libmongocrypt needs**...

@@ -474,6 +474,18 @@ MONGOCRYPT_EXPORT
 void mongocrypt_setopt_use_need_kms_credentials_state(mongocrypt_t *crypt);
 
 /**
+ * @brief Opt-into handling the MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB state.
+ *
+ * A context enters the MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB state when
+ * processing a `bulkWrite` command. The target database of the `bulkWrite` may differ from the command database
+ * ("admin").
+ *
+ * @param[in] crypt The @ref mongocrypt_t object to update
+ */
+MONGOCRYPT_EXPORT
+void mongocrypt_setopt_use_need_mongo_collinfo_with_db_state(mongocrypt_t *crypt);
+
+/**
  * Initialize new @ref mongocrypt_t object.
  *
  * Set options before using @ref mongocrypt_setopt_kms_provider_local, @ref
@@ -962,9 +974,10 @@ bool mongocrypt_ctx_rewrap_many_datakey_init(mongocrypt_ctx_t *ctx, mongocrypt_b
  */
 typedef enum {
     MONGOCRYPT_CTX_ERROR = 0,
-    MONGOCRYPT_CTX_NEED_MONGO_COLLINFO = 1, /* run on main MongoClient */
-    MONGOCRYPT_CTX_NEED_MONGO_MARKINGS = 2, /* run on mongocryptd. */
-    MONGOCRYPT_CTX_NEED_MONGO_KEYS = 3,     /* run on key vault */
+    MONGOCRYPT_CTX_NEED_MONGO_COLLINFO = 1,         /* run on main MongoClient */
+    MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB = 8, /* run on main MongoClient */
+    MONGOCRYPT_CTX_NEED_MONGO_MARKINGS = 2,         /* run on mongocryptd. */
+    MONGOCRYPT_CTX_NEED_MONGO_KEYS = 3,             /* run on key vault */
     MONGOCRYPT_CTX_NEED_KMS = 4,
     MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS = 7, /* fetch/renew KMS credentials */
     MONGOCRYPT_CTX_READY = 5,                /* ready for encryption/decryption */
@@ -985,7 +998,7 @@ mongocrypt_ctx_state_t mongocrypt_ctx_state(mongocrypt_ctx_t *ctx);
  * is in MONGOCRYPT_CTX_NEED_MONGO_* states.
  *
  * @p op_bson is a BSON document to be used for the operation.
- * - For MONGOCRYPT_CTX_NEED_MONGO_COLLINFO it is a listCollections filter.
+ * - For MONGOCRYPT_CTX_NEED_MONGO_COLLINFO(_WITH_DB) it is a listCollections filter.
  * - For MONGOCRYPT_CTX_NEED_MONGO_KEYS it is a find filter.
  * - For MONGOCRYPT_CTX_NEED_MONGO_MARKINGS it is a command to send to
  * mongocryptd.
@@ -1004,12 +1017,28 @@ MONGOCRYPT_EXPORT
 bool mongocrypt_ctx_mongo_op(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *op_bson);
 
 /**
+ * Get the database to run the mongo operation.
+ *
+ * Only applies when mongocrypt_ctx_t is in the state:
+ * MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB.
+ *
+ * The lifetime of the returned string is tied to the lifetime of @p ctx. It is
+ * valid until @ref mongocrypt_ctx_destroy is called.
+ *
+ * @param[in] ctx The @ref mongocrypt_ctx_t object.
+ * @returns A string or NULL. If NULL, an error status is set. Retrieve it with
+ * @ref mongocrypt_ctx_status
+ */
+MONGOCRYPT_EXPORT
+const char *mongocrypt_ctx_mongo_db(mongocrypt_ctx_t *ctx);
+
+/**
  * Feed a BSON reply or result when mongocrypt_ctx_t is in
  * MONGOCRYPT_CTX_NEED_MONGO_* states. This may be called multiple times
  * depending on the operation.
  *
  * reply is a BSON document result being fed back for this operation.
- * - For MONGOCRYPT_CTX_NEED_MONGO_COLLINFO it is a doc from a listCollections
+ * - For MONGOCRYPT_CTX_NEED_MONGO_COLLINFO(_WITH_DB) it is a doc from a listCollections
  * cursor. (Note, if listCollections returned no result, do not call this
  * function.)
  * - For MONGOCRYPT_CTX_NEED_MONGO_KEYS it is a doc from a find cursor.
@@ -1381,6 +1410,17 @@ bool mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5(mongocrypt_t *crypt,
  */
 MONGOCRYPT_EXPORT
 void mongocrypt_setopt_bypass_query_analysis(mongocrypt_t *crypt);
+
+/**
+ * @brief Opt-into use of Queryable Encryption Range V2 protocol.
+ *
+ * @param[in] crypt The @ref mongocrypt_t object.
+ *
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_status
+ */
+MONGOCRYPT_EXPORT
+bool mongocrypt_setopt_use_range_v2(mongocrypt_t *crypt);
 
 /**
  * Set the contention factor used for explicit encryption.

@@ -31,7 +31,7 @@
 static bool _fle2_append_encryptedFieldConfig(const mongocrypt_ctx_t *ctx,
                                               bson_t *dst,
                                               bson_t *encryptedFieldConfig,
-                                              const char *coll_name,
+                                              const char *target_coll,
                                               mongocrypt_status_t *status) {
     bson_iter_t iter;
     bool has_escCollection = false;
@@ -40,7 +40,7 @@ static bool _fle2_append_encryptedFieldConfig(const mongocrypt_ctx_t *ctx,
 
     BSON_ASSERT_PARAM(dst);
     BSON_ASSERT_PARAM(encryptedFieldConfig);
-    BSON_ASSERT_PARAM(coll_name);
+    BSON_ASSERT_PARAM(target_coll);
 
     if (!bson_iter_init(&iter, encryptedFieldConfig)) {
         CLIENT_ERR("unable to iterate encryptedFieldConfig");
@@ -64,7 +64,7 @@ static bool _fle2_append_encryptedFieldConfig(const mongocrypt_ctx_t *ctx,
     }
 
     if (!has_escCollection) {
-        char *default_escCollection = bson_strdup_printf("enxcol_.%s.esc", coll_name);
+        char *default_escCollection = bson_strdup_printf("enxcol_.%s.esc", target_coll);
         if (!BSON_APPEND_UTF8(dst, "escCollection", default_escCollection)) {
             CLIENT_ERR("unable to append escCollection");
             bson_free(default_escCollection);
@@ -73,7 +73,7 @@ static bool _fle2_append_encryptedFieldConfig(const mongocrypt_ctx_t *ctx,
         bson_free(default_escCollection);
     }
     if (!has_eccCollection && !ctx->crypt->opts.use_fle2_v2) {
-        char *default_eccCollection = bson_strdup_printf("enxcol_.%s.ecc", coll_name);
+        char *default_eccCollection = bson_strdup_printf("enxcol_.%s.ecc", target_coll);
         if (!BSON_APPEND_UTF8(dst, "eccCollection", default_eccCollection)) {
             CLIENT_ERR("unable to append eccCollection");
             bson_free(default_eccCollection);
@@ -82,7 +82,7 @@ static bool _fle2_append_encryptedFieldConfig(const mongocrypt_ctx_t *ctx,
         bson_free(default_eccCollection);
     }
     if (!has_ecocCollection) {
-        char *default_ecocCollection = bson_strdup_printf("enxcol_.%s.ecoc", coll_name);
+        char *default_ecocCollection = bson_strdup_printf("enxcol_.%s.ecoc", target_coll);
         if (!BSON_APPEND_UTF8(dst, "ecocCollection", default_ecocCollection)) {
             CLIENT_ERR("unable to append ecocCollection");
             bson_free(default_ecocCollection);
@@ -95,20 +95,20 @@ static bool _fle2_append_encryptedFieldConfig(const mongocrypt_ctx_t *ctx,
 
 static bool _fle2_append_encryptionInformation(const mongocrypt_ctx_t *ctx,
                                                bson_t *dst,
-                                               const char *ns,
+                                               const char *target_ns,
                                                bson_t *encryptedFieldConfig,
                                                bson_t *deleteTokens,
-                                               const char *coll_name,
+                                               const char *target_coll,
                                                mongocrypt_status_t *status) {
     bson_t encryption_information_bson;
     bson_t schema_bson;
     bson_t encrypted_field_config_bson;
 
     BSON_ASSERT_PARAM(dst);
-    BSON_ASSERT_PARAM(ns);
+    BSON_ASSERT_PARAM(target_ns);
     BSON_ASSERT_PARAM(encryptedFieldConfig);
     /* deleteTokens may be NULL */
-    BSON_ASSERT_PARAM(coll_name);
+    BSON_ASSERT_PARAM(target_coll);
 
     if (!BSON_APPEND_DOCUMENT_BEGIN(dst, "encryptionInformation", &encryption_information_bson)) {
         CLIENT_ERR("unable to begin appending 'encryptionInformation'");
@@ -123,7 +123,7 @@ static bool _fle2_append_encryptionInformation(const mongocrypt_ctx_t *ctx,
         return false;
     }
 
-    if (!BSON_APPEND_DOCUMENT_BEGIN(&schema_bson, ns, &encrypted_field_config_bson)) {
+    if (!BSON_APPEND_DOCUMENT_BEGIN(&schema_bson, target_ns, &encrypted_field_config_bson)) {
         CLIENT_ERR("unable to begin appending 'encryptedFieldConfig' to "
                    "'encryptionInformation'.'schema'");
         return false;
@@ -132,7 +132,7 @@ static bool _fle2_append_encryptionInformation(const mongocrypt_ctx_t *ctx,
     if (!_fle2_append_encryptedFieldConfig(ctx,
                                            &encrypted_field_config_bson,
                                            encryptedFieldConfig,
-                                           coll_name,
+                                           target_coll,
                                            status)) {
         return false;
     }
@@ -154,8 +154,8 @@ static bool _fle2_append_encryptionInformation(const mongocrypt_ctx_t *ctx,
                        "'encryptionInformation'");
             return false;
         }
-        if (!BSON_APPEND_DOCUMENT(&delete_tokens_bson, ns, deleteTokens)) {
-            CLIENT_ERR("unable to append '%s' to 'deleteTokens'", ns);
+        if (!BSON_APPEND_DOCUMENT(&delete_tokens_bson, target_ns, deleteTokens)) {
+            CLIENT_ERR("unable to append '%s' to 'deleteTokens'", target_ns);
             return false;
         }
         if (!bson_append_document_end(&encryption_information_bson, &delete_tokens_bson)) {
@@ -179,12 +179,12 @@ typedef enum { MC_TO_CSFLE, MC_TO_MONGOCRYPTD, MC_TO_MONGOD } mc_cmd_target_t;
  *
  * @param cmd_name The name of the command.
  * @param cmd The command being rewritten. It is an input and output.
- * @param ns The <db>.<collection> namespace for the command.
+ * @param target_ns The <db>.<collection> namespace for the command.
  * @param encryptedFieldConfig The "encryptedFields" document for the
  * collection.
  * @param deleteTokens Delete tokens to append to "encryptionInformation". May
  * be NULL.
- * @param coll_name The collection name.
+ * @param target_coll The collection name.
  * @param cmd_target The intended destination of the command. csfle,
  * mongocryptd, and mongod have different requirements for the location of
  * "encryptionInformation".
@@ -195,10 +195,10 @@ typedef enum { MC_TO_CSFLE, MC_TO_MONGOCRYPTD, MC_TO_MONGOD } mc_cmd_target_t;
 static bool _fle2_insert_encryptionInformation(const mongocrypt_ctx_t *ctx,
                                                const char *cmd_name,
                                                bson_t *cmd /* in and out */,
-                                               const char *ns,
+                                               const char *target_ns,
                                                bson_t *encryptedFieldConfig,
                                                bson_t *deleteTokens,
-                                               const char *coll_name,
+                                               const char *target_coll,
                                                mc_cmd_target_t cmd_target,
                                                mongocrypt_status_t *status) {
     bson_t out = BSON_INITIALIZER;
@@ -208,16 +208,96 @@ static bool _fle2_insert_encryptionInformation(const mongocrypt_ctx_t *ctx,
 
     BSON_ASSERT_PARAM(cmd_name);
     BSON_ASSERT_PARAM(cmd);
-    BSON_ASSERT_PARAM(ns);
+    BSON_ASSERT_PARAM(target_ns);
     BSON_ASSERT_PARAM(encryptedFieldConfig);
     /* deleteTokens may be NULL */
-    BSON_ASSERT_PARAM(coll_name);
+    BSON_ASSERT_PARAM(target_coll);
+
+    // For `bulkWrite`, append `encryptionInformation` inside the `nsInfo.0` document.
+    if (0 == strcmp(cmd_name, "bulkWrite")) {
+        // Get the single `nsInfo` document from the input command.
+        bson_t nsInfo; // Non-owning.
+        {
+            bson_iter_t nsInfo_iter;
+            if (!bson_iter_init(&nsInfo_iter, cmd)) {
+                CLIENT_ERR("failed to iterate command");
+                goto fail;
+            }
+            if (!bson_iter_find_descendant(&nsInfo_iter, "nsInfo.0", &nsInfo_iter)) {
+                CLIENT_ERR("expected one namespace in `bulkWrite`, but found zero.");
+                goto fail;
+            }
+            if (bson_has_field(cmd, "nsInfo.1")) {
+                CLIENT_ERR(
+                    "expected one namespace in `bulkWrite`, but found more than one. Only one namespace is supported.");
+                goto fail;
+            }
+            if (!mc_iter_document_as_bson(&nsInfo_iter, &nsInfo, status)) {
+                goto fail;
+            }
+            // Ensure `nsInfo` does not already have an `encryptionInformation` field.
+            if (bson_has_field(&nsInfo, "encryptionInformation")) {
+                CLIENT_ERR("unexpected `encryptionInformation` present in input `nsInfo`.");
+                goto fail;
+            }
+        }
+
+        // Copy input and append `encryptionInformation` to `nsInfo`.
+        {
+            // Append everything from input except `nsInfo`.
+            bson_copy_to_excluding_noinit(cmd, &out, "nsInfo", NULL);
+            // Append `nsInfo` array.
+            bson_t nsInfo_array;
+            if (!BSON_APPEND_ARRAY_BEGIN(&out, "nsInfo", &nsInfo_array)) {
+                CLIENT_ERR("unable to begin appending 'nsInfo' array");
+                goto fail;
+            }
+            bson_t nsInfo_array_0;
+            if (!BSON_APPEND_DOCUMENT_BEGIN(&nsInfo_array, "0", &nsInfo_array_0)) {
+                CLIENT_ERR("unable to append 'nsInfo.0' document");
+                goto fail;
+            }
+            // Copy everything from input `nsInfo`.
+            bson_concat(&nsInfo_array_0, &nsInfo);
+            // And append `encryptionInformation`.
+            if (!_fle2_append_encryptionInformation(ctx,
+                                                    &nsInfo_array_0,
+                                                    target_ns,
+                                                    encryptedFieldConfig,
+                                                    deleteTokens,
+                                                    target_coll,
+                                                    status)) {
+                goto fail;
+            }
+            if (!bson_append_document_end(&nsInfo_array, &nsInfo_array_0)) {
+                CLIENT_ERR("unable to end appending 'nsInfo' document in array");
+            }
+            if (!bson_append_array_end(&out, &nsInfo_array)) {
+                CLIENT_ERR("unable to end appending 'nsInfo' array");
+                goto fail;
+            }
+            // Overwrite `cmd`.
+            bson_destroy(cmd);
+            if (!bson_steal(cmd, &out)) {
+                CLIENT_ERR("failed to steal BSON with encryptionInformation");
+                goto fail;
+            }
+        }
+
+        goto success;
+    }
 
     if (0 != strcmp(cmd_name, "explain") || cmd_target == MC_TO_MONGOCRYPTD) {
-        // All commands except "explain" expect "encryptionInformation"
+        // All commands except "explain" and "bulkWrite" expect "encryptionInformation"
         // at top-level. "explain" sent to mongocryptd expects
         // "encryptionInformation" at top-level.
-        if (!_fle2_append_encryptionInformation(ctx, cmd, ns, encryptedFieldConfig, deleteTokens, coll_name, status)) {
+        if (!_fle2_append_encryptionInformation(ctx,
+                                                cmd,
+                                                target_ns,
+                                                encryptedFieldConfig,
+                                                deleteTokens,
+                                                target_coll,
+                                                status)) {
             goto fail;
         }
         bson_destroy(&out);
@@ -254,7 +334,13 @@ static bool _fle2_insert_encryptionInformation(const mongocrypt_ctx_t *ctx,
         bson_copy_to(&tmp, &explain);
     }
 
-    if (!_fle2_append_encryptionInformation(ctx, &explain, ns, encryptedFieldConfig, deleteTokens, coll_name, status)) {
+    if (!_fle2_append_encryptionInformation(ctx,
+                                            &explain,
+                                            target_ns,
+                                            encryptedFieldConfig,
+                                            deleteTokens,
+                                            target_coll,
+                                            status)) {
         goto fail;
     }
 
@@ -266,7 +352,7 @@ static bool _fle2_insert_encryptionInformation(const mongocrypt_ctx_t *ctx,
     bson_copy_to_excluding_noinit(cmd, &out, "explain", NULL);
     bson_destroy(cmd);
     if (!bson_steal(cmd, &out)) {
-        CLIENT_ERR("failed to steal BSON without encryptionInformation");
+        CLIENT_ERR("failed to steal BSON with encryptionInformation");
         goto fail;
     }
 
@@ -289,7 +375,7 @@ static bool _mongo_op_collinfo(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) 
     BSON_ASSERT_PARAM(out);
 
     ectx = (_mongocrypt_ctx_encrypt_t *)ctx;
-    cmd = BCON_NEW("name", BCON_UTF8(ectx->coll_name));
+    cmd = BCON_NEW("name", BCON_UTF8(ectx->target_coll));
     CRYPT_TRACEF(&ectx->parent.crypt->log, "constructed: %s\n", tmp_json(cmd));
     _mongocrypt_buffer_steal_from_bson(&ectx->list_collections_filter, cmd);
     out->data = ectx->list_collections_filter.data;
@@ -333,6 +419,39 @@ static bool _set_schema_from_collinfo(mongocrypt_ctx_t *ctx, bson_t *collinfo) {
             _mongocrypt_ctx_fail(ctx);
             return false;
         }
+    } else if (0 == strcmp(ectx->cmd_name, "bulkWrite")) {
+        ectx->used_empty_encryptedFields = true;
+        // `bulkWrite` is a special case. Sending `bulkWrite` with `jsonSchema` to query analysis results in an error:
+        // `The bulkWrite command only supports Queryable Encryption`
+        //
+        // Add an empty encryptedFields (rather than an empty JSON schema) to ensure `bulkWrite` can be sent to query
+        // analysis.
+        bson_t empty_encryptedFields = BSON_INITIALIZER;
+        {
+            char *escCollection = bson_strdup_printf("enxcol_.%s.esc", ectx->target_coll);
+            char *ecocCollection = bson_strdup_printf("enxcol_.%s.ecoc", ectx->target_coll);
+            bson_t empty_array = BSON_INITIALIZER;
+            if (!BSON_APPEND_UTF8(&empty_encryptedFields, "escCollection", escCollection)) {
+                return _mongocrypt_ctx_fail_w_msg(ctx, "failed to append `escCollection`");
+            }
+            if (!BSON_APPEND_UTF8(&empty_encryptedFields, "ecocCollection", ecocCollection)) {
+                return _mongocrypt_ctx_fail_w_msg(ctx, "failed to append `ecocCollection`");
+            }
+            if (!BSON_APPEND_ARRAY(&empty_encryptedFields, "fields", &empty_array)) {
+                return _mongocrypt_ctx_fail_w_msg(ctx, "failed to append `fields`");
+            }
+
+            bson_destroy(&empty_array);
+            bson_free(escCollection);
+            bson_free(ecocCollection);
+        }
+
+        if (!mc_EncryptedFieldConfig_parse(&ectx->efc, &empty_encryptedFields, ctx->status)) {
+            bson_destroy(&empty_encryptedFields);
+            _mongocrypt_ctx_fail(ctx);
+            return false;
+        }
+        _mongocrypt_buffer_steal_from_bson(&ectx->encrypted_field_config, &empty_encryptedFields);
     }
 
     BSON_ASSERT(bson_iter_init(&iter, collinfo));
@@ -519,7 +638,7 @@ static bool _mongo_feed_collinfo(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in)
     }
 
     /* Cache the received collinfo. */
-    if (!_mongocrypt_cache_add_copy(&ctx->crypt->cache_collinfo, ectx->ns, &as_bson, ctx->status)) {
+    if (!_mongocrypt_cache_add_copy(&ctx->crypt->cache_collinfo, ectx->target_ns, &as_bson, ctx->status)) {
         return _mongocrypt_ctx_fail(ctx);
     }
 
@@ -541,8 +660,12 @@ static bool _mongo_done_collinfo(mongocrypt_ctx_t *ctx) {
     if (_mongocrypt_buffer_empty(&ectx->schema)) {
         bson_t empty_collinfo = BSON_INITIALIZER;
 
-        /* If no collinfo was fed, cache an empty collinfo. */
-        if (!_mongocrypt_cache_add_copy(&ctx->crypt->cache_collinfo, ectx->ns, &empty_collinfo, ctx->status)) {
+        /* If no collinfo was fed, apply and cache an empty collinfo. */
+        if (!_set_schema_from_collinfo(ctx, &empty_collinfo)) {
+            bson_destroy(&empty_collinfo);
+            return false;
+        }
+        if (!_mongocrypt_cache_add_copy(&ctx->crypt->cache_collinfo, ectx->target_ns, &empty_collinfo, ctx->status)) {
             bson_destroy(&empty_collinfo);
             return _mongocrypt_ctx_fail(ctx);
         }
@@ -565,6 +688,19 @@ static bool _mongo_done_collinfo(mongocrypt_ctx_t *ctx) {
     }
     ectx->parent.state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
     return _try_run_csfle_marking(ctx);
+}
+
+static const char *_mongo_db_collinfo(mongocrypt_ctx_t *ctx) {
+    _mongocrypt_ctx_encrypt_t *ectx;
+
+    BSON_ASSERT_PARAM(ctx);
+
+    ectx = (_mongocrypt_ctx_encrypt_t *)ctx;
+    if (!ectx->target_db) {
+        _mongocrypt_ctx_fail_w_msg(ctx, "Expected target database for `listCollections`, but none exists.");
+        return NULL;
+    }
+    return ectx->target_db;
 }
 
 static bool _fle2_mongo_op_markings(mongocrypt_ctx_t *ctx, bson_t *out) {
@@ -597,10 +733,10 @@ static bool _fle2_mongo_op_markings(mongocrypt_ctx_t *ctx, bson_t *out) {
     if (!_fle2_insert_encryptionInformation(ctx,
                                             cmd_name,
                                             out,
-                                            ectx->ns,
+                                            ectx->target_ns,
                                             &encrypted_field_config_bson,
                                             NULL /* deleteTokens */,
-                                            ectx->coll_name,
+                                            ectx->target_coll,
                                             ctx->crypt->csfle.okay ? MC_TO_CSFLE : MC_TO_MONGOCRYPTD,
                                             ctx->status)) {
         return _mongocrypt_ctx_fail(ctx);
@@ -826,7 +962,7 @@ static bool _mongo_done_markings(mongocrypt_ctx_t *ctx) {
 /**
  * @brief Append $db to a command being passed to csfle.
  */
-static bool _add_dollar_db(const char *cmd_name, bson_t *cmd, const char *db_name, mongocrypt_status_t *status) {
+static bool _add_dollar_db(const char *cmd_name, bson_t *cmd, const char *cmd_db, mongocrypt_status_t *status) {
     bson_t out = BSON_INITIALIZER;
     bson_t explain = BSON_INITIALIZER;
     bson_iter_t iter;
@@ -834,10 +970,10 @@ static bool _add_dollar_db(const char *cmd_name, bson_t *cmd, const char *db_nam
 
     BSON_ASSERT_PARAM(cmd_name);
     BSON_ASSERT_PARAM(cmd);
-    BSON_ASSERT_PARAM(db_name);
+    BSON_ASSERT_PARAM(cmd_db);
 
     if (!bson_iter_init_find(&iter, cmd, "$db")) {
-        if (!BSON_APPEND_UTF8(cmd, "$db", db_name)) {
+        if (!BSON_APPEND_UTF8(cmd, "$db", cmd_db)) {
             CLIENT_ERR("failed to append '$db'");
             goto fail;
         }
@@ -871,7 +1007,7 @@ static bool _add_dollar_db(const char *cmd_name, bson_t *cmd, const char *db_nam
         bson_copy_to(&tmp, &explain);
     }
 
-    if (!BSON_APPEND_UTF8(&explain, "$db", db_name)) {
+    if (!BSON_APPEND_UTF8(&explain, "$db", cmd_db)) {
         CLIENT_ERR("failed to append '$db'");
         goto fail;
     }
@@ -950,7 +1086,7 @@ static bool _try_run_csfle_marking(mongocrypt_ctx_t *ctx) {
 
     const char *cmd_name = ectx->cmd_name;
 
-    if (!_add_dollar_db(cmd_name, &cmd, ectx->db_name, ctx->status)) {
+    if (!_add_dollar_db(cmd_name, &cmd, ectx->cmd_db, ctx->status)) {
         _mongocrypt_ctx_fail(ctx);
         goto fail_create_cmd;
     }
@@ -978,8 +1114,12 @@ static bool _try_run_csfle_marking(mongocrypt_ctx_t *ctx) {
     CHECK_CSFLE_ERROR("query_analyzer_create", fail_qa_create);
 
     uint32_t marked_bson_len = 0;
-    uint8_t *marked_bson =
-        csfle.analyze_query(qa, bson_get_data(&cmd), ectx->ns, (uint32_t)strlen(ectx->ns), &marked_bson_len, status);
+    uint8_t *marked_bson = csfle.analyze_query(qa,
+                                               bson_get_data(&cmd),
+                                               ectx->target_ns,
+                                               (uint32_t)strlen(ectx->target_ns),
+                                               &marked_bson_len,
+                                               status);
     CHECK_CSFLE_ERROR("analyze_query", fail_analyze_query);
 
     // Copy out the marked document.
@@ -1378,8 +1518,60 @@ _fle2_strip_encryptionInformation(const char *cmd_name, bson_t *cmd /* in and ou
     BSON_ASSERT_PARAM(cmd_name);
     BSON_ASSERT_PARAM(cmd);
 
-    if (0 != strcmp(cmd_name, "explain")) {
+    if (0 != strcmp(cmd_name, "explain") && 0 != strcmp(cmd_name, "bulkWrite")) {
         bson_copy_to_excluding_noinit(cmd, &stripped, "encryptionInformation", NULL);
+        goto success;
+    }
+
+    if (0 == strcmp(cmd_name, "bulkWrite")) {
+        // Get the single `nsInfo` document from the input command.
+        bson_t nsInfo; // Non-owning.
+        {
+            bson_iter_t nsInfo_iter;
+            if (!bson_iter_init(&nsInfo_iter, cmd)) {
+                CLIENT_ERR("failed to iterate command");
+                goto fail;
+            }
+            if (!bson_iter_find_descendant(&nsInfo_iter, "nsInfo.0", &nsInfo_iter)) {
+                CLIENT_ERR("expected one namespace in `bulkWrite`, but found zero.");
+                goto fail;
+            }
+            if (bson_has_field(cmd, "nsInfo.1")) {
+                CLIENT_ERR(
+                    "expected one namespace in `bulkWrite`, but found more than one. Only one namespace is supported.");
+                goto fail;
+            }
+            if (!mc_iter_document_as_bson(&nsInfo_iter, &nsInfo, status)) {
+                goto fail;
+            }
+        }
+
+        // Copy input and exclude `encryptionInformation` from `nsInfo`.
+        {
+            // Append everything from input except `nsInfo`.
+            bson_copy_to_excluding_noinit(cmd, &stripped, "nsInfo", NULL);
+            // Append `nsInfo` array.
+            bson_t nsInfo_array;
+            if (!BSON_APPEND_ARRAY_BEGIN(&stripped, "nsInfo", &nsInfo_array)) {
+                CLIENT_ERR("unable to begin appending 'nsInfo' array");
+                goto fail;
+            }
+            bson_t nsInfo_array_0;
+            if (!BSON_APPEND_DOCUMENT_BEGIN(&nsInfo_array, "0", &nsInfo_array_0)) {
+                CLIENT_ERR("unable to append 'nsInfo.0' document");
+                goto fail;
+            }
+            // Copy everything from input `nsInfo` and exclude `encryptionInformation`.
+            bson_copy_to_excluding_noinit(&nsInfo, &nsInfo_array_0, "encryptionInformation", NULL);
+            if (!bson_append_document_end(&nsInfo_array, &nsInfo_array_0)) {
+                CLIENT_ERR("unable to end appending 'nsInfo' document in array");
+            }
+            if (!bson_append_array_end(&stripped, &nsInfo_array)) {
+                CLIENT_ERR("unable to end appending 'nsInfo' array");
+                goto fail;
+            }
+        }
+
         goto success;
     }
 
@@ -1511,14 +1703,14 @@ static bool _fle2_finalize(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
     }
 
     /* Append a new 'encryptionInformation'. */
-    if (!result.must_omit) {
+    if (!result.must_omit && !ectx->used_empty_encryptedFields) {
         if (!_fle2_insert_encryptionInformation(ctx,
                                                 command_name,
                                                 &converted,
-                                                ectx->ns,
+                                                ectx->target_ns,
                                                 &encrypted_field_config_bson,
                                                 deleteTokens,
-                                                ectx->coll_name,
+                                                ectx->target_coll,
                                                 MC_TO_MONGOD,
                                                 ctx->status)) {
             bson_destroy(&converted);
@@ -1542,7 +1734,7 @@ static bool _fle2_finalize(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
     bson_iter_t iter;
     if (bson_iter_init_find(&iter, &original_cmd_bson, "$db")) {
         if (!bson_iter_init_find(&iter, &converted, "$db")) {
-            BSON_APPEND_UTF8(&converted, "$db", ectx->db_name);
+            BSON_APPEND_UTF8(&converted, "$db", ectx->cmd_db);
         }
     }
 
@@ -1842,7 +2034,7 @@ static bool _finalize(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
         bson_iter_t iter;
         if (bson_iter_init_find(&iter, &original_cmd_bson, "$db")) {
             if (!bson_iter_init_find(&iter, &converted, "$db")) {
-                BSON_APPEND_UTF8(&converted, "$db", ectx->db_name);
+                BSON_APPEND_UTF8(&converted, "$db", ectx->cmd_db);
             }
         }
     } else {
@@ -1900,9 +2092,10 @@ static void _cleanup(mongocrypt_ctx_t *ctx) {
     }
 
     ectx = (_mongocrypt_ctx_encrypt_t *)ctx;
-    bson_free(ectx->ns);
-    bson_free(ectx->db_name);
-    bson_free(ectx->coll_name);
+    bson_free(ectx->target_ns);
+    bson_free(ectx->cmd_db);
+    bson_free(ectx->target_db);
+    bson_free(ectx->target_coll);
     _mongocrypt_buffer_cleanup(&ectx->list_collections_filter);
     _mongocrypt_buffer_cleanup(&ectx->schema);
     _mongocrypt_buffer_cleanup(&ectx->encrypted_field_config);
@@ -1934,7 +2127,7 @@ static bool _try_schema_from_schema_map(mongocrypt_ctx_t *ctx) {
         return _mongocrypt_ctx_fail_w_msg(ctx, "malformed schema map");
     }
 
-    if (bson_iter_init_find(&iter, &schema_map, ectx->ns)) {
+    if (bson_iter_init_find(&iter, &schema_map, ectx->target_ns)) {
         if (!_mongocrypt_buffer_copy_from_document_iter(&ectx->schema, &iter)) {
             return _mongocrypt_ctx_fail_w_msg(ctx, "malformed schema map");
         }
@@ -1970,7 +2163,7 @@ static bool _fle2_try_encrypted_field_config_from_map(mongocrypt_ctx_t *ctx) {
         return _mongocrypt_ctx_fail_w_msg(ctx, "unable to convert encrypted_field_config_map to BSON");
     }
 
-    if (bson_iter_init_find(&iter, &encrypted_field_config_map, ectx->ns)) {
+    if (bson_iter_init_find(&iter, &encrypted_field_config_map, ectx->target_ns)) {
         if (!_mongocrypt_buffer_copy_from_document_iter(&ectx->encrypted_field_config, &iter)) {
             return _mongocrypt_ctx_fail_w_msg(ctx,
                                               "unable to copy encrypted_field_config from "
@@ -2001,7 +2194,9 @@ static bool _try_schema_from_cache(mongocrypt_ctx_t *ctx) {
 
     /* Otherwise, we need a remote schema. Check if we have a response to
      * listCollections cached. */
-    if (!_mongocrypt_cache_get(&ctx->crypt->cache_collinfo, ectx->ns /* null terminated */, (void **)&collinfo)) {
+    if (!_mongocrypt_cache_get(&ctx->crypt->cache_collinfo,
+                               ectx->target_ns /* null terminated */,
+                               (void **)&collinfo)) {
         return _mongocrypt_ctx_fail_w_msg(ctx, "failed to retrieve from cache");
     }
 
@@ -2013,6 +2208,17 @@ static bool _try_schema_from_cache(mongocrypt_ctx_t *ctx) {
     } else {
         /* we need to get it. */
         ctx->state = MONGOCRYPT_CTX_NEED_MONGO_COLLINFO;
+        if (ectx->target_db) {
+            if (!ctx->crypt->opts.use_need_mongo_collinfo_with_db_state) {
+                _mongocrypt_ctx_fail_w_msg(
+                    ctx,
+                    "Fetching remote collection information on separate databases is not supported. Try "
+                    "upgrading driver, or specify a local schemaMap or encryptedFieldsMap.");
+                return false;
+            }
+            // Target database may differ from command database. Request collection info from target database.
+            ctx->state = MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB;
+        }
     }
 
     bson_destroy(collinfo);
@@ -2376,16 +2582,69 @@ bool mongocrypt_ctx_explicit_encrypt_expression_init(mongocrypt_ctx_t *ctx, mong
     return true;
 }
 
-static bool
-_check_cmd_for_auto_encrypt(mongocrypt_binary_t *cmd, bool *bypass, char **collname, mongocrypt_status_t *status) {
+static bool _check_cmd_for_auto_encrypt_bulkWrite(mongocrypt_binary_t *cmd,
+                                                  char **target_db,
+                                                  char **target_coll,
+                                                  mongocrypt_status_t *status) {
+    BSON_ASSERT_PARAM(cmd);
+    BSON_ASSERT_PARAM(target_db);
+    BSON_ASSERT_PARAM(target_coll);
+
     bson_t as_bson;
-    bson_iter_t iter, ns_iter;
+    bson_iter_t cmd_iter;
+
+    if (!_mongocrypt_binary_to_bson(cmd, &as_bson) || !bson_iter_init(&cmd_iter, &as_bson)) {
+        CLIENT_ERR("invalid command BSON");
+        return false;
+    }
+
+    bson_iter_t ns_iter = cmd_iter;
+    if (!bson_iter_find_descendant(&ns_iter, "nsInfo.0.ns", &ns_iter)) {
+        CLIENT_ERR("failed to find namespace in `bulkWrite` command");
+        return false;
+    }
+
+    if (!BSON_ITER_HOLDS_UTF8(&ns_iter)) {
+        CLIENT_ERR("expected namespace to be UTF8, got: %s", mc_bson_type_to_string(bson_iter_type(&ns_iter)));
+        return false;
+    }
+
+    const char *target_ns = bson_iter_utf8(&ns_iter, NULL /* length */);
+    // Parse `target_ns` into "<db>.<coll>"
+    const char *dot = strstr(target_ns, ".");
+    if (!dot) {
+        CLIENT_ERR("expected namespace to contain dot, got: %s", target_ns);
+        return false;
+    }
+    *target_coll = bson_strdup(dot + 1);
+    // Get the database from the `ns` field (which may differ from `cmd_db`).
+    ptrdiff_t db_len = dot - target_ns;
+    if ((uint64_t)db_len > SIZE_MAX) {
+        CLIENT_ERR("unexpected database length exceeds %zu", SIZE_MAX);
+        return false;
+    }
+    *target_db = bson_strndup(target_ns, (size_t)db_len);
+
+    // Ensure only one `nsInfo` element is present.
+    // Query analysis (mongocryptd/crypt_shared) currently only supports one namespace.
+    if (bson_has_field(&as_bson, "nsInfo.1")) {
+        CLIENT_ERR("expected one namespace in `bulkWrite`, but found more than one. Only one namespace is supported.");
+        return false;
+    }
+
+    return true;
+}
+
+static bool
+_check_cmd_for_auto_encrypt(mongocrypt_binary_t *cmd, bool *bypass, char **target_coll, mongocrypt_status_t *status) {
+    bson_t as_bson;
+    bson_iter_t iter, target_coll_iter;
     const char *cmd_name;
     bool eligible = false;
 
     BSON_ASSERT_PARAM(cmd);
     BSON_ASSERT_PARAM(bypass);
-    BSON_ASSERT_PARAM(collname);
+    BSON_ASSERT_PARAM(target_coll);
 
     *bypass = false;
 
@@ -2409,22 +2668,22 @@ _check_cmd_for_auto_encrypt(mongocrypt_binary_t *cmd, bool *bypass, char **colln
             CLIENT_ERR("explain value is not a document");
             return false;
         }
-        if (!bson_iter_recurse(&iter, &ns_iter)) {
+        if (!bson_iter_recurse(&iter, &target_coll_iter)) {
             CLIENT_ERR("malformed BSON for encrypt command");
             return false;
         }
-        if (!bson_iter_next(&ns_iter)) {
+        if (!bson_iter_next(&target_coll_iter)) {
             CLIENT_ERR("invalid empty BSON");
             return false;
         }
     } else {
-        memcpy(&ns_iter, &iter, sizeof(iter));
+        memcpy(&target_coll_iter, &iter, sizeof(iter));
     }
 
-    if (BSON_ITER_HOLDS_UTF8(&ns_iter)) {
-        *collname = bson_strdup(bson_iter_utf8(&ns_iter, NULL));
+    if (BSON_ITER_HOLDS_UTF8(&target_coll_iter)) {
+        *target_coll = bson_strdup(bson_iter_utf8(&target_coll_iter, NULL));
     } else {
-        *collname = NULL;
+        *target_coll = NULL;
     }
 
     /* check if command is eligible for auto encryption, bypassed, or ineligible.
@@ -2528,11 +2787,11 @@ _check_cmd_for_auto_encrypt(mongocrypt_binary_t *cmd, bool *bypass, char **colln
 
     /* database/client commands are ineligible. */
     if (eligible) {
-        if (!*collname) {
+        if (!*target_coll) {
             CLIENT_ERR("non-collection command not supported for auto encryption: %s", cmd_name);
             return false;
         }
-        if (0 == strlen(*collname)) {
+        if (0 == strlen(*target_coll)) {
             CLIENT_ERR("empty collection name on command: %s", cmd_name);
             return false;
         }
@@ -2560,7 +2819,6 @@ static bool needs_ismaster_check(mongocrypt_ctx_t *ctx) {
 bool mongocrypt_ctx_encrypt_init(mongocrypt_ctx_t *ctx, const char *db, int32_t db_len, mongocrypt_binary_t *cmd) {
     _mongocrypt_ctx_encrypt_t *ectx;
     _mongocrypt_ctx_opts_spec_t opts_spec;
-    bool bypass;
 
     if (!ctx) {
         return false;
@@ -2582,15 +2840,13 @@ bool mongocrypt_ctx_encrypt_init(mongocrypt_ctx_t *ctx, const char *db, int32_t 
     ctx->vtable.mongo_op_collinfo = _mongo_op_collinfo;
     ctx->vtable.mongo_feed_collinfo = _mongo_feed_collinfo;
     ctx->vtable.mongo_done_collinfo = _mongo_done_collinfo;
+    ctx->vtable.mongo_db_collinfo = _mongo_db_collinfo;
     ctx->vtable.mongo_op_collinfo = _mongo_op_collinfo;
     ctx->vtable.mongo_op_markings = _mongo_op_markings;
     ctx->vtable.mongo_feed_markings = _mongo_feed_markings;
     ctx->vtable.mongo_done_markings = _mongo_done_markings;
     ctx->vtable.finalize = _finalize;
     ctx->vtable.cleanup = _cleanup;
-    ctx->vtable.mongo_op_collinfo = _mongo_op_collinfo;
-    ctx->vtable.mongo_feed_collinfo = _mongo_feed_collinfo;
-    ctx->vtable.mongo_done_collinfo = _mongo_done_collinfo;
     ectx->bypass_query_analysis = ctx->crypt->opts.bypass_query_analysis;
 
     if (!cmd || !cmd->data) {
@@ -2604,27 +2860,38 @@ bool mongocrypt_ctx_encrypt_init(mongocrypt_ctx_t *ctx, const char *db, int32_t 
         return _mongocrypt_ctx_fail(ctx);
     }
 
-    if (!_check_cmd_for_auto_encrypt(cmd, &bypass, &ectx->coll_name, ctx->status)) {
-        return _mongocrypt_ctx_fail(ctx);
-    }
-
-    if (bypass) {
-        ctx->nothing_to_do = true;
-        ctx->state = MONGOCRYPT_CTX_READY;
-        return true;
-    }
-
-    /* if _check_cmd_for_auto_encrypt did not bypass or error, a collection name
-     * must have been set. */
-    if (!ectx->coll_name) {
-        return _mongocrypt_ctx_fail_w_msg(ctx, "unexpected error: did not bypass or error but no collection name");
-    }
-
-    if (!_mongocrypt_validate_and_copy_string(db, db_len, &ectx->db_name) || 0 == strlen(ectx->db_name)) {
+    if (!_mongocrypt_validate_and_copy_string(db, db_len, &ectx->cmd_db) || 0 == strlen(ectx->cmd_db)) {
         return _mongocrypt_ctx_fail_w_msg(ctx, "invalid db");
     }
 
-    ectx->ns = bson_strdup_printf("%s.%s", ectx->db_name, ectx->coll_name);
+    if (0 == strcmp(ectx->cmd_name, "bulkWrite")) {
+        // Handle `bulkWrite` as a special case.
+        // `bulkWrite` includes the target namespaces in an `nsInfo` field.
+        // Only one target namespace is supported.
+        if (!_check_cmd_for_auto_encrypt_bulkWrite(cmd, &ectx->target_db, &ectx->target_coll, ctx->status)) {
+            return _mongocrypt_ctx_fail(ctx);
+        }
+
+        ectx->target_ns = bson_strdup_printf("%s.%s", ectx->target_db, ectx->target_coll);
+    } else {
+        bool bypass;
+        if (!_check_cmd_for_auto_encrypt(cmd, &bypass, &ectx->target_coll, ctx->status)) {
+            return _mongocrypt_ctx_fail(ctx);
+        }
+
+        if (bypass) {
+            ctx->nothing_to_do = true;
+            ctx->state = MONGOCRYPT_CTX_READY;
+            return true;
+        }
+
+        /* if _check_cmd_for_auto_encrypt did not bypass or error, a collection name
+         * must have been set. */
+        if (!ectx->target_coll) {
+            return _mongocrypt_ctx_fail_w_msg(ctx, "unexpected error: did not bypass or error but no collection name");
+        }
+        ectx->target_ns = bson_strdup_printf("%s.%s", ectx->cmd_db, ectx->target_coll);
+    }
 
     if (ctx->opts.kek.provider.aws.region || ctx->opts.kek.provider.aws.cmk) {
         return _mongocrypt_ctx_fail_w_msg(ctx, "aws masterkey options must not be set");
@@ -2646,7 +2913,7 @@ bool mongocrypt_ctx_encrypt_init(mongocrypt_ctx_t *ctx, const char *db, int32_t 
                         "%s (%s=\"%s\", %s=%d, %s=\"%s\")",
                         BSON_FUNC,
                         "db",
-                        ectx->db_name,
+                        ectx->cmd_db,
                         "db_len",
                         db_len,
                         "cmd",
@@ -2725,6 +2992,17 @@ static bool mongocrypt_ctx_encrypt_ismaster_done(mongocrypt_ctx_t *ctx) {
         /* Otherwise, we need the the driver to fetch the schema. */
         if (_mongocrypt_buffer_empty(&ectx->schema)) {
             ctx->state = MONGOCRYPT_CTX_NEED_MONGO_COLLINFO;
+            if (ectx->target_db) {
+                if (!ctx->crypt->opts.use_need_mongo_collinfo_with_db_state) {
+                    _mongocrypt_ctx_fail_w_msg(
+                        ctx,
+                        "Fetching remote collection information on separate databases is not supported. Try "
+                        "upgrading driver, or specify a local schemaMap or encryptedFieldsMap.");
+                    return false;
+                }
+                // Target database may differ from command database. Request collection info from target database.
+                ctx->state = MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB;
+            }
         }
     }
 

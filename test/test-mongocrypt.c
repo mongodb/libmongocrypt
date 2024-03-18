@@ -288,6 +288,7 @@ void _mongocrypt_tester_run_ctx_to(_mongocrypt_tester_t *tester,
     state = mongocrypt_ctx_state(ctx);
     while (state != stop_state) {
         switch (state) {
+        case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB:
         case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO:
             if (tester->paths.collection_info) {
                 bin = TEST_FILE(tester->paths.collection_info);
@@ -495,7 +496,7 @@ mongocrypt_t *_mongocrypt_tester_mongocrypt(tester_mongocrypt_flags flags) {
         mongocrypt_setopt_append_crypt_shared_lib_search_path(crypt, "$ORIGIN");
     }
     if (flags & TESTER_MONGOCRYPT_WITH_RANGE_V2) {
-        ASSERT(mongocrypt_enable_range_v2(crypt));
+        ASSERT(mongocrypt_setopt_use_range_v2(crypt));
     }
     ASSERT_OK(mongocrypt_init(crypt), crypt);
     if (flags & TESTER_MONGOCRYPT_WITH_CRYPT_SHARED_LIB) {

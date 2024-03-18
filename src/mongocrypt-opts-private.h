@@ -115,6 +115,7 @@ typedef struct {
     mstr crypt_shared_lib_override_path;
 
     bool use_need_kms_credentials_state;
+    bool use_need_mongo_collinfo_with_db_state;
     bool bypass_query_analysis;
 
     // When creating new encrypted payloads,

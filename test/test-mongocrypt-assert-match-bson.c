@@ -360,7 +360,7 @@ bool match_bson_with_ctx(const bson_t *doc, const bson_t *pattern, match_ctx_t *
                 goto fail;
             }
         } else if (!found) {
-            match_err(&derived, "not found");
+            match_err(&derived, "key '%s' not found", key);
             goto fail;
         } else if (is_empty_operator) {
             if (empty != is_empty_doc_or_array(&doc_value)) {
@@ -637,6 +637,10 @@ static bool match_bson_arrays(const bson_t *array, const bson_t *pattern, match_
         derive(ctx, &derived, bson_iter_key(&array_iter));
 
         if (!match_bson_value(array_value, pattern_value, &derived)) {
+            // Propagate error message.
+            if (strlen(derived.errmsg) > 0) {
+                memcpy(ctx->errmsg, derived.errmsg, sizeof(derived.errmsg));
+            }
             return false;
         }
     }
@@ -885,9 +889,8 @@ const char *_mongoc_bson_type_to_str(bson_type_t t) {
 }
 
 void _assert_match_bson(const bson_t *doc, const bson_t *pattern) {
-    match_ctx_t ctx;
-
-    memset(&ctx, 0, sizeof(match_ctx_t));
+    // Set `retain_dots_in_keys` to interpret a pattern key "db.test" as a key, rather than a key path.
+    match_ctx_t ctx = {.retain_dots_in_keys = true};
     if (!match_bson_with_ctx(doc, pattern, &ctx)) {
         char *doc_str = doc ? bson_as_json(doc, NULL) : NULL;
         char *pattern_str = bson_as_json(pattern, NULL);

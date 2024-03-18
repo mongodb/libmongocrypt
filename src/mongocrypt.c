@@ -153,7 +153,7 @@ bool mongocrypt_setopt_fle2v2(mongocrypt_t *crypt, bool enable) {
     return true;
 }
 
-bool mongocrypt_enable_range_v2(mongocrypt_t *crypt) {
+bool mongocrypt_setopt_use_range_v2(mongocrypt_t *crypt) {
     ASSERT_MONGOCRYPT_PARAM_UNINIT(crypt);
 
     crypt->opts.use_range_v2 = true;
@@ -1141,6 +1141,12 @@ void mongocrypt_setopt_use_need_kms_credentials_state(mongocrypt_t *crypt) {
     BSON_ASSERT_PARAM(crypt);
 
     crypt->opts.use_need_kms_credentials_state = true;
+}
+
+void mongocrypt_setopt_use_need_mongo_collinfo_with_db_state(mongocrypt_t *crypt) {
+    BSON_ASSERT_PARAM(crypt);
+
+    crypt->opts.use_need_mongo_collinfo_with_db_state = true;
 }
 
 void mongocrypt_setopt_set_crypt_shared_lib_path_override(mongocrypt_t *crypt, const char *path) {

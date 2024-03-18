@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include "kms_message/kms_b64.h" // kms_message_raw_to_b64
 #include "mongocrypt-ctx-private.h"
 #include "mongocrypt.h"
 #include "test-mongocrypt-assert-match-bson.h"
@@ -220,8 +221,9 @@ static void _test_decrypt_per_ctx_credentials_local(_mongocrypt_tester_t *tester
     _mongocrypt_buffer_t encrypted;
     /* local_kek is the KEK used to encrypt the keyMaterial in
      * ./test/data/key-document-local.json */
-    const char *local_kek = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
-                            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+    uint8_t local_kek_raw[MONGOCRYPT_KEY_LEN] = {0};
+    char *local_kek = kms_message_raw_to_b64(local_kek_raw, sizeof(local_kek_raw));
+
     /* local_uuid is the hex of the UUID of the key in
      * ./test/data/key-document-local.json */
     const char *local_uuid = "61616161616161616161616161616161";
@@ -265,6 +267,7 @@ static void _test_decrypt_per_ctx_credentials_local(_mongocrypt_tester_t *tester
     mongocrypt_ctx_destroy(ctx);
     _mongocrypt_buffer_cleanup(&encrypted);
     mongocrypt_destroy(crypt);
+    bson_free(local_kek);
 }
 
 static void _test_decrypt_fle2(_mongocrypt_tester_t *tester) {
