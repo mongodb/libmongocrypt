@@ -403,13 +403,14 @@ static bool _fle2_derive_encrypted_token(_mongocrypt_crypto_t *crypto,
             _mongocrypt_buffer_t isLeafBuf;
             if (!_mongocrypt_buffer_copy_from_data_and_size(&isLeafBuf, (uint8_t[]){!!is_leaf.value}, 1)) {
                 CLIENT_ERR("failed to create is_leaf buffer");
-                _mongocrypt_buffer_cleanup(&isLeafBuf);
                 goto fail;
             }
             if (!_mongocrypt_buffer_concat(&tmp, (_mongocrypt_buffer_t[]){*escDerivedToken, isLeafBuf}, 2)) {
                 CLIENT_ERR("failed to allocate buffer");
+                _mongocrypt_buffer_cleanup(&isLeafBuf);
                 goto fail;
             }
+            _mongocrypt_buffer_cleanup(&isLeafBuf);
         } else {
             p = escDerivedToken;
         }
@@ -785,15 +786,16 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_common(_mongocrypt_key
     BSON_ASSERT(common->eccDerivedToken.data == NULL);
 
     // p := EncryptCTR(ECOCToken, ESCDerivedFromDataTokenAndContentionFactor)
-    if (!_fle2_derive_encrypted_token(crypto,
-                                      &out->encryptedTokens,
-                                      kb->crypt->opts.use_range_v2,
-                                      common->collectionsLevel1Token,
-                                      &out->escDerivedToken,
-                                      NULL,  // unused in v2
-                                      // If this is a range insert, we append isLeaf to the encryptedTokens. Otherwise, we don't.
-                                      placeholder->algorithm == MONGOCRYPT_FLE2_ALGORITHM_RANGE ? OPT_U32(0) : (mc_optional_uint32_t){},
-                                      status)) {
+    if (!_fle2_derive_encrypted_token(
+            crypto,
+            &out->encryptedTokens,
+            kb->crypt->opts.use_range_v2,
+            common->collectionsLevel1Token,
+            &out->escDerivedToken,
+            NULL, // unused in v2
+            // If this is a range insert, we append isLeaf to the encryptedTokens. Otherwise, we don't.
+            placeholder->algorithm == MONGOCRYPT_FLE2_ALGORITHM_RANGE ? OPT_U32(0) : (mc_optional_uint32_t){},
+            status)) {
         goto fail;
     }
 
