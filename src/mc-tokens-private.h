@@ -64,6 +64,15 @@
  * ServerCountAndContentionFactorEncryptionToken =
  *    HMAC(ServerDerivedFromDataToken, 1)
  * ServerZerosEncryptionToken = HMAC(ServerDerivedFromDataToken, 2)
+ * ----------------------------------------------------------------------------
+ * Added in Range V2:
+ *
+ * d is a 17-byte blob of zeros.
+ *
+ * AnchorPaddingTokenRoot   = HMAC(ESCToken, d)
+ * Server-side:
+ *      AnchorPaddingTokenKey    = HMAC(AnchorPaddingTokenRoot, 1)
+ *      AnchorPaddingTokenValue  = HMAC(AnchorPaddingTokenRoot, 2)
  * ======================== End: FLE 2 Token Reference ========================
  */
 
@@ -134,6 +143,8 @@ DECL_TOKEN_TYPE(mc_ServerDerivedFromDataToken,
 DECL_TOKEN_TYPE(mc_ServerCountAndContentionFactorEncryptionToken,
                 const mc_ServerDerivedFromDataToken_t *serverDerivedFromDataToken);
 DECL_TOKEN_TYPE(mc_ServerZerosEncryptionToken, const mc_ServerDerivedFromDataToken_t *serverDerivedFromDataToken);
+
+DECL_TOKEN_TYPE(mc_AnchorPaddingTokenRoot, const mc_ESCToken_t *ESCToken);
 
 #undef DECL_TOKEN_TYPE
 #undef DECL_TOKEN_TYPE_1
