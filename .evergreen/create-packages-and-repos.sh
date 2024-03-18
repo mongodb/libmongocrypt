@@ -46,6 +46,11 @@ tar -zcv -C install \
   --exclude=sharedbson \
   -f "libmongocrypt-$pkg_version.tar.gz" \
   libmongocrypt
+pushd "$LIBMONGOCRYPT_DIR/"
+  (git remote | grep -q upstream) || git remote add upstream https://github.com/mongodb/libmongocrypt
+  git fetch upstream
+  git checkout $(git rev-parse upstream/debian/unstable) -- debian
+popd
 pushd "$LIBMONGOCRYPT_DIR/etc/"
   # The files from libmongocrypt/debian/ are the official maintainer scripts,
   # but libmongocrypt/etc/debian/ contains a few custom scripts that are
