@@ -16,6 +16,7 @@
 
 #include <mongocrypt.h>
 
+#include "kms_message/kms_b64.h"
 #include "mongocrypt-crypto-private.h"
 #include "mongocrypt-private.h"
 #include "test-mongocrypt.h"
@@ -280,8 +281,8 @@ static void _test_datakey_kms_per_ctx_credentials_local(_mongocrypt_tester_t *te
     mongocrypt_binary_t *bin;
     bson_t key_bson;
     bson_iter_t iter;
-    const char *local_kek = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
-                            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+    uint8_t local_kek_raw[MONGOCRYPT_KEY_LEN] = {0};
+    char *local_kek = kms_message_raw_to_b64(local_kek_raw, sizeof(local_kek_raw));
 
     crypt = mongocrypt_new();
     mongocrypt_setopt_use_need_kms_credentials_state(crypt);
@@ -310,6 +311,7 @@ static void _test_datakey_kms_per_ctx_credentials_local(_mongocrypt_tester_t *te
     mongocrypt_binary_destroy(bin);
     mongocrypt_ctx_destroy(ctx);
     mongocrypt_destroy(crypt);
+    bson_free(local_kek);
 }
 
 static void _test_datakey_custom_key_material(_mongocrypt_tester_t *tester) {

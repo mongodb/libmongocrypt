@@ -17,9 +17,9 @@
          },
          "schema": {
             "db.test": {
-               "escCollection": "esc",
-               "eccCollection": "ecc",
-               "ecocCollection": "ecoc",
+               "escCollection": "enxcol_.test.esc",
+               "eccCollection": "enxcol_.test.ecc",
+               "ecocCollection": "enxcol_.test.ecoc",
                "fields": [
                   {
                      "keyId": {

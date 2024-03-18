@@ -288,6 +288,7 @@ void _mongocrypt_tester_run_ctx_to(_mongocrypt_tester_t *tester,
     state = mongocrypt_ctx_state(ctx);
     while (state != stop_state) {
         switch (state) {
+        case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB:
         case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO:
             if (tester->paths.collection_info) {
                 bin = TEST_FILE(tester->paths.collection_info);
