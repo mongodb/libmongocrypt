@@ -16,6 +16,7 @@
 
 #include <mongocrypt-marking-private.h>
 
+#include "kms_message/kms_b64.h"
 #include "mongocrypt-crypto-private.h" // MONGOCRYPT_KEY_LEN
 #include "test-mongocrypt-assert-match-bson.h"
 #include "test-mongocrypt-crypto-std-hooks.h"
@@ -1187,7 +1188,8 @@ static void _test_encrypt_per_ctx_credentials_local(_mongocrypt_tester_t *tester
     mongocrypt_ctx_t *ctx;
     /* local_kek is the KEK used to encrypt the keyMaterial in
      * ./test/data/key-document-local.json */
-    char *local_kek = repeat_char('A', MONGOCRYPT_KEY_LEN);
+    uint8_t local_kek_raw[MONGOCRYPT_KEY_LEN] = {0};
+    char *local_kek = kms_message_raw_to_b64(local_kek_raw, sizeof(local_kek_raw));
 
     crypt = mongocrypt_new();
     mongocrypt_setopt_use_need_kms_credentials_state(crypt);
@@ -4667,7 +4669,8 @@ static void _test_bulkWrite(_mongocrypt_tester_t *tester) {
     }
 
     // local_kek is the KEK used to encrypt the keyMaterial in ./test/data/key-document-local.json
-    char *local_kek = repeat_char('A', MONGOCRYPT_KEY_LEN);
+    uint8_t local_kek_raw[MONGOCRYPT_KEY_LEN] = {0};
+    char *local_kek = kms_message_raw_to_b64(local_kek_raw, sizeof(local_kek_raw));
 
     // Test initializing bulkWrite commands.
     {
