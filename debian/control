@@ -7,7 +7,7 @@ Uploaders: Kevin Albertson <kevin.albertson@mongodb.com>,
 Build-Depends: debhelper (>= 10),
                cmake,
                libssl-dev,
-               pkg-config,
+               pkgconf,
                libintelrdfpmath-dev (>= 2.0u2-6) [!mips64el !mipsel],
                libbson-dev
 Standards-Version: 4.6.2
