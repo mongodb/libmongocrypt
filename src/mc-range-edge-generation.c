@@ -97,7 +97,7 @@ void mc_edges_destroy(mc_edges_t *edges) {
     bson_free(edges);
 }
 
-const bool mc_edges_is_leaf(const mc_edges_t *edges, const char *edge) {
+bool mc_edges_is_leaf(const mc_edges_t *edges, const char *edge) {
     return strcmp(edge, edges->leaf) == 0;
 }
 
