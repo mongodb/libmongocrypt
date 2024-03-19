@@ -19,8 +19,19 @@
 #include "mongocrypt-buffer-private.h"
 #include <bson/bson.h>
 
+typedef enum _supported_query_type_flags {
+    // No queries supported
+    SUPPORTS_NO_QUERIES = 0,
+    // Equality query supported
+    SUPPORTS_EQUALITY_QUERIES = 1 << 0,
+    // Range query supported
+    SUPPORTS_RANGE_QUERIES = 1 << 1,
+    // Range preview query supported
+    SUPPORTS_RANGE_PREVIEW_DEPRECATED_QUERIES = 1 << 2,
+} supported_query_type_flags;
+
 typedef struct _mc_EncryptedField_t {
-    bool has_queries;
+    supported_query_type_flags supported_queries;
     _mongocrypt_buffer_t keyId;
     const char *path;
     struct _mc_EncryptedField_t *next;
@@ -40,5 +51,10 @@ typedef struct {
 bool mc_EncryptedFieldConfig_parse(mc_EncryptedFieldConfig_t *efc, const bson_t *efc_bson, mongocrypt_status_t *status);
 
 void mc_EncryptedFieldConfig_cleanup(mc_EncryptedFieldConfig_t *efc);
+
+/*
+Returns whether the config contains an EncryptedField which supports the given query type flags.
+*/
+bool mc_EncryptedFieldConfig_has_query_type(mc_EncryptedFieldConfig_t *efc, supported_query_type_flags query_type);
 
 #endif /* MC_EFC_PRIVATE_H */

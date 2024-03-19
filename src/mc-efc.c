@@ -19,9 +19,36 @@
 #include "mongocrypt-private.h"
 #include "mongocrypt-util-private.h" // mc_iter_document_as_bson
 
+static bool parse_query_type_string(const char *queryType, supported_query_type_flags *out) {
+    BSON_ASSERT_PARAM(queryType);
+    BSON_ASSERT_PARAM(out);
+
+    if (!strcmp(queryType, "equality")) {
+        *out = SUPPORTS_EQUALITY_QUERIES;
+    } else if (!strcmp(queryType, "range")) {
+        *out = SUPPORTS_RANGE_QUERIES;
+    } else if (!strcmp(queryType, "rangePreview")) {
+        *out = SUPPORTS_RANGE_PREVIEW_DEPRECATED_QUERIES;
+    } else {
+        return false;
+    }
+    return true;
+}
+
+bool mc_EncryptedFieldConfig_has_query_type(mc_EncryptedFieldConfig_t *efc, supported_query_type_flags query_type) {
+    mc_EncryptedField_t *field = efc->fields;
+    while (field) {
+        if (field->supported_queries & query_type) {
+            return true;
+        }
+        field = field->next;
+    }
+    return true;
+}
+
 /* _parse_field parses and prepends one field document to efc->fields. */
 static bool _parse_field(mc_EncryptedFieldConfig_t *efc, bson_t *field, mongocrypt_status_t *status) {
-    bool has_queries = false;
+    supported_query_type_flags query_types = SUPPORTS_NO_QUERIES;
     bson_iter_t field_iter;
 
     BSON_ASSERT_PARAM(efc);
@@ -53,7 +80,83 @@ static bool _parse_field(mc_EncryptedFieldConfig_t *efc, bson_t *field, mongocry
     field_path = bson_iter_utf8(&field_iter, NULL /* length */);
 
     if (bson_iter_init_find(&field_iter, field, "queries")) {
-        has_queries = true;
+        if (BSON_ITER_HOLDS_ARRAY(&field_iter)) {
+            // Multiple queries, iterate through and grab all query types.
+            uint32_t queries_buf_len;
+            const uint8_t *queries_buf;
+            bson_t queries_arr;
+            bson_iter_array(&field_iter, &queries_buf_len, &queries_buf);
+            if (!bson_init_static(&queries_arr, queries_buf, queries_buf_len)) {
+                CLIENT_ERR("Failed to parse 'queries' field");
+                return false;
+            }
+
+            bson_iter_t queries_iter;
+            bson_iter_init(&queries_iter, &queries_arr);
+            while (bson_iter_next(&queries_iter)) {
+                if (!BSON_ITER_HOLDS_DOCUMENT(&queries_iter)) {
+                    CLIENT_ERR("Expected all entries of 'fields.queries' to be type document, got: %d",
+                               bson_iter_type(&queries_iter));
+                    return false;
+                }
+                uint32_t query_buf_len;
+                const uint8_t *query_buf;
+                bson_t query_doc;
+                bson_iter_document(&queries_iter, &query_buf_len, &query_buf);
+                if (!bson_init_static(&query_doc, query_buf, query_buf_len)) {
+                    CLIENT_ERR("Failed to parse 'queries' field");
+                    return false;
+                }
+                bson_iter_t query_type_iter;
+                if (!bson_iter_init_find(&query_type_iter, &query_doc, "queryType")) {
+                    CLIENT_ERR("unable to find 'queryType' in 'query' document");
+                    return false;
+                }
+                if (!BSON_ITER_HOLDS_UTF8(&query_type_iter)) {
+                    CLIENT_ERR("expected 'fields.queries.queryType' to be type UTF-8, got: %d",
+                               bson_iter_type(&query_type_iter));
+                    return false;
+                }
+                const char *queryType = bson_iter_utf8(&query_type_iter, NULL /* length */);
+                supported_query_type_flags flag;
+                if (!parse_query_type_string(queryType, &flag)) {
+                    CLIENT_ERR("Did not recognize query type '%s'", queryType);
+                    return false;
+                }
+                query_types |= flag;
+            }
+        } else {
+            if (!BSON_ITER_HOLDS_DOCUMENT(&field_iter)) {
+                CLIENT_ERR("Expected 'fields.queries' to be either type document or array, got: %d",
+                           bson_iter_type(&field_iter));
+                return false;
+            }
+            uint32_t query_buf_len;
+            const uint8_t *query_buf;
+            bson_t query_doc;
+            bson_iter_document(&field_iter, &query_buf_len, &query_buf);
+            if (!bson_init_static(&query_doc, query_buf, query_buf_len)) {
+                CLIENT_ERR("Failed to parse 'queries' field");
+                return false;
+            }
+            bson_iter_t query_type_iter;
+            if (!bson_iter_init_find(&query_type_iter, &query_doc, "queryType")) {
+                CLIENT_ERR("unable to find 'queryType' in 'query' document");
+                return false;
+            }
+            if (!BSON_ITER_HOLDS_UTF8(&query_type_iter)) {
+                CLIENT_ERR("expected 'fields.queries.queryType' to be type UTF-8, got: %d",
+                           bson_iter_type(&query_type_iter));
+                return false;
+            }
+            const char *queryType = bson_iter_utf8(&query_type_iter, NULL /* length */);
+            supported_query_type_flags flag;
+            if (!parse_query_type_string(queryType, &flag)) {
+                CLIENT_ERR("Did not recognize query type '%s'", queryType);
+                return false;
+            }
+            query_types |= flag;
+        }
     }
 
     /* Prepend a new mc_EncryptedField_t */
@@ -61,7 +164,7 @@ static bool _parse_field(mc_EncryptedFieldConfig_t *efc, bson_t *field, mongocry
     _mongocrypt_buffer_copy_to(&field_keyid, &ef->keyId);
     ef->path = bson_strdup(field_path);
     ef->next = efc->fields;
-    ef->has_queries = has_queries;
+    ef->supported_queries = query_types;
     efc->fields = ef;
 
     return true;

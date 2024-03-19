@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include "mc-efc-private.h"
 #include "mc-fle2-rfds-private.h"
 #include "mc-tokens-private.h"
 #include "mongocrypt-ciphertext-private.h"
@@ -578,7 +579,7 @@ static bool _fle2_collect_keys_for_deleteTokens(mongocrypt_ctx_t *ctx) {
     mc_EncryptedField_t *field;
 
     for (field = ectx->efc.fields; field != NULL; field = field->next) {
-        if (field->has_queries) {
+        if (field->supported_queries) {
             if (!_mongocrypt_key_broker_request_id(&ctx->kb, &field->keyId)) {
                 _mongocrypt_key_broker_status(&ctx->kb, ctx->status);
                 _mongocrypt_ctx_fail(ctx);
@@ -1250,7 +1251,7 @@ static bson_t *generate_delete_tokens(_mongocrypt_crypto_t *crypto,
         mc_ECOCToken_t *ecoc = NULL;
         bool loop_ok = false;
         /* deleteTokens are only necessary for indexed fields. */
-        if (!ef->has_queries) {
+        if (!ef->supported_queries) {
             goto loop_continue;
         }
 
@@ -1366,8 +1367,10 @@ typedef struct {
 
 // must_omit_encryptionInformation returns true if the command
 // must omit the "encryptionInformation" field when sent to mongod / mongos.
-static moe_result
-must_omit_encryptionInformation(const char *command_name, const bson_t *command, mongocrypt_status_t *status) {
+static moe_result must_omit_encryptionInformation(const char *command_name,
+                                                  const bson_t *command,
+                                                  bool use_range_v2,
+                                                  mongocrypt_status_t *status) {
     // eligible_commands may omit encryptionInformation if the command does not
     // contain payloads requiring encryption.
     const char *eligible_commands[] = {"find", "aggregate", "distinct", "count", "insert"};
@@ -1375,14 +1378,17 @@ must_omit_encryptionInformation(const char *command_name, const bson_t *command,
     bool found = false;
 
     // prohibited_commands prohibit encryptionInformation on mongod / mongos.
-    const char *prohibited_commands[] = {"compactStructuredEncryptionData",
-                                         "cleanupStructuredEncryptionData",
-                                         "create",
-                                         "collMod",
-                                         "createIndexes"};
+    const char *prohibited_commands[] = {"cleanupStructuredEncryptionData", "create", "collMod", "createIndexes"};
 
     BSON_ASSERT_PARAM(command_name);
     BSON_ASSERT_PARAM(command);
+
+    if (!use_range_v2) {
+        // Before range v2, compact is a prohibited command. After, it must have encryption information.
+        if (0 == strcmp("compactStructuredEncryptionData", command_name)) {
+            return (moe_result){.ok = true, .must_omit = true};
+        }
+    }
 
     for (i = 0; i < sizeof(prohibited_commands) / sizeof(prohibited_commands[0]); i++) {
         if (0 == strcmp(prohibited_commands[i], command_name)) {
@@ -1424,7 +1430,7 @@ must_omit_encryptionInformation(const char *command_name, const bson_t *command,
  * "compactStructuredEncryptionData" or cleanupTokens if command_name is
  * "cleanupStructuredEncryptionData"
  */
-static bool _fle2_append_compactionTokens(_mongocrypt_crypto_t *crypto,
+static bool _fle2_append_compactionTokens(mongocrypt_t *crypt,
                                           _mongocrypt_key_broker_t *kb,
                                           mc_EncryptedFieldConfig_t *efc,
                                           const char *command_name,
@@ -1433,11 +1439,12 @@ static bool _fle2_append_compactionTokens(_mongocrypt_crypto_t *crypto,
     bson_t result_compactionTokens;
     bool ret = false;
 
-    BSON_ASSERT_PARAM(crypto);
+    BSON_ASSERT_PARAM(crypt);
     BSON_ASSERT_PARAM(kb);
     BSON_ASSERT_PARAM(efc);
     BSON_ASSERT_PARAM(command_name);
     BSON_ASSERT_PARAM(out);
+    _mongocrypt_crypto_t *crypto = crypt->crypto;
 
     bool cleanup = (0 == strcmp(command_name, "cleanupStructuredEncryptionData"));
 
@@ -1453,11 +1460,13 @@ static bool _fle2_append_compactionTokens(_mongocrypt_crypto_t *crypto,
 
     mc_EncryptedField_t *ptr;
     for (ptr = efc->fields; ptr != NULL; ptr = ptr->next) {
-        /* Append ECOC token. */
+        /* Append tokens. */
         _mongocrypt_buffer_t key = {0};
         _mongocrypt_buffer_t tokenkey = {0};
         mc_CollectionsLevel1Token_t *cl1t = NULL;
         mc_ECOCToken_t *ecoct = NULL;
+        mc_ESCToken_t *esct = NULL;
+        mc_AnchorPaddingTokenRoot_t *padt = NULL;
         bool ecoc_ok = false;
 
         if (!_mongocrypt_key_broker_decrypted_key_by_id(kb, &ptr->keyId, &key)) {
@@ -1488,10 +1497,35 @@ static bool _fle2_append_compactionTokens(_mongocrypt_crypto_t *crypto,
 
         const _mongocrypt_buffer_t *ecoct_buf = mc_ECOCToken_get(ecoct);
 
-        BSON_APPEND_BINARY(&result_compactionTokens, ptr->path, BSON_SUBTYPE_BINARY, ecoct_buf->data, ecoct_buf->len);
+        if (crypt->opts.use_range_v2 && !cleanup && ptr->supported_queries & SUPPORTS_RANGE_QUERIES) {
+            // Append the document {ecoc: <ECOCToken>, anchorPaddingToken: <AnchorPaddingTokenRoot>}
+            esct = mc_ESCToken_new(crypto, cl1t, status);
+            if (!esct) {
+                goto ecoc_fail;
+            }
+            padt = mc_AnchorPaddingTokenRoot_new(crypto, esct, status);
+            if (!padt) {
+                goto ecoc_fail;
+            }
+            const _mongocrypt_buffer_t *padt_buf = mc_AnchorPaddingTokenRoot_get(padt);
+            bson_t tokenDoc;
+            BSON_APPEND_DOCUMENT_BEGIN(&result_compactionTokens, ptr->path, &tokenDoc);
+            BSON_APPEND_BINARY(&tokenDoc, "ecoc", BSON_SUBTYPE_BINARY, ecoct_buf->data, ecoct_buf->len);
+            BSON_APPEND_BINARY(&tokenDoc, "anchorPaddingToken", BSON_SUBTYPE_BINARY, padt_buf->data, padt_buf->len);
+            bson_append_document_end(&result_compactionTokens, &tokenDoc);
+        } else {
+            // Append just <ECOCToken>
+            BSON_APPEND_BINARY(&result_compactionTokens,
+                               ptr->path,
+                               BSON_SUBTYPE_BINARY,
+                               ecoct_buf->data,
+                               ecoct_buf->len);
+        }
 
         ecoc_ok = true;
     ecoc_fail:
+        mc_AnchorPaddingTokenRoot_destroy(padt);
+        mc_ESCToken_destroy(esct);
         mc_ECOCToken_destroy(ecoct);
         mc_CollectionsLevel1Token_destroy(cl1t);
         _mongocrypt_buffer_cleanup(&key);
@@ -1695,7 +1729,8 @@ static bool _fle2_finalize(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
         }
     }
 
-    moe_result result = must_omit_encryptionInformation(command_name, &converted, ctx->status);
+    moe_result result =
+        must_omit_encryptionInformation(command_name, &converted, ctx->crypt->opts.use_range_v2, ctx->status);
     if (!result.ok) {
         bson_destroy(&converted);
         bson_destroy(deleteTokens);
@@ -1720,12 +1755,7 @@ static bool _fle2_finalize(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
     }
     bson_destroy(deleteTokens);
 
-    if (!_fle2_append_compactionTokens(ctx->crypt->crypto,
-                                       &ctx->kb,
-                                       &ectx->efc,
-                                       command_name,
-                                       &converted,
-                                       ctx->status)) {
+    if (!_fle2_append_compactionTokens(ctx->crypt, &ctx->kb, &ectx->efc, command_name, &converted, ctx->status)) {
         bson_destroy(&converted);
         return _mongocrypt_ctx_fail(ctx);
     }

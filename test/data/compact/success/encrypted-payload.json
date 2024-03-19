@@ -1,6 +1,12 @@
 {
    "compactStructuredEncryptionData": "test",
    "compactionTokens": {
+      "rangeField": {
+         "$binary": {
+            "base64": "27J6DZqcjkRzZ3lWEsxH7CsQHr4CZirrGmuPS8ZkRO0=",
+            "subType": "00"
+        }
+      },
       "nested.notindexed": {
          "$binary": {
             "base64": "27J6DZqcjkRzZ3lWEsxH7CsQHr4CZirrGmuPS8ZkRO0=",
