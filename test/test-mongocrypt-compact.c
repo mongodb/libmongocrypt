@@ -23,7 +23,7 @@ static void _test_compact_success(_mongocrypt_tester_t *tester) {
     char collfile[1000];
     char payloadfile[1000];
     strcpy(datapath, basepath);
-    int nullb = strlen(basepath);
+    size_t nullb = strlen(basepath);
     for (int use_anchor_pad = 0; use_anchor_pad <= 1; use_anchor_pad++) {
         for (int use_range_v2 = 0; use_range_v2 <= 1; use_range_v2++) {
             datapath[nullb] = 0;
