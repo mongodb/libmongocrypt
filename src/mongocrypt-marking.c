@@ -646,7 +646,7 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_common_v1(_mongocrypt_
                                       common->collectionsLevel1Token,
                                       &out->escDerivedToken,
                                       &out->eccDerivedToken,
-                                      (mc_optional_bool_t){}, // Unset is_leaf as it's not used in V1
+                                      (mc_optional_bool_t){0}, // Unset is_leaf as it's not used in V1
                                       status)) {
         goto fail;
     }
@@ -795,7 +795,7 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_common(_mongocrypt_key
             &out->escDerivedToken,
             NULL, // unused in v2
             // If this is a range insert, we append isLeaf to the encryptedTokens. Otherwise, we don't.
-            placeholder->algorithm == MONGOCRYPT_FLE2_ALGORITHM_RANGE ? OPT_BOOL(false) : (mc_optional_bool_t){},
+            placeholder->algorithm == MONGOCRYPT_FLE2_ALGORITHM_RANGE ? OPT_BOOL(false) : (mc_optional_bool_t){0},
             status)) {
         goto fail;
     }
@@ -1069,7 +1069,7 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange_v1(
                                               edge_tokens.collectionsLevel1Token,
                                               &etc.escDerivedToken,
                                               &etc.eccDerivedToken,
-                                              (mc_optional_bool_t){}, // Dummy value for isLeaf, unused in FLE V1
+                                              (mc_optional_bool_t){0}, // Dummy value for isLeaf, unused in FLE V1
                                               status)) {
                 goto fail_loop;
             }
