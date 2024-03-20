@@ -1497,7 +1497,7 @@ static bool _fle2_append_compactionTokens(mongocrypt_t *crypt,
 
         const _mongocrypt_buffer_t *ecoct_buf = mc_ECOCToken_get(ecoct);
 
-        if (crypt->opts.use_range_v2 && !cleanup && ptr->supported_queries & SUPPORTS_RANGE_QUERIES) {
+        if (crypt->opts.use_range_v2 && (ptr->supported_queries & SUPPORTS_RANGE_QUERIES)) {
             // Append the document {ecoc: <ECOCToken>, anchorPaddingToken: <AnchorPaddingTokenRoot>}
             esct = mc_ESCToken_new(crypto, cl1t, status);
             if (!esct) {
