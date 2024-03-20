@@ -385,7 +385,7 @@ static bool _fle2_derive_encrypted_token(_mongocrypt_crypto_t *crypto,
                                          const mc_CollectionsLevel1Token_t *collectionsLevel1Token,
                                          const _mongocrypt_buffer_t *escDerivedToken,
                                          const _mongocrypt_buffer_t *eccDerivedToken,
-                                         mc_optional_uint32_t is_leaf,
+                                         mc_optional_bool_t is_leaf,
                                          mongocrypt_status_t *status) {
     mc_ECOCToken_t *ecocToken = mc_ECOCToken_new(crypto, collectionsLevel1Token, status);
     if (!ecocToken) {
@@ -401,7 +401,7 @@ static bool _fle2_derive_encrypted_token(_mongocrypt_crypto_t *crypto,
         if (use_range_v2 && is_leaf.set) {
             // Range V2; concat isLeaf
             _mongocrypt_buffer_t isLeafBuf;
-            if (!_mongocrypt_buffer_copy_from_data_and_size(&isLeafBuf, (uint8_t[]){!!is_leaf.value}, 1)) {
+            if (!_mongocrypt_buffer_copy_from_data_and_size(&isLeafBuf, (uint8_t[]){is_leaf.value}, 1)) {
                 CLIENT_ERR("failed to create is_leaf buffer");
                 goto fail;
             }
@@ -646,7 +646,7 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_common_v1(_mongocrypt_
                                       common->collectionsLevel1Token,
                                       &out->escDerivedToken,
                                       &out->eccDerivedToken,
-                                      (mc_optional_uint32_t){}, // Unset is_leaf as it's not used in V1
+                                      (mc_optional_bool_t){}, // Unset is_leaf as it's not used in V1
                                       status)) {
         goto fail;
     }
@@ -786,6 +786,7 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_common(_mongocrypt_key
     BSON_ASSERT(common->eccDerivedToken.data == NULL);
 
     // p := EncryptCTR(ECOCToken, ESCDerivedFromDataTokenAndContentionFactor)
+    // Or in Range V2, when using range: p := EncryptCTR(ECOCToken, ESCDerivedFromDataTokenAndContentionFactor || 0x00)
     if (!_fle2_derive_encrypted_token(
             crypto,
             &out->encryptedTokens,
@@ -794,7 +795,7 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_common(_mongocrypt_key
             &out->escDerivedToken,
             NULL, // unused in v2
             // If this is a range insert, we append isLeaf to the encryptedTokens. Otherwise, we don't.
-            placeholder->algorithm == MONGOCRYPT_FLE2_ALGORITHM_RANGE ? OPT_U32(0) : (mc_optional_uint32_t){},
+            placeholder->algorithm == MONGOCRYPT_FLE2_ALGORITHM_RANGE ? OPT_BOOL(false) : (mc_optional_bool_t){},
             status)) {
         goto fail;
     }
@@ -1068,7 +1069,7 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange_v1(
                                               edge_tokens.collectionsLevel1Token,
                                               &etc.escDerivedToken,
                                               &etc.eccDerivedToken,
-                                              (mc_optional_uint32_t){}, // Dummy value for isLeaf, unused in FLE V1
+                                              (mc_optional_bool_t){}, // Dummy value for isLeaf, unused in FLE V1
                                               status)) {
                 goto fail_loop;
             }
@@ -1205,7 +1206,7 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange(_mo
                                               edge_tokens.collectionsLevel1Token,
                                               &etc.escDerivedToken,
                                               NULL, // ecc unsed in FLE2v2
-                                              OPT_U32(is_leaf),
+                                              OPT_BOOL(is_leaf),
                                               status)) {
                 goto fail_loop;
             }
