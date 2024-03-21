@@ -1383,11 +1383,9 @@ static moe_result must_omit_encryptionInformation(const char *command_name,
     BSON_ASSERT_PARAM(command_name);
     BSON_ASSERT_PARAM(command);
 
-    if (!use_range_v2) {
-        // Before range v2, compact is a prohibited command. After, it must have encryption information.
-        if (0 == strcmp("compactStructuredEncryptionData", command_name)) {
-            return (moe_result){.ok = true, .must_omit = true};
-        }
+    // Before range v2, compact is a prohibited command. After, it must have encryption information.
+    if (!use_range_v2 && 0 == strcmp("compactStructuredEncryptionData", command_name)) {
+        return (moe_result){.ok = true, .must_omit = true};
     }
 
     for (i = 0; i < sizeof(prohibited_commands) / sizeof(prohibited_commands[0]); i++) {
