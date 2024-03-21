@@ -486,7 +486,7 @@ static int64_t backoff_time_usec(int attempts) {
 
 static bool should_retry_http(int http_status) {
     static const int RETRYABLE[] = {408, 429, 500, 502, 503, 509};
-    for (size_t i = 0; i < sizeof(RETRYABLE); i++) {
+    for (size_t i = 0; i < sizeof(RETRYABLE) / sizeof(int); i++) {
         if (http_status == RETRYABLE[i]) {
             return true;
         }
