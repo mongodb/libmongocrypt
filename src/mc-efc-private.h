@@ -52,9 +52,4 @@ bool mc_EncryptedFieldConfig_parse(mc_EncryptedFieldConfig_t *efc, const bson_t 
 
 void mc_EncryptedFieldConfig_cleanup(mc_EncryptedFieldConfig_t *efc);
 
-/*
-Returns whether the config contains an EncryptedField which supports the given query type flags.
-*/
-bool mc_EncryptedFieldConfig_has_query_type(mc_EncryptedFieldConfig_t *efc, supported_query_type_flags query_type);
-
 #endif /* MC_EFC_PRIVATE_H */

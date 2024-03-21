@@ -35,17 +35,6 @@ static bool parse_query_type_string(const char *queryType, supported_query_type_
     return true;
 }
 
-bool mc_EncryptedFieldConfig_has_query_type(mc_EncryptedFieldConfig_t *efc, supported_query_type_flags query_type) {
-    mc_EncryptedField_t *field = efc->fields;
-    while (field) {
-        if (field->supported_queries & query_type) {
-            return true;
-        }
-        field = field->next;
-    }
-    return true;
-}
-
 /* _parse_field parses and prepends one field document to efc->fields. */
 static bool _parse_field(mc_EncryptedFieldConfig_t *efc, bson_t *field, mongocrypt_status_t *status) {
     supported_query_type_flags query_types = SUPPORTS_NO_QUERIES;
