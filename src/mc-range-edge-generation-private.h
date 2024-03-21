@@ -37,6 +37,9 @@ size_t mc_edges_len(mc_edges_t *edges);
 // mc_edges_destroys frees `edges`.
 void mc_edges_destroy(mc_edges_t *edges);
 
+// mc_edges_is_leaf returns whether the given edge is the leaf node of the edge set.
+bool mc_edges_is_leaf(const mc_edges_t *edges, const char *edge);
+
 typedef struct {
     int32_t value;
     mc_optional_int32_t min;

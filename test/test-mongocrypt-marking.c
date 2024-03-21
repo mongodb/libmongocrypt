@@ -17,8 +17,15 @@
 /* For each field, check a valid value, invalid value, missing value */
 
 #include "bson/bson.h"
+#include "mc-fle-blob-subtype-private.h"
+#include "mc-tokens-private.h"
+#include "mongocrypt-buffer-private.h"
+#include "mongocrypt-ciphertext-private.h"
 #include "mongocrypt-marking-private.h"
+#include "mongocrypt.h"
+#include "test-mongocrypt-assert.h"
 #include "test-mongocrypt.h"
+#include <stdbool.h>
 
 /* Create a basis marking buffer with valid values for the given fields. */
 static void _make_marking(bson_t *bson, _mongocrypt_buffer_t *buf) {
@@ -896,7 +903,217 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
     }
 }
 
+// Runs _mongocrypt_marking_to_ciphertext to compute the ciphertext for the given marking.
+static void get_ciphertext_from_marking_json(_mongocrypt_tester_t *tester,
+                                             mongocrypt_t *crypt,
+                                             const char *markingJSON,
+                                             _mongocrypt_ciphertext_t *out) {
+    mongocrypt_status_t *status = mongocrypt_status_new();
+    mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+    // Set up encryption environment
+    ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "test", -1, TEST_FILE("./test/example/cmd.json")), ctx);
+    // Add a test key
+    _mongocrypt_buffer_t keyId;
+    _mongocrypt_buffer_from_binary(&keyId, TEST_BIN(16));
+    keyId.subtype = BSON_SUBTYPE_UUID;
+    _mongocrypt_key_broker_add_test_key(&ctx->kb, &keyId);
+
+    _mongocrypt_buffer_t marking_buf;
+    _mongocrypt_marking_t marking;
+    bson_t *marking_bson = TMP_BSON(markingJSON);
+    // Add key identifier info to the marking
+    BSON_APPEND_BINARY(marking_bson, "ki", BSON_SUBTYPE_UUID, (TEST_BIN(16))->data, 16);
+    BSON_APPEND_BINARY(marking_bson, "ku", BSON_SUBTYPE_UUID, (TEST_BIN(16))->data, 16);
+    _make_marking(marking_bson, &marking_buf);
+    // Use FLE2 as the subtype (default is FLE1)
+    marking_buf.data[0] = MC_SUBTYPE_FLE2EncryptionPlaceholder;
+    _parse_ok(&marking_buf, &marking);
+
+    ASSERT_OK_STATUS(_mongocrypt_marking_to_ciphertext((void *)&ctx->kb, &marking, out, status), status);
+
+    mongocrypt_status_destroy(status);
+    _mongocrypt_buffer_cleanup(&marking_buf);
+    _mongocrypt_marking_cleanup(&marking);
+    mongocrypt_ctx_destroy(ctx);
+}
+
+// Assert that the encryptedTokens fields in V2 insert/update ciphertext matches our expectations. Specifically, checks
+// that the length of these fields are what we expect, and that the "isLeaf" token is appended when using range V2.
+static void assert_correctness_of_ciphertext(_mongocrypt_ciphertext_t *ciphertext,
+                                             mongocrypt_t *crypt,
+                                             mc_ECOCToken_t *ecocToken,
+                                             bool useRangeV2,
+                                             uint32_t expectedEdges) {
+    uint32_t expectedPLength = useRangeV2 ? 33 : 32;
+    const _mongocrypt_value_encryption_algorithm_t *fle2alg = _mcFLE2Algorithm();
+    mongocrypt_status_t *status = mongocrypt_status_new();
+
+    bson_t ciphertextBSON;
+    bson_iter_t iter;
+    ASSERT(_mongocrypt_buffer_to_bson(&ciphertext->data, &ciphertextBSON));
+
+    // 'p' field should be available, length should be 16 bytes of IV + expected bytes
+    bson_iter_init_find(&iter, &ciphertextBSON, "p");
+    ASSERT(BSON_ITER_HOLDS_BINARY(&iter));
+    uint32_t p_len;
+    const uint8_t *p_data;
+    bson_iter_binary(&iter, NULL, &p_len, &p_data);
+    ASSERT_CMPUINT32(p_len, ==, 16 + expectedPLength);
+
+    if (useRangeV2) {
+        _mongocrypt_buffer_t p_buf, decrypted_buf;
+        ASSERT(_mongocrypt_buffer_copy_from_data_and_size(&p_buf, p_data, p_len));
+        _mongocrypt_buffer_init_size(&decrypted_buf, expectedPLength);
+        uint32_t decryptedBytes;
+        // Decrypt p. When using range V2, last byte should be 0.
+        ASSERT_OK_STATUS(fle2alg->do_decrypt(crypt->crypto,
+                                             NULL,
+                                             mc_ECOCToken_get(ecocToken),
+                                             &p_buf,
+                                             &decrypted_buf,
+                                             &decryptedBytes,
+                                             status),
+                         status);
+        ASSERT_CMPUINT32(decryptedBytes, ==, expectedPLength);
+        ASSERT_CMPUINT8(decrypted_buf.data[decrypted_buf.len - 1], ==, 0);
+        _mongocrypt_buffer_cleanup(&decrypted_buf);
+        _mongocrypt_buffer_cleanup(&p_buf);
+    }
+
+    // 'g' field should be available
+    bson_iter_init_find(&iter, &ciphertextBSON, "g");
+    ASSERT(BSON_ITER_HOLDS_ARRAY(&iter));
+    uint32_t g_buf_len;
+    const uint8_t *g_buf;
+    bson_t g_arr;
+    bson_iter_array(&iter, &g_buf_len, &g_buf);
+    ASSERT(bson_init_static(&g_arr, g_buf, g_buf_len));
+
+    bson_iter_t g_iter;
+    bson_iter_init(&g_iter, &g_arr);
+    size_t g_count = 0, leaf_count = 0;
+    // Iterate through each edge token set and check p for each
+    while (bson_iter_next(&g_iter)) {
+        g_count++;
+        ASSERT(BSON_ITER_HOLDS_DOCUMENT(&g_iter));
+        uint32_t subdoc_len;
+        const uint8_t *subdoc_buf;
+        bson_t subdoc;
+        bson_iter_document(&g_iter, &subdoc_len, &subdoc_buf);
+        ASSERT(bson_init_static(&subdoc, subdoc_buf, subdoc_len));
+
+        bson_iter_t sub_iter;
+        bson_iter_init_find(&sub_iter, &subdoc, "p");
+        ASSERT(BSON_ITER_HOLDS_BINARY(&sub_iter));
+        bson_iter_binary(&sub_iter, NULL, &p_len, &p_data);
+        ASSERT_CMPUINT32(p_len, ==, 16 + expectedPLength);
+
+        if (useRangeV2) {
+            _mongocrypt_buffer_t p_buf, decrypted_buf;
+            ASSERT(_mongocrypt_buffer_copy_from_data_and_size(&p_buf, p_data, p_len));
+            _mongocrypt_buffer_init_size(&decrypted_buf, expectedPLength);
+
+            // Decrypt p. If useRangeV2, the last byte should be 0 or 1, depending on whether isLeaf.
+            uint32_t decrypted_bytes;
+            ASSERT_OK_STATUS(fle2alg->do_decrypt(crypt->crypto,
+                                                 NULL,
+                                                 mc_ECOCToken_get(ecocToken),
+                                                 &p_buf,
+                                                 &decrypted_buf,
+                                                 &decrypted_bytes,
+                                                 status),
+                             status);
+            ASSERT_CMPUINT32(decrypted_bytes, ==, expectedPLength);
+            if (decrypted_buf.data[decrypted_buf.len - 1] == 1) {
+                leaf_count++;
+            } else {
+                ASSERT_CMPUINT8(decrypted_buf.data[decrypted_buf.len - 1], ==, 0)
+            }
+
+            _mongocrypt_buffer_cleanup(&decrypted_buf);
+            _mongocrypt_buffer_cleanup(&p_buf);
+        }
+    }
+    ASSERT_CMPSIZE_T(g_count, ==, expectedEdges);
+    if (useRangeV2) {
+        // There should be exactly one leaf in any insert call.
+        ASSERT_CMPSIZE_T(leaf_count, ==, 1);
+    }
+    bson_destroy(&ciphertextBSON);
+    mongocrypt_status_destroy(status);
+}
+
+// Get the ECOC token to use in decryption.
+static mc_ECOCToken_t *getECOCToken(mongocrypt_t *crypt) {
+    mongocrypt_status_t *status = mongocrypt_status_new();
+    // Test token key that we added earlier is all zeros.
+    _mongocrypt_buffer_t tokenKey;
+    _mongocrypt_buffer_init_size(&tokenKey, MONGOCRYPT_TOKEN_KEY_LEN);
+    memset(tokenKey.data, 0, MONGOCRYPT_TOKEN_KEY_LEN);
+
+    mc_CollectionsLevel1Token_t *collectionsLevel1Token =
+        mc_CollectionsLevel1Token_new(crypt->crypto, &tokenKey, status);
+    mc_ECOCToken_t *ecocToken = mc_ECOCToken_new(crypt->crypto, collectionsLevel1Token, status);
+    ASSERT(mongocrypt_status_ok(status));
+
+    mc_CollectionsLevel1Token_destroy(collectionsLevel1Token);
+    _mongocrypt_buffer_cleanup(&tokenKey);
+    mongocrypt_status_destroy(status);
+    return ecocToken;
+}
+
+static void test_mc_marking_to_ciphertext(_mongocrypt_tester_t *tester) {
+    if (!_aes_ctr_is_supported_by_os) {
+        printf("Common Crypto with no CTR support detected. Skipping.");
+        return;
+    }
+
+    // Test that whether range V2 is enabled or disabled, the ciphertext matches our expectations.
+    {
+        const char markingJSON[] = RAW_STRING({
+            't' : 1,
+            'a' : 3,
+            'v' : {'min' : 0, 'max' : 7, 'v' : 5},
+            's' : {'$numberLong' : '1'},
+            'cm' : {'$numberLong' : '1'}
+        });
+        _mongocrypt_ciphertext_t ciphertext;
+        _mongocrypt_ciphertext_init(&ciphertext);
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+
+        get_ciphertext_from_marking_json(tester, crypt, markingJSON, &ciphertext);
+
+        mc_ECOCToken_t *ecocToken = getECOCToken(crypt);
+        assert_correctness_of_ciphertext(&ciphertext, crypt, ecocToken, false, 4);
+        _mongocrypt_ciphertext_cleanup(&ciphertext);
+        mc_ECOCToken_destroy(ecocToken);
+        mongocrypt_destroy(crypt);
+    }
+    {
+        const char markingJSON[] = RAW_STRING({
+            't' : 1,
+            'a' : 3,
+            'v' : {'min' : 0, 'max' : 7, 'v' : 5, 'trimFactor' : 0},
+            's' : {'$numberLong' : '1'},
+            'cm' : {'$numberLong' : '1'}
+        });
+        _mongocrypt_ciphertext_t ciphertext;
+        _mongocrypt_ciphertext_init(&ciphertext);
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_WITH_RANGE_V2);
+
+        get_ciphertext_from_marking_json(tester, crypt, markingJSON, &ciphertext);
+
+        mc_ECOCToken_t *ecocToken = getECOCToken(crypt);
+        assert_correctness_of_ciphertext(&ciphertext, crypt, ecocToken, true, 4);
+        _mongocrypt_ciphertext_cleanup(&ciphertext);
+        mc_ECOCToken_destroy(ecocToken);
+
+        mongocrypt_destroy(crypt);
+    }
+}
+
 void _mongocrypt_tester_install_marking(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(test_mongocrypt_marking_parse);
     INSTALL_TEST(test_mc_get_mincover_from_FLE2RangeFindSpec);
+    INSTALL_TEST(test_mc_marking_to_ciphertext);
 }
