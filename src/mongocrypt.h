@@ -687,6 +687,8 @@ bool mongocrypt_ctx_setopt_algorithm(mongocrypt_ctx_t *ctx, const char *algorith
 /// String constant for setopt_algorithm "Unindexed" explicit encryption
 #define MONGOCRYPT_ALGORITHM_UNINDEXED_STR "Unindexed"
 /// String constant for setopt_algorithm "rangePreview" explicit encryption (deprecated in favor of "range")
+/// NOTE: "rangePreview" is experimental only and is not intended for public use.
+/// API for "rangePreview" may be removed in a future release.
 #define MONGOCRYPT_ALGORITHM_RANGEPREVIEW_DEPRECATED_STR "RangePreview"
 #define MONGOCRYPT_ALGORITHM_RANGE_STR "Range"
 
@@ -878,6 +880,9 @@ bool mongocrypt_ctx_explicit_encrypt_init(mongocrypt_ctx_t *ctx, mongocrypt_bina
  * Explicit helper method to encrypt a Match Expression or Aggregate Expression.
  * Contexts created for explicit encryption will not go through mongocryptd.
  * Requires query_type to be "range" or "rangePreview".
+ *
+ * NOTE: "rangePreview" is experimental only and is not intended for public use.
+ * API for "rangePreview" may be removed in a future release.
  *
  * This method expects the passed-in BSON to be of the form:
  * { "v" : FLE2RangeFindDriverSpec }
@@ -1490,6 +1495,8 @@ bool mongocrypt_ctx_setopt_algorithm_range(mongocrypt_ctx_t *ctx, mongocrypt_bin
 /// String constants for setopt_query_type
 #define MONGOCRYPT_QUERY_TYPE_EQUALITY_STR "equality"
 // 'rangePreview' is deprecated in favor of range.
+/// NOTE: "rangePreview" is experimental only and is not intended for public use.
+/// API for "rangePreview" may be removed in a future release.
 #define MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_DEPRECATED_STR "rangePreview"
 #define MONGOCRYPT_QUERY_TYPE_RANGE_STR "range"
 
