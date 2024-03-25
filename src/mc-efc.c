@@ -16,6 +16,7 @@
 
 #include "mc-efc-private.h"
 
+#include "mlib/str.h"
 #include "mongocrypt-private.h"
 #include "mongocrypt-util-private.h" // mc_iter_document_as_bson
 
@@ -23,15 +24,18 @@ static bool _parse_query_type_string(const char *queryType, supported_query_type
     BSON_ASSERT_PARAM(queryType);
     BSON_ASSERT_PARAM(out);
 
-    if (!strcmp(queryType, "equality")) {
+    mstr_view qtv = mstrv_view_cstr(queryType);
+
+    if (mstr_eq_ignore_case(mstrv_lit(MONGOCRYPT_QUERY_TYPE_EQUALITY_STR), qtv)) {
         *out = SUPPORTS_EQUALITY_QUERIES;
-    } else if (!strcmp(queryType, "range")) {
+    } else if (mstr_eq_ignore_case(mstrv_lit(MONGOCRYPT_QUERY_TYPE_RANGE_STR), qtv)) {
         *out = SUPPORTS_RANGE_QUERIES;
-    } else if (!strcmp(queryType, "rangePreview")) {
+    } else if (mstr_eq_ignore_case(mstrv_lit(MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_DEPRECATED_STR), qtv)) {
         *out = SUPPORTS_RANGE_PREVIEW_DEPRECATED_QUERIES;
     } else {
         return false;
     }
+
     return true;
 }
 
@@ -43,12 +47,9 @@ _parse_supported_query_types(bson_iter_t *iter, supported_query_type_flags *out,
         CLIENT_ERR("When parsing supported query types: Expected type document, got: %d", bson_iter_type(iter));
         return false;
     }
-    uint32_t query_buf_len;
-    const uint8_t *query_buf;
+
     bson_t query_doc;
-    bson_iter_document(iter, &query_buf_len, &query_buf);
-    if (!bson_init_static(&query_doc, query_buf, query_buf_len)) {
-        CLIENT_ERR("Failed to parse supported query types");
+    if (!mc_iter_document_as_bson(iter, &query_doc, status)) {
         return false;
     }
     bson_iter_t query_type_iter;
