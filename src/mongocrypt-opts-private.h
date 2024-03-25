@@ -154,6 +154,14 @@ bool _mongocrypt_opts_kms_providers_validate(_mongocrypt_opts_t *opts,
 bool _mongocrypt_parse_optional_utf8(const bson_t *bson, const char *dotkey, char **out, mongocrypt_status_t *status);
 
 /*
+ * Parse an optional boolean value from BSON.
+ * @dotkey may be a dot separated key like: "a.b.c".
+ * @*out is set to a copy of the value if found, false otherwise.
+ * Returns true if no error occured.
+ */
+bool _mongocrypt_parse_optional_bool(const bson_t *bson, const char *dotkey, bool *out, mongocrypt_status_t *status);
+
+/*
  * Parse a required UTF-8 value from BSON.
  * @dotkey may be a dot separated key like: "a.b.c".
  * @*out is set to a copy of the string if found, NULL otherwise. Caller must
