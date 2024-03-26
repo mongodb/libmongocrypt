@@ -1,10 +1,18 @@
 {
-   "compactStructuredEncryptionData": "test",
-   "compactionTokens": {
+   "cleanupStructuredEncryptionData": "test",
+   "cleanupTokens": {
       "rangeField": {
-         "$binary": {
-            "base64": "27J6DZqcjkRzZ3lWEsxH7CsQHr4CZirrGmuPS8ZkRO0=",
-            "subType": "00"
+        "ecoc": {
+            "$binary": {
+                "base64": "27J6DZqcjkRzZ3lWEsxH7CsQHr4CZirrGmuPS8ZkRO0=",
+                "subType": "00"
+            }
+        },
+        "anchorPaddingToken": {
+            "$binary": {
+                "base64": "hjezd/cwUfInCg0WjvFlzdn9/BQa8upEyogsU5pMWMU=",
+                "subType": "00"
+            }
         }
       },
       "nested.notindexed": {

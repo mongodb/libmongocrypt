@@ -1,5 +1,6 @@
 {
    "compactStructuredEncryptionData": "test",
+   "anchorPaddingFactor": 0.47,
    "compactionTokens": {
       "rangeField": {
          "$binary": {
