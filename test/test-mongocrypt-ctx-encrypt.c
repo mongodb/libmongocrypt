@@ -660,7 +660,7 @@ static void _test_local_schema(_mongocrypt_tester_t *tester) {
     schema_map = TEST_FILE("./test/data/schema-map.json");
     ASSERT_OK(mongocrypt_setopt_kms_provider_aws(crypt, "example", -1, "example", -1), crypt);
     ASSERT_OK(mongocrypt_setopt_schema_map(crypt, schema_map), crypt);
-    ASSERT_OK(mongocrypt_init(crypt), crypt);
+    ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
     /* Schema map has test.test, we should jump right to NEED_MONGO_MARKINGS */
     ctx = mongocrypt_ctx_new(crypt);
@@ -837,7 +837,7 @@ static void _test_encrypt_is_remote_schema(_mongocrypt_tester_t *tester) {
     crypt = mongocrypt_new();
     ASSERT_OK(mongocrypt_setopt_kms_provider_aws(crypt, "example", -1, "example", -1), crypt);
     ASSERT_OK(mongocrypt_setopt_schema_map(crypt, TEST_FILE("./test/data/schema-map.json")), crypt);
-    ASSERT_OK(mongocrypt_init(crypt), crypt);
+    ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
     ctx = mongocrypt_ctx_new(crypt);
     ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "test", -1, TEST_FILE("./test/example/cmd.json")), ctx);
     _mongocrypt_tester_run_ctx_to(tester, ctx, MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
@@ -1087,7 +1087,7 @@ void _test_encrypt_empty_aws(_mongocrypt_tester_t *tester) {
 
     crypt = mongocrypt_new();
     ASSERT_OK(mongocrypt_setopt_kms_provider_aws(crypt, "", -1, "", -1), crypt);
-    ASSERT_OK(mongocrypt_init(crypt), crypt);
+    ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
     ctx = mongocrypt_ctx_new(crypt);
     ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_FILE("./test/example/cmd.json")), ctx);
@@ -1139,7 +1139,7 @@ static void _test_encrypt_per_ctx_credentials(_mongocrypt_tester_t *tester) {
     crypt = mongocrypt_new();
     mongocrypt_setopt_use_need_kms_credentials_state(crypt);
     mongocrypt_setopt_kms_providers(crypt, TEST_BSON("{'aws': {}}"));
-    ASSERT_OK(mongocrypt_init(crypt), crypt);
+    ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
     ctx = mongocrypt_ctx_new(crypt);
     ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "test", -1, TEST_FILE("./test/example/cmd.json")), ctx);
     _mongocrypt_tester_run_ctx_to(tester, ctx, MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS);
@@ -1172,7 +1172,7 @@ static void _test_encrypt_per_ctx_credentials_given_empty(_mongocrypt_tester_t *
     crypt = mongocrypt_new();
     mongocrypt_setopt_use_need_kms_credentials_state(crypt);
     mongocrypt_setopt_kms_providers(crypt, TEST_BSON("{'aws': {}}"));
-    ASSERT_OK(mongocrypt_init(crypt), crypt);
+    ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
     ctx = mongocrypt_ctx_new(crypt);
     ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "test", -1, TEST_FILE("./test/example/cmd.json")), ctx);
     _mongocrypt_tester_run_ctx_to(tester, ctx, MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS);
@@ -1194,7 +1194,7 @@ static void _test_encrypt_per_ctx_credentials_local(_mongocrypt_tester_t *tester
     crypt = mongocrypt_new();
     mongocrypt_setopt_use_need_kms_credentials_state(crypt);
     mongocrypt_setopt_kms_providers(crypt, TEST_BSON("{'local': {}}"));
-    ASSERT_OK(mongocrypt_init(crypt), crypt);
+    ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
     ctx = mongocrypt_ctx_new(crypt);
     ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "test", -1, TEST_FILE("./test/example/cmd.json")), ctx);
     _mongocrypt_tester_run_ctx_to(tester, ctx, MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS);
@@ -1225,7 +1225,7 @@ static void _test_encrypt_with_aws_session_token(_mongocrypt_tester_t *tester) {
                                                         "'accessKeyId': 'myAccessKeyId', "
                                                         "'secretAccessKey': 'mySecretAccessKey'}}")),
               crypt);
-    ASSERT_OK(mongocrypt_init(crypt), crypt);
+    ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
     ctx = mongocrypt_ctx_new(crypt);
     ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "test", -1, TEST_FILE("./test/example/cmd.json")), ctx);
@@ -1305,7 +1305,7 @@ static void _test_encrypt_with_encrypted_field_config_map(_mongocrypt_tester_t *
     // TODO(MONGOCRYPT-572): This test uses the QEv1 protocol. Update this test for QEv2 or remove. Note: decrypting
     // QEv1 is still supported.
     ASSERT_OK(mongocrypt_setopt_fle2v2(crypt, false), crypt);
-    ASSERT_OK(mongocrypt_init(crypt), crypt);
+    ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
     /* Test encrypting a command on a collection present in the encrypted field
      * config map. */
@@ -1351,7 +1351,7 @@ static void _test_encrypt_with_encrypted_field_config_map_bypassed(_mongocrypt_t
         mongocrypt_setopt_kms_providers(crypt, TEST_BSON("{'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'bar'}}")),
         crypt);
     ASSERT_OK(mongocrypt_setopt_encrypted_field_config_map(crypt, TEST_BSON("{'db.coll': {'fields': []}}")), crypt);
-    ASSERT_OK(mongocrypt_init(crypt), crypt);
+    ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
     ctx = mongocrypt_ctx_new(crypt);
     /* 'drop' is bypassed. Expect that no 'encryptionInformation' is appended. */
@@ -1415,7 +1415,7 @@ static void _test_encrypt_remote_encryptedfields(_mongocrypt_tester_t *tester) {
     // TODO(MONGOCRYPT-572): This test uses the QEv1 protocol. Update this test for QEv2 or remove. Note: decrypting
     // QEv1 is still supported.
     ASSERT_OK(mongocrypt_setopt_fle2v2(crypt, false), crypt);
-    ASSERT_OK(mongocrypt_init(crypt), crypt);
+    ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
     /* Test success. */
     {
         ctx = mongocrypt_ctx_new(crypt);
@@ -1480,7 +1480,7 @@ static void _test_encrypt_remote_encryptedfields(_mongocrypt_tester_t *tester) {
         // TODO(MONGOCRYPT-572): This test uses the QEv1 protocol. Update this test for QEv2 or remove. Note: decrypting
         // QEv1 is still supported.
         ASSERT_OK(mongocrypt_setopt_fle2v2(crypt, false), crypt);
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
         ctx = mongocrypt_ctx_new(crypt);
         ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_FILE("./test/data/fle2-find-explicit/cmd.json")),
                   ctx);
@@ -1530,7 +1530,7 @@ static void _test_encrypt_with_bypassqueryanalysis(_mongocrypt_tester_t *tester)
         // TODO(MONGOCRYPT-572): This test uses the QEv1 protocol. Update this test for QEv2 or remove. Note: decrypting
         // QEv1 is still supported.
         ASSERT_OK(mongocrypt_setopt_fle2v2(crypt, false), crypt);
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
         ctx = mongocrypt_ctx_new(crypt);
         ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_FILE("./test/data/fle2-find-explicit/cmd.json")),
@@ -1562,7 +1562,7 @@ static void _test_encrypt_with_bypassqueryanalysis(_mongocrypt_tester_t *tester)
         // TODO(MONGOCRYPT-572): This test uses the QEv1 protocol. Update this test for QEv2 or remove. Note: decrypting
         // QEv1 is still supported.
         ASSERT_OK(mongocrypt_setopt_fle2v2(crypt, false), crypt);
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
         ctx = mongocrypt_ctx_new(crypt);
         ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_FILE("./test/data/fle2-find-explicit/cmd.json")),
@@ -1970,7 +1970,7 @@ static void _test_encrypt_fle2_encryption_placeholder(_mongocrypt_tester_t *test
         MAKE_PATH("encrypted-field-map.json");
         ASSERT_OK(mongocrypt_setopt_encrypted_field_config_map(crypt, TEST_FILE(pathbuf)), crypt);
         mongocrypt_binary_destroy(localkey);
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
     }
 
     /* Create encryption context. */
@@ -2194,7 +2194,7 @@ static mongocrypt_t *_crypt_with_rng(_test_rng_data_source *rng_source, bool use
     // TODO(MONGOCRYPT-572): This test uses the QEv1 protocol. Update this test for QEv2 or remove. Note: decrypting
     // QEv1 is still supported.
     ASSERT_OK(mongocrypt_setopt_fle2v2(crypt, use_v2), crypt);
-    ASSERT_OK(mongocrypt_init(crypt), crypt);
+    ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
     return crypt;
 }
 
@@ -3162,7 +3162,7 @@ static void _test_encrypt_applies_default_state_collections(_mongocrypt_tester_t
         // TODO(MONGOCRYPT-572): This test uses the QEv1 protocol. Update this test for QEv2 or remove. Note: decrypting
         // QEv1 is still supported.
         ASSERT_OK(mongocrypt_setopt_fle2v2(crypt, false), crypt);
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
         ctx = mongocrypt_ctx_new(crypt);
         ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_BSON("{'find': 'coll'}")), ctx);
         ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
@@ -3197,7 +3197,7 @@ static void _test_encrypt_applies_default_state_collections(_mongocrypt_tester_t
                       TEST_BSON("{'db.coll': { 'fields': [], 'escCollection': 'esc', "
                                 "'eccCollection': 'ecc', 'ecocCollection': 'ecoc'}}")),
                   crypt);
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
         ctx = mongocrypt_ctx_new(crypt);
         ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_BSON("{'find': 'coll'}")), ctx);
         ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
@@ -3231,7 +3231,7 @@ static void _test_encrypt_applies_default_state_collections(_mongocrypt_tester_t
                                                          TEST_BSON("{'fields': [], 'db.coll': {'escCollection': "
                                                                    "'esc', 'eccCollection': 'ecc', 'fields': []}}")),
             crypt);
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
         ctx = mongocrypt_ctx_new(crypt);
         ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_BSON("{'find': 'coll'}")), ctx);
         ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
@@ -3373,7 +3373,7 @@ static void _test_encrypt_fle2_delete_v1(_mongocrypt_tester_t *tester) {
             // decrypting
             // QEv1 is still supported.
             ASSERT_OK(mongocrypt_setopt_fle2v2(crypt, false), crypt);
-            ASSERT_OK(mongocrypt_init(crypt), crypt);
+            ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
         }
 
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
@@ -3430,7 +3430,7 @@ static void _test_encrypt_fle2_delete_v1(_mongocrypt_tester_t *tester) {
             // decrypting
             // QEv1 is still supported.
             ASSERT_OK(mongocrypt_setopt_fle2v2(crypt, false), crypt);
-            ASSERT_OK(mongocrypt_init(crypt), crypt);
+            ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
         }
 
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
@@ -3496,7 +3496,7 @@ static void _test_encrypt_fle2_delete_v1(_mongocrypt_tester_t *tester) {
             // decrypting
             // QEv1 is still supported.
             ASSERT_OK(mongocrypt_setopt_fle2v2(crypt, false), crypt);
-            ASSERT_OK(mongocrypt_init(crypt), crypt);
+            ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
         }
 
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
@@ -3627,7 +3627,7 @@ static void _test_encrypt_fle2_delete_v2(_mongocrypt_tester_t *tester) {
             mongocrypt_binary_destroy(localkey);
             mongocrypt_setopt_bypass_query_analysis(crypt);
             mongocrypt_setopt_fle2v2(crypt, true);
-            ASSERT_OK(mongocrypt_init(crypt), crypt);
+            ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
         }
 
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
@@ -3670,7 +3670,7 @@ static void _test_encrypt_fle2_delete_v2(_mongocrypt_tester_t *tester) {
                                                                              "encrypted-field-config-map.json")),
                       crypt);
             mongocrypt_setopt_fle2v2(crypt, true);
-            ASSERT_OK(mongocrypt_init(crypt), crypt);
+            ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
         }
 
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
@@ -3729,7 +3729,7 @@ static void _test_encrypt_fle2_delete_v2(_mongocrypt_tester_t *tester) {
                       crypt);
             mongocrypt_setopt_bypass_query_analysis(crypt);
             mongocrypt_setopt_fle2v2(crypt, true);
-            ASSERT_OK(mongocrypt_init(crypt), crypt);
+            ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
         }
 
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
@@ -4329,7 +4329,7 @@ static void _test_fle1_create_with_schema(_mongocrypt_tester_t *tester) {
     ASSERT_OK(mongocrypt_setopt_kms_provider_aws(crypt, "example", -1, "example", -1), crypt);
     ASSERT_OK(mongocrypt_setopt_schema_map(crypt, TEST_FILE("./test/data/fle1-create/with-schema/schema-map.json")),
               crypt);
-    ASSERT_OK(mongocrypt_init(crypt), crypt);
+    ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
     mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
 
@@ -4507,7 +4507,7 @@ static void _test_fle2_create(_mongocrypt_tester_t *tester) {
                   crypt,
                   TEST_FILE("./test/data/fle2-create/encrypted-field-config-map.json")),
               crypt);
-    ASSERT_OK(mongocrypt_init(crypt), crypt);
+    ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
     mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
 
@@ -4563,7 +4563,7 @@ static void _test_fle2_create_bypass_query_analysis(_mongocrypt_tester_t *tester
                   TEST_FILE("./test/data/fle2-create/encrypted-field-config-map.json")),
               crypt);
     mongocrypt_setopt_bypass_query_analysis(crypt);
-    ASSERT_OK(mongocrypt_init(crypt), crypt);
+    ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
     mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
 
@@ -4688,7 +4688,7 @@ static void _test_bulkWrite(_mongocrypt_tester_t *tester) {
                       crypt,
                       TEST_FILE("./test/data/bulkWrite/simple/encrypted-field-map.json")),
                   crypt);
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
         // Successful case.
         {
@@ -4754,7 +4754,7 @@ static void _test_bulkWrite(_mongocrypt_tester_t *tester) {
                       crypt,
                       TEST_FILE("./test/data/bulkWrite/simple/encrypted-field-map.json")),
                   crypt);
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
 
@@ -4809,7 +4809,7 @@ static void _test_bulkWrite(_mongocrypt_tester_t *tester) {
             crypt,
             TEST_BSON(BSON_STR({"local" : {"key" : {"$binary" : {"base64" : "%s", "subType" : "00"}}}}), local_kek));
 
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
 
@@ -4883,7 +4883,7 @@ static void _test_bulkWrite(_mongocrypt_tester_t *tester) {
             crypt,
             TEST_BSON(BSON_STR({"local" : {"key" : {"$binary" : {"base64" : "%s", "subType" : "00"}}}}), local_kek));
 
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
 
@@ -4907,7 +4907,7 @@ static void _test_bulkWrite(_mongocrypt_tester_t *tester) {
             crypt,
             TEST_BSON(BSON_STR({"local" : {"key" : {"$binary" : {"base64" : "%s", "subType" : "00"}}}}), local_kek));
 
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
 
@@ -5003,7 +5003,7 @@ static void _test_bulkWrite(_mongocrypt_tester_t *tester) {
                       crypt,
                       TEST_FILE("./test/data/bulkWrite/simple/encrypted-field-map.json")),
                   crypt);
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
 
@@ -5037,7 +5037,7 @@ static void _test_bulkWrite(_mongocrypt_tester_t *tester) {
 
         // Associate a JSON schema to the collection to enable CSFLE.
         ASSERT_OK(mongocrypt_setopt_schema_map(crypt, TEST_BSON(BSON_STR({"db.test" : {}}))), crypt);
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
 

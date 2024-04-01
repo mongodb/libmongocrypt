@@ -250,7 +250,7 @@ static void test_configuring_named_kms_providers(_mongocrypt_tester_t *tester) {
                       LOCAL_KEK2_BASE64);
         bool ok = mongocrypt_setopt_kms_providers(crypt, kms_providers);
         ASSERT_OK(ok, crypt);
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
         mongocrypt_destroy(crypt);
     }
 
@@ -315,7 +315,7 @@ static void test_configuring_named_kms_providers(_mongocrypt_tester_t *tester) {
                       LOCAL_KEK1_BASE64);
         bool ok = mongocrypt_setopt_kms_providers(crypt, kms_providers);
         ASSERT_OK(ok, crypt);
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
         mongocrypt_destroy(crypt);
     }
 
@@ -325,7 +325,7 @@ static void test_configuring_named_kms_providers(_mongocrypt_tester_t *tester) {
         mongocrypt_binary_t *kms_providers = TEST_BSON(BSON_STR({"local:name1" : {"key" : "%s"}}), LOCAL_KEK1_BASE64);
         bool ok = mongocrypt_setopt_kms_providers(crypt, kms_providers);
         ASSERT_OK(ok, crypt);
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
         mongocrypt_destroy(crypt);
     }
 
@@ -344,7 +344,7 @@ static void test_create_datakey_with_named_kms_provider(_mongocrypt_tester_t *te
         mongocrypt_t *crypt = mongocrypt_new();
         mongocrypt_binary_t *kms_providers = TEST_BSON(BSON_STR({"local:name1" : {"key" : "%s"}}), LOCAL_KEK1_BASE64);
         ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, kms_providers), crypt);
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
         // Create with named KMS provider.
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
@@ -367,7 +367,7 @@ static void test_create_datakey_with_named_kms_provider(_mongocrypt_tester_t *te
                       LOCAL_KEK1_BASE64,
                       LOCAL_KEK2_BASE64);
         ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, kms_providers), crypt);
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
         // Create with named KMS provider.
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
@@ -390,7 +390,7 @@ static void test_create_datakey_with_named_kms_provider(_mongocrypt_tester_t *te
             TEST_BSON(BSON_STR({"local" : {}, "local:name1" : {"key" : "%s"}}), LOCAL_KEK1_BASE64, LOCAL_KEK2_BASE64);
         ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, kms_providers), crypt);
         mongocrypt_setopt_use_need_kms_credentials_state(crypt);
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
         // Create with named KMS provider.
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
@@ -410,7 +410,7 @@ static void test_create_datakey_with_named_kms_provider(_mongocrypt_tester_t *te
         mongocrypt_t *crypt = mongocrypt_new();
         mongocrypt_binary_t *kms_providers = TEST_BSON(BSON_STR({"local:name1" : {"key" : "%s"}}), LOCAL_KEK1_BASE64);
         ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, kms_providers), crypt);
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
         // Create with named KMS provider.
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
@@ -444,7 +444,7 @@ static void test_create_datakey_with_named_kms_provider(_mongocrypt_tester_t *te
             }
         }));
         ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, kms_providers), crypt);
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
         // Create with named KMS provider.
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
@@ -503,7 +503,7 @@ static void test_create_datakey_with_named_kms_provider(_mongocrypt_tester_t *te
         mongocrypt_t *crypt = mongocrypt_new();
         mongocrypt_binary_t *kms_providers = TEST_BSON(BSON_STR({"azure:name1" : {"accessToken" : "foo"}}));
         ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, kms_providers), crypt);
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
         // Create with named KMS provider.
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
@@ -562,7 +562,7 @@ static void test_create_datakey_with_named_kms_provider(_mongocrypt_tester_t *te
             }
         }));
         ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, kms_providers), crypt);
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
         // Create with `azure:name1`.
         {
@@ -678,7 +678,7 @@ static void test_create_datakey_with_named_kms_provider(_mongocrypt_tester_t *te
         mongocrypt_binary_t *kms_providers =
             TEST_BSON(BSON_STR({"kmip:name1" : {"endpoint" : "placeholder1-endpoint.com"}}));
         ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, kms_providers), crypt);
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
         // Create with named KMS provider.
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
@@ -730,7 +730,7 @@ static void test_create_datakey_with_named_kms_provider(_mongocrypt_tester_t *te
         mongocrypt_binary_t *kms_providers =
             TEST_BSON(BSON_STR({"kmip:name1" : {"endpoint" : "placeholder1-endpoint.com"}}));
         ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, kms_providers), crypt);
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
         // Create with named KMS provider.
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
@@ -835,7 +835,7 @@ static void create_dek(_mongocrypt_tester_t *tester, create_dek_args args, _mong
 
     mongocrypt_t *crypt = mongocrypt_new();
     ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, args.kms_providers), crypt);
-    ASSERT_OK(mongocrypt_init(crypt), crypt);
+    ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
     mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
     ASSERT_OK(mongocrypt_ctx_setopt_key_encryption_key(ctx, args.kek), ctx);
@@ -927,7 +927,7 @@ static void test_explicit_with_named_kms_provider_for_azure(_mongocrypt_tester_t
     {
         mongocrypt_t *crypt = mongocrypt_new();
         ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, kms_providers), crypt);
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
         // Test encrypting without cached DEK. Store result for later decryption.
         {
@@ -997,7 +997,7 @@ static void test_explicit_with_named_kms_provider_for_azure(_mongocrypt_tester_t
     {
         mongocrypt_t *crypt = mongocrypt_new();
         ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, kms_providers), crypt);
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
         // Test decrypting without cached DEK.
         {
@@ -1063,7 +1063,7 @@ static void test_explicit_with_named_kms_provider_for_azure(_mongocrypt_tester_t
     {
         mongocrypt_t *crypt = mongocrypt_new();
         ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, kms_providers), crypt);
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
         // Decrypt.
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
@@ -1125,7 +1125,7 @@ static void test_explicit_with_named_kms_provider_for_azure(_mongocrypt_tester_t
     {
         mongocrypt_t *crypt = mongocrypt_new();
         ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, kms_providers), crypt);
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
         // Encrypt with azure:name1
         {
@@ -1229,7 +1229,7 @@ static void test_explicit_with_named_kms_provider_for_azure(_mongocrypt_tester_t
             TEST_BSON(BSON_STR({"azure:name3_withAccessToken" : {"accessToken" : "placeholder3-accesstoken"}}));
 
         ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, kms_providers_withAccessToken), crypt);
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
         // Create `dek3` from `azure:name3_withAccessToken`
         _mongocrypt_buffer_t dek3;
@@ -1337,7 +1337,7 @@ static void test_explicit_with_named_kms_provider_for_gcp(_mongocrypt_tester_t *
     {
         mongocrypt_t *crypt = mongocrypt_new();
         ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, kms_providers), crypt);
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
         // Test encrypting without cached DEK. Store result for later decryption.
         {
@@ -1407,7 +1407,7 @@ static void test_explicit_with_named_kms_provider_for_gcp(_mongocrypt_tester_t *
     {
         mongocrypt_t *crypt = mongocrypt_new();
         ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, kms_providers), crypt);
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
         // Test decrypting without cached DEK.
         {
@@ -1473,7 +1473,7 @@ static void test_explicit_with_named_kms_provider_for_gcp(_mongocrypt_tester_t *
     {
         mongocrypt_t *crypt = mongocrypt_new();
         ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, kms_providers), crypt);
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
         // Decrypt.
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
@@ -1535,7 +1535,7 @@ static void test_explicit_with_named_kms_provider_for_gcp(_mongocrypt_tester_t *
     {
         mongocrypt_t *crypt = mongocrypt_new();
         ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, kms_providers), crypt);
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
         // Encrypt with gcp:name1
         {
@@ -1635,7 +1635,7 @@ static void test_explicit_with_named_kms_provider_for_gcp(_mongocrypt_tester_t *
     {
         mongocrypt_t *crypt = mongocrypt_new();
         ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, kms_providers), crypt);
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
         ASSERT_OK(mongocrypt_ctx_setopt_key_alt_name(ctx, TEST_BSON(BSON_STR({"keyAltName" : "gcp1"}))), ctx);
@@ -1664,7 +1664,7 @@ static void test_explicit_with_named_kms_provider_for_gcp(_mongocrypt_tester_t *
     {
         mongocrypt_t *crypt = mongocrypt_new();
         ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, kms_providers), crypt);
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
         ASSERT_OK(mongocrypt_ctx_setopt_key_alt_name(ctx, TEST_BSON(BSON_STR({"keyAltName" : "gcp1"}))), ctx);
@@ -1711,7 +1711,7 @@ static void test_explicit_with_named_kms_provider_for_gcp(_mongocrypt_tester_t *
             TEST_BSON(BSON_STR({"gcp:name3_withAccessToken" : {"accessToken" : "placeholder3-accesstoken"}}));
 
         ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, kms_providers_withAccessToken), crypt);
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
         // Create `dek3` from `gcp:name3_withAccessToken`
         _mongocrypt_buffer_t dek3;
@@ -1814,7 +1814,7 @@ static void test_explicit_with_named_kms_provider_for_aws(_mongocrypt_tester_t *
     {
         mongocrypt_t *crypt = mongocrypt_new();
         ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, kms_providers), crypt);
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
         // Test encrypting without cached DEK. Store result for later decryption.
         {
@@ -1870,7 +1870,7 @@ static void test_explicit_with_named_kms_provider_for_aws(_mongocrypt_tester_t *
     {
         mongocrypt_t *crypt = mongocrypt_new();
         ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, kms_providers), crypt);
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
         // Test decrypting without cached DEK.
         {
@@ -1956,7 +1956,7 @@ static void test_explicit_with_named_kms_provider_for_kmip(_mongocrypt_tester_t 
     {
         mongocrypt_t *crypt = mongocrypt_new();
         ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, kms_providers), crypt);
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
         // Test encrypting without cached DEK. Store result for later decryption.
         {
@@ -2020,7 +2020,7 @@ static void test_explicit_with_named_kms_provider_for_kmip(_mongocrypt_tester_t 
     {
         mongocrypt_t *crypt = mongocrypt_new();
         ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, kms_providers), crypt);
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
         // Test decrypting without cached DEK.
         {
@@ -2100,7 +2100,7 @@ static void test_rewrap_with_named_kms_provider_local2local(_mongocrypt_tester_t
     {
         mongocrypt_t *crypt = mongocrypt_new();
         ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, kms_providers), crypt);
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
         ASSERT_OK(mongocrypt_ctx_setopt_key_encryption_key(ctx, TEST_BSON(BSON_STR({"provider" : "local:name2"}))),
@@ -2163,7 +2163,7 @@ static void test_rewrap_with_named_kms_provider_azure2azure(_mongocrypt_tester_t
     {
         mongocrypt_t *crypt = mongocrypt_new();
         ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, kms_providers), crypt);
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
         ASSERT_OK(mongocrypt_ctx_setopt_key_encryption_key(ctx, TEST_BSON(BSON_STR({
@@ -2283,7 +2283,7 @@ static void test_rewrap_with_named_kms_provider_azure2local(_mongocrypt_tester_t
     {
         mongocrypt_t *crypt = mongocrypt_new();
         ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, kms_providers), crypt);
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
         ASSERT_OK(mongocrypt_ctx_setopt_key_encryption_key(ctx, TEST_BSON(BSON_STR({"provider" : "local:name1"}))),
@@ -2346,7 +2346,7 @@ static void test_mongocrypt_kms_ctx_get_kms_provider(_mongocrypt_tester_t *teste
 
     mongocrypt_t *crypt = mongocrypt_new();
     ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, kms_providers), crypt);
-    ASSERT_OK(mongocrypt_init(crypt), crypt);
+    ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
     mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
     ASSERT_OK(

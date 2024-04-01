@@ -98,6 +98,9 @@ void _mongocrypt_tester_fill_buffer(_mongocrypt_buffer_t *buf, int n);
 /* Return a new initialized mongocrypt_t for testing. */
 mongocrypt_t *_mongocrypt_tester_mongocrypt(tester_mongocrypt_flags options);
 
+/* Initialize a new mongocrypt_t for use in testing. */
+bool _mongocrypt_init_for_test(mongocrypt_t *);
+
 typedef enum { CRYPTO_REQUIRED, CRYPTO_OPTIONAL, CRYPTO_PROHIBITED } _mongocrypt_tester_crypto_spec_t;
 
 void _mongocrypt_tester_install(_mongocrypt_tester_t *tester,

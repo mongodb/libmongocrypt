@@ -15,7 +15,7 @@ static mongocrypt_t *get_test_mongocrypt(_mongocrypt_tester_t *tester) {
 static void _test_csfle_no_paths(_mongocrypt_tester_t *tester) {
     /// Test that mongocrypt_init succeeds if we have no search path
     mongocrypt_t *const crypt = get_test_mongocrypt(tester);
-    ASSERT_OK(mongocrypt_init(crypt), crypt);
+    ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
     // No csfle was loaded:
     BSON_ASSERT(mongocrypt_crypt_shared_lib_version_string(crypt, NULL) == NULL);
     BSON_ASSERT(mongocrypt_crypt_shared_lib_version(crypt) == 0);
@@ -27,7 +27,7 @@ static void _test_csfle_not_found(_mongocrypt_tester_t *tester) {
     /// found but a search path was specified
     mongocrypt_t *const crypt = get_test_mongocrypt(tester);
     mongocrypt_setopt_append_crypt_shared_lib_search_path(crypt, "/no-such-directory");
-    ASSERT_OK(mongocrypt_init(crypt), crypt);
+    ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
     // No csfle was loaded:
     BSON_ASSERT(mongocrypt_crypt_shared_lib_version_string(crypt, NULL) == NULL);
     BSON_ASSERT(mongocrypt_crypt_shared_lib_version(crypt) == 0);
@@ -39,7 +39,7 @@ static void _test_csfle_load(_mongocrypt_tester_t *tester) {
     mongocrypt_setopt_append_crypt_shared_lib_search_path(crypt, "no-such-directory");
     mongocrypt_setopt_append_crypt_shared_lib_search_path(crypt, "$ORIGIN");
     mongocrypt_setopt_append_crypt_shared_lib_search_path(crypt, "another-no-such-dir");
-    ASSERT_OK(mongocrypt_init(crypt), crypt);
+    ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
     // csfle WAS loaded:
     BSON_ASSERT(mongocrypt_crypt_shared_lib_version_string(crypt, NULL) != NULL);
     BSON_ASSERT(mongocrypt_crypt_shared_lib_version(crypt) != 0);
@@ -55,14 +55,14 @@ static void _test_csfle_load(_mongocrypt_tester_t *tester) {
 static void _test_csfle_load_twice(_mongocrypt_tester_t *tester) {
     mongocrypt_t *const crypt1 = get_test_mongocrypt(tester);
     mongocrypt_setopt_append_crypt_shared_lib_search_path(crypt1, "$ORIGIN");
-    ASSERT_OK(mongocrypt_init(crypt1), crypt1);
+    ASSERT_OK(_mongocrypt_init_for_test(crypt1), crypt1);
     BSON_ASSERT(mongocrypt_crypt_shared_lib_version_string(crypt1, NULL) != NULL);
     BSON_ASSERT(mongocrypt_crypt_shared_lib_version(crypt1) != 0);
 
     // Make another one:
     mongocrypt_t *const crypt2 = get_test_mongocrypt(tester);
     mongocrypt_setopt_append_crypt_shared_lib_search_path(crypt2, "$ORIGIN");
-    ASSERT_OK(mongocrypt_init(crypt2), crypt2);
+    ASSERT_OK(_mongocrypt_init_for_test(crypt2), crypt2);
     // csfle was loaded again:
     BSON_ASSERT(mongocrypt_crypt_shared_lib_version_string(crypt2, NULL) != NULL);
     BSON_ASSERT(mongocrypt_crypt_shared_lib_version(crypt2) != 0);
@@ -88,7 +88,7 @@ static void _test_csfle_load_twice(_mongocrypt_tester_t *tester) {
 static void _test_csfle_load_twice_fail(_mongocrypt_tester_t *tester) {
     mongocrypt_t *const crypt1 = get_test_mongocrypt(tester);
     mongocrypt_setopt_append_crypt_shared_lib_search_path(crypt1, "$ORIGIN");
-    ASSERT_OK(mongocrypt_init(crypt1), crypt1);
+    ASSERT_OK(_mongocrypt_init_for_test(crypt1), crypt1);
     BSON_ASSERT(mongocrypt_crypt_shared_lib_version_string(crypt1, NULL) != NULL);
     BSON_ASSERT(mongocrypt_crypt_shared_lib_version(crypt1) != 0);
 
@@ -96,7 +96,7 @@ static void _test_csfle_load_twice_fail(_mongocrypt_tester_t *tester) {
     mongocrypt_t *const crypt2 = get_test_mongocrypt(tester);
     mongocrypt_setopt_set_crypt_shared_lib_path_override(crypt2, "$ORIGIN/stubbed-crypt_shared-2.dll");
     // Loading a second different library is an error:
-    ASSERT_FAILS(mongocrypt_init(crypt2), crypt2, "attempted to load a second CSFLE library");
+    ASSERT_FAILS(_mongocrypt_init_for_test(crypt2), crypt2, "attempted to load a second CSFLE library");
 
     mstr_view version = mstrv_view_cstr(mongocrypt_crypt_shared_lib_version_string(crypt1, NULL));
     if (TEST_MONGOCRYPT_HAVE_REAL_CRYPT_SHARED_LIB) {
@@ -113,7 +113,7 @@ static void _test_csfle_path_override_okay(_mongocrypt_tester_t *tester) {
     mongocrypt_t *const crypt = get_test_mongocrypt(tester);
     // Set to the absolute path to the DLL we use for testing:
     mongocrypt_setopt_set_crypt_shared_lib_path_override(crypt, "$ORIGIN/mongo_crypt_v1" MCR_DLL_SUFFIX);
-    ASSERT_OK(mongocrypt_init(crypt), crypt);
+    ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
     // csfle WAS loaded:
     BSON_ASSERT(mongocrypt_crypt_shared_lib_version_string(crypt, NULL) != NULL);
     BSON_ASSERT(mongocrypt_crypt_shared_lib_version(crypt) != 0);
@@ -134,7 +134,7 @@ static void _test_csfle_path_override_fail(_mongocrypt_tester_t *tester) {
     // This *would* succeed, but we don't use the search paths if an absolute
     // override was specified:
     mongocrypt_setopt_append_crypt_shared_lib_search_path(crypt, "$ORIGIN");
-    ASSERT_FAILS(mongocrypt_init(crypt), crypt, "but we failed to open a dynamic library at that location");
+    ASSERT_FAILS(_mongocrypt_init_for_test(crypt), crypt, "but we failed to open a dynamic library at that location");
     BSON_ASSERT(mongocrypt_crypt_shared_lib_version_string(crypt, NULL) == NULL);
     BSON_ASSERT(mongocrypt_crypt_shared_lib_version(crypt) == 0);
     mongocrypt_destroy(crypt);
@@ -151,7 +151,7 @@ static void _test_csfle_not_loaded_with_bypassqueryanalysis(_mongocrypt_tester_t
     mongocrypt_t *const crypt = get_test_mongocrypt(tester);
     mongocrypt_setopt_append_crypt_shared_lib_search_path(crypt, "$ORIGIN");
     mongocrypt_setopt_bypass_query_analysis(crypt);
-    ASSERT_OK(mongocrypt_init(crypt), crypt);
+    ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
     BSON_ASSERT(mongocrypt_crypt_shared_lib_version_string(crypt, NULL) == NULL);
     BSON_ASSERT(mongocrypt_crypt_shared_lib_version(crypt) == 0);
 
@@ -164,7 +164,7 @@ static void _test_override_error_includes_reason(_mongocrypt_tester_t *tester) {
     mongocrypt_t *crypt = get_test_mongocrypt(tester);
     // Set an incorrect override path.
     mongocrypt_setopt_set_crypt_shared_lib_path_override(crypt, "invalid_path_to_crypt_shared.so");
-    ASSERT_FAILS(mongocrypt_init(crypt), crypt, "Error while opening candidate");
+    ASSERT_FAILS(_mongocrypt_init_for_test(crypt), crypt, "Error while opening candidate");
     BSON_ASSERT(mongocrypt_crypt_shared_lib_version_string(crypt, NULL) == NULL);
     BSON_ASSERT(mongocrypt_crypt_shared_lib_version(crypt) == 0);
     mongocrypt_destroy(crypt);
