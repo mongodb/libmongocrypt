@@ -129,7 +129,7 @@ void _test_decrypt_empty_aws(_mongocrypt_tester_t *tester) {
 
     crypt = mongocrypt_new();
     ASSERT_OK(mongocrypt_setopt_kms_provider_aws(crypt, "", -1, "", -1), crypt);
-    ASSERT_OK(mongocrypt_init(crypt), crypt);
+    ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
     ctx = mongocrypt_ctx_new(crypt);
     ASSERT_OK(mongocrypt_ctx_decrypt_init(ctx, TEST_FILE("./test/data/encrypted-cmd.json")), ctx);
@@ -184,7 +184,7 @@ static void _test_decrypt_per_ctx_credentials(_mongocrypt_tester_t *tester) {
     crypt = mongocrypt_new();
     mongocrypt_setopt_use_need_kms_credentials_state(crypt);
     mongocrypt_setopt_kms_providers(crypt, TEST_BSON("{'aws': {}}"));
-    ASSERT_OK(mongocrypt_init(crypt), crypt);
+    ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
     ctx = mongocrypt_ctx_new(crypt);
 
     /* Encrypt an empty binary value. */
@@ -233,7 +233,7 @@ static void _test_decrypt_per_ctx_credentials_local(_mongocrypt_tester_t *tester
     crypt = mongocrypt_new();
     mongocrypt_setopt_use_need_kms_credentials_state(crypt);
     mongocrypt_setopt_kms_providers(crypt, TEST_BSON("{'local': {}}"));
-    ASSERT_OK(mongocrypt_init(crypt), crypt);
+    ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
     ctx = mongocrypt_ctx_new(crypt);
 
     /* Encrypt an empty binary value. */

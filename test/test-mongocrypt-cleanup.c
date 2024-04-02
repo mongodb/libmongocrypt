@@ -201,7 +201,7 @@ static void _test_cleanup_need_kms_credentials(_mongocrypt_tester_t *tester) {
     mongocrypt_setopt_use_need_kms_credentials_state(crypt);
     ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, TEST_BSON("{'aws': {}}")), crypt);
     mongocrypt_setopt_use_need_kms_credentials_state(crypt);
-    ASSERT_OK(mongocrypt_init(crypt), crypt);
+    ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
     ctx = mongocrypt_ctx_new(crypt);
     ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_FILE("./test/data/cleanup/success/cmd.json")), ctx);
@@ -326,7 +326,7 @@ static void _test_cleanup_from_encrypted_field_config_map(_mongocrypt_tester_t *
                       crypt,
                       TEST_FILE("./test/data/cleanup/success/encrypted-field-config-map.json")),
                   crypt);
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
     }
     ctx = mongocrypt_ctx_new(crypt);
 

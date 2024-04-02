@@ -157,7 +157,7 @@ static void _test_createdatakey_with_accesstoken(_mongocrypt_tester_t *tester) {
     crypt = mongocrypt_new();
     ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, TEST_BSON("{'gcp': {}}")), crypt);
     mongocrypt_setopt_use_need_kms_credentials_state(crypt);
-    ASSERT_OK(mongocrypt_init(crypt), crypt);
+    ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
     ctx = mongocrypt_ctx_new(crypt);
     ASSERT_OK(mongocrypt_ctx_setopt_key_encryption_key(ctx, TEST_BSON(kek)), ctx);
     ASSERT_OK(mongocrypt_ctx_datakey_init(ctx), ctx);
@@ -199,7 +199,7 @@ static void _test_encrypt_with_accesstoken(_mongocrypt_tester_t *tester) {
     crypt = mongocrypt_new();
     ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, TEST_BSON("{'gcp': {}}")), crypt);
     mongocrypt_setopt_use_need_kms_credentials_state(crypt);
-    ASSERT_OK(mongocrypt_init(crypt), crypt);
+    ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
     ctx = mongocrypt_ctx_new(crypt);
     uuid = mongocrypt_binary_new_from_data((uint8_t *)uuid_data, UUID_LEN);
     ASSERT_OK(mongocrypt_ctx_setopt_key_id(ctx, uuid), ctx);

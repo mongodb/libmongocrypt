@@ -25,7 +25,7 @@ static void test_mongocrypt_opts_kms_providers_lookup(_mongocrypt_tester_t *test
 
     mongocrypt_t *crypt = mongocrypt_new();
     ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, bson), crypt);
-    ASSERT_OK(mongocrypt_init(crypt), crypt);
+    ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
     mc_kms_creds_t got;
     ASSERT(_mongocrypt_opts_kms_providers_lookup(&crypt->opts.kms_providers, "azure", &got));

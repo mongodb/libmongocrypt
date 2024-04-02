@@ -248,7 +248,7 @@ _create_mongocrypt_and_hooks(_mongocrypt_tester_t *tester, const char *error_on,
         ret = mongocrypt_setopt_aes_256_ecb(crypt, _mock_aes_256_xxx_encrypt, (void *)error_on);
         ASSERT_OK(ret, crypt);
     }
-    ASSERT_OK(mongocrypt_init(crypt), crypt);
+    ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
     return crypt;
 }
 
@@ -553,7 +553,7 @@ static void _test_crypto_hooks_unset(_mongocrypt_tester_t *tester) {
 
     crypt = mongocrypt_new();
     mongocrypt_setopt_kms_provider_aws(crypt, "example", -1, "example", -1);
-    ASSERT_OK(mongocrypt_init(crypt), crypt);
+    ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
     mongocrypt_destroy(crypt);
 }
 
@@ -819,7 +819,7 @@ static void test_setting_only_ctr_hook(_mongocrypt_tester_t *tester) {
         mongocrypt_setopt_aes_256_ctr(crypt, _aes_256_ctr_encrypt_and_count, _aes_256_ctr_decrypt_and_count, NULL),
         crypt);
     ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, kms_providers), crypt);
-    ASSERT_OK(mongocrypt_init(crypt), crypt);
+    ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
     // Encrypt with an algorithm using the CTR hook.
     ctr_encrypt_count = 0;

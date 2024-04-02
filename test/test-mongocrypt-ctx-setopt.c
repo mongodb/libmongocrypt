@@ -1149,7 +1149,7 @@ static void _test_createdatakey_with_wrong_kms_provider_helper(_mongocrypt_teste
     crypt = mongocrypt_new();
     ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, kms_provider), crypt);
     mongocrypt_setopt_use_need_kms_credentials_state(crypt);
-    ASSERT_OK(mongocrypt_init(crypt), crypt);
+    ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
     ctx = mongocrypt_ctx_new(crypt);
     ASSERT_OK(mongocrypt_ctx_setopt_key_encryption_key(ctx, TEST_BSON(kek)), ctx);
     ASSERT_FAILS(mongocrypt_ctx_datakey_init(ctx), ctx, "kms provider required by datakey is not configured");

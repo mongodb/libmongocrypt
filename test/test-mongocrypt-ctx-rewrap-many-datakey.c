@@ -753,7 +753,7 @@ static void _test_rewrap_many_datakey_kms_credentials(_mongocrypt_tester_t *test
         crypt = mongocrypt_new();
         mongocrypt_setopt_use_need_kms_credentials_state(crypt);
         ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, TEST_BSON("{'aws': {}}")), crypt);
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
         ctx = mongocrypt_ctx_new(crypt);
 
         ASSERT_OK(ctx, crypt);
@@ -828,7 +828,7 @@ static void _test_rewrap_many_datakey_kms_credentials(_mongocrypt_tester_t *test
                                                         "   'accessKeyId': 'example',"
                                                         "   'secretAccessKey': 'example'}}")),
               crypt);
-    ASSERT_OK(mongocrypt_init(crypt), crypt);
+    ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
     ctx = mongocrypt_ctx_new(crypt);
     ASSERT_OK(ctx, crypt);
     ASSERT_OK(mongocrypt_ctx_rewrap_many_datakey_init(ctx, TEST_BSON("{}")), ctx);

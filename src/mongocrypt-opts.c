@@ -35,6 +35,9 @@ void _mongocrypt_opts_kms_providers_init(_mongocrypt_opts_kms_providers_t *kms_p
 void _mongocrypt_opts_init(_mongocrypt_opts_t *opts) {
     BSON_ASSERT_PARAM(opts);
     memset(opts, 0, sizeof(*opts));
+#ifdef QE_USE_RANGE_V2
+    opts->use_range_v2 = true;
+#endif
     _mongocrypt_opts_kms_providers_init(&opts->kms_providers);
 }
 
