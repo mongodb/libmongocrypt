@@ -496,7 +496,7 @@ static bool should_retry_http(int http_status) {
 
 static void set_retry(mongocrypt_kms_ctx_t *kms) {
     // Set non-ok status so the parser knows to stop
-    mongocrypt_status_set(kms->status, MONGOCRYPT_STATUS_ERROR_KMS, 1, "retrying", -1);
+    mongocrypt_status_set(kms->status, MONGOCRYPT_STATUS_ERROR_KMS, 1, "KMS returned retryable error", -1);
     kms->should_retry = true;
     kms->sleep_usec = backoff_time_usec(++kms->attempts);
 }
@@ -531,7 +531,6 @@ static bool _ctx_done_aws(mongocrypt_kms_ctx_t *kms, const char *json_field) {
     }
     body = kms_response_get_body(response, &body_len);
 
-    // zz handle all of them
     if (should_retry_http(http_status)) {
         ret = true;
         set_retry(kms);
@@ -696,6 +695,12 @@ static bool _ctx_done_azure_wrapkey_unwrapkey(mongocrypt_kms_ctx_t *kms) {
     }
     body = kms_response_get_body(response, &body_len);
 
+    if (should_retry_http(http_status)) {
+        ret = true;
+        set_retry(kms);
+        goto fail;
+    }
+
     if (body_len == 0) {
         CLIENT_ERR("Empty KMS response. HTTP status=%d", http_status);
         goto fail;
@@ -714,12 +719,6 @@ static bool _ctx_done_azure_wrapkey_unwrapkey(mongocrypt_kms_ctx_t *kms) {
                    bson_error.message,
                    http_status,
                    body);
-        goto fail;
-    }
-
-    if (should_retry_http(http_status)) {
-        ret = true;
-        set_retry(kms);
         goto fail;
     }
 
@@ -1487,8 +1486,10 @@ bool _mongocrypt_kms_ctx_init_gcp_auth(mongocrypt_kms_ctx_t *kms,
         hostname = auth_endpoint->host;
         audience = bson_strdup_printf("https://%s/token", auth_endpoint->host);
     } else {
-        kms->endpoint = bson_strdup("oauth2.googleapis.com");
-        hostname = "oauth2.googleapis.com";
+        // kms->endpoint = bson_strdup("oauth2.googleapis.com");
+        // hostname = "oauth2.googleapis.com";
+        kms->endpoint = bson_strdup("localhost:9002");
+        hostname = "localhost:9002";
         audience = bson_strdup_printf("https://oauth2.googleapis.com/token");
     }
     _mongocrypt_apply_default_port(&kms->endpoint, DEFAULT_HTTPS_PORT);
