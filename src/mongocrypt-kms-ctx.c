@@ -50,6 +50,7 @@ typedef struct {
 #define SHA256_LEN 32
 #define DEFAULT_HTTPS_PORT "443"
 #define DEFAULT_KMIP_PORT "5696"
+static const int kms_max_attempts = 10;
 
 static bool _sha256(void *ctx, const char *input, size_t len, unsigned char *hash_out) {
     BSON_ASSERT_PARAM(ctx);
@@ -475,13 +476,13 @@ static int64_t backoff_time_usec(int attempts) {
     /* Exponential backoff with jitter. */
     const int64_t base = 200000; /* 0.2 seconds */
     const int64_t max = 20000000; /* 20 seconds */
-    int64_t backoff = base * (1 << attempts);
+    int64_t backoff = base * (1 << (attempts - 1));
     if (backoff > max) {
         backoff = max;
     }
 
-    /* Full jitter: between zero and current max */
-    return (int64_t) ((double) rand() / (double) RAND_MAX) * backoff;
+    /* Full jitter: between 1 and current max */
+    return (int64_t) ((double) rand() / (double) RAND_MAX * (double) backoff) + 1;
 }
 
 static bool should_retry_http(int http_status) {
@@ -498,7 +499,8 @@ static void set_retry(mongocrypt_kms_ctx_t *kms) {
     // Set non-ok status so the parser knows to stop
     mongocrypt_status_set(kms->status, MONGOCRYPT_STATUS_ERROR_KMS, 1, "KMS returned retryable error", -1);
     kms->should_retry = true;
-    kms->sleep_usec = backoff_time_usec(++kms->attempts);
+    kms->attempts++;
+    kms->sleep_usec = backoff_time_usec(kms->attempts);
 }
 
 /* An AWS KMS context has received full response. Parse out the result or error.
@@ -532,9 +534,14 @@ static bool _ctx_done_aws(mongocrypt_kms_ctx_t *kms, const char *json_field) {
     body = kms_response_get_body(response, &body_len);
 
     if (should_retry_http(http_status)) {
-        ret = true;
-        set_retry(kms);
-        goto fail;
+        if (kms->attempts >= kms_max_attempts) {
+            CLIENT_ERR("KMS request failed after %d retries", kms_max_attempts);
+            goto fail;
+        } else {
+            ret = true;
+            set_retry(kms);
+            goto fail;
+        }
     }
 
     if (http_status != 200) {
@@ -696,9 +703,14 @@ static bool _ctx_done_azure_wrapkey_unwrapkey(mongocrypt_kms_ctx_t *kms) {
     body = kms_response_get_body(response, &body_len);
 
     if (should_retry_http(http_status)) {
-        ret = true;
-        set_retry(kms);
-        goto fail;
+        if (kms->attempts >= kms_max_attempts) {
+            CLIENT_ERR("KMS request failed after %d retries", kms_max_attempts);
+            goto fail;
+        } else {
+            ret = true;
+            set_retry(kms);
+            goto fail;
+        }
     }
 
     if (body_len == 0) {
@@ -796,9 +808,14 @@ static bool _ctx_done_gcp(mongocrypt_kms_ctx_t *kms, const char *json_field) {
     body = kms_response_get_body(response, &body_len);
 
     if (should_retry_http(http_status)) {
-        ret = true;
-        set_retry(kms);
-        goto fail;
+        if (kms->attempts >= kms_max_attempts) {
+            CLIENT_ERR("KMS request failed after %d retries", kms_max_attempts);
+            goto fail;
+        } else {
+            ret = true;
+            set_retry(kms);
+            goto fail;
+        }
     }
 
     if (http_status != 200) {
