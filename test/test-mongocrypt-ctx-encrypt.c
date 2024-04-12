@@ -1100,17 +1100,6 @@ void _test_encrypt_empty_aws(_mongocrypt_tester_t *tester) {
     mongocrypt_destroy(crypt);
 }
 
-static void _test_encrypt_retry_aws(_mongocrypt_tester_t *tester) {
-
-}
-
-static void _test_encrypt_retry_azure(_mongocrypt_tester_t *tester) {
-
-}
-
-static void _test_encrypt_retry_gcp(_mongocrypt_tester_t *tester) {
-
-}
 
 static void _test_encrypt_custom_endpoint(_mongocrypt_tester_t *tester) {
     mongocrypt_t *crypt;
@@ -5522,6 +5511,8 @@ void _mongocrypt_tester_install_ctx_encrypt(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_encrypt_no_schema);
     INSTALL_TEST(_test_encrypt_remote_encryptedfields);
     INSTALL_TEST(_test_encrypt_with_bypassqueryanalysis);
+    INSTALL_TEST(_test_encrypt_retry);
+    INSTALL_TEST(_test_encrypt_retry_max_exceeded);
     INSTALL_TEST(_test_FLE2EncryptionPlaceholder_parse);
     INSTALL_TEST(_test_encrypt_fle2_insert_payload);
     INSTALL_TEST(_test_encrypt_fle2_find_payload);
