@@ -1503,10 +1503,8 @@ bool _mongocrypt_kms_ctx_init_gcp_auth(mongocrypt_kms_ctx_t *kms,
         hostname = auth_endpoint->host;
         audience = bson_strdup_printf("https://%s/token", auth_endpoint->host);
     } else {
-        // kms->endpoint = bson_strdup("oauth2.googleapis.com");
-        // hostname = "oauth2.googleapis.com";
-        kms->endpoint = bson_strdup("localhost:9002");
-        hostname = "localhost:9002";
+        kms->endpoint = bson_strdup("oauth2.googleapis.com");
+        hostname = "oauth2.googleapis.com";
         audience = bson_strdup_printf("https://oauth2.googleapis.com/token");
     }
     _mongocrypt_apply_default_port(&kms->endpoint, DEFAULT_HTTPS_PORT);
