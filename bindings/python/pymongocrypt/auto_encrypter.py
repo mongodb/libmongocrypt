@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from pymongocrypt.mongocrypt import MongoCrypt
-from pymongocrypt.state_machine import run_state_machine
+from pymongocrypt.state_machine import run_state_machine, a_run_state_machine, AsyncMongoCryptCallback
 
 
 class AutoEncrypter(object):
@@ -43,6 +43,21 @@ class AutoEncrypter(object):
         with self.mongocrypt.encryption_context(database, cmd) as ctx:
             return run_state_machine(ctx, self.callback)
 
+    async def a_encrypt(self, database, cmd):
+        """Encrypt a MongoDB command.
+
+        :Parameters:
+          - `database`: The database for this command.
+          - `cmd`: A MongoDB command as BSON.
+
+        :Returns:
+          The encrypted command.
+        """
+        if not isinstance(self.callback, AsyncMongoCryptCallback):
+            TypeError("callback must be a AsyncMongoCryptCallback")
+        with self.mongocrypt.encryption_context(database, cmd) as ctx:
+            return await a_run_state_machine(ctx, self.callback)
+
     def decrypt(self, response):
         """Decrypt a MongoDB command response.
 
@@ -55,7 +70,27 @@ class AutoEncrypter(object):
         with self.mongocrypt.decryption_context(response) as ctx:
             return run_state_machine(ctx, self.callback)
 
+    async def a_decrypt(self, response):
+        """Decrypt a MongoDB command response.
+
+        :Parameters:
+          - `response`: A MongoDB command response as BSON.
+
+        :Returns:
+          The decrypted command response.
+        """
+        if not isinstance(self.callback, AsyncMongoCryptCallback):
+            TypeError("callback must be a AsyncMongoCryptCallback")
+        with self.mongocrypt.decryption_context(response) as ctx:
+            return await a_run_state_machine(ctx, self.callback)
+
     def close(self):
         """Cleanup resources."""
         self.mongocrypt.close()
         self.callback.close()
+
+    async def a_close(self):
+        """Cleanup resources."""
+        self.mongocrypt.close()
+        await self.callback.close()
+
