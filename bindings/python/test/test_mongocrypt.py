@@ -545,7 +545,7 @@ class TestAsyncMongoCryptCallback(unittest.IsolatedAsyncioTestCase):
             'local': {'key': b'\x00'*96}})
 
     @unittest.skipUnless(os.getenv("TEST_CRYPT_SHARED"), "this test requires TEST_CRYPT_SHARED=1")
-    def test_crypt_shared(self):
+    async def test_crypt_shared(self):
         kms_providers = {
             'aws': {'accessKeyId': 'example', 'secretAccessKey': 'example'},
             'local': {'key': b'\x00'*96}}
@@ -557,12 +557,12 @@ class TestAsyncMongoCryptCallback(unittest.IsolatedAsyncioTestCase):
             kms_providers,
             bypass_encryption=False,
             crypt_shared_lib_required=True))
-        self.addCleanup(encrypter.close)
+        await encrypter.a_close()
         encrypter = AutoEncrypter(MockAsyncCallback(), MongoCryptOptions(
             kms_providers,
             crypt_shared_lib_path=os.environ["CRYPT_SHARED_PATH"],
             crypt_shared_lib_required=True))
-        self.addCleanup(encrypter.close)
+        await encrypter.a_close()
         with self.assertRaisesRegex(MongoCryptError, "/doesnotexist"):
             AutoEncrypter(MockAsyncCallback(), MongoCryptOptions(
                 kms_providers,
@@ -575,11 +575,12 @@ class TestAsyncMongoCryptCallback(unittest.IsolatedAsyncioTestCase):
             mongocryptd_reply=bson_data('mongocryptd-reply.json'),
             key_docs=[bson_data('key-document.json')],
             kms_reply=http_data('kms-reply.txt')), self.mongo_crypt_opts())
-        self.addCleanup(encrypter.close)
         encrypted = await encrypter.a_encrypt('test', bson_data('command.json'))
         self.assertEqual(bson.decode(encrypted, OPTS),
                          json_data('encrypted-command.json'))
         self.assertEqual(encrypted, bson_data('encrypted-command.json'))
+        await encrypter.a_close()
+
 
     async def test_decrypt(self):
         encrypter = AutoEncrypter(MockAsyncCallback(
@@ -587,12 +588,12 @@ class TestAsyncMongoCryptCallback(unittest.IsolatedAsyncioTestCase):
             mongocryptd_reply=bson_data('mongocryptd-reply.json'),
             key_docs=[bson_data('key-document.json')],
             kms_reply=http_data('kms-reply.txt')), self.mongo_crypt_opts())
-        self.addCleanup(encrypter.close)
         decrypted = await encrypter.a_decrypt(
             bson_data('encrypted-command-reply.json'))
         self.assertEqual(bson.decode(decrypted, OPTS),
                          json_data('command-reply.json'))
         self.assertEqual(decrypted, bson_data('command-reply.json'))
+        await encrypter.a_close()
 
     async def test_need_kms_aws_credentials(self):
         kms_providers = { 'aws': {} }
@@ -603,7 +604,6 @@ class TestAsyncMongoCryptCallback(unittest.IsolatedAsyncioTestCase):
             key_docs=[bson_data('key-document.json')],
             kms_reply=http_data('kms-reply.txt'))
         encrypter = AutoEncrypter(callback, opts)
-        self.addCleanup(encrypter.close)
 
         with unittest.mock.patch("pymongocrypt.credentials.aws_temp_credentials") as m:
             m.return_value = AwsCredential("example", "example", None)
@@ -614,6 +614,7 @@ class TestAsyncMongoCryptCallback(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(bson.decode(decrypted, OPTS),
                          json_data('command-reply.json'))
         self.assertEqual(decrypted, bson_data('command-reply.json'))
+        await encrypter.a_close()
 
     async def test_need_kms_gcp_credentials(self):
         kms_providers = { 'gcp': {} }
@@ -624,7 +625,6 @@ class TestAsyncMongoCryptCallback(unittest.IsolatedAsyncioTestCase):
             key_docs=[bson_data('key-document-gcp.json')],
             kms_reply=http_data('kms-reply-gcp.txt'))
         encrypter = AutoEncrypter(callback, opts)
-        self.addCleanup(encrypter.close)
 
         with requests_mock.Mocker() as m:
             data = {"access_token": "foo"}
@@ -637,6 +637,7 @@ class TestAsyncMongoCryptCallback(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(bson.decode(decrypted, OPTS),
                          json_data('command-reply.json'))
         self.assertEqual(decrypted, bson_data('command-reply.json'))
+        await encrypter.a_close()
 
 
 class TestNeedKMSAzureCredentials(unittest.TestCase):
