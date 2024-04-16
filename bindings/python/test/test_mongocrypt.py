@@ -28,6 +28,7 @@ from bson.codec_options import CodecOptions
 from bson.json_util import JSONOptions
 from bson.son import SON
 
+from pymongocrypt.asynchronous.mongocrypt import AsyncMongoCrypt
 from pymongocrypt.binary import MongoCryptBinaryIn, MongoCryptBinaryOut
 from pymongocrypt.options import MongoCryptOptions
 
@@ -550,7 +551,7 @@ class TestAsyncMongoCryptCallback(unittest.IsolatedAsyncioTestCase):
         kms_providers = {
             'aws': {'accessKeyId': 'example', 'secretAccessKey': 'example'},
             'local': {'key': b'\x00'*96}}
-        mc = MongoCrypt(MongoCryptOptions(kms_providers), MockAsyncCallback())
+        mc = AsyncMongoCrypt(MongoCryptOptions(kms_providers), MockAsyncCallback())
         self.addCleanup(mc.close)
         self.assertIsNotNone(mc.crypt_shared_lib_version)
         # Test that we can pick up crypt_shared automatically
