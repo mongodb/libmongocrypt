@@ -9,7 +9,7 @@ replacements = {
     "asynchronous": "synchronous",
     "AsyncMongoCryptCallback": "MongoCryptCallback",
     "AsyncExplicitEncrypter": "ExplicitEncrypter",
-    "AsyncAutoEncrypter": "AutoEncrypter"
+    "AsyncAutoEncrypter": "AutoEncrypter",
 }
 
 async_files = [

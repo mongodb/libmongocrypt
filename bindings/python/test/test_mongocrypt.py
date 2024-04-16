@@ -1063,7 +1063,7 @@ class TestAsyncExplicitEncryption(unittest.IsolatedAsyncioTestCase):
 
             # Queryable Encryption find payloads cannot be round-tripped.
             if 'query_type' not in kwargs:
-                decrypted = encrypter.decrypt(encrypted)
+                decrypted = await encrypter.decrypt(encrypted)
                 self.assertEqual(bson.decode(decrypted, OPTS), val)
                 self.assertEqual(encoded_val, decrypted)
 

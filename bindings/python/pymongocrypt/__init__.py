@@ -14,3 +14,5 @@
 
 from pymongocrypt.binding import libmongocrypt_version, lib
 from pymongocrypt.version import __version__
+import pymongocrypt.asynchronous
+import pymongocrypt.synchronous
