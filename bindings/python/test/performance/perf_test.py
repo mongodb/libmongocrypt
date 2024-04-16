@@ -37,7 +37,7 @@ from test.test_mongocrypt import MockCallback
 
 from pymongocrypt.binding import lib, libmongocrypt_version
 from pymongocrypt.synchronous.explicit_encrypter import ExplicitEncrypter
-from pymongocrypt.mongocrypt import MongoCrypt, MongoCryptOptions
+from pymongocrypt.synchronous.mongocrypt import MongoCrypt, MongoCryptOptions
 from pymongocrypt.version import __version__
 
 NUM_ITERATIONS = 10

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from pymongocrypt.mongocrypt import MongoCrypt
+from pymongocrypt.asynchronous.mongocrypt import MongoCrypt
 from pymongocrypt.asynchronous.state_machine import run_state_machine
 
 

@@ -10,6 +10,8 @@ replacements = {
     "AsyncMongoCryptCallback": "MongoCryptCallback",
     "AsyncExplicitEncrypter": "ExplicitEncrypter",
     "AsyncAutoEncrypter": "AutoEncrypter",
+    "AsyncClient": "Client",
+    "aclose": "close"
 }
 
 async_files = [

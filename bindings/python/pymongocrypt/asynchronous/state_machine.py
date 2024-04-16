@@ -150,7 +150,7 @@ async def run_state_machine(ctx, callback):
                     await callback.kms_request(kms_ctx)
             ctx.complete_kms()
         elif state == lib.MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS:
-            creds = ctx.ask_for_kms_credentials()
+            creds = await ctx.ask_for_kms_credentials()
             ctx.provide_kms_providers(callback.bson_encode(creds))
         else:
             raise MongoCryptError('unknown state: %r' % (state,))

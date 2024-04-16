@@ -23,24 +23,27 @@ except ImportError:
 
 from pymongocrypt.errors import MongoCryptError
 
-import requests
+import httpx
 
 
 _azure_creds = namedtuple("_azure_creds", ["access_token", "expires_utc"])
 _azure_creds_cache = None
 
 
-def _get_gcp_credentials():
+async def _get_gcp_credentials():
     """Get on-demand GCP credentials"""
     metadata_host = os.getenv("GCE_METADATA_HOST") or "metadata.google.internal"
     url = "http://%s/computeMetadata/v1/instance/service-accounts/default/token" % metadata_host
 
     headers = {"Metadata-Flavor": "Google"}
+    client = httpx.AsyncClient()
     try:
-        response = requests.get(url, headers=headers)
+        response = await client.get(url, headers=headers)
     except Exception as e:
         msg = "unable to retrieve GCP credentials: %s" % e
         raise MongoCryptError(msg)
+    finally:
+        await client.aclose()
 
     if response.status_code != 200:
         msg = "Unable to retrieve GCP credentials: expected StatusCode 200, got StatusCode: %s. Response body:\n%s" % (response.status_code, response.content)
@@ -57,7 +60,7 @@ def _get_gcp_credentials():
     return {'accessToken': data['access_token']}
 
 
-def _get_azure_credentials():
+async def _get_azure_credentials():
     """Get on-demand Azure credentials"""
     global _azure_creds_cache
     # Credentials are considered expired when: Expiration - now < 1 mins.
@@ -72,11 +75,14 @@ def _get_azure_credentials():
     url += "?api-version=2018-02-01"
     url += "&resource=https://vault.azure.net"
     headers = { "Metadata": "true", "Accept": "application/json" }
+    client = httpx.AsyncClient()
     try:
-        response = requests.get(url, headers=headers)
+        response = await client.get(url, headers=headers)
     except Exception as e:
         msg = "Failed to acquire IMDS access token: %s" % e
         raise MongoCryptError(msg)
+    finally:
+        await client.aclose()
 
     if response.status_code != 200:
         msg = "Failed to acquire IMDS access token."
@@ -102,7 +108,7 @@ def _get_azure_credentials():
     return { 'accessToken': data['access_token'] }
 
 
-def _ask_for_kms_credentials(kms_providers):
+async def _ask_for_kms_credentials(kms_providers):
     """Get on-demand kms credentials.
 
     This is a separate function so it can be overridden in unit tests."""
@@ -126,10 +132,10 @@ def _ask_for_kms_credentials(kms_providers):
             creds_dict["sessionToken"] = aws_creds.token
         creds['aws'] = creds_dict
     if on_demand_gcp:
-        creds['gcp'] = _get_gcp_credentials()
+        creds['gcp'] = await _get_gcp_credentials()
     if on_demand_azure:
         try:
-            creds['azure'] = _get_azure_credentials()
+            creds['azure'] = await _get_azure_credentials()
         except Exception:
             _azure_creds_cache = None
             raise
