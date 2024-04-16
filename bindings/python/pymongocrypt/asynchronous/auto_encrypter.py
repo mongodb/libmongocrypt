@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from pymongocrypt.asynchronous.mongocrypt import MongoCrypt
+from pymongocrypt.asynchronous.mongocrypt import AsyncMongoCrypt
 from pymongocrypt.asynchronous.state_machine import run_state_machine
 
 
@@ -28,7 +28,7 @@ class AsyncAutoEncrypter(object):
           - `mongo_crypt_opts`: A :class:`MongoCryptOptions`.
         """
         self.callback = callback
-        self.mongocrypt = MongoCrypt(mongo_crypt_opts, callback)
+        self.mongocrypt = AsyncMongoCrypt(mongo_crypt_opts, callback)
 
     async def encrypt(self, database, cmd):
         """Encrypt a MongoDB command.
@@ -59,4 +59,3 @@ class AsyncAutoEncrypter(object):
         """Cleanup resources."""
         self.mongocrypt.close()
         await self.callback.close()
-

@@ -11,6 +11,7 @@ replacements = {
     "AsyncExplicitEncrypter": "ExplicitEncrypter",
     "AsyncAutoEncrypter": "AutoEncrypter",
     "AsyncClient": "Client",
+    "AsyncMongoCrypt": "MongoCrypt",
     "aclose": "close"
 }
 

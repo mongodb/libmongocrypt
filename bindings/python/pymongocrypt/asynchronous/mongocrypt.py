@@ -24,7 +24,6 @@ from pymongocrypt.compat import str_to_bytes
 from pymongocrypt.asynchronous.credentials import _ask_for_kms_credentials
 from pymongocrypt.errors import MongoCryptError
 from pymongocrypt.asynchronous.state_machine import AsyncMongoCryptCallback
-from pymongocrypt.synchronous.state_machine import MongoCryptCallback
 
 from pymongocrypt.crypto import (aes_256_cbc_encrypt,
                                  aes_256_cbc_decrypt,
@@ -39,7 +38,7 @@ from pymongocrypt.crypto import (aes_256_cbc_encrypt,
 from pymongocrypt.options import MongoCryptOptions
 
 
-class MongoCrypt(object):
+class AsyncMongoCrypt(object):
 
     def __init__(self, options, callback):
         """Abstracts libmongocrypt's mongocrypt_t type.
@@ -55,8 +54,8 @@ class MongoCrypt(object):
         if not isinstance(options, MongoCryptOptions):
             raise TypeError("options must be a MongoCryptOptions")
 
-        if not isinstance(callback, (MongoCryptCallback, AsyncMongoCryptCallback)):
-            raise TypeError("callback must be a MongoCryptCallback or AsyncMongoCryptCallback")
+        if not isinstance(callback, AsyncMongoCryptCallback):
+            raise TypeError("callback must be a AsyncMongoCryptCallback")
 
         self.__crypt = lib.mongocrypt_new()
         if self.__crypt == ffi.NULL:

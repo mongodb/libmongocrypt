@@ -24,7 +24,6 @@ from pymongocrypt.compat import str_to_bytes
 from pymongocrypt.synchronous.credentials import _ask_for_kms_credentials
 from pymongocrypt.errors import MongoCryptError
 from pymongocrypt.synchronous.state_machine import MongoCryptCallback
-from pymongocrypt.synchronous.state_machine import MongoCryptCallback
 
 from pymongocrypt.crypto import (aes_256_cbc_encrypt,
                                  aes_256_cbc_decrypt,
@@ -55,8 +54,8 @@ class MongoCrypt(object):
         if not isinstance(options, MongoCryptOptions):
             raise TypeError("options must be a MongoCryptOptions")
 
-        if not isinstance(callback, (MongoCryptCallback, MongoCryptCallback)):
-            raise TypeError("callback must be a MongoCryptCallback or MongoCryptCallback")
+        if not isinstance(callback, MongoCryptCallback):
+            raise TypeError("callback must be a MongoCryptCallback")
 
         self.__crypt = lib.mongocrypt_new()
         if self.__crypt == ffi.NULL:

@@ -59,4 +59,3 @@ class AutoEncrypter(object):
         """Cleanup resources."""
         self.mongocrypt.close()
         self.callback.close()
-
