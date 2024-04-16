@@ -566,7 +566,7 @@ class TestAsyncMongoCryptCallback(unittest.IsolatedAsyncioTestCase):
             crypt_shared_lib_required=True))
         self.addAsyncCleanup(encrypter.close)
         with self.assertRaisesRegex(MongoCryptError, "/doesnotexist"):
-            AutoEncrypter(MockAsyncCallback(), MongoCryptOptions(
+            AsyncAutoEncrypter(MockAsyncCallback(), MongoCryptOptions(
                 kms_providers,
                 crypt_shared_lib_path="/doesnotexist",
                 crypt_shared_lib_required=True))
