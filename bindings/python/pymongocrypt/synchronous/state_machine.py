@@ -112,7 +112,7 @@ def run_state_machine(ctx, callback):
 
     :Parameters:
       - `ctx`: A :class:`MongoCryptContext`.
-      - `callback`: A :class:`AsyncMongoCryptCallback`.
+      - `callback`: A :class:`MongoCryptCallback`.
 
     :Returns:
       The completed libmongocrypt operation.

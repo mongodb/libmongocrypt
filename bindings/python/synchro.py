@@ -30,13 +30,18 @@ unasync_files(
     ],
 )
 
+sync_files = [
+    "./pymongocrypt/synchronous/" + f
+    for f in listdir("pymongocrypt/synchronous")
+    if isfile(join("pymongocrypt/synchronous", f))
+]
 
-# with open("gridfs/synchronous/grid_file.py", "r+") as f:
-#     lines = f.readlines()
-#     is_sync = [line for line in lines if line.startswith("IS_SYNC = ")][0]
-#     index = lines.index(is_sync)
-#     is_sync = is_sync.replace("False", "True")
-#     lines[index] = is_sync
-#     f.seek(0)
-#     f.writelines(lines)
-#     f.truncate()
+for file in sync_files:
+    with open(file, "r+") as f:
+        lines = f.readlines()
+        for i in range(len(lines)):
+            for s in replacements:
+                lines[i] = lines[i].replace(s, replacements[s])
+        f.seek(0)
+        f.truncate()
+        f.writelines(lines)
