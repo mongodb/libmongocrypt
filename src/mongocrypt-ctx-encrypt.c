@@ -1780,6 +1780,9 @@ static bool FLE2RangeFindDriverSpec_to_ciphertexts(mongocrypt_ctx_t *ctx, mongoc
     BSON_ASSERT_PARAM(ctx);
     BSON_ASSERT_PARAM(out);
 
+    bson_t with_placholders = BSON_INITIALIZER;
+    bson_t with_ciphertexts = BSON_INITIALIZER;
+
     if (!ctx->opts.rangeopts.set) {
         _mongocrypt_ctx_fail_w_msg(ctx, "Expected RangeOpts to be set for Range Find");
         goto fail;
@@ -1789,8 +1792,6 @@ static bool FLE2RangeFindDriverSpec_to_ciphertexts(mongocrypt_ctx_t *ctx, mongoc
         goto fail;
     }
 
-    bson_t with_placholders = BSON_INITIALIZER;
-    bson_t with_ciphertexts = BSON_INITIALIZER;
     bson_t in_bson;
     if (!_mongocrypt_buffer_to_bson(&ectx->original_cmd, &in_bson)) {
         _mongocrypt_ctx_fail_w_msg(ctx, "unable to convert input to BSON");
