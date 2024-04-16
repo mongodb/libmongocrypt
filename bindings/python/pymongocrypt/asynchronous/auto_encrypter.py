@@ -13,10 +13,10 @@
 # limitations under the License.
 
 from pymongocrypt.mongocrypt import MongoCrypt
-from pymongocrypt.state_machine import run_state_machine, a_run_state_machine, AsyncMongoCryptCallback
+from pymongocrypt.asynchronous.state_machine import run_state_machine
 
 
-class AutoEncrypter(object):
+class AsyncAutoEncrypter(object):
     def __init__(self, callback, mongo_crypt_opts):
         """Encrypts and decrypts MongoDB commands.
 
@@ -30,7 +30,7 @@ class AutoEncrypter(object):
         self.callback = callback
         self.mongocrypt = MongoCrypt(mongo_crypt_opts, callback)
 
-    def encrypt(self, database, cmd):
+    async def encrypt(self, database, cmd):
         """Encrypt a MongoDB command.
 
         :Parameters:
@@ -41,24 +41,9 @@ class AutoEncrypter(object):
           The encrypted command.
         """
         with self.mongocrypt.encryption_context(database, cmd) as ctx:
-            return run_state_machine(ctx, self.callback)
+            return await run_state_machine(ctx, self.callback)
 
-    async def a_encrypt(self, database, cmd):
-        """Encrypt a MongoDB command.
-
-        :Parameters:
-          - `database`: The database for this command.
-          - `cmd`: A MongoDB command as BSON.
-
-        :Returns:
-          The encrypted command.
-        """
-        if not isinstance(self.callback, AsyncMongoCryptCallback):
-            TypeError("callback must be a AsyncMongoCryptCallback")
-        with self.mongocrypt.encryption_context(database, cmd) as ctx:
-            return await a_run_state_machine(ctx, self.callback)
-
-    def decrypt(self, response):
+    async def decrypt(self, response):
         """Decrypt a MongoDB command response.
 
         :Parameters:
@@ -68,28 +53,9 @@ class AutoEncrypter(object):
           The decrypted command response.
         """
         with self.mongocrypt.decryption_context(response) as ctx:
-            return run_state_machine(ctx, self.callback)
+            return await run_state_machine(ctx, self.callback)
 
-    async def a_decrypt(self, response):
-        """Decrypt a MongoDB command response.
-
-        :Parameters:
-          - `response`: A MongoDB command response as BSON.
-
-        :Returns:
-          The decrypted command response.
-        """
-        if not isinstance(self.callback, AsyncMongoCryptCallback):
-            TypeError("callback must be a AsyncMongoCryptCallback")
-        with self.mongocrypt.decryption_context(response) as ctx:
-            return await a_run_state_machine(ctx, self.callback)
-
-    def close(self):
-        """Cleanup resources."""
-        self.mongocrypt.close()
-        self.callback.close()
-
-    async def a_close(self):
+    async def close(self):
         """Cleanup resources."""
         self.mongocrypt.close()
         await self.callback.close()

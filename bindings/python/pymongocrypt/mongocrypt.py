@@ -23,7 +23,8 @@ from pymongocrypt.binding import ffi, lib, _to_string
 from pymongocrypt.compat import str_to_bytes, unicode_type
 from pymongocrypt.credentials import _ask_for_kms_credentials
 from pymongocrypt.errors import MongoCryptError
-from pymongocrypt.state_machine import MongoCryptCallback, AsyncMongoCryptCallback
+from pymongocrypt.asynchronous.state_machine import AsyncMongoCryptCallback
+from pymongocrypt.synchronous.state_machine import MongoCryptCallback
 
 from pymongocrypt.crypto import (aes_256_cbc_encrypt,
                                  aes_256_cbc_decrypt,
