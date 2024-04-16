@@ -537,6 +537,7 @@ static bool _collect_K_KeyID_from_FLE2IndexedEncryptedValue(void *ctx,
     BSON_ASSERT_PARAM(in);
     BSON_ASSERT(in->data);
     bool ret = false;
+    _mongocrypt_buffer_t S_Key = {0};
 
     BSON_ASSERT((in->data[0] == MC_SUBTYPE_FLE2IndexedEqualityEncryptedValue)
                 || (in->data[0] == MC_SUBTYPE_FLE2IndexedRangeEncryptedValue));
@@ -549,7 +550,6 @@ static bool _collect_K_KeyID_from_FLE2IndexedEncryptedValue(void *ctx,
     CHECK_AND_RETURN(S_KeyId);
 
     _mongocrypt_key_broker_t *kb = ctx;
-    _mongocrypt_buffer_t S_Key = {0};
     CHECK_AND_RETURN_KB_STATUS(_mongocrypt_key_broker_decrypted_key_by_id(kb, S_KeyId, &S_Key));
 
     /* Decrypt InnerEncrypted to get K_KeyId. */
