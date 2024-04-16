@@ -504,6 +504,7 @@ static bool _collect_K_KeyID_from_FLE2IndexedEncryptedValueV2(void *ctx,
                 || (in->data[0] == MC_SUBTYPE_FLE2IndexedRangeEncryptedValueV2));
 
     mc_FLE2IndexedEncryptedValueV2_t *iev = mc_FLE2IndexedEncryptedValueV2_new();
+    _mongocrypt_buffer_t S_Key = {0};
     CHECK_AND_RETURN(iev);
     CHECK_AND_RETURN(mc_FLE2IndexedEncryptedValueV2_parse(iev, in, status));
 
@@ -511,7 +512,6 @@ static bool _collect_K_KeyID_from_FLE2IndexedEncryptedValueV2(void *ctx,
     CHECK_AND_RETURN(S_KeyId);
 
     _mongocrypt_key_broker_t *kb = ctx;
-    _mongocrypt_buffer_t S_Key = {0};
     CHECK_AND_RETURN_KB_STATUS(_mongocrypt_key_broker_decrypted_key_by_id(kb, S_KeyId, &S_Key));
 
     /* Decrypt InnerEncrypted to get K_KeyId. */
