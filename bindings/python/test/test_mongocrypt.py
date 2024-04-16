@@ -28,6 +28,8 @@ from bson.codec_options import CodecOptions
 from bson.json_util import JSONOptions
 from bson.son import SON
 
+from pymongocrypt.options import MongoCryptOptions
+
 sys.path[0:0] = [""]
 
 import pymongocrypt.synchronous.mongocrypt
@@ -41,8 +43,7 @@ from pymongocrypt.synchronous.explicit_encrypter import ExplicitEncrypter
 from pymongocrypt.asynchronous.explicit_encrypter import AsyncExplicitEncrypter
 from pymongocrypt.synchronous.mongocrypt import (MongoCrypt,
                                      MongoCryptBinaryIn,
-                                     MongoCryptBinaryOut,
-                                     MongoCryptOptions)
+                                     MongoCryptBinaryOut)
 from pymongocrypt.asynchronous.state_machine import AsyncMongoCryptCallback
 from pymongocrypt.synchronous.state_machine import MongoCryptCallback
 
