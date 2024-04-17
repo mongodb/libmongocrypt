@@ -44,6 +44,7 @@ dependencies = [
     "cryptography>=40",
     "packaging>=21.0",
     "httpx",
+    "unasync"
 ]
 
 [project.urls]
