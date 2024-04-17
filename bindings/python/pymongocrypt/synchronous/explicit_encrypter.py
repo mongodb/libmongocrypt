@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from pymongocrypt.synchronous.mongocrypt import MongoCrypt
+from pymongocrypt.mongocrypt import MongoCrypt
 from pymongocrypt.synchronous.state_machine import run_state_machine
 from pymongocrypt.options import DataKeyOpts, ExplicitEncryptOpts
 

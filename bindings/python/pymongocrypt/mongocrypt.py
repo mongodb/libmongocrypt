@@ -55,7 +55,7 @@ class MongoCrypt(object):
             raise TypeError("options must be a MongoCryptOptions")
 
         if not isinstance(callback, (AsyncMongoCryptCallback, MongoCryptCallback)):
-            raise TypeError("callback must be a MongoCryptCallBack or AsyncMongoCryptCallback")
+            raise TypeError("callback must be a MongoCryptCallback or AsyncMongoCryptCallback")
 
         self.__crypt = lib.mongocrypt_new()
         if self.__crypt == ffi.NULL:

@@ -42,7 +42,7 @@ from pymongocrypt.compat import unicode_type, PY3
 from pymongocrypt.errors import MongoCryptError
 from pymongocrypt.synchronous.explicit_encrypter import ExplicitEncrypter
 from pymongocrypt.asynchronous.explicit_encrypter import AsyncExplicitEncrypter
-from pymongocrypt.synchronous.mongocrypt import MongoCrypt
+from pymongocrypt.mongocrypt import MongoCrypt
 from pymongocrypt.asynchronous.state_machine import AsyncMongoCryptCallback
 from pymongocrypt.synchronous.state_machine import MongoCryptCallback
 
@@ -203,10 +203,10 @@ class TestMongoCrypt(unittest.TestCase):
             MongoCrypt(None, callback)
 
         with self.assertRaisesRegex(
-                TypeError, 'callback must be a MongoCryptCallback'):
+                TypeError, 'callback must be a MongoCryptCallback or AsyncMongoCryptCallback'):
             MongoCrypt(options, {})
         with self.assertRaisesRegex(
-                TypeError, 'callback must be a MongoCryptCallback'):
+                TypeError, 'callback must be a MongoCryptCallback or AsyncMongoCryptCallback'):
             MongoCrypt(options, None)
 
         invalid_key_len_opts = MongoCryptOptions({'local': {'key': b'1'}})
