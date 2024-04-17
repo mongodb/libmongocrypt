@@ -21,9 +21,9 @@ from pymongocrypt.binary import (MongoCryptBinaryIn,
                                  MongoCryptBinaryOut)
 from pymongocrypt.binding import ffi, lib, _to_string
 from pymongocrypt.compat import str_to_bytes
-from pymongocrypt.asynchronous.credentials import _ask_for_kms_credentials
 from pymongocrypt.errors import MongoCryptError
 from pymongocrypt.asynchronous.state_machine import AsyncMongoCryptCallback
+from pymongocrypt.synchronous.state_machine import MongoCryptCallback
 
 from pymongocrypt.crypto import (aes_256_cbc_encrypt,
                                  aes_256_cbc_decrypt,
@@ -38,7 +38,7 @@ from pymongocrypt.crypto import (aes_256_cbc_encrypt,
 from pymongocrypt.options import MongoCryptOptions
 
 
-class AsyncMongoCrypt(object):
+class MongoCrypt(object):
 
     def __init__(self, options, callback):
         """Abstracts libmongocrypt's mongocrypt_t type.
@@ -54,7 +54,7 @@ class AsyncMongoCrypt(object):
         if not isinstance(options, MongoCryptOptions):
             raise TypeError("options must be a MongoCryptOptions")
 
-        if not isinstance(callback, AsyncMongoCryptCallback):
+        if not isinstance(callback, AsyncMongoCryptCallback or MongoCryptCallBack):
             raise TypeError("callback must be a AsyncMongoCryptCallback")
 
         self.__crypt = lib.mongocrypt_new()
@@ -260,7 +260,7 @@ class AsyncMongoCrypt(object):
 
 
 class MongoCryptContext(object):
-    __slots__ = ("__ctx", "__kms_providers")
+    __slots__ = ("__ctx", "kms_providers")
 
     def __init__(self, ctx, kms_providers):
         """Abstracts libmongocrypt's mongocrypt_ctx_t type.
@@ -271,7 +271,7 @@ class MongoCryptContext(object):
           - `kms_providers`: The KMS provider map.
         """
         self.__ctx = ctx
-        self.__kms_providers = kms_providers
+        self.kms_providers = kms_providers
 
     def _close(self):
         """Cleanup resources."""
@@ -321,10 +321,6 @@ class MongoCryptContext(object):
         """Completes the mongo operation."""
         if not lib.mongocrypt_ctx_mongo_done(self.__ctx):
             self._raise_from_status()
-
-    async def ask_for_kms_credentials(self):
-        """Get on-demand kms credentials"""
-        return await _ask_for_kms_credentials(self.__kms_providers)
 
     def provide_kms_providers(self, providers):
         """Provide a map of KMS providers."""

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from pymongocrypt.asynchronous.mongocrypt import AsyncMongoCrypt
+from pymongocrypt.mongocrypt import MongoCrypt
 from pymongocrypt.asynchronous.state_machine import run_state_machine
 from pymongocrypt.options import DataKeyOpts, ExplicitEncryptOpts
 
@@ -31,7 +31,7 @@ class AsyncExplicitEncrypter(object):
         self.callback = callback
         if mongo_crypt_opts.schema_map is not None:
             raise ValueError("mongo_crypt_opts.schema_map must be None")
-        self.mongocrypt = AsyncMongoCrypt(mongo_crypt_opts, callback)
+        self.mongocrypt = MongoCrypt(mongo_crypt_opts, callback)
 
     async def create_data_key(self, kms_provider, master_key=None,
                         key_alt_names=None, key_material=None):

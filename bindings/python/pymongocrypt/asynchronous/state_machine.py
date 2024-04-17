@@ -14,6 +14,7 @@
 
 from abc import abstractmethod
 
+from pymongocrypt.asynchronous.credentials import _ask_for_kms_credentials
 from pymongocrypt.binding import lib
 from pymongocrypt.compat import ABC
 from pymongocrypt.errors import MongoCryptError
@@ -150,7 +151,7 @@ async def run_state_machine(ctx, callback):
                     await callback.kms_request(kms_ctx)
             ctx.complete_kms()
         elif state == lib.MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS:
-            creds = await ctx.ask_for_kms_credentials()
+            creds = await _ask_for_kms_credentials(ctx.kms_providers)
             ctx.provide_kms_providers(callback.bson_encode(creds))
         else:
             raise MongoCryptError('unknown state: %r' % (state,))

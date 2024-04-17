@@ -28,13 +28,12 @@ from bson.codec_options import CodecOptions
 from bson.json_util import JSONOptions
 from bson.son import SON
 
-from pymongocrypt.asynchronous.mongocrypt import AsyncMongoCrypt
+import pymongocrypt.mongocrypt
 from pymongocrypt.binary import MongoCryptBinaryIn, MongoCryptBinaryOut
 from pymongocrypt.options import MongoCryptOptions
 
 sys.path[0:0] = [""]
 
-import pymongocrypt.synchronous.mongocrypt
 from pymongo_auth_aws.auth import AwsCredential
 from pymongocrypt.synchronous.auto_encrypter import AutoEncrypter
 from pymongocrypt.asynchronous.auto_encrypter import AsyncAutoEncrypter
@@ -552,7 +551,7 @@ if sys.version_info >= (3, 8, 0):
             kms_providers = {
                 'aws': {'accessKeyId': 'example', 'secretAccessKey': 'example'},
                 'local': {'key': b'\x00'*96}}
-            mc = AsyncMongoCrypt(MongoCryptOptions(kms_providers), MockAsyncCallback())
+            mc = MongoCrypt(MongoCryptOptions(kms_providers), MockAsyncCallback())
             self.addCleanup(mc.close)
             self.assertIsNotNone(mc.crypt_shared_lib_version)
             # Test that we can pick up crypt_shared automatically
