@@ -26,4 +26,16 @@ if sys.platform in ('win32', 'darwin'):
         # Version of wheel is too old, use None to fail a bdist_wheel attempt.
         cmdclass['bdist_wheel'] = None
 
-setup(cmdclass=cmdclass)
+
+def parse_reqs_file(fname):
+    with open(fname) as fid:  # noqa:PTH123
+        lines = [li.strip() for li in fid.readlines()]
+    return [li for li in lines if li and not li.startswith("#")]
+
+
+extras_require = dict(  # noqa:C408
+    test=parse_reqs_file("test-requirements.txt")
+)
+
+setup(cmdclass=cmdclass, install_requires=parse_reqs_file("requirements.txt"),
+      extras_require=extras_require)
