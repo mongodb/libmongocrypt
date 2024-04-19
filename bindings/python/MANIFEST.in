@@ -1,0 +1,13 @@
+include README.rst
+include LICENSE
+include pyproject.toml
+include *requirements.txt
+include CHANGELOG.rst
+recursive-include pymongocrypt *.py
+recursive-include requirements *.txt
+exclude build-manylinux-wheel.sh
+exclude release.sh
+exclude RELEASE.rst
+exclude strip_header.py
+prune test
+prune .evergreen
