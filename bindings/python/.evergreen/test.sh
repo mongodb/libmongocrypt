@@ -79,8 +79,8 @@ fi
 for PYTHON_BINARY in "${PYTHONS[@]}"; do
     echo "Running test with python: $PYTHON_BINARY"
     $PYTHON_BINARY -c 'import sys; print(sys.version)'
-    createvirtualenv $PYTHON_BINARY .venv
     git clean -dffx
+    createvirtualenv $PYTHON_BINARY .venv
     python -m pip install check-manifest
     check-manifest -v
     python -m pip install --prefer-binary -v -e ".[test]"
