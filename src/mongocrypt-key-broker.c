@@ -817,7 +817,6 @@ mongocrypt_kms_ctx_t *_mongocrypt_key_broker_next_kms(_mongocrypt_key_broker_t *
         return NULL;
     }
 
-    // zz intercept here via kb->keys_returned->kms->should_retry?
     if (kb->keys_returned->kms.should_retry) {
         kb->keys_returned->kms.should_retry = false;
         mongocrypt_status_set(kb->keys_returned->kms.status, MONGOCRYPT_STATUS_OK, 0, "", -1);
@@ -830,7 +829,6 @@ mongocrypt_kms_ctx_t *_mongocrypt_key_broker_next_kms(_mongocrypt_key_broker_t *
             key_returned = kb->decryptor_iter;
             /* iterate before returning, so next call starts at next entry */
             kb->decryptor_iter = kb->decryptor_iter->next;
-            // zz KMS is what's returned for the request to execute
             return &key_returned->kms;
         }
         kb->decryptor_iter = kb->decryptor_iter->next;
@@ -839,7 +837,6 @@ mongocrypt_kms_ctx_t *_mongocrypt_key_broker_next_kms(_mongocrypt_key_broker_t *
     return NULL;
 }
 
-// key broker version of kms_done phase
 bool _mongocrypt_key_broker_kms_done(_mongocrypt_key_broker_t *kb, _mongocrypt_opts_kms_providers_t *kms_providers) {
     key_returned_t *key_returned;
 
