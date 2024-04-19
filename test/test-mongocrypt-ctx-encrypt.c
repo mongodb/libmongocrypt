@@ -1100,7 +1100,6 @@ void _test_encrypt_empty_aws(_mongocrypt_tester_t *tester) {
     mongocrypt_destroy(crypt);
 }
 
-
 static void _test_encrypt_custom_endpoint(_mongocrypt_tester_t *tester) {
     mongocrypt_t *crypt;
     mongocrypt_ctx_t *ctx;
