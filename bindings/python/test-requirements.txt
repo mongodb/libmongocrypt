@@ -1,4 +1,5 @@
 pymongo[aws]>=4
+dnspython>=2.6.1
 cffi>=1.12.0,<2
 cryptography>=2
 requests_mock>=1.10
