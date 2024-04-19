@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-#include "mongocrypt.h"
 #include "test-mongocrypt.h"
 
 #define TEST_REWRAP_MASTER_KEY_ID_OLD                                                                                  \
