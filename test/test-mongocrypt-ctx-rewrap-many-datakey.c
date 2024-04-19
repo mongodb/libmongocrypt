@@ -474,15 +474,15 @@ static void _test_rewrap_many_datakey_need_kms_decrypt_retryable(_mongocrypt_tes
     mongocrypt_ctx_destroy(ctx);
 
     /* Ensures failure after more than ten retries */
-    ctx = mongocrypt_ctx_new(crypt);
-    ASSERT_OK(mongocrypt_ctx_rewrap_many_datakey_init(ctx, filter), ctx);
-    ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
-    ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TEST_FILE("./test/data/rmd/key-document-a.json")), ctx);
-    ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TEST_FILE("./test/data/rmd/key-document-b.json")), ctx);
-    ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
-    ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_KMS);
-    ASSERT((kms = mongocrypt_ctx_next_kms_ctx(ctx)));
     if (retry) {
+        ctx = mongocrypt_ctx_new(crypt);
+        ASSERT_OK(mongocrypt_ctx_rewrap_many_datakey_init(ctx, filter), ctx);
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+        ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TEST_FILE("./test/data/rmd/key-document-a.json")), ctx);
+        ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TEST_FILE("./test/data/rmd/key-document-b.json")), ctx);
+        ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_KMS);
+        ASSERT((kms = mongocrypt_ctx_next_kms_ctx(ctx)));
         for (int i = 0; i <= 10; i++) {
             if (i == 10) {
                 ASSERT_FAILS(mongocrypt_kms_ctx_feed(kms, TEST_FILE("./test/data/rmd/kms-decrypt-reply-429.txt")), kms, "retries");
@@ -493,8 +493,8 @@ static void _test_rewrap_many_datakey_need_kms_decrypt_retryable(_mongocrypt_tes
             ASSERT((kms = mongocrypt_ctx_next_kms_ctx(ctx)));
             ASSERT(mongocrypt_kms_ctx_usleep(kms) > 0);
         }
+        mongocrypt_ctx_destroy(ctx);
     }
-    mongocrypt_ctx_destroy(ctx);
 
     /* Clear key cache. */
     mongocrypt_destroy(crypt);
