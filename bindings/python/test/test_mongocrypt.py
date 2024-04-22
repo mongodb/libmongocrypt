@@ -361,6 +361,13 @@ class TestMongoCrypt(unittest.TestCase):
             self.assertEqual(encrypted, bson_data('compact/success/encrypted-payload.json'))
             self.assertEqual(ctx.state, lib.MONGOCRYPT_CTX_DONE)
 
+    def test_pymongo_imports(self):
+        from pymongocrypt.auto_encrypter import AutoEncrypter  # type:ignore[import]
+        from pymongocrypt.errors import MongoCryptError  # type:ignore[import]
+        from pymongocrypt.explicit_encrypter import ExplicitEncrypter  # type:ignore[import]
+        from pymongocrypt.mongocrypt import MongoCryptOptions  # type:ignore[import]
+        from pymongocrypt.state_machine import MongoCryptCallback  # type:ignore[import]
+
 
 class MockCallback(MongoCryptCallback):
     def __init__(self,
