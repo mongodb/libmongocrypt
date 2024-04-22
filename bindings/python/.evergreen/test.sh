@@ -72,6 +72,7 @@ else
       crypt_shared --version latest --out ../crypt_shared/ --target $TARGET
 fi
 
+pre-commit run --all-files
 
 for PYTHON_BINARY in "${PYTHONS[@]}"; do
     echo "Running test with python: $PYTHON_BINARY"
