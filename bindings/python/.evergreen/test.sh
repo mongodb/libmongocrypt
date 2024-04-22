@@ -5,8 +5,10 @@
 set -o xtrace   # Write all commands first to stderr
 set -o errexit  # Exit the script with error if any of the commands fail
 
-# For createvirtualenv.
+# For createvirtualenv and find_python3
 . .evergreen/utils.sh
+
+BASE_PYTHON=$(find_python3)
 
 # MONGOCRYPT_DIR is set by libmongocrypt/.evergreen/config.yml
 MONGOCRYPT_DIR="$MONGOCRYPT_DIR"
@@ -51,7 +53,7 @@ else
         export PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/nocrypto/lib/libmongocrypt.so
         PYMONGOCRYPT_LIB_CRYPTO=${MONGOCRYPT_DIR}/lib/libmongocrypt.so
     fi
-    
+
     export CRYPT_SHARED_PATH="../crypt_shared/lib/mongo_crypt_v1.so"
     MACHINE=$(uname -m)
     if [ $MACHINE == "aarch64" ]; then
@@ -72,7 +74,14 @@ else
       crypt_shared --version latest --out ../crypt_shared/ --target $TARGET
 fi
 
+
+# Only run once and with Python 3.8+
+createvirtualenv $BASE_PYTHON .venv
+python -m pip install certifi
+python -m pip install pre-commit
 pre-commit run --all-files
+deactivate
+rm -rf .venv
 
 for PYTHON_BINARY in "${PYTHONS[@]}"; do
     echo "Running test with python: $PYTHON_BINARY"
