@@ -181,6 +181,12 @@ tasks.withType<PublishToMavenRepository> {
     sourceSets["main"].resources.srcDirs("resources", jnaResourcesDir)
 }
 
+// The `processResources` task (defined by the `java-library` plug-in) consumes files in the main source set.
+// Add a dependency on `unzipJava`. `unzipJava` adds libmongocrypt libraries to the main source set.
+tasks.processResources {
+    dependsOn(tasks.named("unzipJava"))
+}
+
 /*
  * Publishing
  */
