@@ -466,7 +466,7 @@ _handle_non200_http_status(int http_status, const char *body, size_t body_len, m
     CLIENT_ERR("Error in KMS response. HTTP status=%d. Response body=\n%s", http_status, body);
 }
 
-static int64_t backoff_time_usec(int attempts) {
+static int64_t backoff_time_usec(int64_t attempts) {
     static bool seeded = false;
     if (!seeded) {
         srand((uint32_t) time(NULL));
