@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pymongocrypt"
-dynamic = ["version"]
+dynamic = ["version", "dependencies", "optional-dependencies"]
 description = "Python bindings for libmongocrypt"
 readme = "README.rst"
 license = {file="LICENSE"}
@@ -38,12 +38,6 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Topic :: Database",
-]
-dependencies = [
-    "cffi>=1.12.0,<2",
-    "cryptography>=40",
-    "packaging>=21.0",
-    "httpx",
 ]
 
 [project.urls]
