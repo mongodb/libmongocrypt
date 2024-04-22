@@ -82,7 +82,6 @@ for PYTHON_BINARY in "${PYTHONS[@]}"; do
     createvirtualenv $PYTHON_BINARY .venv
     python -m pip install --prefer-binary -r test-requirements.txt
     python -m pip install -v -e .
-    python synchro.py
     echo "Running tests with crypto enabled libmongocrypt..."
     PYMONGOCRYPT_LIB=$PYMONGOCRYPT_LIB_CRYPTO python -c 'from pymongocrypt.binding import lib;assert lib.mongocrypt_is_crypto_available(), "mongocrypt_is_crypto_available() returned False"'
     PYMONGOCRYPT_LIB=$PYMONGOCRYPT_LIB_CRYPTO python -m pytest -v --ignore=test/performance .
