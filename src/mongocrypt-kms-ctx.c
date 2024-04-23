@@ -476,7 +476,7 @@ static int64_t backoff_time_usec(int64_t attempts) {
     /* Exponential backoff with jitter. */
     const int64_t base = 200000; /* 0.2 seconds */
     const int64_t max = 20000000; /* 20 seconds */
-    int64_t backoff = base * (1 << (attempts - 1));
+    int64_t backoff = base * (1LL << (attempts - 1));
     if (backoff > max) {
         backoff = max;
     }
