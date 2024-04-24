@@ -42,14 +42,23 @@ namespace MongoDB.Libmongocrypt
             MongoCryptSafeHandle handle = null;
             Status status = null;
 
+            bool cryptoAvailable;
+            try
+            {
+                cryptoAvailable = Library.mongocrypt_is_crypto_available();
+            }
+            catch (LibraryLoader.FunctionNotFoundException)
+            {
+                // mongocrypt_is_crypto_available is only available in libmongocrypt version >= 1.9
+                cryptoAvailable = false;
+            }
+
             try
             {
                 handle = Library.mongocrypt_new();
                 status = new Status();
-
-                // The below code can be avoided on Windows. So, we don't call it on this system 
-                // to avoid restrictions on target frameworks that present in some of below
-                if (OperatingSystemHelper.CurrentOperatingSystem != OperatingSystemPlatform.Windows)
+                
+                if (!cryptoAvailable)
                 {
                     handle.Check(
                         status,
