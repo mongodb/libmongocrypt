@@ -9,5 +9,6 @@ exclude build-manylinux-wheel.sh
 exclude release.sh
 exclude RELEASE.rst
 exclude strip_header.py
+exclude synchro.py
 prune test
 prune .evergreen

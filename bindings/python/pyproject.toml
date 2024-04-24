@@ -47,7 +47,7 @@ Homepage = "https://github.com/mongodb/libmongocrypt/tree/master/bindings/python
 version = {attr = "pymongocrypt/version.__version__"}
 
 [tool.setuptools.packages.find]
-include = ["pymongocrypt"]
+include = ["pymongocrypt", "pymongocrypt.asynchronous", "pymongocrypt.synchronous"]
 
 [tool.setuptools.package-data]
 pymongocrypt=['*.dll', '*.so', '*.dylib']

@@ -36,7 +36,7 @@ sys.path[0:0] = [""]
 from test.test_mongocrypt import MockCallback
 
 from pymongocrypt.binding import lib, libmongocrypt_version
-from pymongocrypt.explicit_encrypter import ExplicitEncrypter
+from pymongocrypt.synchronous.explicit_encrypter import ExplicitEncrypter
 from pymongocrypt.mongocrypt import MongoCrypt, MongoCryptOptions
 from pymongocrypt.version import __version__
 

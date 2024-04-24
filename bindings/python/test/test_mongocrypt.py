@@ -16,11 +16,11 @@
 
 import base64
 import copy
-import json
 import os
 import sys
 
 import bson
+import httpx
 from bson.raw_bson import RawBSONDocument
 from bson import json_util
 from bson.binary import Binary, UuidRepresentation
@@ -28,25 +28,26 @@ from bson.codec_options import CodecOptions
 from bson.json_util import JSONOptions
 from bson.son import SON
 
+import pymongocrypt.mongocrypt
+from pymongocrypt.binary import MongoCryptBinaryIn, MongoCryptBinaryOut
+from pymongocrypt.options import MongoCryptOptions
+
 sys.path[0:0] = [""]
 
-import pymongocrypt.mongocrypt
 from pymongo_auth_aws.auth import AwsCredential
-from pymongocrypt.auto_encrypter import AutoEncrypter
+from pymongocrypt.synchronous.auto_encrypter import AutoEncrypter
+from pymongocrypt.asynchronous.auto_encrypter import AsyncAutoEncrypter
 from pymongocrypt.binding import lib
 from pymongocrypt.compat import unicode_type, PY3
 from pymongocrypt.errors import MongoCryptError
-from pymongocrypt.explicit_encrypter import ExplicitEncrypter
-from pymongocrypt.mongocrypt import (MongoCrypt,
-                                     MongoCryptBinaryIn,
-                                     MongoCryptBinaryOut,
-                                     MongoCryptOptions)
-from pymongocrypt.state_machine import MongoCryptCallback
+from pymongocrypt.synchronous.explicit_encrypter import ExplicitEncrypter
+from pymongocrypt.asynchronous.explicit_encrypter import AsyncExplicitEncrypter
+from pymongocrypt.mongocrypt import MongoCrypt
+from pymongocrypt.asynchronous.state_machine import AsyncMongoCryptCallback
+from pymongocrypt.synchronous.state_machine import MongoCryptCallback
 
-from test import unittest, mock
-
-import requests.exceptions
-import requests_mock
+import unittest, unittest.mock
+import respx
 
 
 # Data for testing libbmongocrypt binding.
@@ -202,10 +203,10 @@ class TestMongoCrypt(unittest.TestCase):
             MongoCrypt(None, callback)
 
         with self.assertRaisesRegex(
-                TypeError, 'callback must be a MongoCryptCallback'):
+                TypeError, 'callback must be a MongoCryptCallback or AsyncMongoCryptCallback'):
             MongoCrypt(options, {})
         with self.assertRaisesRegex(
-                TypeError, 'callback must be a MongoCryptCallback'):
+                TypeError, 'callback must be a MongoCryptCallback or AsyncMongoCryptCallback'):
             MongoCrypt(options, None)
 
         invalid_key_len_opts = MongoCryptOptions({'local': {'key': b'1'}})
@@ -360,6 +361,13 @@ class TestMongoCrypt(unittest.TestCase):
             self.assertEqual(encrypted, bson_data('compact/success/encrypted-payload.json'))
             self.assertEqual(ctx.state, lib.MONGOCRYPT_CTX_DONE)
 
+    def test_pymongo_imports(self):
+        from pymongocrypt.auto_encrypter import AutoEncrypter  # type:ignore[import]
+        from pymongocrypt.errors import MongoCryptError  # type:ignore[import]
+        from pymongocrypt.explicit_encrypter import ExplicitEncrypter  # type:ignore[import]
+        from pymongocrypt.mongocrypt import MongoCryptOptions  # type:ignore[import]
+        from pymongocrypt.state_machine import MongoCryptCallback  # type:ignore[import]
+
 
 class MockCallback(MongoCryptCallback):
     def __init__(self,
@@ -393,6 +401,41 @@ class MockCallback(MongoCryptCallback):
         return bson.encode(doc)
 
     def close(self):
+        pass
+
+
+class MockAsyncCallback(AsyncMongoCryptCallback):
+    def __init__(self,
+                 list_colls_result=None,
+                 mongocryptd_reply=None,
+                 key_docs=None,
+                 kms_reply=None):
+        self.list_colls_result = list_colls_result
+        self.mongocryptd_reply = mongocryptd_reply
+        self.key_docs = key_docs
+        self.kms_reply = kms_reply
+        self.kms_endpoint = None
+
+    async def kms_request(self, kms_context):
+        self.kms_endpoint = kms_context.endpoint
+        kms_context.feed(self.kms_reply)
+
+    async def collection_info(self, ns, filter):
+        return self.list_colls_result
+
+    async def mark_command(self, ns, cmd):
+        return self.mongocryptd_reply
+
+    async def fetch_keys(self, filter):
+        return self.key_docs
+
+    async def insert_data_key(self, data_key):
+        raise NotImplementedError
+
+    def bson_encode(self, doc):
+        return bson.encode(doc)
+
+    async def close(self):
         pass
 
 
@@ -466,7 +509,7 @@ class TestMongoCryptCallback(unittest.TestCase):
         encrypter = AutoEncrypter(callback, opts)
         self.addCleanup(encrypter.close)
 
-        with mock.patch("pymongocrypt.credentials.aws_temp_credentials") as m:
+        with unittest.mock.patch("pymongocrypt.synchronous.credentials.aws_temp_credentials") as m:
             m.return_value = AwsCredential("example", "example", None)
             decrypted = encrypter.decrypt(
                 bson_data('encrypted-command-reply.json'))
@@ -487,17 +530,305 @@ class TestMongoCryptCallback(unittest.TestCase):
         encrypter = AutoEncrypter(callback, opts)
         self.addCleanup(encrypter.close)
 
-        with requests_mock.Mocker() as m:
+        with respx.mock() as router:
             data = {"access_token": "foo"}
             url = "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token"
-            m.get(url, text=json.dumps(data))
+            router.add(respx.get(url=url).mock(return_value=httpx.Response(200, json=data)))
             decrypted = encrypter.decrypt(
                 bson_data('encrypted-command-reply.json'))
-            self.assertTrue(m.called)
+            self.assertTrue(len(router.calls))
 
         self.assertEqual(bson.decode(decrypted, OPTS),
                          json_data('command-reply.json'))
         self.assertEqual(decrypted, bson_data('command-reply.json'))
+
+
+if sys.version_info >= (3, 8, 0):
+    class TestAsyncMongoCryptCallback(unittest.IsolatedAsyncioTestCase):
+        maxDiff = None
+
+        @staticmethod
+        def mongo_crypt_opts():
+            return MongoCryptOptions({
+                'aws': {'accessKeyId': 'example', 'secretAccessKey': 'example'},
+                'local': {'key': b'\x00'*96}})
+
+        @unittest.skipUnless(os.getenv("TEST_CRYPT_SHARED"), "this test requires TEST_CRYPT_SHARED=1")
+        async def test_crypt_shared(self):
+            kms_providers = {
+                'aws': {'accessKeyId': 'example', 'secretAccessKey': 'example'},
+                'local': {'key': b'\x00'*96}}
+            mc = MongoCrypt(MongoCryptOptions(kms_providers), MockAsyncCallback())
+            self.addCleanup(mc.close)
+            self.assertIsNotNone(mc.crypt_shared_lib_version)
+            # Test that we can pick up crypt_shared automatically
+            encrypter = AsyncAutoEncrypter(MockAsyncCallback(), MongoCryptOptions(
+                kms_providers,
+                bypass_encryption=False,
+                crypt_shared_lib_required=True))
+            self.addAsyncCleanup(encrypter.close)
+            encrypter = AsyncAutoEncrypter(MockAsyncCallback(), MongoCryptOptions(
+                kms_providers,
+                crypt_shared_lib_path=os.environ["CRYPT_SHARED_PATH"],
+                crypt_shared_lib_required=True))
+            self.addAsyncCleanup(encrypter.close)
+            with self.assertRaisesRegex(MongoCryptError, "/doesnotexist"):
+                AsyncAutoEncrypter(MockAsyncCallback(), MongoCryptOptions(
+                    kms_providers,
+                    crypt_shared_lib_path="/doesnotexist",
+                    crypt_shared_lib_required=True))
+
+        async def test_encrypt(self):
+            encrypter = AsyncAutoEncrypter(MockAsyncCallback(
+                list_colls_result=bson_data('collection-info.json'),
+                mongocryptd_reply=bson_data('mongocryptd-reply.json'),
+                key_docs=[bson_data('key-document.json')],
+                kms_reply=http_data('kms-reply.txt')), self.mongo_crypt_opts())
+            self.addAsyncCleanup(encrypter.close)
+            encrypted = await encrypter.encrypt('test', bson_data('command.json'))
+            self.assertEqual(bson.decode(encrypted, OPTS),
+                             json_data('encrypted-command.json'))
+            self.assertEqual(encrypted, bson_data('encrypted-command.json'))
+
+
+        async def test_decrypt(self):
+            encrypter = AsyncAutoEncrypter(MockAsyncCallback(
+                list_colls_result=bson_data('collection-info.json'),
+                mongocryptd_reply=bson_data('mongocryptd-reply.json'),
+                key_docs=[bson_data('key-document.json')],
+                kms_reply=http_data('kms-reply.txt')), self.mongo_crypt_opts())
+            self.addAsyncCleanup(encrypter.close)
+            decrypted = await encrypter.decrypt(
+                bson_data('encrypted-command-reply.json'))
+            self.assertEqual(bson.decode(decrypted, OPTS),
+                             json_data('command-reply.json'))
+            self.assertEqual(decrypted, bson_data('command-reply.json'))
+
+        async def test_need_kms_aws_credentials(self):
+            kms_providers = { 'aws': {} }
+            opts = MongoCryptOptions(kms_providers)
+            callback = MockAsyncCallback(
+                list_colls_result=bson_data('collection-info.json'),
+                mongocryptd_reply=bson_data('mongocryptd-reply.json'),
+                key_docs=[bson_data('key-document.json')],
+                kms_reply=http_data('kms-reply.txt'))
+            encrypter = AsyncAutoEncrypter(callback, opts)
+            self.addAsyncCleanup(encrypter.close)
+
+            with unittest.mock.patch("pymongocrypt.asynchronous.credentials.aws_temp_credentials") as m:
+                m.return_value = AwsCredential("example", "example", None)
+                decrypted = await encrypter.decrypt(
+                    bson_data('encrypted-command-reply.json'))
+                self.assertTrue(m.called)
+
+            self.assertEqual(bson.decode(decrypted, OPTS),
+                             json_data('command-reply.json'))
+            self.assertEqual(decrypted, bson_data('command-reply.json'))
+
+        async def test_need_kms_gcp_credentials(self):
+            kms_providers = { 'gcp': {} }
+            opts = MongoCryptOptions(kms_providers)
+            callback = MockAsyncCallback(
+                list_colls_result=bson_data('collection-info.json'),
+                mongocryptd_reply=bson_data('mongocryptd-reply.json'),
+                key_docs=[bson_data('key-document-gcp.json')],
+                kms_reply=http_data('kms-reply-gcp.txt'))
+            encrypter = AsyncAutoEncrypter(callback, opts)
+            self.addAsyncCleanup(encrypter.close)
+
+            with respx.mock() as router:
+                data = {"access_token": "foo"}
+                url = "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token"
+                router.add(respx.get(url=url).mock(return_value=httpx.Response(200, json=data)))
+                decrypted = await encrypter.decrypt(
+                    bson_data('encrypted-command-reply.json'))
+                self.assertTrue(len(router.calls))
+
+            self.assertEqual(bson.decode(decrypted, OPTS),
+                             json_data('command-reply.json'))
+            self.assertEqual(decrypted, bson_data('command-reply.json'))
+
+
+    class TestAsyncExplicitEncryption(unittest.IsolatedAsyncioTestCase):
+        maxDiff = None
+
+        @staticmethod
+        def mongo_crypt_opts():
+            return MongoCryptOptions({
+                'aws': {'accessKeyId': 'example', 'secretAccessKey': 'example'},
+                'local': {'key': b'\x00' * 96}})
+
+        async def _test_encrypt_decrypt(self, key_id=None, key_alt_name=None):
+            encrypter = AsyncExplicitEncrypter(MockAsyncCallback(
+                key_docs=[bson_data('key-document.json')],
+                kms_reply=http_data('kms-reply.txt')), self.mongo_crypt_opts())
+            self.addCleanup(encrypter.close)
+
+            val = {'v': 'hello'}
+            encoded_val = bson.encode(val)
+            algo = "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic"
+            encrypted = await encrypter.encrypt(
+                encoded_val, algo, key_id=key_id, key_alt_name=key_alt_name)
+            self.assertEqual(bson.decode(encrypted, OPTS),
+                             json_data('encrypted-value.json'))
+            self.assertEqual(encrypted, bson_data('encrypted-value.json'))
+
+            decrypted = await encrypter.decrypt(encrypted)
+            self.assertEqual(bson.decode(decrypted, OPTS), val)
+            self.assertEqual(encoded_val, decrypted)
+
+        async def test_encrypt_decrypt(self):
+            key_id = json_data('key-document.json')['_id']
+            await self._test_encrypt_decrypt(key_id=key_id)
+
+        async def test_encrypt_decrypt_key_alt_name(self):
+            key_alt_name = json_data('key-document.json')['keyAltNames'][0]
+            await self._test_encrypt_decrypt(key_alt_name=key_alt_name)
+
+        async def test_encrypt_errors(self):
+            key_id = json_data('key-document.json')['_id']
+            encrypter = AsyncExplicitEncrypter(MockAsyncCallback(key_docs=[]), self.mongo_crypt_opts())
+            self.addCleanup(encrypter.close)
+
+            val = {'v': 'value123'}
+            encoded_val = bson.encode(val)
+            # Invalid algorithm.
+            with self.assertRaisesRegex(MongoCryptError, "algorithm"):
+                await encrypter.encrypt(encoded_val, "Invalid", key_id)
+            # Invalid query_type type.
+            with self.assertRaisesRegex(TypeError, "query_type"):
+                await encrypter.encrypt(encoded_val, "Indexed", key_id, query_type=42)
+            # Invalid query_type string.
+            with self.assertRaisesRegex(MongoCryptError, "query_type"):
+                await encrypter.encrypt(encoded_val, "Indexed", key_id, query_type='invalid query type string')
+            # Invalid contention_factor type.
+            with self.assertRaisesRegex(TypeError, "contention_factor"):
+                await encrypter.encrypt(encoded_val, "Indexed", key_id, contention_factor='not an int')
+            with self.assertRaisesRegex(MongoCryptError, "contention"):
+                await encrypter.encrypt(encoded_val, "Indexed", key_id, contention_factor=-1)
+            # Invalid: Unindexed + query_type is an error.
+            with self.assertRaisesRegex(MongoCryptError, "query"):
+                await encrypter.encrypt(encoded_val, "Unindexed", key_id, query_type='equality')
+            # Invalid: Unindexed + contention_factor is an error.
+            with self.assertRaisesRegex(MongoCryptError, "contention"):
+                await encrypter.encrypt(encoded_val, "Unindexed", key_id, contention_factor=1)
+
+        async def test_encrypt_indexed(self):
+            key_path = 'keys/ABCDEFAB123498761234123456789012-local-document.json'
+            key_id = json_data(key_path)['_id']
+            encrypter = AsyncExplicitEncrypter(MockAsyncCallback(
+                key_docs=[bson_data(key_path)],
+                kms_reply=http_data('kms-reply.txt')), self.mongo_crypt_opts())
+            self.addCleanup(encrypter.close)
+
+            val = {'v': 'value123'}
+            encoded_val = bson.encode(val)
+            for kwargs in [
+                dict(algorithm='Indexed', contention_factor=0),
+                dict(algorithm='Indexed', query_type='equality', contention_factor=0),
+                dict(algorithm='Indexed', contention_factor=100),
+                dict(algorithm='Unindexed'),
+            ]:
+                kwargs['key_id'] = key_id
+                encrypted = await encrypter.encrypt(encoded_val, **kwargs)
+                encrypted_val = bson.decode(encrypted, OPTS)['v']
+                self.assertIsInstance(encrypted_val, Binary)
+                self.assertEqual(encrypted_val.subtype, 6)
+
+                # Queryable Encryption find payloads cannot be round-tripped.
+                if 'query_type' not in kwargs:
+                    decrypted = await encrypter.decrypt(encrypted)
+                    self.assertEqual(bson.decode(decrypted, OPTS), val)
+                    self.assertEqual(encoded_val, decrypted)
+
+        async def test_data_key_creation(self):
+            mock_key_vault = AsyncKeyVaultCallback(
+                kms_reply=http_data('kms-encrypt-reply.txt'))
+            opts = MongoCryptOptions({
+                'aws': {'accessKeyId': 'example', 'secretAccessKey': 'example'},
+                'aws:named': {'accessKeyId': 'example', 'secretAccessKey': 'example'},
+                'local': {'key': b'\x00' * 96},
+                'local:named': {'key': b'\x01' * 96},
+            })
+            encrypter = AsyncExplicitEncrypter(mock_key_vault, opts)
+            self.addCleanup(encrypter.close)
+
+            valid_args = [
+                ('local', None, ['first', 'second']),
+                ('local:named', None, ['local:named']),
+                ('aws', {'region': 'region', 'key': 'cmk'}, ['third', 'forth']),
+                ('aws:named', {'region': 'region', 'key': 'cmk'}, ['aws:named']),
+                # Unicode region and key
+                ('aws', {'region': u'region-unicode', 'key': u'cmk-unicode'}, []),
+                # Endpoint
+                ('aws', {'region': 'region', 'key': 'cmk',
+                         'endpoint': 'kms.us-east-1.amazonaws.com:443'}, []),
+            ]
+            for kms_provider, master_key, key_alt_names in valid_args:
+                key_id = await encrypter.create_data_key(
+                    kms_provider, master_key=master_key,
+                    key_alt_names=key_alt_names)
+                self.assertIsInstance(key_id, Binary)
+                self.assertEqual(key_id.subtype, 4)
+                data_key = bson.decode(mock_key_vault.data_key, OPTS)
+                # CDRIVER-3277 The order of key_alt_names is not maintained.
+                for name in key_alt_names:
+                    self.assertIn(name, data_key['keyAltNames'])
+
+            # Assert that the custom endpoint is passed to libmongocrypt.
+            master_key = {
+                "region": "region",
+                "key": "key",
+                "endpoint": "example.com"
+            }
+            key_material = base64.b64decode(
+                'xPTAjBRG5JiPm+d3fj6XLi2q5DMXUS/f1f+SMAlhhwkhDRL0kr8r9GDLIGTAGlvC+HVjSIgdL+RKwZCvpXSyxTICWSXTUYsWYPyu3IoHbuBZdmw2faM3WhcRIgbMReU5')
+            if not PY3:
+                key_material = Binary(key_material)
+            await encrypter.create_data_key("aws", master_key=master_key, key_material=key_material)
+            self.assertEqual("example.com:443", mock_key_vault.kms_endpoint)
+
+        async def test_data_key_creation_bad_key_material(self):
+            mock_key_vault = AsyncKeyVaultCallback(
+                kms_reply=http_data('kms-encrypt-reply.txt'))
+            encrypter = AsyncExplicitEncrypter(mock_key_vault, self.mongo_crypt_opts())
+            self.addCleanup(encrypter.close)
+
+            key_material = Binary(b'0' * 97)
+            with self.assertRaisesRegex(MongoCryptError, "keyMaterial should have length 96, but has length 97"):
+                await encrypter.create_data_key("local", key_material=key_material)
+
+        async def test_rewrap_many_data_key(self):
+            key_path = 'keys/ABCDEFAB123498761234123456789012-local-document.json'
+            key_path2 = 'keys/12345678123498761234123456789012-local-document.json'
+            encrypter = AsyncExplicitEncrypter(MockAsyncCallback(
+                key_docs=[bson_data(key_path), bson_data(key_path2)]), self.mongo_crypt_opts())
+            self.addCleanup(encrypter.close)
+
+            result = await encrypter.rewrap_many_data_key({})
+            raw_doc = RawBSONDocument(result)
+            assert len(raw_doc['v']) == 2
+
+        async def test_range_query_int32(self):
+            key_path = 'keys/ABCDEFAB123498761234123456789012-local-document.json'
+            key_id = json_data(key_path)['_id']
+            encrypter = AsyncExplicitEncrypter(MockAsyncCallback(
+                key_docs=[bson_data(key_path)],
+                kms_reply=http_data('kms-reply.txt')), self.mongo_crypt_opts())
+            self.addCleanup(encrypter.close)
+
+            range_opts = bson_data("fle2-find-range-explicit-v2/int32/rangeopts.json")
+            value = bson_data("fle2-find-range-explicit-v2/int32/value-to-encrypt.json")
+            expected = json_data("fle2-find-range-explicit-v2/int32/encrypted-payload.json")
+            encrypted = await encrypter.encrypt(
+                value, "rangePreview", key_id=key_id, query_type="rangePreview",
+                contention_factor=4, range_opts=range_opts, is_expression=True)
+            encrypted_val = bson.decode(encrypted, OPTS)
+
+            # Workaround for the internal range payload counter in libmongocrypt
+            if encrypted_val != expected:
+                expected = json_data("fle2-find-range-explicit-v2/int32/encrypted-payload-second.json")
+            self.assertEqual(encrypted_val, expected)
 
 
 class TestNeedKMSAzureCredentials(unittest.TestCase):
@@ -505,7 +836,7 @@ class TestNeedKMSAzureCredentials(unittest.TestCase):
 
     def get_encrypter(self, clear_cache=True):
         if clear_cache:
-            pymongocrypt.credentials._azure_creds_cache = None
+            pymongocrypt.synchronous.credentials._azure_creds_cache = None
         kms_providers = { 'azure': {} }
         opts = MongoCryptOptions(kms_providers)
         callback = MockCallback(
@@ -519,110 +850,110 @@ class TestNeedKMSAzureCredentials(unittest.TestCase):
 
     def test_success(self):
         encrypter = self.get_encrypter()
-        with requests_mock.Mocker() as m:
+        with respx.mock() as router:
             data = {"access_token": "foo", "expires_in": 4000}
             url = "http://169.254.169.254/metadata/identity/oauth2/token"
-            m.get(url, text=json.dumps(data))
+            router.add(respx.get(url=url).mock(return_value=httpx.Response(200, json=data)))
             decrypted = encrypter.decrypt(
                 bson_data('encrypted-command-reply.json'))
-            self.assertTrue(m.called)
+            self.assertTrue(len(router.calls))
 
         self.assertEqual(bson.decode(decrypted, OPTS),
                          json_data('command-reply.json'))
         self.assertEqual(decrypted, bson_data('command-reply.json'))
-        self.assertIsNotNone(pymongocrypt.credentials._azure_creds_cache)
+        self.assertIsNotNone(pymongocrypt.synchronous.credentials._azure_creds_cache)
 
     def test_empty_json(self):
         encrypter = self.get_encrypter()
-        with requests_mock.Mocker() as m:
+        with respx.mock() as router:
             url = "http://169.254.169.254/metadata/identity/oauth2/token"
-            m.get(url, text=json.dumps({}))
+            router.add(respx.get(url=url).mock(return_value=httpx.Response(200, json={})))
             with self.assertRaisesRegex(MongoCryptError, "Azure IMDS response must contain"):
                 encrypter.decrypt(bson_data('encrypted-command-reply.json'))
-            self.assertTrue(m.called)
-        self.assertIsNone(pymongocrypt.credentials._azure_creds_cache)
+            self.assertTrue(len(router.calls))
+        self.assertIsNone(pymongocrypt.synchronous.credentials._azure_creds_cache)
 
     def test_bad_json(self):
         encrypter = self.get_encrypter()
-        with requests_mock.Mocker() as m:
+        with respx.mock() as router:
             url = "http://169.254.169.254/metadata/identity/oauth2/token"
-            m.get(url, text="a'")
+            router.add(respx.get(url=url).mock(return_value=httpx.Response(200, text="a'")))
             with self.assertRaisesRegex(MongoCryptError, "Azure IMDS response must be in JSON format"):
                 encrypter.decrypt(bson_data('encrypted-command-reply.json'))
-            self.assertTrue(m.called)
-        self.assertIsNone(pymongocrypt.credentials._azure_creds_cache)
+            self.assertTrue(len(router.calls))
+        self.assertIsNone(pymongocrypt.synchronous.credentials._azure_creds_cache)
 
     def test_http_404(self):
         encrypter = self.get_encrypter()
-        with requests_mock.Mocker() as m:
+        with respx.mock() as router:
             url = "http://169.254.169.254/metadata/identity/oauth2/token"
-            m.get(url, status_code=404)
+            router.add(respx.get(url=url).mock(return_value=httpx.Response(404)))
             with self.assertRaisesRegex(MongoCryptError, "Failed to acquire IMDS access token."):
                 encrypter.decrypt(bson_data('encrypted-command-reply.json'))
-            self.assertTrue(m.called)
-        self.assertIsNone(pymongocrypt.credentials._azure_creds_cache)
+            self.assertTrue(len(router.calls))
+        self.assertIsNone(pymongocrypt.synchronous.credentials._azure_creds_cache)
 
     def test_http_500(self):
         encrypter = self.get_encrypter()
-        with requests_mock.Mocker() as m:
+        with respx.mock() as router:
             url = "http://169.254.169.254/metadata/identity/oauth2/token"
-            m.get(url, status_code=500)
+            router.add(respx.get(url=url).mock(return_value=httpx.Response(500)))
             with self.assertRaisesRegex(MongoCryptError, "Failed to acquire IMDS access token."):
                 encrypter.decrypt(bson_data('encrypted-command-reply.json'))
-            self.assertTrue(m.called)
-        self.assertIsNone(pymongocrypt.credentials._azure_creds_cache)
+            self.assertTrue(len(router.calls))
+        self.assertIsNone(pymongocrypt.synchronous.credentials._azure_creds_cache)
 
     def test_slow_response(self):
         encrypter = self.get_encrypter()
-        with requests_mock.Mocker() as m:
+        with respx.mock() as router:
             url = "http://169.254.169.254/metadata/identity/oauth2/token"
-            m.get(url, exc=requests.exceptions.ConnectTimeout)
+            router.add(respx.get(url=url).mock(side_effect=httpx._exceptions.ConnectTimeout))
             with self.assertRaisesRegex(MongoCryptError, "Failed to acquire IMDS access token: "):
                 encrypter.decrypt(bson_data('encrypted-command-reply.json'))
-            self.assertTrue(m.called)
-        self.assertIsNone(pymongocrypt.credentials._azure_creds_cache)
+            self.assertTrue(len(router.calls))
+        self.assertIsNone(pymongocrypt.synchronous.credentials._azure_creds_cache)
 
     def test_cache(self):
         encrypter = self.get_encrypter()
-        with requests_mock.Mocker() as m:
+        with respx.mock() as router:
             data = {"access_token": "foo", "expires_in": 4000}
             url = "http://169.254.169.254/metadata/identity/oauth2/token"
-            m.get(url, text=json.dumps(data))
-            decrypted = encrypter.decrypt(
+            router.add(respx.get(url=url).mock(return_value=httpx.Response(status_code=200, json=data)))
+            encrypter.decrypt(
                 bson_data('encrypted-command-reply.json'))
-            self.assertTrue(m.called)
+            self.assertTrue(len(router.calls))
 
-        self.assertIsNotNone(pymongocrypt.credentials._azure_creds_cache)
+        self.assertIsNotNone(pymongocrypt.synchronous.credentials._azure_creds_cache)
 
         # Should use the cached value.
         decrypted = encrypter.decrypt(bson_data('encrypted-command-reply.json'))
         self.assertEqual(decrypted, bson_data('command-reply.json'))
 
-        self.assertIsNotNone(pymongocrypt.credentials._azure_creds_cache)
+        self.assertIsNotNone(pymongocrypt.synchronous.credentials._azure_creds_cache)
 
     def test_cache_expires_soon(self):
         encrypter = self.get_encrypter()
-        with requests_mock.Mocker() as m:
+        with respx.mock() as router:
             data = {"access_token": "foo", "expires_in": 10}
             url = "http://169.254.169.254/metadata/identity/oauth2/token"
-            m.get(url, text=json.dumps(data))
-            decrypted = encrypter.decrypt(
+            router.add(respx.get(url=url).mock(return_value=httpx.Response(status_code=200, json=data)))
+            encrypter.decrypt(
                 bson_data('encrypted-command-reply.json'))
-            self.assertTrue(m.called)
+            self.assertTrue(len(router.calls))
 
-        self.assertIsNotNone(pymongocrypt.credentials._azure_creds_cache)
+        self.assertIsNotNone(pymongocrypt.synchronous.credentials._azure_creds_cache)
 
         # Should not use the cached value.
         encrypter = self.get_encrypter(False)
-        self.assertIsNotNone(pymongocrypt.credentials._azure_creds_cache)
-        with requests_mock.Mocker() as m:
+        self.assertIsNotNone(pymongocrypt.synchronous.credentials._azure_creds_cache)
+        with respx.mock() as router:
             url = "http://169.254.169.254/metadata/identity/oauth2/token"
-            m.get(url, exc=requests.exceptions.ConnectTimeout)
+            router.add(respx.get(url=url).mock(side_effect=httpx._exceptions.ConnectTimeout))
             with self.assertRaisesRegex(MongoCryptError, "Failed to acquire IMDS access token: "):
                 encrypter.decrypt(bson_data('encrypted-command-reply.json'))
-            self.assertTrue(m.called)
+            self.assertTrue(len(router.calls))
 
-        self.assertIsNone(pymongocrypt.credentials._azure_creds_cache)
+        self.assertIsNone(pymongocrypt.synchronous.credentials._azure_creds_cache)
 
 
 class KeyVaultCallback(MockCallback):
@@ -634,6 +965,19 @@ class KeyVaultCallback(MockCallback):
         return self.data_key
 
     def insert_data_key(self, data_key):
+        self.data_key = data_key
+        return bson.decode(data_key, OPTS)['_id']
+
+
+class AsyncKeyVaultCallback(MockAsyncCallback):
+    def __init__(self, kms_reply=None):
+        super(AsyncKeyVaultCallback, self).__init__(kms_reply=kms_reply)
+        self.data_key = None
+
+    async def fetch_keys(self, filter):
+        return self.data_key
+
+    async def insert_data_key(self, data_key):
         self.data_key = data_key
         return bson.decode(data_key, OPTS)['_id']
 
@@ -665,6 +1009,8 @@ class TestExplicitEncryption(unittest.TestCase):
         decrypted = encrypter.decrypt(encrypted)
         self.assertEqual(bson.decode(decrypted, OPTS), val)
         self.assertEqual(encoded_val, decrypted)
+
+
 
     def test_encrypt_decrypt(self):
         key_id = json_data('key-document.json')['_id']
@@ -812,6 +1158,10 @@ class TestExplicitEncryption(unittest.TestCase):
             value, "rangePreview", key_id=key_id, query_type="rangePreview",
             contention_factor=4, range_opts=range_opts, is_expression=True)
         encrypted_val = bson.decode(encrypted, OPTS)
+
+        # Workaround for the internal range payload counter in libmongocrypt
+        if encrypted_val != expected:
+            expected = json_data("fle2-find-range-explicit-v2/int32/encrypted-payload-second.json")
         self.assertEqual(encrypted_val, expected)
 
 
