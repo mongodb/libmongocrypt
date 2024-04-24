@@ -13,7 +13,7 @@ Python wrapper library for libmongocrypt that supports client side encryption
 in drivers. PyMongoCrypt uses `cffi <https://pypi.org/project/cffi/>`_ and
 `cryptography <https://pypi.org/project/cryptography/>`_.
 
-PyMongoCrypt supports Python 3.7+ and PyPy3.7+.
+PyMongoCrypt supports Python 3.8+ and PyPy3.8+.
 
 Support / Feedback
 ==================
@@ -166,7 +166,7 @@ https://www.mongodb.com/docs/manual/core/csfle/reference/libmongocrypt/#linux-in
 Dependencies
 ============
 
-PyMongoCrypt supports Python 3.7+ and PyPy3.7+.
+PyMongoCrypt supports Python 3.8+ and PyPy3.8+.
 
 PyMongoCrypt requires `cffi <https://pypi.org/project/cffi/>`_ and
 `cryptography <https://pypi.org/project/cryptography/>`_.
@@ -184,11 +184,11 @@ installed you will see an error like this:
       from pymongocrypt.binding import libmongocrypt_version, lib
     File "pymongocrypt/binding.py", line 803, in <module>
       lib = ffi.dlopen(os.environ.get('PYMONGOCRYPT_LIB', 'mongocrypt'))
-    File "/.../lib/python3.7/site-packages/cffi/api.py", line 146, in dlopen
+    File "/.../lib/python3.8/site-packages/cffi/api.py", line 146, in dlopen
       lib, function_cache = _make_ffi_library(self, name, flags)
-    File "/.../lib/python3.7/site-packages/cffi/api.py", line 828, in _make_ffi_library
+    File "/.../lib/python3.8/site-packages/cffi/api.py", line 828, in _make_ffi_library
       backendlib = _load_backend_lib(backend, libname, flags)
-    File "/.../lib/python3.7/site-packages/cffi/api.py", line 823, in _load_backend_lib
+    File "/.../lib/python3.8/site-packages/cffi/api.py", line 823, in _load_backend_lib
       raise OSError(msg)
   OSError: ctypes.util.find_library() did not manage to locate a library called 'mongocrypt'
 

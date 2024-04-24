@@ -30,8 +30,7 @@ elif [ "Darwin" = "$(uname -s)" ]; then
     PYMONGOCRYPT_LIB_CRYPTO=${MONGOCRYPT_DIR}/lib/libmongocrypt.dylib
     MACOS_VER=$(sw_vers -productVersion)
     if [[ $MACOS_VER =~ ^10.14 ]]; then
-      PYTHONS=("/Library/Frameworks/Python.framework/Versions/3.7/bin/python3"
-               "/Library/Frameworks/Python.framework/Versions/3.8/bin/python3"
+      PYTHONS=("/Library/Frameworks/Python.framework/Versions/3.8/bin/python3"
                "/Library/Frameworks/Python.framework/Versions/3.9/bin/python3")
     else
           PYTHONS=(
@@ -63,8 +62,7 @@ else
         )
     else
         TARGET=rhel80
-        PYTHONS=("/opt/python/3.7/bin/python3"
-          "/opt/python/3.8/bin/python3"
+        PYTHONS=("/opt/python/3.8/bin/python3"
           "/opt/python/3.9/bin/python3"
           "/opt/python/3.10/bin/python3"
           "/opt/python/3.11/bin/python3"
