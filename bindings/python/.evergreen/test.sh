@@ -16,8 +16,7 @@ if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
     PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/nocrypto/bin/mongocrypt.dll
     PYMONGOCRYPT_LIB_CRYPTO=$(cygpath -m ${MONGOCRYPT_DIR}/bin/mongocrypt.dll)
     export PYMONGOCRYPT_LIB=$(cygpath -m $PYMONGOCRYPT_LIB)
-    PYTHONS=("C:/python/Python37/python.exe"
-             "C:/python/Python38/python.exe"
+    PYTHONS=("C:/python/Python38/python.exe"
              "C:/python/Python39/python.exe"
              "C:/python/Python310/python.exe"
              "C:/python/Python311/python.exe"
