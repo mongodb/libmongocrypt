@@ -28,6 +28,7 @@ namespace MongoDB.Libmongocrypt
     internal class LibraryLoader
     {
         private ISharedLibraryLoader _loader;
+        private static readonly string _libmongocryptLibPath = Environment.GetEnvironmentVariable("LIBMONGOCRYPT_PATH");
 
         public LibraryLoader()
         {
@@ -54,40 +55,13 @@ namespace MongoDB.Libmongocrypt
             switch (OperatingSystemHelper.CurrentOperatingSystem)
             {
                 case OperatingSystemPlatform.MacOS:
-                    {
-                        string[] suffixPaths = new[]
-                        {
-                            "../../runtimes/osx/native/",
-                            "runtimes/osx/native/",
-                            string.Empty
-                        };
-                        string path = FindLibrary(candidatePaths, suffixPaths, "libmongocrypt.dylib");
-                        _loader = new DarwinLibraryLoader(path);
-                    }
+                    _loader = new DarwinLibraryLoader(candidatePaths);
                     break;
                 case OperatingSystemPlatform.Linux:
-                    {
-                        string[] suffixPaths = new[]
-                        {
-                            "../../runtimes/linux/native/",
-                            "runtimes/linux/native/",
-                            string.Empty
-                        };
-                        string path = FindLibrary(candidatePaths, suffixPaths, "libmongocrypt.so");
-                        _loader = new LinuxLibrary(path);
-                    }
+                    _loader = new LinuxLibrary(candidatePaths);
                     break;
                 case OperatingSystemPlatform.Windows:
-                    {
-                        string[] suffixPaths = new[]
-                        {
-                            @"..\..\runtimes\win\native\",
-                            @".\runtimes\win\native\",
-                            string.Empty
-                        };
-                        string path = FindLibrary(candidatePaths, suffixPaths, "mongocrypt.dll");
-                        _loader = new WindowsLibrary(path);
-                    }
+                    _loader = new WindowsLibrary(candidatePaths);
                     break;
                 default:
                     // should not be reached. If we're here, then there is a bug in OperatingSystemHelper
@@ -95,7 +69,7 @@ namespace MongoDB.Libmongocrypt
             }
         }
 
-        private string FindLibrary(IList<string> basePaths, string[] suffixPaths, string library)
+        private static string FindLibrary(IList<string> basePaths, string[] suffixPaths, string library)
         {
             var candidates = new List<string>();
             foreach (var basePath in basePaths)
@@ -150,9 +124,17 @@ namespace MongoDB.Libmongocrypt
             public const int RTLD_GLOBAL = 0x8;
             public const int RTLD_NOW = 0x2;
 
-            private readonly IntPtr _handle;
-            public DarwinLibraryLoader(string path)
+            private static readonly string[] _suffixPaths = 
             {
+                "../../runtimes/osx/native/",
+                "runtimes/osx/native/",
+                string.Empty
+            };
+
+            private readonly IntPtr _handle;
+            public DarwinLibraryLoader(List<string> candidatePaths)
+            {
+                var path = _libmongocryptLibPath ?? FindLibrary(candidatePaths, _suffixPaths, "libmongocrypt.dylib");
                 _handle = dlopen(path, RTLD_GLOBAL | RTLD_NOW);
                 if (_handle == IntPtr.Zero)
                 {
@@ -186,10 +168,18 @@ namespace MongoDB.Libmongocrypt
             // #define RTLD_GLOBAL     0x100
             public const int RTLD_GLOBAL = 0x100;
             public const int RTLD_NOW = 0x2;
+            
+            private static readonly string[] _suffixPaths = 
+            {
+                "../../runtimes/linux/native/",
+                "runtimes/linux/native/",
+                string.Empty
+            };
 
             private readonly IntPtr _handle;
-            public LinuxLibrary(string path)
+            public LinuxLibrary(List<string> candidatePaths)
             {
+                var path = _libmongocryptLibPath ?? FindLibrary(candidatePaths, _suffixPaths, "libmongocrypt.so");
                 _handle = dlopen(path, RTLD_GLOBAL | RTLD_NOW);
                 if (_handle == IntPtr.Zero)
                 {
@@ -216,9 +206,17 @@ namespace MongoDB.Libmongocrypt
         /// </summary>
         private class WindowsLibrary : ISharedLibraryLoader
         {
-            private readonly IntPtr _handle;
-            public WindowsLibrary(string path)
+            private static readonly string[] _suffixPaths = 
             {
+                @"..\..\runtimes\win\native\",
+                @".\runtimes\win\native\",
+                string.Empty
+            };
+            
+            private readonly IntPtr _handle;
+            public WindowsLibrary(List<string> candidatePaths)
+            {
+                var path = _libmongocryptLibPath ?? FindLibrary(candidatePaths, _suffixPaths, "mongocrypt.dll");
                 _handle = LoadLibrary(path);
                 if (_handle == IntPtr.Zero)
                 {
