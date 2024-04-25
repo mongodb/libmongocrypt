@@ -76,14 +76,14 @@ fi
 
 
 # Don't run pre-commit on Windows
-if [ "$OS" != "Windows_NT" ];
-  # Only run once and with Python 3.8+
-  createvirtualenv $BASE_PYTHON .venv
-  python -m pip install certifi
-  python -m pip install pre-commit
-  pre-commit run --all-files
-  deactivate
-  rm -rf .venv
+if [ "$OS" != "Windows_NT" ]; then
+    # Only run once and with Python 3.8+
+    createvirtualenv $BASE_PYTHON .venv
+    python -m pip install certifi
+    python -m pip install pre-commit
+    pre-commit run --all-files
+    deactivate
+    rm -rf .venv
 fi
 
 for PYTHON_BINARY in "${PYTHONS[@]}"; do
