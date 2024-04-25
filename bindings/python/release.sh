@@ -78,18 +78,6 @@ fi
 if [ "Darwin" = "$(uname -s)" ]; then
     $PYTHON -m venv .venv
     . .venv/bin/activate
-
-    # Use crypto-enabled libmongocrypt.
-    # Build intel wheel for Python 3.7.
-    get_libmongocrypt macos_x86_64 libmongocrypt/lib/libmongocrypt.dylib
-    # See https://github.com/pypa/cibuildwheel/blob/a3e5b541dc3111166a3abdbbc90ecb195c8cb9e2/cibuildwheel/macos.py#L247
-    # for information on these environment variables.
-    export MACOSX_DEPLOYMENT_TARGET=10.14
-    export _PYTHON_HOST_PLATFORM=macosx-10.9-x86_64
-    build_wheel
-    if [ "$(uname -m)" != "arm64" ]; then
-        test_dist dist/*.whl
-    fi
     
     # Build universal2 wheel.
     get_libmongocrypt macos libmongocrypt/lib/libmongocrypt.dylib
