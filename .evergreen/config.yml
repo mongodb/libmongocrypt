@@ -411,6 +411,17 @@ tasks:
   - func: "create packages and repos"
   - func: "upload packages and repos"
 
+- name: build-with-earthly
+  commands:
+  - func: "fetch source"
+  - func: "earthly"
+    vars:
+      args: +build --env=${earthly_env}
+  - func: "earthly"
+    vars:
+      args: --artifact +build/libmongocrypt-install ${workdir}/install
+  - func: "tar and upload libmongocrypt libraries"
+
 - name: build-deb-packages-with-earthly
   commands:
   - func: "fetch source"
@@ -1602,6 +1613,22 @@ buildvariants:
   tasks:
   - benchmark-java
   - benchmark-python
+
+- name: alpine-amd64-earthly
+  display_name: "Alpine Linux 3.18 amd64 (via Earthly)"
+  expansions:
+    earthly_env: alpine
+  tasks:
+  - name: build-with-earthly
+    run_on: ubuntu2204-small
+
+- name: alpine-arm64-earthly
+  display_name: "Alpine Linux 3.18 arm64 (via Earthly)"
+  expansions:
+    earthly_env: alpine
+  tasks:
+  - name: build-with-earthly
+    run_on: ubuntu2204-arm64-small
 
 - name: debian11-arm64-earthly
   display_name: "Debian 11 arm64 (via Earthly)"

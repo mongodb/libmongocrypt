@@ -212,7 +212,7 @@ env.sles15:
     DO +SLES_SETUP
 
 env.alpine:
-    FROM +init --base=docker.io/library/alpine:3.17
+    FROM +init --base=docker.io/library/alpine:3.18
     DO +ALPINE_SETUP
 
 # Utility: Warm-up obtaining CMake and Ninja for the build. This is usually
@@ -382,6 +382,7 @@ build:
         CACHE /s/libmongocrypt/cmake-build
     END
     RUN env USE_NINJA=1 bash libmongocrypt/.evergreen/build_all.sh
+    SAVE ARTIFACT /s/install /libmongocrypt-install
 
 # `create-deb-packages-and-repos` creates the .deb packages and repo directories intended for the PPA on debian-like distros. Options:
 #   • --env=[...]
