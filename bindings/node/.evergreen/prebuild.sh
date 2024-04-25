@@ -20,7 +20,7 @@ bash ./etc/build-static.sh
 
 # FLE platform matrix (as of 22 May 2023)
 # macos   arm64  (compiled on 11.00)
-# macos   x86_64 (compiled on 11.00)
+# macos   x86_64 (compiled on 10.14)
 # windows x86_64 (compiled on vs2019)
 # linux   x86_64 (compiled on Ubuntu 16.04)
 # linux   arm64  (compiled on Ubuntu 16.04)
