@@ -14,10 +14,10 @@
 
 from abc import abstractmethod
 
-from pymongocrypt.synchronous.credentials import _ask_for_kms_credentials
 from pymongocrypt.binding import lib
 from pymongocrypt.compat import ABC
 from pymongocrypt.errors import MongoCryptError
+from pymongocrypt.synchronous.credentials import _ask_for_kms_credentials
 
 
 class MongoCryptCallback(ABC):
@@ -33,7 +33,6 @@ class MongoCryptCallback(ABC):
         :Returns:
           None
         """
-        pass
 
     @abstractmethod
     def collection_info(self, database, filter):
@@ -49,7 +48,6 @@ class MongoCryptCallback(ABC):
         :Returns:
           The first document from the listCollections command response as BSON.
         """
-        pass
 
     @abstractmethod
     def mark_command(self, database, cmd):
@@ -62,7 +60,6 @@ class MongoCryptCallback(ABC):
         :Returns:
           The marked command response from mongocryptd.
         """
-        pass
 
     @abstractmethod
     def fetch_keys(self, filter):
@@ -74,7 +71,6 @@ class MongoCryptCallback(ABC):
         :Returns:
           A generator which yields the requested keys from the key vault.
         """
-        pass
 
     @abstractmethod
     def insert_data_key(self, data_key):
@@ -86,7 +82,6 @@ class MongoCryptCallback(ABC):
         :Returns:
           The _id of the inserted data key document.
         """
-        pass
 
     @abstractmethod
     def bson_encode(self, doc):
@@ -100,12 +95,10 @@ class MongoCryptCallback(ABC):
         :Returns:
           The encoded BSON bytes.
         """
-        pass
 
     @abstractmethod
     def close(self):
         """Release resources."""
-        pass
 
 
 def run_state_machine(ctx, callback):
@@ -130,8 +123,7 @@ def run_state_machine(ctx, callback):
 
         if state == lib.MONGOCRYPT_CTX_NEED_MONGO_COLLINFO:
             list_colls_filter = ctx.mongo_operation()
-            coll_info = callback.collection_info(
-                ctx.database, list_colls_filter)
+            coll_info = callback.collection_info(ctx.database, list_colls_filter)
             if coll_info:
                 ctx.add_mongo_operation_result(coll_info)
             ctx.complete_mongo_operation()
@@ -154,4 +146,4 @@ def run_state_machine(ctx, callback):
             creds = _ask_for_kms_credentials(ctx.kms_providers)
             ctx.provide_kms_providers(callback.bson_encode(creds))
         else:
-            raise MongoCryptError('unknown state: %r' % (state,))
+            raise MongoCryptError(f"unknown state: {state}")

@@ -22,7 +22,7 @@ def _to_bytes(mongocrypt_binary):
     """Returns this mongocrypt_binary_t as bytes."""
     data = mongocrypt_binary.data
     if data == ffi.NULL:
-        raise MongoCryptError('mongocrypt_binary_t.data returned NULL')
+        raise MongoCryptError("mongocrypt_binary_t.data returned NULL")
     return ffi.unpack(ffi.cast("char*", data), mongocrypt_binary.len)
 
 
@@ -30,20 +30,19 @@ def _write_bytes(mongocrypt_binary, data):
     """Writes the given data to a mongocrypt_binary_t."""
     buf = mongocrypt_binary.data
     if buf == ffi.NULL:
-        raise MongoCryptError('mongocrypt_binary_t.data returned NULL')
+        raise MongoCryptError("mongocrypt_binary_t.data returned NULL")
 
     ffi.memmove(buf, data, len(data))
     mongocrypt_binary.len = len(data)
 
 
-class _MongoCryptBinary(object):
+class _MongoCryptBinary:
     __slots__ = ("bin",)
 
     def __init__(self, binary):
         """Wraps a mongocrypt_binary_t."""
         if binary == ffi.NULL:
-            raise MongoCryptError(
-                "unable to create new mongocrypt_binary object")
+            raise MongoCryptError("unable to create new mongocrypt_binary object")
         self.bin = binary
 
     def _close(self):
@@ -62,7 +61,7 @@ class _MongoCryptBinary(object):
         """Returns this mongocrypt_binary_t as bytes."""
         data = self.bin.data
         if data == ffi.NULL:
-            return b''
+            return b""
         return ffi.unpack(ffi.cast("char*", data), self.bin.len)
 
 
@@ -71,7 +70,7 @@ class MongoCryptBinaryOut(_MongoCryptBinary):
 
     def __init__(self):
         """Wraps a mongocrypt_binary_t."""
-        super(MongoCryptBinaryOut, self).__init__(lib.mongocrypt_binary_new())
+        super().__init__(lib.mongocrypt_binary_new())
 
 
 class MongoCryptBinaryIn(_MongoCryptBinary):
@@ -82,12 +81,11 @@ class MongoCryptBinaryIn(_MongoCryptBinary):
         # mongocrypt_binary_t does not own the data it is passed so we need to
         # create a separate reference to keep the data alive.
         self.cref = ffi.from_buffer("uint8_t[]", data)
-        super(MongoCryptBinaryIn, self).__init__(
-            lib.mongocrypt_binary_new_from_data(self.cref, len(data)))
+        super().__init__(lib.mongocrypt_binary_new_from_data(self.cref, len(data)))
 
     def _close(self):
         """Cleanup resources."""
-        super(MongoCryptBinaryIn, self)._close()
+        super()._close()
         if self.cref is not None:
             ffi.release(self.cref)
             self.cref = None

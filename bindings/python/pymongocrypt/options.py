@@ -1,10 +1,17 @@
 from pymongocrypt.compat import unicode_type
 
 
-class MongoCryptOptions(object):
-    def __init__(self, kms_providers, schema_map=None, encrypted_fields_map=None,
-                 bypass_query_analysis=False, crypt_shared_lib_path=None,
-                 crypt_shared_lib_required=False, bypass_encryption=False):
+class MongoCryptOptions:
+    def __init__(
+        self,
+        kms_providers,
+        schema_map=None,
+        encrypted_fields_map=None,
+        bypass_query_analysis=False,
+        crypt_shared_lib_path=None,
+        crypt_shared_lib_required=False,
+        bypass_encryption=False,
+    ):
         """Options for :class:`MongoCrypt`.
 
         :Parameters:
@@ -60,51 +67,68 @@ class MongoCryptOptions(object):
            as either a 96-byte array or the equivalent base64-encoded string.
         """
         if not isinstance(kms_providers, dict):
-            raise ValueError('kms_providers must be a dict')
+            raise ValueError("kms_providers must be a dict")
         if not kms_providers:
-            raise ValueError('at least one KMS provider must be configured')
+            raise ValueError("at least one KMS provider must be configured")
 
         for name, provider in kms_providers.items():
             # Account for provider names like "local:myname".
             provider_type = name.split(":")[0]
-            if provider_type in ('aws', 'gcp', 'azure', 'kmip', 'local'):
+            if provider_type in ("aws", "gcp", "azure", "kmip", "local"):
                 if not isinstance(provider, dict):
                     raise ValueError(f"kms_providers[{name!r}] must be a dict")
-            if provider_type == 'aws':
+            if provider_type == "aws":
                 if len(provider):
-                    if "accessKeyId" not in provider or "secretAccessKey" not in provider:
-                        raise ValueError(f"kms_providers[{name!r}] must contain "
-                                         "'accessKeyId' and 'secretAccessKey'")
-            elif provider_type == 'azure':
+                    if (
+                        "accessKeyId" not in provider
+                        or "secretAccessKey" not in provider
+                    ):
+                        raise ValueError(
+                            f"kms_providers[{name!r}] must contain "
+                            "'accessKeyId' and 'secretAccessKey'"
+                        )
+            elif provider_type == "azure":
                 if len(provider):
-                    if 'clientId' not in provider or 'clientSecret' not in provider:
-                        raise ValueError(f"kms_providers[{name!r}] must contain "
-                                         "'clientId' and 'clientSecret'")
-            elif provider_type == 'gcp':
+                    if "clientId" not in provider or "clientSecret" not in provider:
+                        raise ValueError(
+                            f"kms_providers[{name!r}] must contain "
+                            "'clientId' and 'clientSecret'"
+                        )
+            elif provider_type == "gcp":
                 if len(provider):
-                    if 'email' not in provider or 'privateKey' not in provider:
-                        raise ValueError(f"kms_providers[{name!r}] must contain "
-                                         "'email' and 'privateKey'")
-                    if not isinstance(provider['privateKey'], (bytes, unicode_type)):
-                        raise TypeError(f"kms_providers[{name!r}]['privateKey'] must "
-                                        "be an instance of bytes or str")
-            elif provider_type == 'kmip':
-                if 'endpoint' not in provider:
+                    if "email" not in provider or "privateKey" not in provider:
+                        raise ValueError(
+                            f"kms_providers[{name!r}] must contain "
+                            "'email' and 'privateKey'"
+                        )
+                    if not isinstance(provider["privateKey"], (bytes, unicode_type)):
+                        raise TypeError(
+                            f"kms_providers[{name!r}]['privateKey'] must "
+                            "be an instance of bytes or str"
+                        )
+            elif provider_type == "kmip":
+                if "endpoint" not in provider:
                     raise ValueError(f"kms_providers[{name!r}] must contain 'endpoint'")
-                if not isinstance(provider['endpoint'], (str, unicode_type)):
-                    raise TypeError(f"kms_providers[{name!r}]['endpoint'] must "
-                                    "be an instance of str")
-            elif provider_type == 'local':
-                if 'key' not in provider:
+                if not isinstance(provider["endpoint"], (str, unicode_type)):
+                    raise TypeError(
+                        f"kms_providers[{name!r}]['endpoint'] must "
+                        "be an instance of str"
+                    )
+            elif provider_type == "local":
+                if "key" not in provider:
                     raise ValueError(f"kms_providers[{name!r}] must contain 'key'")
-                if not isinstance(provider['key'], (bytes, unicode_type)):
-                    raise TypeError(f"kms_providers[{name!r}]['key'] must be an "
-                                    "instance of bytes or str")
+                if not isinstance(provider["key"], (bytes, unicode_type)):
+                    raise TypeError(
+                        f"kms_providers[{name!r}]['key'] must be an "
+                        "instance of bytes or str"
+                    )
 
         if schema_map is not None and not isinstance(schema_map, bytes):
             raise TypeError("schema_map must be bytes or None")
 
-        if encrypted_fields_map is not None and not isinstance(encrypted_fields_map, bytes):
+        if encrypted_fields_map is not None and not isinstance(
+            encrypted_fields_map, bytes
+        ):
             raise TypeError("encrypted_fields_map must be bytes or None")
 
         self.kms_providers = kms_providers
@@ -116,10 +140,17 @@ class MongoCryptOptions(object):
         self.bypass_encryption = bypass_encryption
 
 
-class ExplicitEncryptOpts(object):
-    def __init__(self, algorithm, key_id=None, key_alt_name=None,
-                 query_type=None, contention_factor=None, range_opts=None,
-                 is_expression=False):
+class ExplicitEncryptOpts:
+    def __init__(
+        self,
+        algorithm,
+        key_id=None,
+        key_alt_name=None,
+        query_type=None,
+        contention_factor=None,
+        range_opts=None,
+        is_expression=False,
+    ):
         """Options for explicit encryption.
 
         :Parameters:
@@ -147,20 +178,23 @@ class ExplicitEncryptOpts(object):
         if query_type is not None:
             if not isinstance(query_type, str):
                 raise TypeError(
-                    'query_type must be str or None, not: %r' % (type(query_type),))
+                    f"query_type must be str or None, not: {type(query_type)}"
+                )
         self.query_type = query_type
         if contention_factor is not None and not isinstance(contention_factor, int):
             raise TypeError(
-                'contention_factor must be an int or None, not: %r' % (type(contention_factor),))
+                f"contention_factor must be an int or None, not: {type(contention_factor)}"
+            )
         self.contention_factor = contention_factor
         if range_opts is not None and not isinstance(range_opts, bytes):
             raise TypeError(
-                'range_opts must be an bytes or None, not: %r' % (type(range_opts),))
+                f"range_opts must be an bytes or None, not: {type(range_opts)}"
+            )
         self.range_opts = range_opts
         self.is_expression = is_expression
 
 
-class DataKeyOpts(object):
+class DataKeyOpts:
     def __init__(self, master_key=None, key_alt_names=None, key_material=None):
         """Options for creating encryption keys.
 

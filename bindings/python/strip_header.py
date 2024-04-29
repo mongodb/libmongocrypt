@@ -21,16 +21,16 @@ import itertools
 import re
 import sys
 
-DROP_RE = re.compile(r'^\s*(#|MONGOCRYPT_EXPORT)')
+DROP_RE = re.compile(r"^\s*(#|MONGOCRYPT_EXPORT)")
 
 
 def strip_file(content):
-    fold = content.replace('\\\n', ' ')
-    all_lines = fold.split('\n') + ['']
+    fold = content.replace("\\\n", " ")
+    all_lines = [*fold.split("\n"), ""]
     keep_lines = (line for line in all_lines if not DROP_RE.match(line))
-    fin = ''
+    fin = ""
     for line, peek in itertools.pairwise(keep_lines):
-        if peek == '' and line == '':
+        if peek == "" and line == "":
             # Drop adjacent empty lines
             continue
         yield line
@@ -38,11 +38,10 @@ def strip_file(content):
     yield fin
 
 
-
 def strip(hdr):
     with open(hdr) as fp:
         out = strip_file(fp.read())
-        print('\n'.join(out))
+        print("\n".join(out))  # noqa: T201
 
 
 if __name__ == "__main__":

@@ -41,7 +41,7 @@ Docker and a Windows machine.
      -REVISION=$(git rev-list -n 1 1.0.0)
      +REVISION=$(git rev-list -n 1 1.0.1)
 
-#. Add a changlog entry for this release in CHANGELOG.rst.
+#. Add a changelog entry for this release in CHANGELOG.rst.
 #. Bump "__version__" in ``pymongocrypt/version.py``.
 #. After merging the PR, clone the repository and check out the commit
    with the version change.
@@ -51,8 +51,8 @@ Docker and a Windows machine.
    $ git tag -a "pymongocrypt-<version>" -m "pymongocrypt-<version"
    $ git push --tags
 
-#. Pushing a tag will trigger the release process on GitHub Actions that will require a member 
-   of the team to authorize the deployment. Navigate to https://github.com/mongodb/libmongocrypt/actions/workflows/release-python.yml 
+#. Pushing a tag will trigger the release process on GitHub Actions that will require a member
+   of the team to authorize the deployment. Navigate to https://github.com/mongodb/libmongocrypt/actions/workflows/release-python.yml
    and wait for the publish to complete.
 
 #. Create a new PR against the same ticket to update version to a ``.dev0``

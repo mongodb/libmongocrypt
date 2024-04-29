@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from os import listdir
-from os.path import isfile, join
+from pathlib import Path
 
 from unasync import Rule, unasync_files
 
@@ -24,13 +24,15 @@ replacements = {
     "AsyncAutoEncrypter": "AutoEncrypter",
     "AsyncClient": "Client",
     "AsyncMongoCrypt": "MongoCrypt",
-    "aclose": "close"
+    "aclose": "close",
 }
 
+_base = "pymongocrypt"
+
 async_files = [
-    "./pymongocrypt/asynchronous/" + f
+    f"./{_base}/asynchronous/{f}"
     for f in listdir("pymongocrypt/asynchronous")
-    if isfile(join("pymongocrypt/asynchronous", f))
+    if (Path(_base) / "asynchronous" / f).is_file()
 ]
 
 
@@ -46,9 +48,9 @@ unasync_files(
 )
 
 sync_files = [
-    "./pymongocrypt/synchronous/" + f
+    f"./{_base}/synchronous/{f}"
     for f in listdir("pymongocrypt/synchronous")
-    if isfile(join("pymongocrypt/synchronous", f))
+    if (Path(_base) / "synchronous" / f).is_file()
 ]
 
 for file in sync_files:

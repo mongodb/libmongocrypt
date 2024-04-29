@@ -33,7 +33,7 @@ createvirtualenv () {
 }
 
 # Usage:
-# PYTHON = find_python3 
+# PYTHON = find_python3
 find_python3() {
     PYTHON=""
     # Add a fallback system python3 if it is available and Python 3.8+.
