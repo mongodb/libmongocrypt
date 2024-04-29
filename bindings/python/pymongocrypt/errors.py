@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from pymongocrypt.binding import ffi, lib, _to_string
+from pymongocrypt.binding import _to_string, ffi, lib
 
 
 class MongoCryptError(Exception):
@@ -23,7 +23,7 @@ class MongoCryptError(Exception):
           - `msg`: An error message.
           - `code`: The mongocrypt_status_t code.
         """
-        super(MongoCryptError, self).__init__(msg)
+        super().__init__(msg)
         self.code = code
 
     @classmethod

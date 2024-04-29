@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from pymongocrypt.mongocrypt import MongoCrypt
 from pymongocrypt.asynchronous.state_machine import run_state_machine
+from pymongocrypt.mongocrypt import MongoCrypt
 
 
-class AsyncAutoEncrypter(object):
+class AsyncAutoEncrypter:
     def __init__(self, callback, mongo_crypt_opts):
         """Encrypts and decrypts MongoDB commands.
 

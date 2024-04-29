@@ -72,13 +72,13 @@ if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
     get_libmongocrypt windows-test libmongocrypt/bin/mongocrypt.dll
     build_wheel
     test_dist dist/*.whl
-fi 
+fi
 
 # Handle MacOS dists.
 if [ "Darwin" = "$(uname -s)" ]; then
     $PYTHON -m venv .venv
     . .venv/bin/activate
-    
+
     # Build universal2 wheel.
     get_libmongocrypt macos libmongocrypt/lib/libmongocrypt.dylib
     export MACOSX_DEPLOYMENT_TARGET=11.0

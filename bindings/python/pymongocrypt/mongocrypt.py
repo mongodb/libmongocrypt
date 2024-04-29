@@ -12,34 +12,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
 import platform
+import sys
 
 from packaging.version import Version
 
-from pymongocrypt.binary import (MongoCryptBinaryIn,
-                                 MongoCryptBinaryOut)
-from pymongocrypt.binding import ffi, lib, _to_string
-from pymongocrypt.compat import str_to_bytes
-from pymongocrypt.errors import MongoCryptError
 from pymongocrypt.asynchronous.state_machine import AsyncMongoCryptCallback
+from pymongocrypt.binary import MongoCryptBinaryIn, MongoCryptBinaryOut
+from pymongocrypt.binding import _to_string, ffi, lib
+from pymongocrypt.compat import str_to_bytes
+from pymongocrypt.crypto import (
+    aes_256_cbc_decrypt,
+    aes_256_cbc_encrypt,
+    aes_256_ctr_decrypt,
+    aes_256_ctr_encrypt,
+    hmac_sha_256,
+    hmac_sha_512,
+    secure_random,
+    sha_256,
+    sign_rsaes_pkcs1_v1_5,
+)
+from pymongocrypt.errors import MongoCryptError
+from pymongocrypt.options import MongoCryptOptions
 from pymongocrypt.synchronous.state_machine import MongoCryptCallback
 
-from pymongocrypt.crypto import (aes_256_cbc_encrypt,
-                                 aes_256_cbc_decrypt,
-                                 aes_256_ctr_decrypt,
-                                 aes_256_ctr_encrypt,
-                                 hmac_sha_256,
-                                 hmac_sha_512,
-                                 sha_256,
-                                 secure_random,
-                                 sign_rsaes_pkcs1_v1_5)
 
-from pymongocrypt.options import MongoCryptOptions
-
-
-class MongoCrypt(object):
-
+class MongoCrypt:
     def __init__(self, options, callback):
         """Abstracts libmongocrypt's mongocrypt_t type.
 
@@ -55,7 +53,9 @@ class MongoCrypt(object):
             raise TypeError("options must be a MongoCryptOptions")
 
         if not isinstance(callback, (AsyncMongoCryptCallback, MongoCryptCallback)):
-            raise TypeError("callback must be a MongoCryptCallback or AsyncMongoCryptCallback")
+            raise TypeError(
+                "callback must be a MongoCryptCallback or AsyncMongoCryptCallback"
+            )
 
         self.__crypt = lib.mongocrypt_new()
         if self.__crypt == ffi.NULL:
@@ -71,24 +71,26 @@ class MongoCrypt(object):
     def __init(self):
         """Internal init helper."""
         kms_providers = self.__opts.kms_providers
-        with MongoCryptBinaryIn(
-                self.__callback.bson_encode(kms_providers)) as kmsopt:
-            if not lib.mongocrypt_setopt_kms_providers(
-                    self.__crypt, kmsopt.bin):
+        with MongoCryptBinaryIn(self.__callback.bson_encode(kms_providers)) as kmsopt:
+            if not lib.mongocrypt_setopt_kms_providers(self.__crypt, kmsopt.bin):
                 self.__raise_from_status()
 
         schema_map = self.__opts.schema_map
         if schema_map is not None:
             with MongoCryptBinaryIn(schema_map) as binary_schema_map:
                 if not lib.mongocrypt_setopt_schema_map(
-                        self.__crypt, binary_schema_map.bin):
+                    self.__crypt, binary_schema_map.bin
+                ):
                     self.__raise_from_status()
 
         encrypted_fields_map = self.__opts.encrypted_fields_map
         if encrypted_fields_map is not None:
-            with MongoCryptBinaryIn(encrypted_fields_map) as binary_encrypted_fields_map:
+            with MongoCryptBinaryIn(
+                encrypted_fields_map
+            ) as binary_encrypted_fields_map:
                 if not lib.mongocrypt_setopt_encrypted_field_config_map(
-                        self.__crypt, binary_encrypted_fields_map.bin):
+                    self.__crypt, binary_encrypted_fields_map.bin
+                ):
                     self.__raise_from_status()
 
         if self.__opts.bypass_query_analysis:
@@ -103,44 +105,62 @@ class MongoCrypt(object):
 
         if not crypto_available:
             if not lib.mongocrypt_setopt_crypto_hooks(
-                    self.__crypt, aes_256_cbc_encrypt, aes_256_cbc_decrypt,
-                    secure_random, hmac_sha_512, hmac_sha_256, sha_256, ffi.NULL):
+                self.__crypt,
+                aes_256_cbc_encrypt,
+                aes_256_cbc_decrypt,
+                secure_random,
+                hmac_sha_512,
+                hmac_sha_256,
+                sha_256,
+                ffi.NULL,
+            ):
                 self.__raise_from_status()
 
             if not lib.mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5(
-                    self.__crypt, sign_rsaes_pkcs1_v1_5, ffi.NULL):
+                self.__crypt, sign_rsaes_pkcs1_v1_5, ffi.NULL
+            ):
                 self.__raise_from_status()
 
             if not lib.mongocrypt_setopt_aes_256_ctr(
-                    self.__crypt, aes_256_ctr_encrypt, aes_256_ctr_decrypt, ffi.NULL):
+                self.__crypt, aes_256_ctr_encrypt, aes_256_ctr_decrypt, ffi.NULL
+            ):
                 self.__raise_from_status()
-        elif sys.platform == 'darwin' and Version(platform.mac_ver()[0]) < Version("10.15"):
+        elif sys.platform == "darwin" and Version(platform.mac_ver()[0]) < Version(
+            "10.15"
+        ):
             # MONGOCRYPT-440 libmongocrypt does not support AES-CTR on macOS < 10.15.
             if not lib.mongocrypt_setopt_aes_256_ctr(
-                    self.__crypt, aes_256_ctr_encrypt, aes_256_ctr_decrypt, ffi.NULL):
+                self.__crypt, aes_256_ctr_encrypt, aes_256_ctr_decrypt, ffi.NULL
+            ):
                 self.__raise_from_status()
 
         if self.__opts.crypt_shared_lib_path is not None:
             lib.mongocrypt_setopt_set_crypt_shared_lib_path_override(
-                self.__crypt, self.__opts.crypt_shared_lib_path.encode("utf-8"))
+                self.__crypt, self.__opts.crypt_shared_lib_path.encode("utf-8")
+            )
 
         if not self.__opts.bypass_encryption:
-            lib.mongocrypt_setopt_append_crypt_shared_lib_search_path(self.__crypt, b"$SYSTEM")
-        on_demand_aws = 'aws' in kms_providers and not len(kms_providers['aws'])
-        on_demand_gcp = 'gcp' in kms_providers and not len(kms_providers['gcp'])
-        on_demand_azure = 'azure' in kms_providers and not len(kms_providers['azure'])
+            lib.mongocrypt_setopt_append_crypt_shared_lib_search_path(
+                self.__crypt, b"$SYSTEM"
+            )
+        on_demand_aws = "aws" in kms_providers and not len(kms_providers["aws"])
+        on_demand_gcp = "gcp" in kms_providers and not len(kms_providers["gcp"])
+        on_demand_azure = "azure" in kms_providers and not len(kms_providers["azure"])
         if any([on_demand_aws, on_demand_gcp, on_demand_azure]):
             lib.mongocrypt_setopt_use_need_kms_credentials_state(self.__crypt)
 
         if not lib.mongocrypt_init(self.__crypt):
             self.__raise_from_status()
 
-        if self.__opts.crypt_shared_lib_required and self.crypt_shared_lib_version is None:
+        if (
+            self.__opts.crypt_shared_lib_required
+            and self.crypt_shared_lib_version is None
+        ):
             raise MongoCryptError(
                 "crypt_shared_lib_required=True but the crypt_shared library could not be loaded "
-                "from crypt_shared_lib_path={}".format(
-                    self.__opts.crypt_shared_lib_path) +
-                " or the operating system's dynamic library search path")
+                f"from crypt_shared_lib_path={self.__opts.crypt_shared_lib_path}"
+                + " or the operating system's dynamic library search path"
+            )
 
     def __raise_from_status(self):
         status = lib.mongocrypt_status_new()
@@ -189,7 +209,9 @@ class MongoCrypt(object):
         :Returns:
           A :class:`EncryptionContext`.
         """
-        return EncryptionContext(self._create_context(), self.__opts.kms_providers, database, command)
+        return EncryptionContext(
+            self._create_context(), self.__opts.kms_providers, database, command
+        )
 
     def decryption_context(self, command):
         """Creates a context to use for decryption.
@@ -200,7 +222,9 @@ class MongoCrypt(object):
         :Returns:
           A :class:`DecryptionContext`.
         """
-        return DecryptionContext(self._create_context(), self.__opts.kms_providers, command)
+        return DecryptionContext(
+            self._create_context(), self.__opts.kms_providers, command
+        )
 
     def explicit_encryption_context(self, value, opts):
         """Creates a context to use for explicit encryption.
@@ -214,7 +238,8 @@ class MongoCrypt(object):
           A :class:`ExplicitEncryptionContext`.
         """
         return ExplicitEncryptionContext(
-            self._create_context(), self.__opts.kms_providers, value, opts)
+            self._create_context(), self.__opts.kms_providers, value, opts
+        )
 
     def explicit_decryption_context(self, value):
         """Creates a context to use for explicit decryption.
@@ -226,8 +251,9 @@ class MongoCrypt(object):
         :Returns:
           A :class:`ExplicitDecryptionContext`.
         """
-        return ExplicitDecryptionContext(self._create_context(),
-            self.__opts.kms_providers, value)
+        return ExplicitDecryptionContext(
+            self._create_context(), self.__opts.kms_providers, value
+        )
 
     def data_key_context(self, kms_provider, opts=None):
         """Creates a context to use for key generation.
@@ -239,8 +265,13 @@ class MongoCrypt(object):
         :Returns:
           A :class:`DataKeyContext`.
         """
-        return DataKeyContext(self._create_context(), self.__opts.kms_providers, kms_provider, opts,
-                              self.__callback)
+        return DataKeyContext(
+            self._create_context(),
+            self.__opts.kms_providers,
+            kms_provider,
+            opts,
+            self.__callback,
+        )
 
     def rewrap_many_data_key_context(self, filter, provider, master_key):
         """Creates a context to use for rewrapping many data keys.
@@ -256,10 +287,17 @@ class MongoCrypt(object):
         :Returns:
           A :class:`RewrapManyDataKeyContext`.
         """
-        return RewrapManyDataKeyContext(self._create_context(), self.__opts.kms_providers, filter, provider, master_key, self.__callback)
+        return RewrapManyDataKeyContext(
+            self._create_context(),
+            self.__opts.kms_providers,
+            filter,
+            provider,
+            master_key,
+            self.__callback,
+        )
 
 
-class MongoCryptContext(object):
+class MongoCryptContext:
     __slots__ = ("__ctx", "kms_providers")
 
     def __init__(self, ctx, kms_providers):
@@ -361,13 +399,14 @@ class EncryptionContext(MongoCryptContext):
           - `database`: Optional, the name of the database.
           - `command`: The BSON command to encrypt.
         """
-        super(EncryptionContext, self).__init__(ctx, kms_providers)
+        super().__init__(ctx, kms_providers)
         self.database = database
         try:
             with MongoCryptBinaryIn(command) as binary:
                 database = str_to_bytes(database)
                 if not lib.mongocrypt_ctx_encrypt_init(
-                       ctx, database, len(database), binary.bin):
+                    ctx, database, len(database), binary.bin
+                ):
                     self._raise_from_status()
         except Exception:
             # Destroy the context on error.
@@ -387,7 +426,7 @@ class DecryptionContext(MongoCryptContext):
           - `kms_providers`: The KMS provider map.
           - `command`: The encoded BSON command to decrypt.
         """
-        super(DecryptionContext, self).__init__(ctx, kms_providers)
+        super().__init__(ctx, kms_providers)
         try:
             with MongoCryptBinaryIn(command) as binary:
                 if not lib.mongocrypt_ctx_decrypt_init(ctx, binary.bin):
@@ -412,7 +451,7 @@ class ExplicitEncryptionContext(MongoCryptContext):
             form { "v" : BSON value to encrypt }}.
           - `opts`: A :class:`ExplicitEncryptOpts`.
         """
-        super(ExplicitEncryptionContext, self).__init__(ctx, kms_providers)
+        super().__init__(ctx, kms_providers)
         try:
             algorithm = str_to_bytes(opts.algorithm)
             if not lib.mongocrypt_ctx_setopt_algorithm(ctx, algorithm, -1):
@@ -434,17 +473,23 @@ class ExplicitEncryptionContext(MongoCryptContext):
                     self._raise_from_status()
 
             if opts.contention_factor is not None:
-                if not lib.mongocrypt_ctx_setopt_contention_factor(ctx, opts.contention_factor):
+                if not lib.mongocrypt_ctx_setopt_contention_factor(
+                    ctx, opts.contention_factor
+                ):
                     self._raise_from_status()
 
             if opts.range_opts is not None:
                 with MongoCryptBinaryIn(opts.range_opts) as range_opts:
-                    if not lib.mongocrypt_ctx_setopt_algorithm_range(ctx, range_opts.bin):
+                    if not lib.mongocrypt_ctx_setopt_algorithm_range(
+                        ctx, range_opts.bin
+                    ):
                         self._raise_from_status()
 
             with MongoCryptBinaryIn(value) as binary:
                 if opts.is_expression:
-                    if not lib.mongocrypt_ctx_explicit_encrypt_expression_init(ctx, binary.bin):
+                    if not lib.mongocrypt_ctx_explicit_encrypt_expression_init(
+                        ctx, binary.bin
+                    ):
                         self._raise_from_status()
                 else:
                     if not lib.mongocrypt_ctx_explicit_encrypt_init(ctx, binary.bin):
@@ -467,12 +512,11 @@ class ExplicitDecryptionContext(MongoCryptContext):
           - `kms_providers`: The KMS provider map.
           - `value`: The encoded BSON value to decrypt.
         """
-        super(ExplicitDecryptionContext, self).__init__(ctx, kms_providers)
+        super().__init__(ctx, kms_providers)
 
         try:
             with MongoCryptBinaryIn(value) as binary:
-                if not lib.mongocrypt_ctx_explicit_decrypt_init(ctx,
-                                                                binary.bin):
+                if not lib.mongocrypt_ctx_explicit_decrypt_init(ctx, binary.bin):
                     self._raise_from_status()
         except Exception:
             # Destroy the context on error.
@@ -494,61 +538,61 @@ class DataKeyContext(MongoCryptContext):
           - `opts`: An optional class:`DataKeyOpts`.
           - `callback`: A :class:`MongoCryptCallback`.
         """
-        super(DataKeyContext, self).__init__(ctx, kms_providers)
+        super().__init__(ctx, kms_providers)
         try:
             if kms_provider not in kms_providers:
-                raise ValueError('unknown kms_provider: %s' % (kms_provider,))
+                raise ValueError(f"unknown kms_provider: {kms_provider}")
 
             # Account for provider names like "local:myname".
             provider_type = kms_provider.split(":")[0]
             if opts is None or opts.master_key is None:
-                if provider_type in ['kmip', 'local']:
+                if provider_type in ["kmip", "local"]:
                     master_key = {}
                 else:
                     raise ValueError(
-                        f'master_key is required for kms_provider: {kms_provider!r}')
+                        f"master_key is required for kms_provider: {kms_provider!r}"
+                    )
             else:
                 master_key = opts.master_key.copy()
 
-            if provider_type == 'aws':
-                if ('region' not in master_key or
-                        'key' not in master_key):
+            if provider_type == "aws":
+                if "region" not in master_key or "key" not in master_key:
                     raise ValueError(
                         'master_key must include "region" and "key" for '
-                        f'kms_provider: {kms_provider!r}')
-            elif provider_type == 'azure':
-                if ('keyName' not in master_key or
-                        'keyVaultEndpoint' not in master_key):
+                        f"kms_provider: {kms_provider!r}"
+                    )
+            elif provider_type == "azure":
+                if "keyName" not in master_key or "keyVaultEndpoint" not in master_key:
                     raise ValueError(
                         'master key must include "keyName" and '
-                        f'"keyVaultEndpoint" for kms_provider: {kms_provider!r}')
-            elif provider_type == 'gcp':
-                if ('projectId' not in master_key or
-                        'location' not in master_key or
-                        'keyRing' not in master_key or
-                        'keyName' not in master_key):
+                        f'"keyVaultEndpoint" for kms_provider: {kms_provider!r}'
+                    )
+            elif provider_type == "gcp":
+                if (
+                    "projectId" not in master_key
+                    or "location" not in master_key
+                    or "keyRing" not in master_key
+                    or "keyName" not in master_key
+                ):
                     raise ValueError(
                         'master key must include "projectId", "location",'
-                        f'"keyRing", and "keyName" for kms_provider: {kms_provider!r}')
+                        f'"keyRing", and "keyName" for kms_provider: {kms_provider!r}'
+                    )
 
-            master_key['provider'] = kms_provider
-            with MongoCryptBinaryIn(
-                    callback.bson_encode(master_key)) as mkey:
-                if not lib.mongocrypt_ctx_setopt_key_encryption_key(
-                        ctx, mkey.bin):
+            master_key["provider"] = kms_provider
+            with MongoCryptBinaryIn(callback.bson_encode(master_key)) as mkey:
+                if not lib.mongocrypt_ctx_setopt_key_encryption_key(ctx, mkey.bin):
                     self._raise_from_status()
 
             if opts.key_alt_names:
                 for key_alt_name in opts.key_alt_names:
                     with MongoCryptBinaryIn(key_alt_name) as binary:
-                        if not lib.mongocrypt_ctx_setopt_key_alt_name(
-                                ctx, binary.bin):
+                        if not lib.mongocrypt_ctx_setopt_key_alt_name(ctx, binary.bin):
                             self._raise_from_status()
 
             if opts.key_material:
                 with MongoCryptBinaryIn(opts.key_material) as binary:
-                    if not lib.mongocrypt_ctx_setopt_key_material(
-                            ctx, binary.bin):
+                    if not lib.mongocrypt_ctx_setopt_key_material(ctx, binary.bin):
                         self._raise_from_status()
 
             if not lib.mongocrypt_ctx_datakey_init(ctx):
@@ -559,7 +603,7 @@ class DataKeyContext(MongoCryptContext):
             raise
 
 
-class MongoCryptKmsContext(object):
+class MongoCryptKmsContext:
     __slots__ = ("__ctx",)
 
     def __init__(self, ctx):
@@ -613,8 +657,7 @@ class MongoCryptKmsContext(object):
 
         .. versionadded:: 1.2
         """
-        return _to_string(
-            lib.mongocrypt_kms_ctx_get_kms_provider(self.__ctx, ffi.NULL))
+        return _to_string(lib.mongocrypt_kms_ctx_get_kms_provider(self.__ctx, ffi.NULL))
 
     def feed(self, data):
         """Feed bytes from the HTTP response.
@@ -640,8 +683,7 @@ class MongoCryptKmsContext(object):
 class RewrapManyDataKeyContext(MongoCryptContext):
     __slots__ = ()
 
-    def __init__(self, ctx, kms_providers, filter, provider, master_key,
-        callback):
+    def __init__(self, ctx, kms_providers, filter, provider, master_key, callback):
         """Abstracts libmongocrypt's mongocrypt_ctx_t type.
 
         :Parameters:
@@ -653,7 +695,7 @@ class RewrapManyDataKeyContext(MongoCryptContext):
           - `master_key`: Optional document for the given provider.
           - `callback`: A :class:`MongoCryptCallback`.
         """
-        super(RewrapManyDataKeyContext, self).__init__(ctx, kms_providers)
+        super().__init__(ctx, kms_providers)
         key_encryption_key_bson = None
         if provider is not None:
             data = dict(provider=provider)
@@ -664,7 +706,9 @@ class RewrapManyDataKeyContext(MongoCryptContext):
         try:
             if key_encryption_key_bson:
                 with MongoCryptBinaryIn(key_encryption_key_bson) as binary:
-                    if not lib.mongocrypt_ctx_setopt_key_encryption_key(ctx, binary.bin):
+                    if not lib.mongocrypt_ctx_setopt_key_encryption_key(
+                        ctx, binary.bin
+                    ):
                         self._raise_from_status()
 
             filter_bson = callback.bson_encode(filter)

@@ -16,7 +16,7 @@ from pymongocrypt.mongocrypt import MongoCrypt
 from pymongocrypt.synchronous.state_machine import run_state_machine
 
 
-class AutoEncrypter(object):
+class AutoEncrypter:
     def __init__(self, callback, mongo_crypt_opts):
         """Encrypts and decrypts MongoDB commands.
 

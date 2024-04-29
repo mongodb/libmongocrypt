@@ -13,11 +13,11 @@
 # limitations under the License.
 
 from pymongocrypt.mongocrypt import MongoCrypt
-from pymongocrypt.synchronous.state_machine import run_state_machine
 from pymongocrypt.options import DataKeyOpts, ExplicitEncryptOpts
+from pymongocrypt.synchronous.state_machine import run_state_machine
 
 
-class ExplicitEncrypter(object):
+class ExplicitEncrypter:
     def __init__(self, callback, mongo_crypt_opts):
         """Encrypts and decrypts BSON values.
 
@@ -33,8 +33,9 @@ class ExplicitEncrypter(object):
             raise ValueError("mongo_crypt_opts.schema_map must be None")
         self.mongocrypt = MongoCrypt(mongo_crypt_opts, callback)
 
-    def create_data_key(self, kms_provider, master_key=None,
-                        key_alt_names=None, key_material=None):
+    def create_data_key(
+        self, kms_provider, master_key=None, key_alt_names=None, key_material=None
+    ):
         """Creates a data key used for explicit encryption.
 
         :Parameters:
@@ -56,11 +57,10 @@ class ExplicitEncrypter(object):
         encoded_names = []
         if key_alt_names is not None:
             for name in key_alt_names:
-                encoded_names.append(
-                    self.callback.bson_encode({'keyAltName': name}))
+                encoded_names.append(self.callback.bson_encode({"keyAltName": name}))
 
         if key_material is not None:
-            key_material = self.callback.bson_encode({'keyMaterial': key_material})
+            key_material = self.callback.bson_encode({"keyMaterial": key_material})
 
         opts = DataKeyOpts(master_key, encoded_names, key_material)
         with self.mongocrypt.data_key_context(kms_provider, opts) as ctx:
@@ -78,12 +78,22 @@ class ExplicitEncrypter(object):
         :Returns:
           A binary document with the rewrap data.
         """
-        with self.mongocrypt.rewrap_many_data_key_context(filter, provider, master_key) as ctx:
+        with self.mongocrypt.rewrap_many_data_key_context(
+            filter, provider, master_key
+        ) as ctx:
             return run_state_machine(ctx, self.callback)
 
-    def encrypt(self, value, algorithm, key_id=None, key_alt_name=None,
-                query_type=None, contention_factor=None, range_opts=None,
-                is_expression=False):
+    def encrypt(
+        self,
+        value,
+        algorithm,
+        key_id=None,
+        key_alt_name=None,
+        query_type=None,
+        contention_factor=None,
+        range_opts=None,
+        is_expression=False,
+    ):
         """Encrypts a BSON value.
 
         Note that exactly one of ``key_id`` or  ``key_alt_name`` must be
@@ -115,11 +125,16 @@ class ExplicitEncrypter(object):
         """
         # CDRIVER-3275 key_alt_name needs to be wrapped in a bson document.
         if key_alt_name is not None:
-            key_alt_name = self.callback.bson_encode(
-                {'keyAltName': key_alt_name})
+            key_alt_name = self.callback.bson_encode({"keyAltName": key_alt_name})
         opts = ExplicitEncryptOpts(
-            algorithm, key_id, key_alt_name, query_type, contention_factor,
-            range_opts, is_expression)
+            algorithm,
+            key_id,
+            key_alt_name,
+            query_type,
+            contention_factor,
+            range_opts,
+            is_expression,
+        )
         with self.mongocrypt.explicit_encryption_context(value, opts) as ctx:
             return run_state_machine(ctx, self.callback)
 

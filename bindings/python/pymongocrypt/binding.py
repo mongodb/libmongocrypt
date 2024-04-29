@@ -15,6 +15,7 @@
 import os
 import os.path
 import sys
+from pathlib import Path
 
 import cffi
 from packaging.version import Version
@@ -29,7 +30,8 @@ def _parse_version(version):
 ffi = cffi.FFI()
 
 # Generated with strip_header.py
-ffi.cdef("""/*
+ffi.cdef(
+    """/*
  * Copyright 2019-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -522,7 +524,7 @@ const char *mongocrypt_crypt_shared_lib_version_string(const mongocrypt_t *crypt
  * @brief Obtain a 64-bit constant encoding the version of the loaded
  * crypt_shared library, if available.
  *
- * @param[in] crypt The mongocrypt_t object after a successul call to
+ * @param[in] crypt The mongocrypt_t object after a successful call to
  * mongocrypt_init.
  *
  * @return A 64-bit encoded version number, with the version encoded as four
@@ -1188,7 +1190,7 @@ void mongocrypt_ctx_destroy(mongocrypt_ctx_t *ctx);
  * @param[out] status An optional status to pass error messages. See @ref
  * mongocrypt_status_set.
  * @returns A boolean indicating success. If returning false, set @p status
- * with a message indiciating the error using @ref mongocrypt_status_set.
+ * with a message indicating the error using @ref mongocrypt_status_set.
  */
 typedef bool (*mongocrypt_crypto_fn)(void *ctx,
                                      mongocrypt_binary_t *key,
@@ -1213,7 +1215,7 @@ typedef bool (*mongocrypt_crypto_fn)(void *ctx,
  * @param[out] status An optional status to pass error messages. See @ref
  * mongocrypt_status_set.
  * @returns A boolean indicating success. If returning false, set @p status
- * with a message indiciating the error using @ref mongocrypt_status_set.
+ * with a message indicating the error using @ref mongocrypt_status_set.
  */
 typedef bool (*mongocrypt_hmac_fn)(void *ctx,
                                    mongocrypt_binary_t *key,
@@ -1232,7 +1234,7 @@ typedef bool (*mongocrypt_hmac_fn)(void *ctx,
  * @param[out] status An optional status to pass error messages. See @ref
  * mongocrypt_status_set.
  * @returns A boolean indicating success. If returning false, set @p status
- * with a message indiciating the error using @ref mongocrypt_status_set.
+ * with a message indicating the error using @ref mongocrypt_status_set.
  */
 typedef bool (*mongocrypt_hash_fn)(void *ctx,
                                    mongocrypt_binary_t *in,
@@ -1250,7 +1252,7 @@ typedef bool (*mongocrypt_hash_fn)(void *ctx,
  * @param[out] status An optional status to pass error messages. See @ref
  * mongocrypt_status_set.
  * @returns A boolean indicating success. If returning false, set @p status
- * with a message indiciating the error using @ref mongocrypt_status_set.
+ * with a message indicating the error using @ref mongocrypt_status_set.
  */
 typedef bool (*mongocrypt_random_fn)(void *ctx, mongocrypt_binary_t *out, uint32_t count, mongocrypt_status_t *status);
 
@@ -1398,7 +1400,9 @@ bool mongocrypt_ctx_setopt_algorithm_range(mongocrypt_ctx_t *ctx, mongocrypt_bin
 /// String constants for setopt_query_type
 // NOTE: The RangePreview algorithm is experimental only. It is not intended for
 // public use.
-""")
+"""
+)
+
 
 def _to_string(cdata):
     """Decode a cdata c-string to a Python str."""
@@ -1416,18 +1420,19 @@ def libmongocrypt_version():
 # export PYMONGOCRYPT_LIB='/path/to/libmongocrypt.so'
 # If the PYMONGOCRYPT_LIB is not set then load the embedded library and
 # fallback to the relying on a system installed library.
-_base = os.path.dirname(os.path.realpath(__file__))
-if sys.platform == 'win32':
-    _path = os.path.join(_base, 'mongocrypt.dll')
-elif sys.platform == 'darwin':
-    _path = os.path.join(_base, 'libmongocrypt.dylib')
+_base = Path(os.path.realpath(__file__)).parent
+if sys.platform == "win32":
+    _path = Path(_base) / "mongocrypt.dll"
+elif sys.platform == "darwin":
+    _path = Path(_base) / "libmongocrypt.dylib"
 else:
-    _path = os.path.join(_base, 'libmongocrypt.so')
+    _path = Path(_base) / "libmongocrypt.so"
 
 
-class _Library(object):
+class _Library:
     """Helper class for delaying errors that would usually be raised at
     import time until the library is actually used."""
+
     def __init__(self, error):
         self._error = error
 
@@ -1435,25 +1440,24 @@ class _Library(object):
         raise self._error
 
 
-_PYMONGOCRYPT_LIB = os.environ.get('PYMONGOCRYPT_LIB')
+_PYMONGOCRYPT_LIB = os.environ.get("PYMONGOCRYPT_LIB")
 try:
     if _PYMONGOCRYPT_LIB:
         lib = ffi.dlopen(_PYMONGOCRYPT_LIB)
     else:
         try:
             lib = ffi.dlopen(_path)
-        except OSError as exc:
+        except OSError:
             # Fallback to libmongocrypt installed on the system.
-            lib = ffi.dlopen('mongocrypt')
+            lib = ffi.dlopen("mongocrypt")
 except OSError as exc:
     # dlopen raises OSError when the library cannot be found.
     # Delay the error until the library is actually used.
     lib = _Library(exc)
 else:
-
     _limongocrypt_version = Version(libmongocrypt_version())
     if _limongocrypt_version < Version(_MIN_LIBMONGOCRYPT_VERSION):
         exc = RuntimeError(
-            "Expected libmongocrypt version %s or greater, found %s" % (
-                _MIN_LIBMONGOCRYPT_VERSION, libmongocrypt_version()))
+            f"Expected libmongocrypt version %s or greater, found {_MIN_LIBMONGOCRYPT_VERSION, libmongocrypt_version()}"
+        )
         lib = _Library(exc)

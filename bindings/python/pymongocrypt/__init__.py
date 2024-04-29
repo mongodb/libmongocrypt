@@ -12,5 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from pymongocrypt.binding import libmongocrypt_version, lib
-from pymongocrypt.version import __version__
+from pymongocrypt.binding import lib, libmongocrypt_version  # noqa: F401
+from pymongocrypt.version import __version__  # noqa: F401

@@ -4,7 +4,7 @@ Changelog
 Changes in Version 2.0.0
 ------------------------
 
-- Add Python async support. 
+- Add Python async support.
 - Drop support for Python 3.7 and PyPy 3.8. Python >=3.8 or PyPy >=3.9 is now required.
 
 Changes in Version 1.9.1
