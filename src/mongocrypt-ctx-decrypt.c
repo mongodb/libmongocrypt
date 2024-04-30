@@ -604,7 +604,7 @@ static bool _check_for_K_KeyId(mongocrypt_ctx_t *ctx) {
     }
 
     bson_t as_bson;
-    bson_iter_t iter;
+    bson_iter_t iter = {0};
     _mongocrypt_ctx_decrypt_t *dctx = (_mongocrypt_ctx_decrypt_t *)ctx;
     if (!_mongocrypt_buffer_to_bson(&dctx->original_doc, &as_bson)) {
         return _mongocrypt_ctx_fail_w_msg(ctx, "error converting original_doc to bson");
