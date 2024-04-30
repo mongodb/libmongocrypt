@@ -843,7 +843,7 @@ static bool _kms_done(mongocrypt_ctx_t *ctx) {
 bool mongocrypt_ctx_decrypt_init(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *doc) {
     _mongocrypt_ctx_decrypt_t *dctx;
     bson_t as_bson;
-    bson_iter_t iter;
+    bson_iter_t iter = {0};
     _mongocrypt_ctx_opts_spec_t opts_spec;
 
     memset(&opts_spec, 0, sizeof(opts_spec));
