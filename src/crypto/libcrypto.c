@@ -61,7 +61,7 @@ void _native_crypto_init(void) {
 static bool _encrypt_with_cipher(const EVP_CIPHER *cipher, aes_256_args_t args) {
     EVP_CIPHER_CTX *ctx;
     bool ret = false;
-    int intermediate_bytes_written;
+    int intermediate_bytes_written = 0;
     mongocrypt_status_t *status = args.status;
 
     ctx = EVP_CIPHER_CTX_new();
@@ -89,6 +89,7 @@ static bool _encrypt_with_cipher(const EVP_CIPHER *cipher, aes_256_args_t args) 
         goto done;
     }
 
+    BSON_ASSERT(intermediate_bytes_written >= 0 && (uint64_t)intermediate_bytes_written <= UINT32_MAX);
     /* intermediate_bytes_written cannot be negative, so int -> uint32_t is OK */
     *args.bytes_written = (uint32_t)intermediate_bytes_written;
 
@@ -116,7 +117,7 @@ done:
 static bool _decrypt_with_cipher(const EVP_CIPHER *cipher, aes_256_args_t args) {
     EVP_CIPHER_CTX *ctx;
     bool ret = false;
-    int intermediate_bytes_written;
+    int intermediate_bytes_written = 0;
     mongocrypt_status_t *status = args.status;
 
     ctx = EVP_CIPHER_CTX_new();
@@ -146,6 +147,7 @@ static bool _decrypt_with_cipher(const EVP_CIPHER *cipher, aes_256_args_t args) 
         goto done;
     }
 
+    BSON_ASSERT(intermediate_bytes_written >= 0 && (uint64_t)intermediate_bytes_written <= UINT32_MAX);
     /* intermediate_bytes_written cannot be negative, so int -> uint32_t is OK */
     *args.bytes_written = (uint32_t)intermediate_bytes_written;
 
@@ -206,7 +208,7 @@ static bool _hmac_with_hash(const EVP_MD *hash,
 
     if (out->len != (uint32_t)EVP_MD_size(hash)) {
         CLIENT_ERR("out does not contain %d bytes", EVP_MD_size(hash));
-        return false;
+        goto done;
     }
 
     if (!HMAC_Init_ex(ctx, key->data, (int)key->len, hash, NULL /* engine */)) {

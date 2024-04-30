@@ -70,7 +70,7 @@ static bool parse_and(const bson_t *in, bson_iter_t *out, mongocrypt_status_t *s
     BSON_ASSERT_PARAM(out);
     BSON_ASSERT(status || true);
 
-    bson_iter_t and;
+    bson_iter_t and = {0};
     if (!bson_iter_init(&and, in) || !bson_iter_next(&and) || 0 != strcmp(bson_iter_key(&and), "$and")) {
         ERR_WITH_BSON(in, "%s", "error unable to find '$and'");
         return false;
@@ -105,7 +105,7 @@ parse_aggregate_expression(const bson_t *orig, bson_iter_t *in, operator_value_t
     BSON_ASSERT_PARAM(out);
     BSON_ASSERT(status || true);
 
-    bson_iter_t array, value;
+    bson_iter_t array = {0}, value;
     const char *op_type_str = bson_iter_key(in);
     bool ok = false;
     const char *field;
@@ -162,7 +162,7 @@ parse_match_expression(const bson_t *orig, bson_iter_t *in, operator_value_t *ou
     BSON_ASSERT_PARAM(out);
     BSON_ASSERT(status || true);
 
-    bson_iter_t document, value;
+    bson_iter_t document = {0}, value;
     const char *op_type_str;
     bool ok = false;
     const char *field = bson_iter_key(in);

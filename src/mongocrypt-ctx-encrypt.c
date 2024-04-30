@@ -874,7 +874,7 @@ static bool _collect_key_from_marking(void *ctx, _mongocrypt_buffer_t *in, mongo
 static bool _mongo_feed_markings(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in) {
     /* Find keys. */
     bson_t as_bson;
-    bson_iter_t iter;
+    bson_iter_t iter = {0};
     _mongocrypt_ctx_encrypt_t *ectx;
 
     BSON_ASSERT_PARAM(ctx);
@@ -1405,7 +1405,7 @@ static moe_result must_omit_encryptionInformation(const char *command_name,
     }
 
     bool has_payload_requiring_encryptionInformation = false;
-    bson_iter_t iter;
+    bson_iter_t iter = {0};
     if (!bson_iter_init(&iter, command)) {
         CLIENT_ERR("unable to iterate command");
         return (moe_result){.ok = false};
@@ -1690,7 +1690,7 @@ static bool _fle2_finalize(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
         bson_copy_to(&original_cmd_bson, &converted);
     } else {
         bson_t as_bson;
-        bson_iter_t iter;
+        bson_iter_t iter = {0};
 
         if (!_mongocrypt_buffer_to_bson(&ectx->marked_cmd, &as_bson)) {
             return _mongocrypt_ctx_fail_w_msg(ctx, "malformed bson");
@@ -1780,6 +1780,9 @@ static bool FLE2RangeFindDriverSpec_to_ciphertexts(mongocrypt_ctx_t *ctx, mongoc
     BSON_ASSERT_PARAM(ctx);
     BSON_ASSERT_PARAM(out);
 
+    bson_t with_placholders = BSON_INITIALIZER;
+    bson_t with_ciphertexts = BSON_INITIALIZER;
+
     if (!ctx->opts.rangeopts.set) {
         _mongocrypt_ctx_fail_w_msg(ctx, "Expected RangeOpts to be set for Range Find");
         goto fail;
@@ -1789,8 +1792,6 @@ static bool FLE2RangeFindDriverSpec_to_ciphertexts(mongocrypt_ctx_t *ctx, mongoc
         goto fail;
     }
 
-    bson_t with_placholders = BSON_INITIALIZER;
-    bson_t with_ciphertexts = BSON_INITIALIZER;
     bson_t in_bson;
     if (!_mongocrypt_buffer_to_bson(&ectx->original_cmd, &in_bson)) {
         _mongocrypt_ctx_fail_w_msg(ctx, "unable to convert input to BSON");
@@ -2015,7 +2016,7 @@ fail:
 
 static bool _finalize(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
     bson_t as_bson, converted;
-    bson_iter_t iter;
+    bson_iter_t iter = {0};
     _mongocrypt_ctx_encrypt_t *ectx;
     bool res;
 
@@ -2619,7 +2620,7 @@ static bool _check_cmd_for_auto_encrypt_bulkWrite(mongocrypt_binary_t *cmd,
     BSON_ASSERT_PARAM(target_coll);
 
     bson_t as_bson;
-    bson_iter_t cmd_iter;
+    bson_iter_t cmd_iter = {0};
 
     if (!_mongocrypt_binary_to_bson(cmd, &as_bson) || !bson_iter_init(&cmd_iter, &as_bson)) {
         CLIENT_ERR("invalid command BSON");
@@ -2666,7 +2667,7 @@ static bool _check_cmd_for_auto_encrypt_bulkWrite(mongocrypt_binary_t *cmd,
 static bool
 _check_cmd_for_auto_encrypt(mongocrypt_binary_t *cmd, bool *bypass, char **target_coll, mongocrypt_status_t *status) {
     bson_t as_bson;
-    bson_iter_t iter, target_coll_iter;
+    bson_iter_t iter = {0}, target_coll_iter;
     const char *cmd_name;
     bool eligible = false;
 
