@@ -85,6 +85,7 @@ static void _dump_attr(void *attr_in) {
     for (altname = attr->alt_names; NULL != altname; altname = altname->next) {
         printf("%s\n", _mongocrypt_key_alt_name_get_string(altname));
     }
+    bson_free(hex);
 }
 
 _mongocrypt_cache_key_value_t *_mongocrypt_cache_key_value_new(_mongocrypt_key_doc_t *key_doc,
