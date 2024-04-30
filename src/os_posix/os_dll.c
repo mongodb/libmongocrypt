@@ -104,9 +104,10 @@ bool mcr_dll_path_supported(void) {
 #include <link.h>
 
 mcr_dll_path_result mcr_dll_path(mcr_dll dll) {
-    struct link_map *map;
+    struct link_map *map = NULL;
     int rc = dlinfo(dll._native_handle, RTLD_DI_LINKMAP, &map);
     if (rc == 0) {
+        assert(NULL != map);
         return (mcr_dll_path_result){.path = mstr_copy_cstr(map->l_name)};
     } else {
         return (mcr_dll_path_result){.error_string = mstr_copy_cstr(dlerror())};
