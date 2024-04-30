@@ -1690,7 +1690,7 @@ static bool _fle2_finalize(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
         bson_copy_to(&original_cmd_bson, &converted);
     } else {
         bson_t as_bson;
-        bson_iter_t iter;
+        bson_iter_t iter = {0};
 
         if (!_mongocrypt_buffer_to_bson(&ectx->marked_cmd, &as_bson)) {
             return _mongocrypt_ctx_fail_w_msg(ctx, "malformed bson");
