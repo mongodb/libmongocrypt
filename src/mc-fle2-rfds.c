@@ -162,7 +162,7 @@ parse_match_expression(const bson_t *orig, bson_iter_t *in, operator_value_t *ou
     BSON_ASSERT_PARAM(out);
     BSON_ASSERT(status || true);
 
-    bson_iter_t document, value;
+    bson_iter_t document = {0}, value;
     const char *op_type_str;
     bool ok = false;
     const char *field = bson_iter_key(in);
