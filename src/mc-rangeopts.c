@@ -49,7 +49,7 @@
 #define ERROR_PREFIX "Error parsing RangeOpts"
 
 bool mc_RangeOpts_parse(mc_RangeOpts_t *ro, const bson_t *in, bool use_range_v2, mongocrypt_status_t *status) {
-    bson_iter_t iter;
+    bson_iter_t iter = {0};
     bool has_min = false, has_max = false, has_sparsity = false, has_precision = false, has_trimFactor = false;
     BSON_ASSERT_PARAM(ro);
     BSON_ASSERT_PARAM(in);
