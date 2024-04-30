@@ -874,7 +874,7 @@ static bool _collect_key_from_marking(void *ctx, _mongocrypt_buffer_t *in, mongo
 static bool _mongo_feed_markings(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in) {
     /* Find keys. */
     bson_t as_bson;
-    bson_iter_t iter;
+    bson_iter_t iter = {0};
     _mongocrypt_ctx_encrypt_t *ectx;
 
     BSON_ASSERT_PARAM(ctx);
