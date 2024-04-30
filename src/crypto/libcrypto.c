@@ -117,7 +117,7 @@ done:
 static bool _decrypt_with_cipher(const EVP_CIPHER *cipher, aes_256_args_t args) {
     EVP_CIPHER_CTX *ctx;
     bool ret = false;
-    int intermediate_bytes_written;
+    int intermediate_bytes_written = 0;
     mongocrypt_status_t *status = args.status;
 
     ctx = EVP_CIPHER_CTX_new();
@@ -147,6 +147,7 @@ static bool _decrypt_with_cipher(const EVP_CIPHER *cipher, aes_256_args_t args) 
         goto done;
     }
 
+    BSON_ASSERT(intermediate_bytes_written >= 0 && intermediate_bytes_written <= UINT32_MAX);
     /* intermediate_bytes_written cannot be negative, so int -> uint32_t is OK */
     *args.bytes_written = (uint32_t)intermediate_bytes_written;
 
