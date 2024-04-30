@@ -2620,7 +2620,7 @@ static bool _check_cmd_for_auto_encrypt_bulkWrite(mongocrypt_binary_t *cmd,
     BSON_ASSERT_PARAM(target_coll);
 
     bson_t as_bson;
-    bson_iter_t cmd_iter;
+    bson_iter_t cmd_iter = {0};
 
     if (!_mongocrypt_binary_to_bson(cmd, &as_bson) || !bson_iter_init(&cmd_iter, &as_bson)) {
         CLIENT_ERR("invalid command BSON");
