@@ -70,7 +70,7 @@ static bool parse_and(const bson_t *in, bson_iter_t *out, mongocrypt_status_t *s
     BSON_ASSERT_PARAM(out);
     BSON_ASSERT(status || true);
 
-    bson_iter_t and;
+    bson_iter_t and = {0};
     if (!bson_iter_init(&and, in) || !bson_iter_next(&and) || 0 != strcmp(bson_iter_key(&and), "$and")) {
         ERR_WITH_BSON(in, "%s", "error unable to find '$and'");
         return false;
