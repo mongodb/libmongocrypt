@@ -53,7 +53,7 @@ void mc_FLE2EncryptionPlaceholder_init(mc_FLE2EncryptionPlaceholder_t *placehold
 bool mc_FLE2EncryptionPlaceholder_parse(mc_FLE2EncryptionPlaceholder_t *out,
                                         const bson_t *in,
                                         mongocrypt_status_t *status) {
-    bson_iter_t iter;
+    bson_iter_t iter = {0};
     bool has_t = false, has_a = false, has_v = false, has_cm = false;
     bool has_ki = false, has_ku = false;
     bool has_s = false;
