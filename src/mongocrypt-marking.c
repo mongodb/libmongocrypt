@@ -42,7 +42,7 @@
 
 static bool
 _mongocrypt_marking_parse_fle1_placeholder(const bson_t *in, _mongocrypt_marking_t *out, mongocrypt_status_t *status) {
-    bson_iter_t iter;
+    bson_iter_t iter = {0};
     bool has_ki = false, has_ka = false, has_a = false, has_v = false;
 
     BSON_ASSERT_PARAM(in);
