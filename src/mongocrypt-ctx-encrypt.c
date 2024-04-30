@@ -2667,7 +2667,7 @@ static bool _check_cmd_for_auto_encrypt_bulkWrite(mongocrypt_binary_t *cmd,
 static bool
 _check_cmd_for_auto_encrypt(mongocrypt_binary_t *cmd, bool *bypass, char **target_coll, mongocrypt_status_t *status) {
     bson_t as_bson;
-    bson_iter_t iter, target_coll_iter;
+    bson_iter_t iter = {0}, target_coll_iter;
     const char *cmd_name;
     bool eligible = false;
 
