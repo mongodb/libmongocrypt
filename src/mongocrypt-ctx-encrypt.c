@@ -2016,7 +2016,7 @@ fail:
 
 static bool _finalize(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
     bson_t as_bson, converted;
-    bson_iter_t iter;
+    bson_iter_t iter = {0};
     _mongocrypt_ctx_encrypt_t *ectx;
     bool res;
 
