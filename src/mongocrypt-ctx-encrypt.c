@@ -1405,7 +1405,7 @@ static moe_result must_omit_encryptionInformation(const char *command_name,
     }
 
     bool has_payload_requiring_encryptionInformation = false;
-    bson_iter_t iter;
+    bson_iter_t iter = {0};
     if (!bson_iter_init(&iter, command)) {
         CLIENT_ERR("unable to iterate command");
         return (moe_result){.ok = false};
