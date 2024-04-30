@@ -206,7 +206,7 @@ static bool _hmac_with_hash(const EVP_MD *hash,
 
     if (out->len != (uint32_t)EVP_MD_size(hash)) {
         CLIENT_ERR("out does not contain %d bytes", EVP_MD_size(hash));
-        return false;
+        goto done;
     }
 
     if (!HMAC_Init_ex(ctx, key->data, (int)key->len, hash, NULL /* engine */)) {
