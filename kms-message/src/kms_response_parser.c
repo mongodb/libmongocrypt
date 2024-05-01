@@ -38,6 +38,18 @@ _parser_init (kms_response_parser_t *parser)
    parser->kmip = NULL;
 }
 
+void
+kms_response_parser_reset (kms_response_parser_t *parser)
+{
+   if (parser->kmip) {
+      kms_kmip_response_parser_destroy(parser->kmip); 
+      kms_kmip_response_parser_new(parser->kmip);
+   } else {
+      _parser_destroy (parser);
+      _parser_init (parser);
+   }
+}
+
 kms_response_parser_t *
 kms_response_parser_new (void)
 {
