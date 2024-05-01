@@ -1,0 +1,71 @@
+{
+  "components": [
+    {
+      "bom-ref": "pkg:github/mongodb/libmongocrypt",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://github.com/mongodb/libmongocrypt"
+        }
+      ],
+      "group": "mongodb",
+      "name": "libmongocrypt",
+      "purl": "pkg:github/mongodb/libmongocrypt",
+      "type": "library"
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:github/mongodb/libmongocrypt"
+    }
+  ],
+  "metadata": {
+    "timestamp": "2024-05-01T20:55:10.513782+00:00",
+    "tools": [
+      {
+        "externalReferences": [
+          {
+            "type": "build-system",
+            "url": "https://github.com/CycloneDX/cyclonedx-python-lib/actions"
+          },
+          {
+            "type": "distribution",
+            "url": "https://pypi.org/project/cyclonedx-python-lib/"
+          },
+          {
+            "type": "documentation",
+            "url": "https://cyclonedx-python-library.readthedocs.io/"
+          },
+          {
+            "type": "issue-tracker",
+            "url": "https://github.com/CycloneDX/cyclonedx-python-lib/issues"
+          },
+          {
+            "type": "license",
+            "url": "https://github.com/CycloneDX/cyclonedx-python-lib/blob/main/LICENSE"
+          },
+          {
+            "type": "release-notes",
+            "url": "https://github.com/CycloneDX/cyclonedx-python-lib/blob/main/CHANGELOG.md"
+          },
+          {
+            "type": "vcs",
+            "url": "https://github.com/CycloneDX/cyclonedx-python-lib"
+          },
+          {
+            "type": "website",
+            "url": "https://github.com/CycloneDX/cyclonedx-python-lib/#readme"
+          }
+        ],
+        "name": "cyclonedx-python-lib",
+        "vendor": "CycloneDX",
+        "version": "6.4.4"
+      }
+    ]
+  },
+  "serialNumber": "urn:uuid:d39c0f4e-9f42-4f2b-8102-01c5da520fe7",
+  "version": 1,
+  "$schema": "http://cyclonedx.org/schema/bom-1.5.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5"
+}
