@@ -1,8 +1,8 @@
-libmongocrypt (1.10.0-1) UNRELEASED; urgency=medium
+libmongocrypt (1.10.0-1) unstable; urgency=medium
 
   * New upstream release.
 
- -- Kyle Kloberdanz <kyle.kloberdanz@mongodb.com>  Wed, 01 May 2024 14:41:59 -0500
+ -- Kyle Kloberdanz <kyle.kloberdanz@mongodb.com>  Wed, 01 May 2024 14:45:37 -0500
 
 libmongocrypt (1.9.1-1) unstable; urgency=medium
 
