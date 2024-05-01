@@ -68,6 +68,15 @@ _set_binary_opt(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *binary, _mongocrypt_
     return true;
 }
 
+bool mongocrypt_ctx_setopt_retry(mongocrypt_ctx_t *ctx, bool retry) {
+    if (!ctx) {
+        return false;
+    }
+
+    ctx->opts.retry_enabled = retry;
+    return true;
+}
+
 bool mongocrypt_ctx_setopt_key_id(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *key_id) {
     if (!ctx) {
         return false;
@@ -307,6 +316,7 @@ mongocrypt_ctx_t *mongocrypt_ctx_new(mongocrypt_t *crypt) {
     ctx->crypt = crypt;
     ctx->status = mongocrypt_status_new();
     ctx->opts.algorithm = MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE;
+    ctx->opts.retry_enabled = false;
     ctx->state = MONGOCRYPT_CTX_DONE;
     return ctx;
 }
@@ -512,9 +522,12 @@ mongocrypt_kms_ctx_t *mongocrypt_ctx_next_kms_ctx(mongocrypt_ctx_t *ctx) {
         _mongocrypt_ctx_fail_w_msg(ctx, "not applicable to context");
         return NULL;
     }
-
+    
+    mongocrypt_kms_ctx_t *ret;
     switch (ctx->state) {
-    case MONGOCRYPT_CTX_NEED_KMS: return ctx->vtable.next_kms_ctx(ctx);
+    case MONGOCRYPT_CTX_NEED_KMS:
+        ret = ctx->vtable.next_kms_ctx(ctx);
+        break;
     case MONGOCRYPT_CTX_ERROR: return NULL;
     case MONGOCRYPT_CTX_DONE:
     case MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS:
@@ -525,6 +538,11 @@ mongocrypt_kms_ctx_t *mongocrypt_ctx_next_kms_ctx(mongocrypt_ctx_t *ctx) {
     case MONGOCRYPT_CTX_READY:
     default: _mongocrypt_ctx_fail_w_msg(ctx, "wrong state"); return NULL;
     }
+
+    if (ret) {
+        ret->retry_enabled = ctx->opts.retry_enabled;
+    }
+    return ret;
 }
 
 bool mongocrypt_ctx_provide_kms_providers(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *kms_providers_definition) {

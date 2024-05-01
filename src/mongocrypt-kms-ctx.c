@@ -533,7 +533,7 @@ static bool _ctx_done_aws(mongocrypt_kms_ctx_t *kms, const char *json_field) {
     }
     body = kms_response_get_body(response, &body_len);
 
-    if (should_retry_http(http_status)) {
+    if (kms->retry_enabled && should_retry_http(http_status)) {
         if (kms->attempts >= kms_max_attempts) {
             CLIENT_ERR("KMS request failed after %d retries", kms_max_attempts);
             goto fail;
@@ -702,7 +702,7 @@ static bool _ctx_done_azure_wrapkey_unwrapkey(mongocrypt_kms_ctx_t *kms) {
     }
     body = kms_response_get_body(response, &body_len);
 
-    if (should_retry_http(http_status)) {
+    if (kms->should_retry && should_retry_http(http_status)) {
         if (kms->attempts >= kms_max_attempts) {
             CLIENT_ERR("KMS request failed after %d retries", kms_max_attempts);
             goto fail;
@@ -807,7 +807,7 @@ static bool _ctx_done_gcp(mongocrypt_kms_ctx_t *kms, const char *json_field) {
     }
     body = kms_response_get_body(response, &body_len);
 
-    if (should_retry_http(http_status)) {
+    if (kms->should_retry && should_retry_http(http_status)) {
         if (kms->attempts >= kms_max_attempts) {
             CLIENT_ERR("KMS request failed after %d retries", kms_max_attempts);
             goto fail;
@@ -1074,6 +1074,25 @@ static bool _ctx_done_kmip_decrypt(mongocrypt_kms_ctx_t *kms_ctx) {
 done:
     kms_response_destroy(res);
     return ret;
+}
+
+bool mongocrypt_kms_ctx_fail(mongocrypt_kms_ctx_t *kms) {
+    if (!kms || !kms->retry_enabled) {
+        return false;
+    }
+    switch (kms->req_type) {
+        /* Not idempotent and can't be retried. */
+        case MONGOCRYPT_KMS_KMIP_REGISTER:
+        case MONGOCRYPT_KMS_KMIP_ACTIVATE:
+        case MONGOCRYPT_KMS_KMIP_CREATE:
+            return false;
+        default: {
+            if (kms->parser) {
+                kms_response_parser_reset(kms->parser);
+            }
+            return true;
+        }
+    }
 }
 
 bool mongocrypt_kms_ctx_feed(mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes) {

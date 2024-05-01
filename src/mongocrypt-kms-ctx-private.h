@@ -58,6 +58,7 @@ struct _mongocrypt_kms_ctx_t {
     char *kmsid;
     int64_t sleep_usec;
     int attempts;
+    bool retry_enabled;
     bool should_retry;
 };
 

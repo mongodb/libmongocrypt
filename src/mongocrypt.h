@@ -596,6 +596,17 @@ MONGOCRYPT_EXPORT
 bool mongocrypt_ctx_status(mongocrypt_ctx_t *ctx, mongocrypt_status_t *status);
 
 /**
+ * Enable or disable retry behavior.
+ *
+ * @param[in] ctx The @ref mongocrypt_ctx_t object.
+ * @param[in] retry A boolean indicating whether to retry operations.
+ *
+ * @returns A boolean indicating success.
+ */
+MONGOCRYPT_EXPORT
+bool mongocrypt_ctx_setopt_retry(mongocrypt_ctx_t *ctx, bool retry);
+
+/**
  * Set the key id to use for explicit encryption.
  *
  * It is an error to set both this and the key alt name.
@@ -1154,6 +1165,15 @@ int64_t mongocrypt_kms_ctx_usleep(mongocrypt_kms_ctx_t *kms);
  */
 MONGOCRYPT_EXPORT
 bool mongocrypt_kms_ctx_feed(mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes);
+
+/**
+ * Indicate a network-level failure.
+ *
+ * @param[in] kms The @ref mongocrypt_kms_ctx_t.
+ * @return A boolean indicating whether the failed request may be retried.
+ */
+MONGOCRYPT_EXPORT
+bool mongocrypt_kms_ctx_fail(mongocrypt_kms_ctx_t *kms);
 
 /**
  * Get the status associated with a @ref mongocrypt_kms_ctx_t object.
