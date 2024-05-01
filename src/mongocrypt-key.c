@@ -127,7 +127,7 @@ bool _mongocrypt_key_alt_name_from_iter(const bson_iter_t *iter_in,
 
 /* Takes ownership of all fields. */
 bool _mongocrypt_key_parse_owned(const bson_t *bson, _mongocrypt_key_doc_t *out, mongocrypt_status_t *status) {
-    bson_iter_t iter;
+    bson_iter_t iter = {0};
     bool has_id = false, has_key_material = false, has_status = false, has_creation_date = false,
          has_update_date = false, has_master_key = false;
 

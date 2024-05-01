@@ -1,0 +1,23 @@
+{
+    "bulkWrite": {
+        "$numberInt": "1"
+    },
+    "ops": [
+        {
+            "insert": 0,
+            "document": {
+                "plainText": "sample",
+                "encrypted": {
+                    "$numberInt": "123"
+                }
+            }
+        }
+    ],
+    "nsInfo": [
+        {
+            "ns": "db.test"
+        }
+    ],
+    "jsonSchema": {},
+    "isRemoteSchema": false
+}

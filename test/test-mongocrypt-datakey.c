@@ -16,6 +16,7 @@
 
 #include <mongocrypt.h>
 
+#include "kms_message/kms_b64.h"
 #include "mongocrypt-crypto-private.h"
 #include "mongocrypt-private.h"
 #include "test-mongocrypt.h"
@@ -210,7 +211,7 @@ static void _test_datakey_kms_per_ctx_credentials(_mongocrypt_tester_t *tester) 
     crypt = mongocrypt_new();
     mongocrypt_setopt_use_need_kms_credentials_state(crypt);
     ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, TEST_BSON("{'aws': {}}")), crypt);
-    ASSERT_OK(mongocrypt_init(crypt), crypt);
+    ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
     ctx = mongocrypt_ctx_new(crypt);
     ASSERT_OK(mongocrypt_ctx_setopt_masterkey_aws(ctx, "region", -1, "cmk", -1), ctx);
     ASSERT_OK(mongocrypt_ctx_setopt_masterkey_aws_endpoint(ctx, "example.com", -1), ctx);
@@ -258,7 +259,7 @@ static void _test_datakey_kms_per_ctx_credentials_not_requested(_mongocrypt_test
                                               TEST_BSON("{'aws': {}, 'azure': {'tenantId': '', 'clientId': "
                                                         "'', 'clientSecret': '' }}")),
               crypt);
-    ASSERT_OK(mongocrypt_init(crypt), crypt);
+    ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
     ctx = mongocrypt_ctx_new(crypt);
     ASSERT_OK(mongocrypt_ctx_setopt_key_encryption_key(ctx,
                                                        TEST_BSON("{'provider': 'azure', 'keyVaultEndpoint': "
@@ -280,13 +281,13 @@ static void _test_datakey_kms_per_ctx_credentials_local(_mongocrypt_tester_t *te
     mongocrypt_binary_t *bin;
     bson_t key_bson;
     bson_iter_t iter;
-    const char *local_kek = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
-                            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+    uint8_t local_kek_raw[MONGOCRYPT_KEY_LEN] = {0};
+    char *local_kek = kms_message_raw_to_b64(local_kek_raw, sizeof(local_kek_raw));
 
     crypt = mongocrypt_new();
     mongocrypt_setopt_use_need_kms_credentials_state(crypt);
     ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, TEST_BSON("{'local': {}}")), crypt);
-    ASSERT_OK(mongocrypt_init(crypt), crypt);
+    ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
     ctx = mongocrypt_ctx_new(crypt);
     ASSERT_OK(mongocrypt_ctx_setopt_key_encryption_key(ctx, TEST_BSON("{'provider': 'local' }")), ctx);
     ASSERT_OK(mongocrypt_ctx_datakey_init(ctx), ctx);
@@ -310,6 +311,7 @@ static void _test_datakey_kms_per_ctx_credentials_local(_mongocrypt_tester_t *te
     mongocrypt_binary_destroy(bin);
     mongocrypt_ctx_destroy(ctx);
     mongocrypt_destroy(crypt);
+    bson_free(local_kek);
 }
 
 static void _test_datakey_custom_key_material(_mongocrypt_tester_t *tester) {

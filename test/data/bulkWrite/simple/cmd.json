@@ -1,0 +1,20 @@
+{
+   "bulkWrite": 1,
+   "ops": [
+      {
+         "insert": 0,
+         "document": {
+            "plainText": "sample",
+            "encrypted": {
+               "$numberInt": "123"
+            }
+         }
+      }
+   ],
+   "nsInfo": [
+      {
+         "ns": "db.test"
+      }
+   ],
+   "$db": "admin"
+}

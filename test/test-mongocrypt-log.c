@@ -104,7 +104,7 @@ static void _test_no_log(_mongocrypt_tester_t *tester) {
     status = mongocrypt_status_new();
     crypt = mongocrypt_new();
     mongocrypt_setopt_kms_provider_aws(crypt, "example", -1, "example", -1);
-    ASSERT_OK(mongocrypt_init(crypt), crypt);
+    ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
     _mongocrypt_log(&crypt->log, MONGOCRYPT_LOG_LEVEL_FATAL, "Please don't log");
     mongocrypt_status_destroy(status);
     mongocrypt_destroy(crypt);

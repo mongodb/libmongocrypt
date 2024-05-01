@@ -16,19 +16,21 @@
 
 import sys
 
-PY3 = sys.version_info[0] == 3
+PY3 = sys.version_info[0] >= 3
 
 if PY3:
     from abc import ABC
+
     unicode_type = str
 else:
     from abc import ABCMeta as _ABCMeta
-    ABC = _ABCMeta('ABC', (object,), {})
-    unicode_type = unicode
+
+    ABC = _ABCMeta("ABC", (object,), {})
+    unicode_type = "unicode"
 
 
 def str_to_bytes(string):
     """Convert a str (or unicode) to bytes."""
     if isinstance(string, bytes):
         return string
-    return string.encode('utf-8')
+    return string.encode("utf-8")

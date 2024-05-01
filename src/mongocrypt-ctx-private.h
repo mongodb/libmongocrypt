@@ -39,12 +39,17 @@ typedef enum {
 typedef enum {
     MONGOCRYPT_INDEX_TYPE_NONE = 1,
     MONGOCRYPT_INDEX_TYPE_EQUALITY = 2,
-    MONGOCRYPT_INDEX_TYPE_RANGEPREVIEW = 3
+    MONGOCRYPT_INDEX_TYPE_RANGE = 3,
+    MONGOCRYPT_INDEX_TYPE_RANGEPREVIEW_DEPRECATED = 4
 } mongocrypt_index_type_t;
 
 const char *_mongocrypt_index_type_to_string(mongocrypt_index_type_t val);
 
-typedef enum { MONGOCRYPT_QUERY_TYPE_EQUALITY = 1, MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW = 2 } mongocrypt_query_type_t;
+typedef enum {
+    MONGOCRYPT_QUERY_TYPE_EQUALITY = 1,
+    MONGOCRYPT_QUERY_TYPE_RANGE = 2,
+    MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_DEPRECATED = 3
+} mongocrypt_query_type_t;
 
 const char *_mongocrypt_query_type_to_string(mongocrypt_query_type_t val);
 
@@ -84,6 +89,7 @@ typedef struct __mongocrypt_ctx_opts_t {
 
 /* All derived contexts may override these methods. */
 typedef struct {
+    const char *(*mongo_db_collinfo)(mongocrypt_ctx_t *ctx);
     bool (*mongo_op_collinfo)(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out);
     bool (*mongo_feed_collinfo)(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in);
     bool (*mongo_done_collinfo)(mongocrypt_ctx_t *ctx);
@@ -129,9 +135,22 @@ bool _mongocrypt_ctx_fail_w_msg(mongocrypt_ctx_t *ctx, const char *msg);
 typedef struct {
     mongocrypt_ctx_t parent;
     bool explicit;
-    char *coll_name;
-    char *db_name;
-    char *ns;
+
+    // `cmd_db` is the command database (appended as `$db`).
+    char *cmd_db;
+
+    // `target_ns` is the target namespace "<target_db>.<target_coll>" for the operation. May be associated with
+    // jsonSchema (CSFLE) or encryptedFields (QE). For `bulkWrite`, the target namespace database may differ from
+    // `cmd_db`.
+    char *target_ns;
+
+    // `target_db` is the target database for the operation. For `bulkWrite`, the target namespace database may differ
+    // from `cmd_db`. If `target_db` is NULL, the target namespace database is the same as `cmd_db`.
+    char *target_db;
+
+    // `target_coll` is the target namespace collection name.
+    char *target_coll;
+
     _mongocrypt_buffer_t list_collections_filter;
     _mongocrypt_buffer_t schema;
     /* TODO CDRIVER-3150: audit + rename these buffers.
@@ -156,13 +175,19 @@ typedef struct {
      * schema, and there were siblings. */
     bool collinfo_has_siblings;
     /* encrypted_field_config is set when:
-     * 1. <db_name>.<coll_name> is present in an encrypted_field_config_map.
+     * 1. `target_ns` is present in an encrypted_field_config_map.
      * 2. (TODO MONGOCRYPT-414) The collection has encryptedFields in the
      * response to listCollections. encrypted_field_config is true if and only if
      * encryption is using FLE 2.0.
+     * 3. The `bulkWrite` command is processed and needs an empty encryptedFields to be processed by query analysis.
+     * (`bulkWrite` does not support empty JSON schema).
      */
     _mongocrypt_buffer_t encrypted_field_config;
     mc_EncryptedFieldConfig_t efc;
+    // `used_empty_encryptedFields` is true if the collection has no JSON schema or encryptedFields,
+    // yet an empty encryptedFields was constructed to support query analysis.
+    // When true, an empty encryptedFields is sent to query analysis, but not appended to the final command.
+    bool used_empty_encryptedFields;
     /* bypass_query_analysis is set to true to skip the
      * MONGOCRYPT_CTX_NEED_MONGO_MARKINGS state. */
     bool bypass_query_analysis;

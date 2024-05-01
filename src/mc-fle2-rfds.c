@@ -70,7 +70,7 @@ static bool parse_and(const bson_t *in, bson_iter_t *out, mongocrypt_status_t *s
     BSON_ASSERT_PARAM(out);
     BSON_ASSERT(status || true);
 
-    bson_iter_t and;
+    bson_iter_t and = {0};
     if (!bson_iter_init(&and, in) || !bson_iter_next(&and) || 0 != strcmp(bson_iter_key(&and), "$and")) {
         ERR_WITH_BSON(in, "%s", "error unable to find '$and'");
         return false;
@@ -105,7 +105,7 @@ parse_aggregate_expression(const bson_t *orig, bson_iter_t *in, operator_value_t
     BSON_ASSERT_PARAM(out);
     BSON_ASSERT(status || true);
 
-    bson_iter_t array, value;
+    bson_iter_t array = {0}, value;
     const char *op_type_str = bson_iter_key(in);
     bool ok = false;
     const char *field;
@@ -162,7 +162,7 @@ parse_match_expression(const bson_t *orig, bson_iter_t *in, operator_value_t *ou
     BSON_ASSERT_PARAM(out);
     BSON_ASSERT(status || true);
 
-    bson_iter_t document, value;
+    bson_iter_t document = {0}, value;
     const char *op_type_str;
     bool ok = false;
     const char *field = bson_iter_key(in);
@@ -367,6 +367,10 @@ bool mc_makeRangeFindPlaceholder(mc_makeRangeFindPlaceholder_args_t *args,
             BSON_ASSERT(args->precision.value <= INT32_MAX);
             TRY(BSON_APPEND_INT32(edgesInfo, "precision", (int32_t)args->precision.value));
         }
+        if (args->trimFactor.set) {
+            BSON_ASSERT(args->trimFactor.value <= INT32_MAX);
+            TRY(BSON_APPEND_INT32(edgesInfo, "trimFactor", (int32_t)args->trimFactor.value));
+        }
         TRY(BSON_APPEND_DOCUMENT(v, "edgesInfo", edgesInfo));
     }
 
@@ -470,7 +474,8 @@ bool mc_FLE2RangeFindDriverSpec_to_placeholders(mc_FLE2RangeFindDriverSpec_t *sp
                                                .indexMax = indexMax,
                                                .precision = range_opts->precision,
                                                .maxContentionFactor = maxContentionFactor,
-                                               .sparsity = range_opts->sparsity};
+                                               .sparsity = range_opts->sparsity,
+                                               .trimFactor = range_opts->trimFactor};
 
     // First operator is the non-stub.
     if (!mc_makeRangeFindPlaceholder(&args, &p1, status)) {

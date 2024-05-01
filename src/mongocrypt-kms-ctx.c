@@ -14,10 +14,14 @@
  * limitations under the License.
  */
 
+#include "kms_message/kms_kmip_request.h"
 #include "mongocrypt-binary-private.h"
 #include "mongocrypt-buffer-private.h"
+#include "mongocrypt-crypto-private.h"
 #include "mongocrypt-ctx-private.h"
+#include "mongocrypt-endpoint-private.h"
 #include "mongocrypt-kms-ctx-private.h"
+#include "mongocrypt-log-private.h"
 #include "mongocrypt-opts-private.h"
 #include "mongocrypt-private.h"
 #include "mongocrypt-status-private.h"
@@ -118,7 +122,8 @@ _set_kms_crypto_hooks(_mongocrypt_crypto_t *crypto, ctx_with_status_t *ctx_with_
 
 static bool is_kms(_kms_request_type_t kms_type) {
     return kms_type == MONGOCRYPT_KMS_KMIP_REGISTER || kms_type == MONGOCRYPT_KMS_KMIP_ACTIVATE
-        || kms_type == MONGOCRYPT_KMS_KMIP_GET;
+        || kms_type == MONGOCRYPT_KMS_KMIP_GET || kms_type == MONGOCRYPT_KMS_KMIP_ENCRYPT
+        || kms_type == MONGOCRYPT_KMS_KMIP_DECRYPT || kms_type == MONGOCRYPT_KMS_KMIP_CREATE;
 }
 
 static void
@@ -852,6 +857,144 @@ done:
     return ret;
 }
 
+static bool _ctx_done_kmip_create(mongocrypt_kms_ctx_t *kms_ctx) {
+    BSON_ASSERT_PARAM(kms_ctx);
+
+    kms_response_t *res = NULL;
+
+    mongocrypt_status_t *status = kms_ctx->status;
+    bool ret = false;
+    char *uid;
+
+    res = kms_response_parser_get_response(kms_ctx->parser);
+    if (!res) {
+        CLIENT_ERR("Error getting KMIP response: %s", kms_response_parser_error(kms_ctx->parser));
+        goto done;
+    }
+
+    uid = kms_kmip_response_get_unique_identifier(res);
+    if (!uid) {
+        CLIENT_ERR("Error getting UniqueIdentifer from KMIP Create response: %s", kms_response_get_error(res));
+        goto done;
+    }
+
+    if (!_mongocrypt_buffer_steal_from_string(&kms_ctx->result, uid)) {
+        CLIENT_ERR("Error storing KMS UniqueIdentifer result");
+        bson_free(uid);
+        goto done;
+    }
+    ret = true;
+
+done:
+    kms_response_destroy(res);
+    return ret;
+}
+
+static bool _ctx_done_kmip_encrypt(mongocrypt_kms_ctx_t *kms_ctx) {
+    BSON_ASSERT_PARAM(kms_ctx);
+
+    kms_response_t *res = NULL;
+
+    mongocrypt_status_t *status = kms_ctx->status;
+    bool ret = false;
+    uint8_t *ciphertext;
+    size_t ciphertext_len;
+    uint8_t *iv;
+    size_t iv_len;
+    _mongocrypt_buffer_t data_buf, iv_buf;
+    _mongocrypt_buffer_init(&data_buf);
+    _mongocrypt_buffer_init(&iv_buf);
+
+    res = kms_response_parser_get_response(kms_ctx->parser);
+    if (!res) {
+        CLIENT_ERR("Error getting KMIP response: %s", kms_response_parser_error(kms_ctx->parser));
+        goto done;
+    }
+
+    ciphertext = kms_kmip_response_get_data(res, &ciphertext_len);
+    if (!ciphertext) {
+        CLIENT_ERR("Error getting data from KMIP Encrypt response: %s", kms_response_get_error(res));
+        goto done;
+    }
+
+    iv = kms_kmip_response_get_iv(res, &iv_len);
+    if (!iv) {
+        CLIENT_ERR("Error getting IV from KMIP Encrypt response: %s", kms_response_get_error(res));
+        bson_free(ciphertext);
+        goto done;
+    }
+
+    if (iv_len != MONGOCRYPT_IV_LEN) {
+        CLIENT_ERR("KMIP IV response has unexpected length: %zu", iv_len);
+        bson_free(ciphertext);
+        bson_free(iv);
+        goto done;
+    }
+
+    if (!_mongocrypt_buffer_steal_from_data_and_size(&data_buf, ciphertext, ciphertext_len)) {
+        CLIENT_ERR("Error storing KMS Encrypt result");
+        bson_free(ciphertext);
+        bson_free(iv);
+        goto done;
+    }
+
+    if (!_mongocrypt_buffer_steal_from_data_and_size(&iv_buf, iv, iv_len)) {
+        CLIENT_ERR("Error storing KMS Encrypt IV");
+        bson_free(ciphertext);
+        bson_free(iv);
+        goto done;
+    }
+
+    const _mongocrypt_buffer_t results_buf[2] = {iv_buf, data_buf};
+    if (!_mongocrypt_buffer_concat(&kms_ctx->result, results_buf, 2)) {
+        CLIENT_ERR("Error concatenating IV and ciphertext");
+        goto done;
+    }
+
+    ret = true;
+
+done:
+    kms_response_destroy(res);
+    _mongocrypt_buffer_cleanup(&iv_buf);
+    _mongocrypt_buffer_cleanup(&data_buf);
+    return ret;
+}
+
+static bool _ctx_done_kmip_decrypt(mongocrypt_kms_ctx_t *kms_ctx) {
+    BSON_ASSERT_PARAM(kms_ctx);
+
+    kms_response_t *res = NULL;
+
+    mongocrypt_status_t *status = kms_ctx->status;
+    bool ret = false;
+    uint8_t *ciphertext;
+    size_t ciphertext_len;
+
+    res = kms_response_parser_get_response(kms_ctx->parser);
+    if (!res) {
+        CLIENT_ERR("Error getting KMIP response: %s", kms_response_parser_error(kms_ctx->parser));
+        goto done;
+    }
+
+    ciphertext = kms_kmip_response_get_data(res, &ciphertext_len);
+    if (!ciphertext) {
+        CLIENT_ERR("Error getting data from KMIP Decrypt response: %s", kms_response_get_error(res));
+        goto done;
+    }
+
+    if (!_mongocrypt_buffer_steal_from_data_and_size(&kms_ctx->result, ciphertext, ciphertext_len)) {
+        CLIENT_ERR("Error storing KMS Decrypt result");
+        bson_free(ciphertext);
+        goto done;
+    }
+
+    ret = true;
+
+done:
+    kms_response_destroy(res);
+    return ret;
+}
+
 bool mongocrypt_kms_ctx_feed(mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes) {
     if (!kms) {
         return false;
@@ -915,6 +1058,9 @@ bool mongocrypt_kms_ctx_feed(mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *byt
         case MONGOCRYPT_KMS_KMIP_REGISTER: return _ctx_done_kmip_register(kms);
         case MONGOCRYPT_KMS_KMIP_ACTIVATE: return _ctx_done_kmip_activate(kms);
         case MONGOCRYPT_KMS_KMIP_GET: return _ctx_done_kmip_get(kms);
+        case MONGOCRYPT_KMS_KMIP_ENCRYPT: return _ctx_done_kmip_encrypt(kms);
+        case MONGOCRYPT_KMS_KMIP_DECRYPT: return _ctx_done_kmip_decrypt(kms);
+        case MONGOCRYPT_KMS_KMIP_CREATE: return _ctx_done_kmip_create(kms);
         }
     }
     return true;
@@ -1570,6 +1716,129 @@ bool _mongocrypt_kms_ctx_init_kmip_get(mongocrypt_kms_ctx_t *kms_ctx,
     }
 
     reqdata = kms_request_to_bytes(kms_ctx->req, &reqlen);
+    if (!_mongocrypt_buffer_copy_from_data_and_size(&kms_ctx->msg, reqdata, reqlen)) {
+        CLIENT_ERR("Error storing KMS request payload");
+        goto done;
+    }
+
+    ret = true;
+done:
+    return ret;
+}
+
+bool _mongocrypt_kms_ctx_init_kmip_create(mongocrypt_kms_ctx_t *kms_ctx,
+                                          const _mongocrypt_endpoint_t *endpoint,
+                                          const char *kmsid,
+                                          _mongocrypt_log_t *log) {
+    BSON_ASSERT_PARAM(kms_ctx);
+    BSON_ASSERT_PARAM(endpoint);
+    bool ret = false;
+
+    _init_common(kms_ctx, log, MONGOCRYPT_KMS_KMIP_CREATE, kmsid);
+    mongocrypt_status_t *status = kms_ctx->status;
+    kms_ctx->endpoint = bson_strdup(endpoint->host_and_port);
+    _mongocrypt_apply_default_port(&kms_ctx->endpoint, DEFAULT_KMIP_PORT);
+
+    kms_ctx->req = kms_kmip_request_create_new(NULL /* reserved */);
+
+    if (kms_request_get_error(kms_ctx->req)) {
+        CLIENT_ERR("Error creating KMIP create request: %s", kms_request_get_error(kms_ctx->req));
+        goto done;
+    }
+
+    size_t reqlen;
+    const uint8_t *reqdata = kms_request_to_bytes(kms_ctx->req, &reqlen);
+    if (!_mongocrypt_buffer_copy_from_data_and_size(&kms_ctx->msg, reqdata, reqlen)) {
+        CLIENT_ERR("Error storing KMS request payload");
+        goto done;
+    }
+
+    ret = true;
+done:
+    return ret;
+}
+
+bool _mongocrypt_kms_ctx_init_kmip_encrypt(mongocrypt_kms_ctx_t *kms_ctx,
+                                           const _mongocrypt_endpoint_t *endpoint,
+                                           const char *unique_identifier,
+                                           const char *kmsid,
+                                           _mongocrypt_buffer_t *plaintext,
+                                           _mongocrypt_log_t *log) {
+    BSON_ASSERT_PARAM(kms_ctx);
+    BSON_ASSERT_PARAM(endpoint);
+    BSON_ASSERT_PARAM(plaintext);
+    bool ret = false;
+
+    _init_common(kms_ctx, log, MONGOCRYPT_KMS_KMIP_ENCRYPT, kmsid);
+    mongocrypt_status_t *status = kms_ctx->status;
+    kms_ctx->endpoint = bson_strdup(endpoint->host_and_port);
+    _mongocrypt_apply_default_port(&kms_ctx->endpoint, DEFAULT_KMIP_PORT);
+
+    kms_ctx->req =
+        kms_kmip_request_encrypt_new(NULL /* reserved */, unique_identifier, plaintext->data, plaintext->len);
+
+    if (kms_request_get_error(kms_ctx->req)) {
+        CLIENT_ERR("Error creating KMIP encrypt request: %s", kms_request_get_error(kms_ctx->req));
+        goto done;
+    }
+
+    size_t reqlen;
+    const uint8_t *reqdata = kms_request_to_bytes(kms_ctx->req, &reqlen);
+    if (!_mongocrypt_buffer_copy_from_data_and_size(&kms_ctx->msg, reqdata, reqlen)) {
+        CLIENT_ERR("Error storing KMS request payload");
+        goto done;
+    }
+
+    ret = true;
+done:
+    return ret;
+}
+
+bool _mongocrypt_kms_ctx_init_kmip_decrypt(mongocrypt_kms_ctx_t *kms_ctx,
+                                           const _mongocrypt_endpoint_t *endpoint,
+                                           const char *kmsid,
+                                           _mongocrypt_key_doc_t *key,
+                                           _mongocrypt_log_t *log) {
+    BSON_ASSERT_PARAM(kms_ctx);
+    BSON_ASSERT_PARAM(endpoint);
+    BSON_ASSERT_PARAM(key);
+    bool ret = false;
+
+    _init_common(kms_ctx, log, MONGOCRYPT_KMS_KMIP_DECRYPT, kmsid);
+    mongocrypt_status_t *status = kms_ctx->status;
+    kms_ctx->endpoint = bson_strdup(endpoint->host_and_port);
+    _mongocrypt_apply_default_port(&kms_ctx->endpoint, DEFAULT_KMIP_PORT);
+
+    _mongocrypt_buffer_t iv;
+    if (!_mongocrypt_buffer_from_subrange(&iv, &key->key_material, 0, MONGOCRYPT_IV_LEN)) {
+        CLIENT_ERR("Error getting IV from key material");
+        goto done;
+    }
+    _mongocrypt_buffer_t ciphertext;
+    if (!_mongocrypt_buffer_from_subrange(&ciphertext,
+                                          &key->key_material,
+                                          MONGOCRYPT_IV_LEN,
+                                          key->key_material.len - MONGOCRYPT_IV_LEN)) {
+        CLIENT_ERR("Error getting ciphertext from key material");
+        goto done;
+    }
+
+    BSON_ASSERT(key->kek.kms_provider == MONGOCRYPT_KMS_PROVIDER_KMIP);
+    BSON_ASSERT(key->kek.provider.kmip.delegated);
+    kms_ctx->req = kms_kmip_request_decrypt_new(NULL /* reserved */,
+                                                key->kek.provider.kmip.key_id,
+                                                ciphertext.data,
+                                                ciphertext.len,
+                                                iv.data,
+                                                iv.len);
+
+    if (kms_request_get_error(kms_ctx->req)) {
+        CLIENT_ERR("Error creating KMIP decrypt request: %s", kms_request_get_error(kms_ctx->req));
+        goto done;
+    }
+
+    size_t reqlen;
+    const uint8_t *reqdata = kms_request_to_bytes(kms_ctx->req, &reqlen);
     if (!_mongocrypt_buffer_copy_from_data_and_size(&kms_ctx->msg, reqdata, reqlen)) {
         CLIENT_ERR("Error storing KMS request payload");
         goto done;

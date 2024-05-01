@@ -1,0 +1,44 @@
+{
+    "name": "test",
+    "type": "collection",
+    "options": {
+        "encryptedFields": {
+            "escCollection": "enxcol_.test.esc",
+            "ecocCollection": "enxcol_.test.ecoc",
+            "fields": [
+                {
+                    "keyId": {
+                        "$binary": {
+                            "base64": "YWFhYWFhYWFhYWFhYWFhYQ==",
+                            "subType": "04"
+                        }
+                    },
+                    "path": "encrypted",
+                    "bsonType": "int",
+                    "queries": {
+                        "queryType": "equality",
+                        "contention": {
+                            "$numberLong": "0"
+                        }
+                    }
+                }
+            ]
+        }
+    },
+    "info": {
+        "readOnly": false,
+        "uuid": {
+            "$binary": {
+                "base64": "4z9fIUN+Sh2WeH/aySC+OA==",
+                "subType": "04"
+            }
+        }
+    },
+    "idIndex": {
+        "v": 2,
+        "key": {
+            "_id": 1
+        },
+        "name": "_id_"
+    }
+}

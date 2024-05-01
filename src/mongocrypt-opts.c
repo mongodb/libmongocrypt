@@ -35,6 +35,9 @@ void _mongocrypt_opts_kms_providers_init(_mongocrypt_opts_kms_providers_t *kms_p
 void _mongocrypt_opts_init(_mongocrypt_opts_t *opts) {
     BSON_ASSERT_PARAM(opts);
     memset(opts, 0, sizeof(*opts));
+#ifdef QE_USE_RANGE_V2
+    opts->use_range_v2 = true;
+#endif
     _mongocrypt_opts_kms_providers_init(&opts->kms_providers);
 }
 
@@ -344,6 +347,33 @@ bool _mongocrypt_parse_optional_utf8(const bson_t *bson, const char *dotkey, cha
     }
 
     *out = bson_strdup(bson_iter_utf8(&child, NULL));
+    return true;
+}
+
+bool _mongocrypt_parse_optional_bool(const bson_t *bson, const char *dotkey, bool *out, mongocrypt_status_t *status) {
+    bson_iter_t iter;
+    bson_iter_t child;
+
+    BSON_ASSERT_PARAM(bson);
+    BSON_ASSERT_PARAM(dotkey);
+    BSON_ASSERT_PARAM(out);
+
+    *out = false;
+
+    if (!bson_iter_init(&iter, bson)) {
+        CLIENT_ERR("invalid BSON");
+        return false;
+    }
+    if (!bson_iter_find_descendant(&iter, dotkey, &child)) {
+        /* Not found. Not an error. */
+        return true;
+    }
+    if (!BSON_ITER_HOLDS_BOOL(&child)) {
+        CLIENT_ERR("expected bool %s", dotkey);
+        return false;
+    }
+
+    *out = bson_iter_bool(&child);
     return true;
 }
 

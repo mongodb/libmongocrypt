@@ -196,7 +196,7 @@ bool mc_FLE2IndexedEncryptedValueV2_add_S_Key(_mongocrypt_crypto_t *crypto,
     BSON_ASSERT(bytes_written == DecryptedServerEncryptedValueLen);
     if (!_mongocrypt_buffer_from_subrange(&iev->K_KeyId, &iev->DecryptedServerEncryptedValue, 0, UUID_LEN)) {
         CLIENT_ERR("Error creating K_KeyId subrange from DecryptedServerEncryptedValue");
-        return false;
+        goto fail;
     }
     iev->K_KeyId.subtype = BSON_SUBTYPE_UUID;
 
@@ -207,7 +207,7 @@ bool mc_FLE2IndexedEncryptedValueV2_add_S_Key(_mongocrypt_crypto_t *crypto,
                                           iev->DecryptedServerEncryptedValue.len - UUID_LEN)) {
         CLIENT_ERR("Error creating ClientEncryptedValue subrange from "
                    "DecryptedServerEncryptedValue");
-        return false;
+        goto fail;
     }
 
     iev->ClientEncryptedValueDecoded = true;

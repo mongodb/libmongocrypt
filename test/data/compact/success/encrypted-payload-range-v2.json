@@ -1,0 +1,104 @@
+{
+    "compactStructuredEncryptionData": "test",
+    "encryptionInformation": {
+        "type": {
+            "$numberInt": "1"
+        },
+        "schema": {
+            "db.test": {
+                "escCollection": "esc",
+                "eccCollection": "ecc",
+                "ecocCollection": "ecoc",
+                "fields": [
+                    {
+                        "keyId": {
+                            "$binary": {
+                                "base64": "EjRWeBI0mHYSNBI0VniQEg==",
+                                "subType": "04"
+                            }
+                        },
+                        "path": "encrypted",
+                        "bsonType": "string",
+                        "queries": {
+                            "queryType": "equality",
+                            "contention": 0
+                        }
+                    },
+                    {
+                        "keyId": {
+                            "$binary": {
+                                "base64": "q83vqxI0mHYSNBI0VniQEg==",
+                                "subType": "04"
+                            }
+                        },
+                        "path": "nested.encrypted",
+                        "bsonType": "string",
+                        "queries": {
+                            "queryType": "equality",
+                            "contention": 0
+                        }
+                    },
+                    {
+                        "keyId": {
+                            "$binary": {
+                                "base64": "EjRWeBI0mHYSNBI0VniQEw==",
+                                "subType": "04"
+                            }
+                        },
+                        "path": "nested.notindexed",
+                        "bsonType": "string"
+                    },
+                    {
+                        "keyId": {
+                            "$binary": {
+                                "base64": "EjRWeBI0mHYSNBI0VniQEw==",
+                                "subType": "04"
+                            }
+                        },
+                        "path": "rangeField",
+                        "bsonType": "int",
+                        "queries": {
+                            "queryType": "range",
+                            "contention": 0,
+                            "sparsity": 1
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    "compactionTokens": {
+        "rangeField": {
+            "ecoc": {
+                "$binary": {
+                    "base64": "27J6DZqcjkRzZ3lWEsxH7CsQHr4CZirrGmuPS8ZkRO0=",
+                    "subType": "00"
+                }
+            },
+            "anchorPaddingToken": {
+                "$binary": {
+                    "base64": "hjezd/cwUfInCg0WjvFlzdn9/BQa8upEyogsU5pMWMU=",
+                    "subType": "00"
+                }
+            }
+       },
+       "nested.notindexed": {
+          "$binary": {
+             "base64": "27J6DZqcjkRzZ3lWEsxH7CsQHr4CZirrGmuPS8ZkRO0=",
+             "subType": "00"
+          }
+       },
+       "nested.encrypted": {
+          "$binary": {
+             "base64": "SWO8WEoZ2r2Kx/muQKb7+COizy85nIIUFiHh4K9kcvA=",
+             "subType": "00"
+          }
+       },
+       "encrypted": {
+          "$binary": {
+             "base64": "noN+05JsuO1oDg59yypIGj45i+eFH6HOTXOPpeZ//Mk=",
+             "subType": "00"
+          }
+       }
+    }
+ }

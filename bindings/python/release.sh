@@ -16,9 +16,9 @@ set -o xtrace   # Write all commands first to stderr
 set -o errexit  # Exit the script with error if any of the commands fail
 
 # The libmongocrypt git revision release to embed in our wheels.
-REVISION=$(git rev-list -n 1 1.8.4)
+REVISION=$(git rev-list -n 1 1.9.0)
 # The libmongocrypt release branch.
-BRANCH="r1.8"
+BRANCH="r1.9"
 # The python executable to use.
 PYTHON=${PYTHON:-python}
 
@@ -27,23 +27,25 @@ rm -rf dist .venv build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymon
 
 function get_libmongocrypt() {
     TARGET=$1
-    NOCRYPTO_SO=$2
+    MONGOCRYPT_SO=$2
     rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
     curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt-release/$TARGET/${BRANCH}/${REVISION}/libmongocrypt.tar.gz
     mkdir libmongocrypt
     tar xzf libmongocrypt.tar.gz -C ./libmongocrypt
-    chmod +x ${NOCRYPTO_SO}
-    cp ${NOCRYPTO_SO} pymongocrypt/
+    chmod +x ${MONGOCRYPT_SO}
+    cp ${MONGOCRYPT_SO} pymongocrypt/
     rm -rf ./libmongocrypt libmongocrypt.tar.gz
 }
 
 function build_wheel() {
+    python -m pip install unasync
     python -m pip install --upgrade pip build
     python -m build --wheel
     rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
 }
 
 function build_manylinux_wheel() {
+    python -m pip install unasync
     docker pull $1
     docker run --rm -v `pwd`:/python $1 /python/build-manylinux-wheel.sh
     # Sudo is needed to remove the files created by docker.
@@ -66,29 +68,19 @@ if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
     dos2unix .venv/Scripts/activate || true
     . ./.venv/Scripts/activate
 
-    get_libmongocrypt windows-test libmongocrypt/nocrypto/bin/mongocrypt.dll
+    # Use crypto-enabled libmongocrypt.
+    get_libmongocrypt windows-test libmongocrypt/bin/mongocrypt.dll
     build_wheel
     test_dist dist/*.whl
-fi 
+fi
 
 # Handle MacOS dists.
 if [ "Darwin" = "$(uname -s)" ]; then
     $PYTHON -m venv .venv
     . .venv/bin/activate
 
-    # Build intel wheel for Python 3.7.
-    get_libmongocrypt macos_x86_64 libmongocrypt/nocrypto/lib/libmongocrypt.dylib
-    # See https://github.com/pypa/cibuildwheel/blob/a3e5b541dc3111166a3abdbbc90ecb195c8cb9e2/cibuildwheel/macos.py#L247
-    # for information on these environment variables.
-    export MACOSX_DEPLOYMENT_TARGET=10.14
-    export _PYTHON_HOST_PLATFORM=macosx-10.9-x86_64
-    build_wheel
-    if [ "$(uname -m)" != "arm64" ]; then
-        test_dist dist/*.whl
-    fi
-    
     # Build universal2 wheel.
-    get_libmongocrypt macos libmongocrypt/nocrypto/lib/libmongocrypt.dylib
+    get_libmongocrypt macos libmongocrypt/lib/libmongocrypt.dylib
     export MACOSX_DEPLOYMENT_TARGET=11.0
     export _PYTHON_HOST_PLATFORM=macosx-11.0-universal2
     build_wheel

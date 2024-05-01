@@ -23,6 +23,7 @@
 #include "mongocrypt-compat.h"
 #include "mongocrypt-crypto-private.h"
 #include "mongocrypt-endpoint-private.h"
+#include "mongocrypt-key-private.h"
 #include "mongocrypt-opts-private.h"
 #include "mongocrypt.h"
 
@@ -39,7 +40,10 @@ typedef enum {
     MONGOCRYPT_KMS_GCP_DECRYPT,
     MONGOCRYPT_KMS_KMIP_REGISTER,
     MONGOCRYPT_KMS_KMIP_ACTIVATE,
-    MONGOCRYPT_KMS_KMIP_GET
+    MONGOCRYPT_KMS_KMIP_GET,
+    MONGOCRYPT_KMS_KMIP_CREATE,
+    MONGOCRYPT_KMS_KMIP_ENCRYPT,
+    MONGOCRYPT_KMS_KMIP_DECRYPT,
 } _kms_request_type_t;
 
 struct _mongocrypt_kms_ctx_t {
@@ -135,5 +139,23 @@ bool _mongocrypt_kms_ctx_init_kmip_get(mongocrypt_kms_ctx_t *kms,
                                        const char *unique_identifier,
                                        const char *kmsid,
                                        _mongocrypt_log_t *log) MONGOCRYPT_WARN_UNUSED_RESULT;
+
+bool _mongocrypt_kms_ctx_init_kmip_create(mongocrypt_kms_ctx_t *kms,
+                                          const _mongocrypt_endpoint_t *endpoint,
+                                          const char *kmsid,
+                                          _mongocrypt_log_t *log);
+
+bool _mongocrypt_kms_ctx_init_kmip_encrypt(mongocrypt_kms_ctx_t *kms,
+                                           const _mongocrypt_endpoint_t *endpoint,
+                                           const char *unique_identifier,
+                                           const char *kmsid,
+                                           _mongocrypt_buffer_t *plaintext,
+                                           _mongocrypt_log_t *log);
+
+bool _mongocrypt_kms_ctx_init_kmip_decrypt(mongocrypt_kms_ctx_t *kms,
+                                           const _mongocrypt_endpoint_t *endpoint,
+                                           const char *kmsid,
+                                           _mongocrypt_key_doc_t *key,
+                                           _mongocrypt_log_t *log);
 
 #endif /* MONGOCRYPT_KMX_CTX_PRIVATE_H */

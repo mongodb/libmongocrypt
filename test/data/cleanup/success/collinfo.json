@@ -41,6 +41,21 @@
                     },
                     "path": "nested.notindexed",
                     "bsonType": "string"
+                },
+                {
+                    "keyId": {
+                        "$binary": {
+                            "base64": "EjRWeBI0mHYSNBI0VniQEw==",
+                            "subType": "04"
+                        }
+                    },
+                    "path": "rangeField",
+                    "bsonType": "int",
+                    "queries": {
+                        "queryType": "range",
+                        "contention": 0,
+                        "sparsity": 1
+                    }
                 }
             ]
         }

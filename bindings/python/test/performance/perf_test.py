@@ -36,8 +36,8 @@ sys.path[0:0] = [""]
 from test.test_mongocrypt import MockCallback
 
 from pymongocrypt.binding import lib, libmongocrypt_version
-from pymongocrypt.explicit_encrypter import ExplicitEncrypter
 from pymongocrypt.mongocrypt import MongoCrypt, MongoCryptOptions
+from pymongocrypt.synchronous.explicit_encrypter import ExplicitEncrypter
 from pymongocrypt.version import __version__
 
 NUM_ITERATIONS = 10
@@ -132,7 +132,9 @@ class TestBulkDecryption(unittest.TestCase):
                 self.results = []
                 for _ in range(NUM_ITERATIONS):
                     start = time.monotonic()
-                    thread_results = list(executor.map(self.do_task, [encrypted] * n_threads))
+                    thread_results = list(
+                        executor.map(self.do_task, [encrypted] * n_threads)
+                    )
                     interval = time.monotonic() - start
                     self.results.append(sum(thread_results) / interval)
             median = self.percentile(50)
@@ -157,5 +159,7 @@ class TestBulkDecryption(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    print(f"Running benchmark with pymongocrypt: {__version__} libmongocrypt: {libmongocrypt_version()}")
+    print(
+        f"Running benchmark with pymongocrypt: {__version__} libmongocrypt: {libmongocrypt_version()}"
+    )
     unittest.main()

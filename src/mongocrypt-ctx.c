@@ -258,8 +258,15 @@ bool mongocrypt_ctx_setopt_algorithm(mongocrypt_ctx_t *ctx, const char *algorith
     } else if (mstr_eq_ignore_case(algo_str, mstrv_lit(MONGOCRYPT_ALGORITHM_UNINDEXED_STR))) {
         ctx->opts.index_type.value = MONGOCRYPT_INDEX_TYPE_NONE;
         ctx->opts.index_type.set = true;
-    } else if (mstr_eq_ignore_case(algo_str, mstrv_lit(MONGOCRYPT_ALGORITHM_RANGEPREVIEW_STR))) {
-        ctx->opts.index_type.value = MONGOCRYPT_INDEX_TYPE_RANGEPREVIEW;
+    } else if (mstr_eq_ignore_case(algo_str, mstrv_lit(MONGOCRYPT_ALGORITHM_RANGE_STR))) {
+        ctx->opts.index_type.value = MONGOCRYPT_INDEX_TYPE_RANGE;
+        ctx->opts.index_type.set = true;
+    } else if (mstr_eq_ignore_case(algo_str, mstrv_lit(MONGOCRYPT_ALGORITHM_RANGEPREVIEW_DEPRECATED_STR))) {
+        if (ctx->crypt->opts.use_range_v2) {
+            _mongocrypt_ctx_fail_w_msg(ctx, "Algorithm 'rangePreview' is deprecated, please use 'range'");
+            return false;
+        }
+        ctx->opts.index_type.value = MONGOCRYPT_INDEX_TYPE_RANGEPREVIEW_DEPRECATED;
         ctx->opts.index_type.set = true;
     } else {
         char *error = bson_strdup_printf("unsupported algorithm string \"%.*s\"",
@@ -379,6 +386,7 @@ bool mongocrypt_ctx_mongo_op(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
     }
 
     switch (ctx->state) {
+    case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB:
     case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO: CHECK_AND_CALL(mongo_op_collinfo, ctx, out);
     case MONGOCRYPT_CTX_NEED_MONGO_MARKINGS: CHECK_AND_CALL(mongo_op_markings, ctx, out);
     case MONGOCRYPT_CTX_NEED_MONGO_KEYS: CHECK_AND_CALL(mongo_op_keys, ctx, out);
@@ -388,6 +396,38 @@ bool mongocrypt_ctx_mongo_op(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
     case MONGOCRYPT_CTX_NEED_KMS:
     case MONGOCRYPT_CTX_READY:
     default: return _mongocrypt_ctx_fail_w_msg(ctx, "wrong state");
+    }
+}
+
+const char *mongocrypt_ctx_mongo_db(mongocrypt_ctx_t *ctx) {
+    if (!ctx) {
+        return NULL;
+    }
+    if (!ctx->initialized) {
+        _mongocrypt_ctx_fail_w_msg(ctx, "ctx NULL or uninitialized");
+        return NULL;
+    }
+
+    switch (ctx->state) {
+    case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB: {
+        if (!ctx->vtable.mongo_db_collinfo) {
+            _mongocrypt_ctx_fail_w_msg(ctx, "not applicable to context");
+            return NULL;
+        }
+        return ctx->vtable.mongo_db_collinfo(ctx);
+    }
+    case MONGOCRYPT_CTX_ERROR: return false;
+    case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO:
+    case MONGOCRYPT_CTX_NEED_MONGO_MARKINGS:
+    case MONGOCRYPT_CTX_NEED_MONGO_KEYS:
+    case MONGOCRYPT_CTX_DONE:
+    case MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS:
+    case MONGOCRYPT_CTX_NEED_KMS:
+    case MONGOCRYPT_CTX_READY:
+    default: {
+        _mongocrypt_ctx_fail_w_msg(ctx, "wrong state");
+        return NULL;
+    }
     }
 }
 
@@ -412,6 +452,7 @@ bool mongocrypt_ctx_mongo_feed(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in) {
     }
 
     switch (ctx->state) {
+    case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB:
     case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO: CHECK_AND_CALL(mongo_feed_collinfo, ctx, in);
     case MONGOCRYPT_CTX_NEED_MONGO_MARKINGS: CHECK_AND_CALL(mongo_feed_markings, ctx, in);
     case MONGOCRYPT_CTX_NEED_MONGO_KEYS: CHECK_AND_CALL(mongo_feed_keys, ctx, in);
@@ -433,6 +474,7 @@ bool mongocrypt_ctx_mongo_done(mongocrypt_ctx_t *ctx) {
     }
 
     switch (ctx->state) {
+    case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB:
     case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO: CHECK_AND_CALL(mongo_done_collinfo, ctx);
     case MONGOCRYPT_CTX_NEED_MONGO_MARKINGS: CHECK_AND_CALL(mongo_done_markings, ctx);
     case MONGOCRYPT_CTX_NEED_MONGO_KEYS: CHECK_AND_CALL(mongo_done_keys, ctx);
@@ -476,6 +518,7 @@ mongocrypt_kms_ctx_t *mongocrypt_ctx_next_kms_ctx(mongocrypt_ctx_t *ctx) {
     case MONGOCRYPT_CTX_ERROR: return NULL;
     case MONGOCRYPT_CTX_DONE:
     case MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS:
+    case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB:
     case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO:
     case MONGOCRYPT_CTX_NEED_MONGO_KEYS:
     case MONGOCRYPT_CTX_NEED_MONGO_MARKINGS:
@@ -547,6 +590,7 @@ bool mongocrypt_ctx_kms_done(mongocrypt_ctx_t *ctx) {
     case MONGOCRYPT_CTX_ERROR: return false;
     case MONGOCRYPT_CTX_DONE:
     case MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS:
+    case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB:
     case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO:
     case MONGOCRYPT_CTX_NEED_MONGO_KEYS:
     case MONGOCRYPT_CTX_NEED_MONGO_MARKINGS:
@@ -577,6 +621,7 @@ bool mongocrypt_ctx_finalize(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
     case MONGOCRYPT_CTX_DONE:
     case MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS:
     case MONGOCRYPT_CTX_NEED_KMS:
+    case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB:
     case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO:
     case MONGOCRYPT_CTX_NEED_MONGO_KEYS:
     case MONGOCRYPT_CTX_NEED_MONGO_MARKINGS:
@@ -1016,8 +1061,15 @@ bool mongocrypt_ctx_setopt_query_type(mongocrypt_ctx_t *ctx, const char *query_t
     if (mstr_eq_ignore_case(qt_str, mstrv_lit(MONGOCRYPT_QUERY_TYPE_EQUALITY_STR))) {
         ctx->opts.query_type.value = MONGOCRYPT_QUERY_TYPE_EQUALITY;
         ctx->opts.query_type.set = true;
-    } else if (mstr_eq_ignore_case(qt_str, mstrv_lit(MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_STR))) {
-        ctx->opts.query_type.value = MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW;
+    } else if (mstr_eq_ignore_case(qt_str, mstrv_lit(MONGOCRYPT_QUERY_TYPE_RANGE_STR))) {
+        ctx->opts.query_type.value = MONGOCRYPT_QUERY_TYPE_RANGE;
+        ctx->opts.query_type.set = true;
+    } else if (mstr_eq_ignore_case(qt_str, mstrv_lit(MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_DEPRECATED_STR))) {
+        if (ctx->crypt->opts.use_range_v2) {
+            _mongocrypt_ctx_fail_w_msg(ctx, "Query type 'rangePreview' is deprecated, please use 'range'");
+            return false;
+        }
+        ctx->opts.query_type.value = MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_DEPRECATED;
         ctx->opts.query_type.set = true;
     } else {
         /* don't check if qt_str.len fits in int; we want the diagnostic output */
@@ -1035,7 +1087,8 @@ const char *_mongocrypt_index_type_to_string(mongocrypt_index_type_t val) {
     switch (val) {
     case MONGOCRYPT_INDEX_TYPE_NONE: return "None";
     case MONGOCRYPT_INDEX_TYPE_EQUALITY: return "Equality";
-    case MONGOCRYPT_INDEX_TYPE_RANGEPREVIEW: return "RangePreview";
+    case MONGOCRYPT_INDEX_TYPE_RANGE: return "Range";
+    case MONGOCRYPT_INDEX_TYPE_RANGEPREVIEW_DEPRECATED: return "RangePreview";
     default: return "Unknown";
     }
 }
@@ -1043,7 +1096,8 @@ const char *_mongocrypt_index_type_to_string(mongocrypt_index_type_t val) {
 const char *_mongocrypt_query_type_to_string(mongocrypt_query_type_t val) {
     switch (val) {
     case MONGOCRYPT_QUERY_TYPE_EQUALITY: return "Equality";
-    case MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW: return "RangePreview";
+    case MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_DEPRECATED: return "RangePreview";
+    case MONGOCRYPT_QUERY_TYPE_RANGE: return "Range";
     default: return "Unknown";
     }
 }

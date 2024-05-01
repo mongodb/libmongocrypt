@@ -503,16 +503,6 @@ tasks:
       vars: { PYTHON: /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 }
     - func: "upload python release"
 
-- name: "release-python-macos-1014"
-  tags: ["release_python_tag"]
-  run_on: macos-1014
-  commands:
-    - func: "fetch source"
-    - func: "build python release"
-      vars:
-        PYTHON: /Library/Frameworks/Python.framework/Versions/3.7/bin/python3
-    - func: "upload python release"
-
 - name: "release-python-linux"
   tags: ["release_python_tag"]
   run_on: ubuntu2004-large
@@ -520,7 +510,7 @@ tasks:
   commands:
     - func: "fetch source"
     - func: "build python release"
-      vars: { PYTHON: /opt/python/3.7/bin/python3 }
+      vars: { PYTHON: /opt/python/3.8/bin/python3 }
     - func: "upload python release"
 
 - name: "release-python-windows"
@@ -529,7 +519,7 @@ tasks:
   commands:
     - func: "fetch source"
     - func: "build python release"
-      vars: { PYTHON: C:/python/Python37/python.exe }
+      vars: { PYTHON: C:/python/Python38/python.exe }
     - func: "upload python release"
 
 - name: "release-python-combine"
@@ -1084,7 +1074,6 @@ buildvariants:
   - build-and-test-node
   - build-and-publish-node
   - build-and-test-csharp
-  - test-python
   - test-java
 - name: rhel72-zseries-test
   display_name: "RHEL 7.2 on zSeries"
