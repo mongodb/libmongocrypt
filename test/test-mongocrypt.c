@@ -461,6 +461,7 @@ mongocrypt_t *_mongocrypt_tester_mongocrypt(tester_mongocrypt_flags flags) {
     crypt = mongocrypt_new();
     mongocrypt_setopt_log_handler(crypt, _mongocrypt_stdout_log_fn, NULL);
     mongocrypt_setopt_kms_provider_aws(crypt, "example", -1, "example", -1);
+    mongocrypt_setopt_retry(crypt, true);
     localkey = mongocrypt_binary_new_from_data((uint8_t *)localkey_data, sizeof localkey_data);
     mongocrypt_setopt_kms_provider_local(crypt, localkey);
     mongocrypt_binary_destroy(localkey);

@@ -68,15 +68,6 @@ _set_binary_opt(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *binary, _mongocrypt_
     return true;
 }
 
-bool mongocrypt_ctx_setopt_retry(mongocrypt_ctx_t *ctx, bool retry) {
-    if (!ctx) {
-        return false;
-    }
-
-    ctx->opts.retry_enabled = retry;
-    return true;
-}
-
 bool mongocrypt_ctx_setopt_key_id(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *key_id) {
     if (!ctx) {
         return false;
@@ -316,7 +307,7 @@ mongocrypt_ctx_t *mongocrypt_ctx_new(mongocrypt_t *crypt) {
     ctx->crypt = crypt;
     ctx->status = mongocrypt_status_new();
     ctx->opts.algorithm = MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE;
-    ctx->opts.retry_enabled = false;
+    ctx->opts.retry_enabled = crypt->retry_enabled;
     ctx->state = MONGOCRYPT_CTX_DONE;
     return ctx;
 }
@@ -522,7 +513,7 @@ mongocrypt_kms_ctx_t *mongocrypt_ctx_next_kms_ctx(mongocrypt_ctx_t *ctx) {
         _mongocrypt_ctx_fail_w_msg(ctx, "not applicable to context");
         return NULL;
     }
-    
+
     mongocrypt_kms_ctx_t *ret;
     switch (ctx->state) {
     case MONGOCRYPT_CTX_NEED_KMS:
