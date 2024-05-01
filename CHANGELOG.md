@@ -1,4 +1,9 @@
 # ChangeLog
+## 1.10.0
+### New features
+- Support KMIP `delegated` option.
+- Support processing `bulkWrite` command.
+- Support `range` algorithm.
 ## 1.9.1
 ### New features
 - Add Debian 12 packages
