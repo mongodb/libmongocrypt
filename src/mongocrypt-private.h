@@ -128,6 +128,7 @@ struct _mongocrypt_t {
     _mongo_crypt_v1_vtable csfle;
     /// Pointer to the global csfle_lib object. Should not be freed directly.
     mongo_crypt_v1_lib *csfle_lib;
+    bool retry_enabled;
 };
 
 typedef enum {

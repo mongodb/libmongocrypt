@@ -167,6 +167,12 @@ bool mongocrypt_setopt_log_handler(mongocrypt_t *crypt, mongocrypt_log_fn_t log_
     return true;
 }
 
+bool mongocrypt_setopt_retry(mongocrypt_t *crypt, bool enable) {
+    ASSERT_MONGOCRYPT_PARAM_UNINIT(crypt);
+    crypt->retry_enabled = enable;
+    return true;
+}
+
 bool mongocrypt_setopt_kms_provider_aws(mongocrypt_t *crypt,
                                         const char *aws_access_key_id,
                                         int32_t aws_access_key_id_len,
