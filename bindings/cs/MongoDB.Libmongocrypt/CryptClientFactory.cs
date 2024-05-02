@@ -42,16 +42,8 @@ namespace MongoDB.Libmongocrypt
             MongoCryptSafeHandle handle = null;
             Status status = null;
 
-            bool cryptoAvailable;
-            try
-            {
-                cryptoAvailable = Library.mongocrypt_is_crypto_available();
-            }
-            catch (LibraryLoader.FunctionNotFoundException)
-            {
-                // mongocrypt_is_crypto_available is only available in libmongocrypt version >= 1.9
-                cryptoAvailable = false;
-            }
+            // mongocrypt_is_crypto_available is only available in libmongocrypt version >= 1.9
+            var cryptoAvailable = Version.Parse(Library.Version) >= Version.Parse("1.9") && Library.mongocrypt_is_crypto_available();
 
             try
             {
