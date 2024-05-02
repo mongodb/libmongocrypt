@@ -2231,6 +2231,7 @@ static bool _try_schema_from_cache(mongocrypt_ctx_t *ctx) {
 
     if (collinfo) {
         if (!_set_schema_from_collinfo(ctx, collinfo)) {
+            bson_destroy(collinfo);
             return _mongocrypt_ctx_fail(ctx);
         }
         ctx->state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
