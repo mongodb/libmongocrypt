@@ -886,7 +886,40 @@ tasks:
         bucket: mciuploads
         permissions: public-read
         local_file: 'libmongocrypt_upload.tar.gz'
-        content_type: '${content_type|application/x-gzip}'
+        content_type: 'application/x-gzip'
+    - command: s3.put # Upload tarball for GitHub Release.
+      params:
+        aws_key: '${aws_key}'
+        aws_secret: '${aws_secret}'
+        remote_file: '${project}/${build_variant}/${branch_name}/${revision}/${version_id}/libmongocrypt-windows-x86_64-${libmongocrypt_release_version}.tar.gz'
+        display_name: libmongocrypt-windows-x86_64-${libmongocrypt_release_version}.tar.gz
+        bucket: mciuploads
+        permissions: public-read
+        local_file: 'libmongocrypt_upload.tar.gz'
+        content_type: 'application/x-gzip'
+    - command: subprocess.exec # Sign tarball.
+      params:
+        binary: bash
+        include_expansions_in_env:
+          - garasign_username
+          - garasign_password
+          - artifactory_username
+          - artifactory_password
+        env:
+          file_to_sign: libmongocrypt_upload.tar.gz
+          output_file: libmongocrypt_upload.sig
+        args:
+          - ./libmongocrypt/.evergreen/sign.sh
+    - command: s3.put # Upload signature for GitHub Release.
+      params:
+        aws_key: '${aws_key}'
+        aws_secret: '${aws_secret}'
+        remote_file: '${project}/${build_variant}/${branch_name}/${revision}/${version_id}/libmongocrypt-windows-x86_64-${libmongocrypt_release_version}.sig'
+        display_name: libmongocrypt-windows-x86_64-${libmongocrypt_release_version}.sig
+        bucket: mciuploads
+        permissions: public-read
+        local_file: 'libmongocrypt_upload.sig'
+        content_type: 'application/pgp-signature'
 
 - name: debian-package-build
   run_on: &deb-package-build-run_on
