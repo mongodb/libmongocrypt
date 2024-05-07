@@ -72,12 +72,10 @@ find_package (mongocrypt)
 ```
 
 ## Installing libmongocrypt on Windows ##
-For Windows, there is a fixed URL to download the DLL and includes directory:
-https://s3.amazonaws.com/mciuploads/libmongocrypt/windows/latest_release/libmongocrypt.tar.gz
+A Windows DLL for x86_64 is available on the Github Releases page. See the [latest release](https://github.com/mongodb/libmongocrypt/releases/latest).
 
-To download the latest unstable release, download from this URL:
-https://s3.amazonaws.com/mciuploads/libmongocrypt/windows/latest_release/libmongocrypt_unstable.tar.gz
-Do not use the unstable version of libmongocrypt in a production environment.
+Use `gpg` to verify the signature. The public key for `libmongocrypt` is available on https://pgp.mongodb.com/.
+
 
 ### Testing ###
 `test-mongocrypt` mocks all I/O with files stored in the `test/data` and `test/example` directories. Run `test-mongocrypt` from the source directory:
