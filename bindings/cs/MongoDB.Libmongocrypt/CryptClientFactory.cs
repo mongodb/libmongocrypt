@@ -35,7 +35,7 @@ namespace MongoDB.Libmongocrypt
         private static Library.Delegates.CryptoHmacCallback __signRsaesPkcs1HmacCallback = new Library.Delegates.CryptoHmacCallback(SigningRSAESPKCSCallback.RsaSign);
 
         // mongocrypt_is_crypto_available is only available in libmongocrypt version >= 1.9
-        private static readonly Version __s_libVersionWithMongocryptIsCryptoAvailable = Version.Parse("1.9");
+        private static readonly Version __mongocryptIsCryptoAvailableMinVersion = Version.Parse("1.9");
 
         /// <summary>Creates a CryptClient with the specified options.</summary>
         /// <param name="options">The options.</param>
@@ -45,7 +45,7 @@ namespace MongoDB.Libmongocrypt
             MongoCryptSafeHandle handle = null;
             Status status = null;
 
-            var cryptoAvailable = Version.Parse(Library.Version) >= __s_libVersionWithMongocryptIsCryptoAvailable && Library.mongocrypt_is_crypto_available();
+            var cryptoAvailable = Version.Parse(Library.Version) >= __mongocryptIsCryptoAvailableMinVersion && Library.mongocrypt_is_crypto_available();
 
             try
             {

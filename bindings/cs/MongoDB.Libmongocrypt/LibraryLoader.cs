@@ -28,7 +28,7 @@ namespace MongoDB.Libmongocrypt
     internal class LibraryLoader
     {
         private ISharedLibraryLoader _loader;
-        private static readonly string __s_libmongocryptLibPath = Environment.GetEnvironmentVariable("LIBMONGOCRYPT_PATH");
+        private static readonly string __libmongocryptLibPath = Environment.GetEnvironmentVariable("LIBMONGOCRYPT_PATH");
 
         public LibraryLoader()
         {
@@ -124,7 +124,7 @@ namespace MongoDB.Libmongocrypt
             public const int RTLD_GLOBAL = 0x8;
             public const int RTLD_NOW = 0x2;
 
-            private static readonly string[] __s_suffixPaths = 
+            private static readonly string[] __suffixPaths = 
             {
                 "../../runtimes/osx/native/",
                 "runtimes/osx/native/",
@@ -134,7 +134,7 @@ namespace MongoDB.Libmongocrypt
             private readonly IntPtr _handle;
             public DarwinLibraryLoader(List<string> candidatePaths)
             {
-                var path = __s_libmongocryptLibPath ?? FindLibrary(candidatePaths, __s_suffixPaths, "libmongocrypt.dylib");
+                var path = __libmongocryptLibPath ?? FindLibrary(candidatePaths, __suffixPaths, "libmongocrypt.dylib");
                 _handle = dlopen(path, RTLD_GLOBAL | RTLD_NOW);
                 if (_handle == IntPtr.Zero)
                 {
@@ -169,7 +169,7 @@ namespace MongoDB.Libmongocrypt
             public const int RTLD_GLOBAL = 0x100;
             public const int RTLD_NOW = 0x2;
             
-            private static readonly string[] __s_suffixPaths = 
+            private static readonly string[] __suffixPaths = 
             {
                 "../../runtimes/linux/native/",
                 "runtimes/linux/native/",
@@ -179,7 +179,7 @@ namespace MongoDB.Libmongocrypt
             private readonly IntPtr _handle;
             public LinuxLibrary(List<string> candidatePaths)
             {
-                var path = __s_libmongocryptLibPath ?? FindLibrary(candidatePaths, __s_suffixPaths, "libmongocrypt.so");
+                var path = __libmongocryptLibPath ?? FindLibrary(candidatePaths, __suffixPaths, "libmongocrypt.so");
                 _handle = dlopen(path, RTLD_GLOBAL | RTLD_NOW);
                 if (_handle == IntPtr.Zero)
                 {
@@ -206,7 +206,7 @@ namespace MongoDB.Libmongocrypt
         /// </summary>
         private class WindowsLibrary : ISharedLibraryLoader
         {
-            private static readonly string[] __s_suffixPaths = 
+            private static readonly string[] __suffixPaths = 
             {
                 @"..\..\runtimes\win\native\",
                 @".\runtimes\win\native\",
@@ -216,7 +216,7 @@ namespace MongoDB.Libmongocrypt
             private readonly IntPtr _handle;
             public WindowsLibrary(List<string> candidatePaths)
             {
-                var path = __s_libmongocryptLibPath ?? FindLibrary(candidatePaths, __s_suffixPaths, "mongocrypt.dll");
+                var path = __libmongocryptLibPath ?? FindLibrary(candidatePaths, __suffixPaths, "mongocrypt.dll");
                 _handle = LoadLibrary(path);
                 if (_handle == IntPtr.Zero)
                 {
