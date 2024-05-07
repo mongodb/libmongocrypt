@@ -905,19 +905,18 @@ tasks:
         permissions: public-read
         local_file: 'libmongocrypt_upload.tar.gz'
         content_type: 'application/x-gzip'
-    - command: subprocess.exec # Sign tarball.
+    - command: shell.exec
       params:
-        binary: bash
-        include_expansions_in_env:
-          - garasign_username
-          - garasign_password
-          - artifactory_username
-          - artifactory_password
-        env:
-          file_to_sign: libmongocrypt_upload.tar.gz
-          output_file: libmongocrypt_upload.sig
-        args:
-          - ./libmongocrypt/.evergreen/sign.sh
+        shell: bash
+        script: |-
+          set -o errexit
+          # Authenticate to artifactory for signing image.
+          echo "${artifactory_password}" | docker login --password-stdin --username "${artifactory_username}" artifactory.corp.mongodb.com
+          # Copy file to sign into `libmongocrypt` directory to be used by Earthly.
+          cp libmongocrypt_upload.tar.gz libmongocrypt
+    - func: "earthly" # Sign tarball.
+      vars:
+        args: --secret garasign_username=${garasign_username} --secret garasign_password=${garasign_password} +sign --file_to_sign=libmongocrypt_upload.tar.gz --output_file=libmongocrypt_upload.sig
     - command: s3.put # Upload signature for GitHub Release.
       params:
         aws_key: '${aws_key}'
@@ -926,7 +925,7 @@ tasks:
         display_name: libmongocrypt-windows-x86_64-${libmongocrypt_release_version}.sig
         bucket: mciuploads
         permissions: public-read
-        local_file: 'libmongocrypt_upload.sig'
+        local_file: 'libmongocrypt/libmongocrypt_upload.sig'
         content_type: 'application/pgp-signature'
 
 - name: debian-package-build

@@ -435,3 +435,18 @@ test-deb-packages-from-ppa:
         }" > test.c
     RUN gcc -o test.out test.c $(pkg-config --libs --cflags libmongocrypt)
     RUN ./test.out
+
+# `sign` uses Garasign to sign a file with the libmongocrypt key.
+# Requires prior authentication with Artifactory.
+# See: https://docs.devprod.prod.corp.mongodb.com/release-tools-container-images/garasign/garasign_signing/.
+sign:
+    ARG --required file_to_sign
+    ARG --required output_file
+    FROM artifactory.corp.mongodb.com/release-tools-container-registry-local/garasign-gpg
+    WORKDIR /s
+    COPY ${file_to_sign} /s/file
+    RUN --secret garasign_username --secret garasign_password \
+        GRS_CONFIG_USER1_USERNAME=${garasign_username} \
+        GRS_CONFIG_USER1_PASSWORD=${garasign_password} \
+        /bin/bash -c "gpgloader && gpg --yes -v --armor -o /s/file.sig --detach-sign /s/file"
+    SAVE ARTIFACT /s/file.sig AS LOCAL ${output_file}
