@@ -819,41 +819,42 @@ tasks:
     - func: "fetch source"
     - func: "setup packaging credentials"
     - func: "publish packages"
-- name: windows-upload-check
+- name: windows-upload-release
   depends_on: build-and-test-and-upload
   commands:
     - func: "fetch source"
     - command: shell.exec
       params:
+        shell: bash
         working_dir: libmongocrypt
         script: |-
           set -o xtrace
           set -o errexit
 
-          CMAKE=/cygdrive/c/cmake/bin/cmake
-          mongocrypt_version="$(python etc/calc_release_version.py)"
-          case "$mongocrypt_version" in
+          . .evergreen/init.sh
+          libmongocrypt_release_version=$(run_python ./etc/calc_release_version.py)
+          case "$libmongocrypt_release_version" in
             *+*)
-              # Not a tagged release.
-              echo "{}" > ./.evergreen/windows-upload.json
+              # Not a tagged release. Use full release version suffix.
+              upload_suffix="$libmongocrypt_release_version"
               ;;
             *-*)
-              # This is an unstable release, like 1.1.0-beta1 or 1.0.1-rc0
-              cp ./.evergreen/windows-upload-doit-unstable.json ./.evergreen/windows-upload.json
+              # Unstable release, like 1.1.0-beta1 or 1.0.1-rc0. Overwrite the latest unstable URL.
+              upload_suffix='_unstable'
               ;;
             *)
-              # It is a tagged release.
-              cp ./.evergreen/windows-upload-doit.json ./.evergreen/windows-upload.json
+              # Tagged release. Overwrite the latest stable URL.
+              upload_suffix=''
               ;;
           esac
-    - command: generate.tasks
-      params:
-        files:
-          - libmongocrypt/.evergreen/windows-upload.json
 
-- name: windows-upload
-  commands:
-    - command: s3.get
+          # Add expansions used in later commands:
+          echo "libmongocrypt_release_version: '$libmongocrypt_release_version'" > expansions.yml
+          echo "upload_suffix: '$upload_suffix'" >> expansions.yml
+    - command: expansions.update
+      params:
+        file: libmongocrypt/expansions.yml
+    - command: s3.get # Download Windows build.
       params:
         aws_key: '${aws_key}'
         aws_secret: '${aws_secret}'
@@ -1120,7 +1121,7 @@ buildvariants:
   - build-and-test-node
   - build-and-publish-node
   - test-java
-  - windows-upload-check
+  - windows-upload-release
 - name: windows-test-python
   display_name: "Windows Python"
   run_on: windows-64-vsMulti-small
