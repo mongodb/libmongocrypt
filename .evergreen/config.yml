@@ -820,7 +820,9 @@ tasks:
     - func: "setup packaging credentials"
     - func: "publish packages"
 - name: windows-upload-release
-  depends_on: build-and-test-and-upload
+  depends_on:
+  - variant: windows-test
+    name: build-and-test-and-upload
   commands:
     - func: "fetch source"
     - command: shell.exec
@@ -1160,7 +1162,6 @@ buildvariants:
   - build-and-test-node
   - build-and-publish-node
   - test-java
-  - windows-upload-release
 - name: windows-test-python
   display_name: "Windows Python"
   run_on: windows-64-vsMulti-small
@@ -1581,6 +1582,7 @@ buildvariants:
   - name: publish-packages
     distros:
     - ubuntu2004-small
+  - windows-upload-release
 - name: ubuntu2204-arm64
   display_name: "Ubuntu 22.04 arm64"
   run_on: ubuntu2204-arm64-small
