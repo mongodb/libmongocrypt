@@ -1080,18 +1080,16 @@ bool mongocrypt_kms_ctx_fail(mongocrypt_kms_ctx_t *kms) {
     if (!kms || !kms->retry_enabled) {
         return false;
     }
-    switch (kms->req_type) {
-        /* Not idempotent and can't be retried. */
-        case MONGOCRYPT_KMS_KMIP_REGISTER:
-        case MONGOCRYPT_KMS_KMIP_ACTIVATE:
-        case MONGOCRYPT_KMS_KMIP_CREATE:
-            return false;
-        default: {
-            if (kms->parser) {
-                kms_response_parser_reset(kms->parser);
-            }
-            return true;
+
+    /* Not idempotent and can't be retried. */
+    if (kms->req_type == MONGOCRYPT_KMS_KMIP_REGISTER || kms->req_type == MONGOCRYPT_KMS_KMIP_ACTIVATE
+        || kms->req_type == MONGOCRYPT_KMS_KMIP_CREATE) {
+        return false;
+    } else {
+        if (kms->parser) {
+            kms_response_parser_reset(kms->parser);
         }
+        return true;
     }
 }
 
