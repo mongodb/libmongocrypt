@@ -15,6 +15,7 @@
  */
 
 using System;
+using System.Linq;
 
 namespace MongoDB.Libmongocrypt
 {
@@ -45,7 +46,7 @@ namespace MongoDB.Libmongocrypt
             MongoCryptSafeHandle handle = null;
             Status status = null;
 
-            var cryptoAvailable = Version.Parse(Library.Version) >= __mongocryptIsCryptoAvailableMinVersion && Library.mongocrypt_is_crypto_available();
+            var cryptoAvailable = Version.Parse(Library.Version.Split('-', '+').First()) >= __mongocryptIsCryptoAvailableMinVersion && Library.mongocrypt_is_crypto_available();
 
             try
             {
