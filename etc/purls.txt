@@ -3,7 +3,9 @@
 
 # This file is fed to silkbomb to generate the cyclonedx.sbom.json file. Edit this file
 # instead of modifying the SBOM JSON directly. After modifying this file, be sure to
-# re-generate the SBOM JSON file with: `./.evergreen/earthly.sh +sbom-generate`
+# re-generate the SBOM JSON file with: `./.evergreen/earthly.sh +sbom-generate`. If
+# adding a new dependency, ensure the resulting SBOM JSON includes the `licenses` and
+# `copyright` property. This information can be manually added.
 
 # libbson is obtained via `cmake/FetchMongoC.cmake`.
 pkg:github/mongodb/mongo-c-driver@v1.17.0?#src/libbson
