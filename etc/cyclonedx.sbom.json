@@ -2,7 +2,7 @@
   "components": [
     {
       "bom-ref": "pkg:github/mongodb/mongo-c-driver@v1.17.0#src/libbson",
-      "copyright": "Copyright 2020-present MongoDB, Inc.",
+      "copyright": "Copyright 2009-present MongoDB, Inc.",
       "externalReferences": [
         {
           "type": "distribution",
