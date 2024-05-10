@@ -87,6 +87,7 @@ set (_dfp_sources
     "<library>/src/bid_binarydecimal.c"
     "<library>/src/bid_convert_data.c"
     "<library>/src/bid_decimal_data.c"
+    "<library>/src/bid_flag_operations.c"
     "<library>/src/bid_round.c"
     )
 # Put in the actual library path:
