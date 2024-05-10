@@ -1,16 +1,16 @@
 {
   "components": [
     {
-      "bom-ref": "pkg:github/mongodb/mongo-c-driver@v1.17.0#src/libbson",
+      "bom-ref": "pkg:github/mongodb/mongo-c-driver@v1.27.1#src/libbson",
       "copyright": "Copyright 2009-present MongoDB, Inc.",
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://github.com/mongodb/mongo-c-driver/archive/refs/tags/v1.17.0.tar.gz"
+          "url": "https://github.com/mongodb/mongo-c-driver/archive/refs/tags/v1.27.1.tar.gz"
         },
         {
           "type": "website",
-          "url": "https://github.com/mongodb/mongo-c-driver/tree/v1.17.0"
+          "url": "https://github.com/mongodb/mongo-c-driver/tree/v1.27.1"
         }
       ],
       "group": "mongodb",
@@ -22,9 +22,9 @@
         }
       ],
       "name": "mongo-c-driver",
-      "purl": "pkg:github/mongodb/mongo-c-driver@v1.17.0#src/libbson",
+      "purl": "pkg:github/mongodb/mongo-c-driver@v1.27.1#src/libbson",
       "type": "library",
-      "version": "v1.17.0"
+      "version": "v1.27.1"
     },
     {
       "bom-ref": "pkg:generic/IntelRDFPMathLib@20U2?download_url=https://www.netlib.org/misc/intel/IntelRDFPMathLib20U2.tar.gz",
@@ -53,11 +53,11 @@
       "ref": "pkg:generic/IntelRDFPMathLib@20U2?download_url=https://www.netlib.org/misc/intel/IntelRDFPMathLib20U2.tar.gz"
     },
     {
-      "ref": "pkg:github/mongodb/mongo-c-driver@v1.17.0#src/libbson"
+      "ref": "pkg:github/mongodb/mongo-c-driver@v1.27.1#src/libbson"
     }
   ],
   "metadata": {
-    "timestamp": "2024-05-09T14:53:50.877648+00:00",
+    "timestamp": "2024-05-10T12:07:55.084050+00:00",
     "tools": [
       {
         "externalReferences": [

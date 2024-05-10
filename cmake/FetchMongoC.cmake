@@ -2,7 +2,7 @@ include (FetchContent)
 
 # Set the tag that we will fetch.
 # When updating the version of libbson, also update the version in etc/purls.txt
-set (MONGOC_FETCH_TAG_FOR_LIBBSON "1.17.7" CACHE STRING "The Git tag of mongo-c-driver that will be fetched to obtain libbson")
+set (MONGOC_FETCH_TAG_FOR_LIBBSON "1.27.1" CACHE STRING "The Git tag of mongo-c-driver that will be fetched to obtain libbson")
 
 # Fetch the source archive for the requested tag from GitHub
 FetchContent_Declare (
