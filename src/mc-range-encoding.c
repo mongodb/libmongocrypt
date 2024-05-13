@@ -313,6 +313,7 @@ static mlib_int128 dec128_to_int128(mc_dec128 dec) {
     // Decimal128:
     int32_t exp = ((int32_t)mc_dec128_get_biased_exp(dec)) - MC_DEC128_EXPONENT_BIAS;
     // We will scale up/down based on whether it is negative:
+    BSON_ASSERT(abs(exp) <= UINT8_MAX);
     mlib_int128 e1 = mlib_int128_pow10((uint8_t)abs(exp));
     if (exp < 0) {
         ret = mlib_int128_div(ret, e1);
