@@ -105,13 +105,11 @@ mc_bitstring mc_convert_to_bitstring_u64(uint64_t in) {
     mc_bitstring ret = {{0}};
     char *out = ret.str;
     uint64_t bit = UINT64_C(1) << 63;
+    int loops = 0; // used to determine a bit shift
     while (bit > 0) {
-        if (bit & in) {
-            *out++ = '1';
-        } else {
-            *out++ = '0';
-        }
+        *out++ = (char)('0' + ((bit & in) >> (63 - loops)));
         bit >>= 1;
+        loops++;
     }
     return ret;
 }
