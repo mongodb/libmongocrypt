@@ -3,6 +3,7 @@ include (FetchContent)
 find_program (GIT_EXECUTABLE git)
 find_program (PATCH_EXECUTABLE patch)
 
+# When updating the version of IntelDFP, also update the version in etc/purls.txt
 set (_default_url "${PROJECT_SOURCE_DIR}/third-party/IntelRDFPMathLib20U2.tar.xz")
 
 set (INTEL_DFP_LIBRARY_URL "${_default_url}"

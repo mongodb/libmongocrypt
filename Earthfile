@@ -450,3 +450,25 @@ sign:
         GRS_CONFIG_USER1_PASSWORD=${garasign_password} \
         /bin/bash -c "gpgloader && gpg --yes -v --armor -o /s/file.sig --detach-sign /s/file"
     SAVE ARTIFACT /s/file.sig AS LOCAL ${output_file}
+
+# sbom-generate :
+#   Generate/update the etc/cyclonedx.sbom.json file from the etc/purls.txt file.
+#
+# This target will update the existing etc/cyclonedx.sbom.json file in-place based
+# on the content of etc/purls.txt.
+#
+# See https://docs.devprod.prod.corp.mongodb.com/mms/python/src/sbom/silkbomb/ for documentation of silkbomb.
+sbom-generate:
+    FROM artifactory.corp.mongodb.com/release-tools-container-registry-public-local/silkbomb:1.0
+    # Alias the silkbom executable to a simpler name:
+    RUN ln -s /python/src/sbom/silkbomb/bin /usr/local/bin/silkbomb
+    # Copy in the relevant files:
+    WORKDIR /s
+    COPY etc/purls.txt etc/cyclonedx.sbom.json /s/
+    # Update the SBOM file:
+    RUN silkbomb update \
+        --purls purls.txt \
+        --sbom-in cyclonedx.sbom.json \
+        --sbom-out cyclonedx.sbom.json
+    # Save the result back to the host:
+    SAVE ARTIFACT /s/cyclonedx.sbom.json AS LOCAL etc/cyclonedx.sbom.json
