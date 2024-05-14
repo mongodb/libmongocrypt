@@ -23,7 +23,6 @@
 
 struct _mc_edges_t {
     size_t sparsity;
-    uint32_t trimFactor;
     /* edges is an array of `char*` edge strings. */
     mc_array_t edges;
     char *leaf;
