@@ -98,6 +98,9 @@ void mc_edges_destroy(mc_edges_t *edges) {
 }
 
 bool mc_edges_is_leaf(const mc_edges_t *edges, const char *edge) {
+    BSON_ASSERT_PARAM(edges);
+    BSON_ASSERT_PARAM(edge);
+
     return strcmp(edge, edges->leaf) == 0;
 }
 
