@@ -916,16 +916,16 @@ tasks:
           cp libmongocrypt_upload.tar.gz libmongocrypt
     - func: "earthly" # Sign tarball.
       vars:
-        args: --secret garasign_username=${garasign_username} --secret garasign_password=${garasign_password} +sign --file_to_sign=libmongocrypt_upload.tar.gz --output_file=libmongocrypt_upload.sig
+        args: --secret garasign_username=${garasign_username} --secret garasign_password=${garasign_password} +sign --file_to_sign=libmongocrypt_upload.tar.gz --output_file=libmongocrypt_upload.asc
     - command: s3.put # Upload signature for GitHub Release.
       params:
         aws_key: '${aws_key}'
         aws_secret: '${aws_secret}'
-        remote_file: '${project}/${build_variant}/${branch_name}/${revision}/${version_id}/libmongocrypt-windows-x86_64-${libmongocrypt_release_version}.sig'
-        display_name: libmongocrypt-windows-x86_64-${libmongocrypt_release_version}.sig
+        remote_file: '${project}/${build_variant}/${branch_name}/${revision}/${version_id}/libmongocrypt-windows-x86_64-${libmongocrypt_release_version}.asc'
+        display_name: libmongocrypt-windows-x86_64-${libmongocrypt_release_version}.asc
         bucket: mciuploads
         permissions: public-read
-        local_file: 'libmongocrypt/libmongocrypt_upload.sig'
+        local_file: 'libmongocrypt/libmongocrypt_upload.asc'
         content_type: 'application/pgp-signature'
 
 - name: debian-package-build

@@ -448,8 +448,12 @@ sign:
     RUN --secret garasign_username --secret garasign_password \
         GRS_CONFIG_USER1_USERNAME=${garasign_username} \
         GRS_CONFIG_USER1_PASSWORD=${garasign_password} \
-        /bin/bash -c "gpgloader && gpg --yes -v --armor -o /s/file.sig --detach-sign /s/file"
-    SAVE ARTIFACT /s/file.sig AS LOCAL ${output_file}
+        /bin/bash -c "gpgloader && gpg --yes -v --armor -o /s/file.asc --detach-sign /s/file"
+    # Verify the signature
+    RUN touch /keyring
+    RUN curl -sS https://pgp.mongodb.com/libmongocrypt.pub | gpg -q --no-default-keyring --keyring "/keyring" --import -
+    RUN gpgv --keyring "/keyring" "/s/file.asc" "/s/file"
+    SAVE ARTIFACT /s/file.asc AS LOCAL ${output_file}
 
 # sbom-generate :
 #   Generate/update the etc/cyclonedx.sbom.json file from the etc/purls.txt file.
