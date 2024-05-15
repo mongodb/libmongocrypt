@@ -23,7 +23,6 @@
 
 struct _mc_edges_t {
     size_t sparsity;
-    uint32_t trimFactor;
     /* edges is an array of `char*` edge strings. */
     mc_array_t edges;
     char *leaf;
@@ -98,6 +97,9 @@ void mc_edges_destroy(mc_edges_t *edges) {
 }
 
 bool mc_edges_is_leaf(const mc_edges_t *edges, const char *edge) {
+    BSON_ASSERT_PARAM(edges);
+    BSON_ASSERT_PARAM(edge);
+
     return strcmp(edge, edges->leaf) == 0;
 }
 
@@ -105,13 +107,11 @@ mc_bitstring mc_convert_to_bitstring_u64(uint64_t in) {
     mc_bitstring ret = {{0}};
     char *out = ret.str;
     uint64_t bit = UINT64_C(1) << 63;
+    int loops = 0; // used to determine a bit shift
     while (bit > 0) {
-        if (bit & in) {
-            *out++ = '1';
-        } else {
-            *out++ = '0';
-        }
+        *out++ = (char)('0' + ((bit & in) >> (63 - loops)));
         bit >>= 1;
+        loops++;
     }
     return ret;
 }
