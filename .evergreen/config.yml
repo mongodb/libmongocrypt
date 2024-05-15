@@ -711,6 +711,10 @@ tasks:
       name: build-and-test-and-upload
     - variant: macos
       name: build-and-test-and-upload
+    - variant: alpine-amd64-earthly
+      name: build-with-earthly
+    - variant: alpine-arm64-earthly
+      name: build-with-earthly
   commands:
     - func: "fetch source"
     - command: shell.exec
@@ -780,6 +784,10 @@ tasks:
       vars: { variant_name: "ubuntu2204-arm64" }
     - func: "download tarball"
       vars: { variant_name: "macos" }
+    - func: "download tarball"
+      vars: { variant_name: "alpine-amd64-earthly" }
+    - func: "download tarball"
+      vars: { variant_name: "alpine-arm64-earthly" }
     - command: archive.targz_pack
       params:
         target: libmongocrypt-all.tar.gz
