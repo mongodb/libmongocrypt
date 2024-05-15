@@ -885,7 +885,7 @@ tasks:
       # (stable)  : https://s3.amazonaws.com/mciuploads/libmongocrypt/windows/latest_release/libmongocrypt.tar.gz
       # (unstable): https://s3.amazonaws.com/mciuploads/libmongocrypt/windows/latest_release/libmongocrypt_unstable.tar.gz
       # Documentation now refers to the GitHub release page, which includes the per-release tarball.
-      # The fixed URL upload is kept to avoid possibly breaking expectatations. Consider removing in the future.
+      # The fixed URL upload is kept to avoid possibly breaking expectations. Consider removing in the future.
       params:
         aws_key: '${aws_key}'
         aws_secret: '${aws_secret}'
