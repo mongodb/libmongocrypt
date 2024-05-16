@@ -53,3 +53,6 @@ VERSION_CURRENT
 .csfle
 *.pyc
 .DS_Store
+
+# Ignore the Augmented SBOM that is downloaded to attach to releases.
+cyclonedx.augmented.sbom.json

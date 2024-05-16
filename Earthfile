@@ -477,3 +477,24 @@ sbom-generate:
         --sbom-out cyclonedx.sbom.json
     # Save the result back to the host:
     SAVE ARTIFACT /s/cyclonedx.sbom.json AS LOCAL etc/cyclonedx.sbom.json
+
+# sbom-download:
+#   Download the Augmented SBOM file from Silk.
+#
+# See https://wiki.corp.mongodb.com/display/DRIVERS/Using+AWS+Secrets+Manager+to+Store+Testing+Secrets for instructions to get secrets from AWS Secrets Manager. Secrets are available under `drivers/libmongocrypt`.
+# See https://docs.devprod.prod.corp.mongodb.com/mms/python/src/sbom/silkbomb/ for documentation of silkbomb.
+sbom-download:
+    FROM artifactory.corp.mongodb.com/release-tools-container-registry-public-local/silkbomb:1.0
+    # Alias the silkbom executable to a simpler name:
+    RUN ln -s /python/src/sbom/silkbomb/bin /usr/local/bin/silkbomb
+    WORKDIR /s
+    # Download the Augmented SBOM file:
+    RUN --secret silk_client_id --secret silk_client_secret \
+        SILK_CLIENT_ID=${silk_client_id} \
+        SILK_CLIENT_SECRET=${silk_client_secret} \
+        silkbomb download \
+        --sbom-out cyclonedx.augmented.sbom.json \
+        --silk-asset-group libmongocrypt
+    # Save the result back to the host:
+    SAVE ARTIFACT /s/cyclonedx.augmented.sbom.json AS LOCAL etc/cyclonedx.augmented.sbom.json
+    RUN echo "Augmented SBOM saved to etc/cyclonedx.augmented.sbom.json"
