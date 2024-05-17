@@ -1,7 +1,5 @@
 
 include (FetchContent)
-find_program (GIT_EXECUTABLE git)
-find_program (PATCH_EXECUTABLE patch)
 
 # When updating the version of IntelDFP, also update the version in etc/purls.txt
 set (_default_url "${PROJECT_SOURCE_DIR}/third-party/IntelRDFPMathLib20U2.tar.xz")
@@ -19,17 +17,10 @@ if (NOT INTEL_DFP_LIBRARY_URL_SHA256 STREQUAL "no-verify")
     set (_hash_arg URL_HASH "${INTEL_DFP_LIBRARY_URL_HASH}")
 endif ()
 
-# Make the PATCH_COMMAND a no-op if it was disabled
-set (patch_command)
-set (patch_input_opt)
 if (NOT INTEL_DFP_LIBRARY_PATCH_ENABLED)
-    set (patch_command "${CMAKE_COMMAND}" -E true)
-elseif (GIT_EXECUTABLE)
-    set (patch_command "${GIT_EXECUTABLE}" --work-tree=<SOURCE_DIR> apply)
-else ()
-    set (patch_command "${PATCH_EXECUTABLE}" --dir=<SOURCE_DIR>)
-    set (patch_input_opt -i)
+    set (patch_disabled ON)
 endif ()
+include (Patch) # defines `patch_command` and `patch_input_opt`.
 
 # NOTE: The applying of the patch expects the correct input directly from the
 #       expanded archive. If the patch needs to be reapplied, you may see errors
