@@ -129,6 +129,12 @@ tasks.register<Download>("downloadJava") {
     overwrite(true)
 }
 
+// The `processResources` task (defined by the `java-library` plug-in) consumes files in the main source set.
+// Add a dependency on `unzipJava`. `unzipJava` adds libmongocrypt libraries to the main source set.
+tasks.processResources {
+    mustRunAfter(tasks.named("unzipJava"))
+}
+
 tasks.register<Copy>("unzipJava") {
     outputs.upToDateWhen { false }
     from(tarTree(resources.gzip("${jnaDownloadsDir}/libmongocrypt-java.tar.gz")))
