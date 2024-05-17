@@ -20,7 +20,7 @@ option (ENABLE_PIC
    ON
 )
 option (ENABLE_BUILD_FOR_PPA "Maintainer-only option for preparing PPA build" OFF)
-option (ENABLE_ONLINE_TESTS "Enable online tests and the csfle utility" ON)
+option (ENABLE_ONLINE_TESTS "Enable online tests and the csfle utility. Requires libmongoc." ON)
 # TODO MONGOCRYPT-661 When range V2 is default, remove this option.
 option (ENABLE_USE_RANGE_V2 "Enable the use_range_v2 flag by default for queryable encryption" OFF)
 if (ENABLE_USE_RANGE_V2)
