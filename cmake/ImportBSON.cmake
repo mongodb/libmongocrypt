@@ -150,6 +150,8 @@ function (_import_bson)
       # Disable building tests in C driver:
       set (ENABLE_TESTS OFF)
       set (BUILD_TESTING OFF)
+      # Disable counters in C driver. Counters are not supported on all platforms.
+      set (ENABLE_SHM_COUNTERS OFF)
       # Add the subdirectory as a project. EXCLUDE_FROM_ALL to inhibit building and installing of components unless requested
       # SYSTEM (on applicable CMake versions) to prevent warnings (particularly from -Wconversion/-Wsign-conversion) from the C driver code
       if (CMAKE_VERSION VERSION_GREATER 3.25)
