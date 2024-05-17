@@ -493,7 +493,7 @@ sbom-download:
     FROM +silkbomb
     WORKDIR /s
     # Download the Augmented SBOM file:
-    RUN --secret silk_client_id --secret silk_client_secret \
+    RUN --no-cache --secret silk_client_id --secret silk_client_secret \
         SILK_CLIENT_ID=${silk_client_id} \
         SILK_CLIENT_SECRET=${silk_client_secret} \
         silkbomb download \
