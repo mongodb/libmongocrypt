@@ -459,6 +459,7 @@ static void _test_rewrap_many_datakey_need_kms_decrypt_retryable(_mongocrypt_tes
         for (int i = 0; i < 10; i++) {
             ASSERT(mongocrypt_kms_ctx_feed(kms, TEST_FILE("./test/data/rmd/kms-decrypt-reply-429.txt")));
             ASSERT(mongocrypt_kms_ctx_bytes_needed(kms) == 0);
+            ASSERT(mongocrypt_kms_ctx_fail(kms)); //  Simulate driver-side network failure
             ASSERT((kms = mongocrypt_ctx_next_kms_ctx(ctx)));
             ASSERT(mongocrypt_kms_ctx_usleep(kms) > 0);
         }
@@ -488,6 +489,7 @@ static void _test_rewrap_many_datakey_need_kms_decrypt_retryable(_mongocrypt_tes
                 break;
             }
             ASSERT(mongocrypt_kms_ctx_feed(kms, TEST_FILE("./test/data/rmd/kms-decrypt-reply-429.txt")));
+            ASSERT(mongocrypt_kms_ctx_fail(kms)); //  Simulate driver-side network failure
             ASSERT(mongocrypt_kms_ctx_bytes_needed(kms) == 0);
             ASSERT((kms = mongocrypt_ctx_next_kms_ctx(ctx)));
             ASSERT(mongocrypt_kms_ctx_usleep(kms) > 0);
@@ -510,6 +512,7 @@ static void _test_rewrap_many_datakey_need_kms_decrypt_retryable(_mongocrypt_tes
     /* Cache decrypted key material for datakey B. */
     if (retry) {
         ASSERT(mongocrypt_kms_ctx_feed(kms, TEST_FILE("./test/data/rmd/kms-decrypt-reply-429.txt")));
+        ASSERT(mongocrypt_kms_ctx_fail(kms)); //  Simulate driver-side network failure
         ASSERT(mongocrypt_kms_ctx_bytes_needed(kms) == 0);
         ASSERT((kms = mongocrypt_ctx_next_kms_ctx(ctx)));
         ASSERT(mongocrypt_kms_ctx_usleep(kms) > 0);
