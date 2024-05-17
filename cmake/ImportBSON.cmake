@@ -147,6 +147,9 @@ function (_import_bson)
          # Set the `BUILD_VERSION` in this file to only apply to the C driver subproject.
          set (BUILD_VERSION ${MONGOC_FETCH_TAG_FOR_LIBBSON})
       endif()
+      # Disable building tests in C driver:
+      set (ENABLE_TESTS OFF)
+      set (BUILD_TESTING OFF)
       # Add the subdirectory as a project. EXCLUDE_FROM_ALL to inhibit building and installing of components unless requested
       # SYSTEM (on applicable CMake versions) to prevent warnings (particularly from -Wconversion/-Wsign-conversion) from the C driver code
       if (CMAKE_VERSION VERSION_GREATER 3.25)
