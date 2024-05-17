@@ -4,10 +4,22 @@ include (FetchContent)
 # When updating the version of libbson, also update the version in etc/purls.txt
 set (MONGOC_FETCH_TAG_FOR_LIBBSON "1.27.1" CACHE STRING "The Git tag of mongo-c-driver that will be fetched to obtain libbson")
 
+# Add an option to disable patching if a patch command is unavailable.
+option (LIBBSON_PATCH_ENABLED "Whether to apply patches to the libbson library" ON)
+if (NOT LIBBSON_PATCH_ENABLED)
+    set (patch_disabled ON)
+endif ()
+include (Patch) # defines `patch_command` and `patch_input_opt`.
+
 # Fetch the source archive for the requested tag from GitHub
 FetchContent_Declare (
     embedded_mcd
     URL "https://github.com/mongodb/mongo-c-driver/archive/refs/tags/${MONGOC_FETCH_TAG_FOR_LIBBSON}.tar.gz"
+    PATCH_COMMAND
+        ${patch_command}
+            -p 1 # Strip one path component
+            ${patch_input_opt} "${PROJECT_SOURCE_DIR}/etc/libbson-remove-GCC-diagnostic-pragma.patch" # TODO: try to remove once RHEL 6.2 is dropped.
+            --verbose
     )
 # Populate it:
 FetchContent_GetProperties (embedded_mcd)
