@@ -426,6 +426,9 @@ if (BUILD_TESTING)
       INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/src"
       LINK_LIBRARIES _mongocrypt::libbson_for_static
       COMPILE_FEATURES cxx_std_11
+      # Define `__STDC_LIMIT_MACROS` in libbson to define integer macros (e.g. SIZE_MAX) when including in C++ code.
+      # C99 standard notes: "C++ implementations should define these macros only when __STDC_LIMIT_MACROS is defined before <stdint.h> is included."
+      COMPILE_DEFINITIONS __STDC_LIMIT_MACROS
       PREFIX ""
       )
 
