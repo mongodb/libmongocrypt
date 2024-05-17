@@ -31,7 +31,8 @@ Do the following when releasing:
      ./.evergreen/earthly.sh \
         --secret silk_client_id=${silk_client_id} \
         --secret silk_client_secret=${silk_client_secret} \
-        +sbom-download
+        +sbom-download \
+        --out cyclonedx.augmented.sbom.json
      ```
      Secrets can be obtained from [AWS Secrets Manager](https://wiki.corp.mongodb.com/display/DRIVERS/Using+AWS+Secrets+Manager+to+Store+Testing+Secrets) under `drivers/libmongocrypt`.
 

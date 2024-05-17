@@ -490,6 +490,7 @@ sbom-generate:
 # See https://wiki.corp.mongodb.com/display/DRIVERS/Using+AWS+Secrets+Manager+to+Store+Testing+Secrets for instructions to get secrets from AWS Secrets Manager. Secrets are available under `drivers/libmongocrypt`.
 #
 sbom-download:
+    ARG --required out
     FROM +silkbomb
     WORKDIR /s
     # Download the Augmented SBOM file:
@@ -500,5 +501,5 @@ sbom-download:
         --sbom-out cyclonedx.augmented.sbom.json \
         --silk-asset-group libmongocrypt
     # Save the result back to the host:
-    SAVE ARTIFACT /s/cyclonedx.augmented.sbom.json AS LOCAL etc/cyclonedx.augmented.sbom.json
-    RUN echo "Augmented SBOM saved to etc/cyclonedx.augmented.sbom.json"
+    SAVE ARTIFACT /s/cyclonedx.augmented.sbom.json AS LOCAL ${out}
+    RUN echo "Augmented SBOM saved to ${out}"
