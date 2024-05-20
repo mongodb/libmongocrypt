@@ -1153,7 +1153,6 @@ bool mongocrypt_kms_ctx_endpoint(mongocrypt_kms_ctx_t *kms, const char **endpoin
 MONGOCRYPT_EXPORT
 uint32_t mongocrypt_kms_ctx_bytes_needed(mongocrypt_kms_ctx_t *kms);
 
-
 /**
  * Indicates how long to sleep before sending this request.
  *
