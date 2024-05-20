@@ -470,12 +470,12 @@ _handle_non200_http_status(int http_status, const char *body, size_t body_len, m
 static int64_t backoff_time_usec(int64_t attempts) {
     static bool seeded = false;
     if (!seeded) {
-        srand((uint32_t) time(NULL));
+        srand((uint32_t)time(NULL));
         seeded = true;
     }
 
     /* Exponential backoff with jitter. */
-    const int64_t base = 200000; /* 0.2 seconds */
+    const int64_t base = 200000;  /* 0.2 seconds */
     const int64_t max = 20000000; /* 20 seconds */
     int64_t backoff = base * (1LL << (attempts - 1));
     if (backoff > max) {
@@ -483,38 +483,30 @@ static int64_t backoff_time_usec(int64_t attempts) {
     }
 
     /* Full jitter: between 1 and current max */
-    return (int64_t) ((double) rand() / (double) RAND_MAX * (double) backoff) + 1;
+    return (int64_t)((double)rand() / (double)RAND_MAX * (double)backoff) + 1;
 }
 
 static bool should_retry_http(int http_status, _kms_request_type_t t) {
     static const int retryable_aws[] = {408, 429, 500, 502, 503, 509};
     static const int retryable_azure[] = {408, 429, 500, 502, 503, 504};
-    switch (t) {
-        case MONGOCRYPT_KMS_AWS_ENCRYPT:
-        case MONGOCRYPT_KMS_AWS_DECRYPT:
-            for (size_t i = 0; i < sizeof(retryable_aws) / sizeof(retryable_aws[0]); i++) {
-                if (http_status == retryable_aws[i]) {
-                    return true;
-                }
-            }
-            return false;
-        case MONGOCRYPT_KMS_AZURE_WRAPKEY:
-        case MONGOCRYPT_KMS_AZURE_UNWRAPKEY:
-            for (size_t i = 0; i < sizeof(retryable_azure) / sizeof(retryable_azure[0]); i++) {
-                if (http_status == retryable_azure[i]) {
-                    return true;
-                }
-            }
-            return false;
-        case MONGOCRYPT_KMS_GCP_ENCRYPT:
-        case MONGOCRYPT_KMS_GCP_DECRYPT:
-            if (http_status == 408 || http_status == 429 || http_status / 500 == 1) {
+    if (t == MONGOCRYPT_KMS_AWS_ENCRYPT || t == MONGOCRYPT_KMS_AWS_DECRYPT) {
+        for (size_t i = 0; i < sizeof(retryable_aws) / sizeof(retryable_aws[0]); i++) {
+            if (http_status == retryable_aws[i]) {
                 return true;
             }
-            return false;
-        default:
-            return false;
+        }
+    } else if (t == MONGOCRYPT_KMS_AZURE_WRAPKEY || t == MONGOCRYPT_KMS_AZURE_UNWRAPKEY) {
+        for (size_t i = 0; i < sizeof(retryable_azure) / sizeof(retryable_azure[0]); i++) {
+            if (http_status == retryable_azure[i]) {
+                return true;
+            }
+        }
+    } else if (t == MONGOCRYPT_KMS_GCP_ENCRYPT || t == MONGOCRYPT_KMS_GCP_DECRYPT) {
+        if (http_status == 408 || http_status == 429 || http_status / 500 == 1) {
+            return true;
+        }
     }
+    return false;
 }
 
 static void set_retry(mongocrypt_kms_ctx_t *kms) {
