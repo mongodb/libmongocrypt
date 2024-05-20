@@ -20,6 +20,7 @@
 #include "mongocrypt-crypto-private.h"
 #include "mongocrypt-ctx-private.h"
 #include "mongocrypt-endpoint-private.h"
+#include "mongocrypt-kek-private.h"
 #include "mongocrypt-kms-ctx-private.h"
 #include "mongocrypt-log-private.h"
 #include "mongocrypt-opts-private.h"
@@ -485,14 +486,35 @@ static int64_t backoff_time_usec(int64_t attempts) {
     return (int64_t) ((double) rand() / (double) RAND_MAX * (double) backoff) + 1;
 }
 
-static bool should_retry_http(int http_status) {
-    static const int retryable[] = {408, 429, 500, 502, 503, 509};
-    for (size_t i = 0; i < sizeof(retryable) / sizeof(retryable[0]); i++) {
-        if (http_status == retryable[i]) {
-            return true;
-        }
+static bool should_retry_http(int http_status, _kms_request_type_t t) {
+    static const int retryable_aws[] = {408, 429, 500, 502, 503, 509};
+    static const int retryable_azure[] = {408, 429, 500, 502, 503, 504};
+    switch (t) {
+        case MONGOCRYPT_KMS_AWS_ENCRYPT:
+        case MONGOCRYPT_KMS_AWS_DECRYPT:
+            for (size_t i = 0; i < sizeof(retryable_aws) / sizeof(retryable_aws[0]); i++) {
+                if (http_status == retryable_aws[i]) {
+                    return true;
+                }
+            }
+            return false;
+        case MONGOCRYPT_KMS_AZURE_WRAPKEY:
+        case MONGOCRYPT_KMS_AZURE_UNWRAPKEY:
+            for (size_t i = 0; i < sizeof(retryable_azure) / sizeof(retryable_azure[0]); i++) {
+                if (http_status == retryable_azure[i]) {
+                    return true;
+                }
+            }
+            return false;
+        case MONGOCRYPT_KMS_GCP_ENCRYPT:
+        case MONGOCRYPT_KMS_GCP_DECRYPT:
+            if (http_status == 408 || http_status == 429 || http_status / 500 == 1) {
+                return true;
+            }
+            return false;
+        default:
+            return false;
     }
-    return false;
 }
 
 static void set_retry(mongocrypt_kms_ctx_t *kms) {
@@ -533,7 +555,7 @@ static bool _ctx_done_aws(mongocrypt_kms_ctx_t *kms, const char *json_field) {
     }
     body = kms_response_get_body(response, &body_len);
 
-    if (kms->retry_enabled && should_retry_http(http_status)) {
+    if (kms->retry_enabled && should_retry_http(http_status, kms->req_type)) {
         if (kms->attempts >= kms_max_attempts) {
             CLIENT_ERR("KMS request failed after %d retries", kms_max_attempts);
             goto fail;
@@ -702,7 +724,7 @@ static bool _ctx_done_azure_wrapkey_unwrapkey(mongocrypt_kms_ctx_t *kms) {
     }
     body = kms_response_get_body(response, &body_len);
 
-    if (kms->should_retry && should_retry_http(http_status)) {
+    if (kms->should_retry && should_retry_http(http_status, kms->req_type)) {
         if (kms->attempts >= kms_max_attempts) {
             CLIENT_ERR("KMS request failed after %d retries", kms_max_attempts);
             goto fail;
@@ -807,7 +829,7 @@ static bool _ctx_done_gcp(mongocrypt_kms_ctx_t *kms, const char *json_field) {
     }
     body = kms_response_get_body(response, &body_len);
 
-    if (kms->should_retry && should_retry_http(http_status)) {
+    if (kms->should_retry && should_retry_http(http_status, kms->req_type)) {
         if (kms->attempts >= kms_max_attempts) {
             CLIENT_ERR("KMS request failed after %d retries", kms_max_attempts);
             goto fail;
