@@ -516,9 +516,7 @@ mongocrypt_kms_ctx_t *mongocrypt_ctx_next_kms_ctx(mongocrypt_ctx_t *ctx) {
 
     mongocrypt_kms_ctx_t *ret;
     switch (ctx->state) {
-    case MONGOCRYPT_CTX_NEED_KMS:
-        ret = ctx->vtable.next_kms_ctx(ctx);
-        break;
+    case MONGOCRYPT_CTX_NEED_KMS: ret = ctx->vtable.next_kms_ctx(ctx); break;
     case MONGOCRYPT_CTX_ERROR: return NULL;
     case MONGOCRYPT_CTX_DONE:
     case MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS:
