@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include "mongocrypt-kms-ctx-private.h"
 #include "test-mongocrypt.h"
 
 #define TEST_REWRAP_MASTER_KEY_ID_OLD                                                                                  \
@@ -455,8 +456,8 @@ static void _test_rewrap_many_datakey_need_kms_decrypt_retryable(_mongocrypt_tes
     ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_KMS);
     ASSERT((kms = mongocrypt_ctx_next_kms_ctx(ctx)));
     if (retry) {
-        /* Test that ten retries are attempted */
-        for (int i = 0; i < 10; i++) {
+        /* Test that three retries are attempted */
+        for (int i = 0; i < kms_max_attempts; i++) {
             ASSERT(mongocrypt_kms_ctx_feed(kms, TEST_FILE("./test/data/rmd/kms-decrypt-reply-429.txt")));
             ASSERT(mongocrypt_kms_ctx_bytes_needed(kms) == 0);
             ASSERT(mongocrypt_kms_ctx_fail(kms)); //  Simulate driver-side network failure
@@ -483,8 +484,8 @@ static void _test_rewrap_many_datakey_need_kms_decrypt_retryable(_mongocrypt_tes
         ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
         ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_KMS);
         ASSERT((kms = mongocrypt_ctx_next_kms_ctx(ctx)));
-        for (int i = 0; i <= 10; i++) {
-            if (i == 10) {
+        for (int i = 0; i <= kms_max_attempts; i++) {
+            if (i == 3) {
                 ASSERT_FAILS(mongocrypt_kms_ctx_feed(kms, TEST_FILE("./test/data/rmd/kms-decrypt-reply-429.txt")), kms, "retries");
                 break;
             }

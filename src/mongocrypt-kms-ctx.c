@@ -51,7 +51,6 @@ typedef struct {
 #define SHA256_LEN 32
 #define DEFAULT_HTTPS_PORT "443"
 #define DEFAULT_KMIP_PORT "5696"
-static const int kms_max_attempts = 3;
 
 static bool _sha256(void *ctx, const char *input, size_t len, unsigned char *hash_out) {
     BSON_ASSERT_PARAM(ctx);
