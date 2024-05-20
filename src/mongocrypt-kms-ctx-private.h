@@ -62,6 +62,8 @@ struct _mongocrypt_kms_ctx_t {
     bool should_retry;
 };
 
+static const int kms_max_attempts = 3;
+
 bool _mongocrypt_kms_ctx_init_aws_decrypt(mongocrypt_kms_ctx_t *kms,
                                           _mongocrypt_opts_kms_providers_t *kms_providers,
                                           _mongocrypt_key_doc_t *key,
