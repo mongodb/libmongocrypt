@@ -32,11 +32,14 @@ Do the following when releasing:
         --secret silk_client_id=${silk_client_id} \
         --secret silk_client_secret=${silk_client_secret} \
         +sbom-download \
-        --out cyclonedx.augmented.sbom.json
+        --out cyclonedx.augmented.sbom.json \
+        --branch <branch>
      ```
+     For a new minor release, use `master` for `--branch`. For a patch release, use the release branch (e.g. `rx.y`).
      Secrets can be obtained from [AWS Secrets Manager](https://wiki.corp.mongodb.com/display/DRIVERS/Using+AWS+Secrets+Manager+to+Store+Testing+Secrets) under `drivers/libmongocrypt`.
 
-- If this is a new minor release (e.g. `x.y.0`), file a DOCSP ticket to update the installation instructions on [Install libmongocrypt](https://www.mongodb.com/docs/manual/core/csfle/reference/libmongocrypt/). ([Example](https://jira.mongodb.org/browse/DOCSP-36863))
+- If this is a new minor release (e.g. `x.y.0`):
+   - File a DOCSP ticket to update the installation instructions on [Install libmongocrypt](https://www.mongodb.com/docs/manual/core/csfle/reference/libmongocrypt/). ([Example](https://jira.mongodb.org/browse/DOCSP-36863))
 - Make a PR to apply the "Update CHANGELOG.md for x.y.z" commit to the `master` branch.
 - Update the release on the [Jira releases page](https://jira.mongodb.org/projects/MONGOCRYPT/versions).
 - Record the release on [C/C++ Release Info](https://docs.google.com/spreadsheets/d/1yHfGmDnbA5-Qt8FX4tKWC5xk9AhzYZx1SKF4AD36ecY/edit?usp=sharing). This is done to meet SSDLC reporting requirements.

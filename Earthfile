@@ -491,6 +491,7 @@ sbom-generate:
 #
 sbom-download:
     ARG --required out
+    ARG --required branch
     FROM +silkbomb
     WORKDIR /s
     # Download the Augmented SBOM file:
@@ -499,7 +500,7 @@ sbom-download:
         SILK_CLIENT_SECRET=${silk_client_secret} \
         silkbomb download \
         --sbom-out cyclonedx.augmented.sbom.json \
-        --silk-asset-group libmongocrypt
+        --silk-asset-group libmongocrypt-${branch}
     # Save the result back to the host:
     SAVE ARTIFACT /s/cyclonedx.augmented.sbom.json AS LOCAL ${out}
     RUN echo "Augmented SBOM saved to ${out}"
