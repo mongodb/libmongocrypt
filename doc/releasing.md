@@ -40,6 +40,14 @@ Do the following when releasing:
 
 - If this is a new minor release (e.g. `x.y.0`):
    - File a DOCSP ticket to update the installation instructions on [Install libmongocrypt](https://www.mongodb.com/docs/manual/core/csfle/reference/libmongocrypt/). ([Example](https://jira.mongodb.org/browse/DOCSP-36863))
+   - Create a new Silk asset group. Use the newly created release branch (e.g. `rx.y`) as the `--branch` argument:
+     ```bash
+     ./.evergreen/earthly.sh \
+        --secret silk_client_id=${silk_client_id} \
+        --secret silk_client_secret=${silk_client_secret} \
+        +silk-create-asset-group \
+        --branch <branch>
+     ```
 - Make a PR to apply the "Update CHANGELOG.md for x.y.z" commit to the `master` branch.
 - Update the release on the [Jira releases page](https://jira.mongodb.org/projects/MONGOCRYPT/versions).
 - Record the release on [C/C++ Release Info](https://docs.google.com/spreadsheets/d/1yHfGmDnbA5-Qt8FX4tKWC5xk9AhzYZx1SKF4AD36ecY/edit?usp=sharing). This is done to meet SSDLC reporting requirements.

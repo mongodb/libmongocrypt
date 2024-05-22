@@ -504,3 +504,19 @@ sbom-download:
     # Save the result back to the host:
     SAVE ARTIFACT /s/cyclonedx.augmented.sbom.json AS LOCAL ${out}
     RUN echo "Augmented SBOM saved to ${out}"
+
+# silk-create-asset-group:
+#   Create an asset group for Silk.
+#
+# See https://wiki.corp.mongodb.com/display/DRIVERS/Using+AWS+Secrets+Manager+to+Store+Testing+Secrets for instructions to get secrets from AWS Secrets Manager. Secrets are available under `drivers/libmongocrypt`.
+#
+silk-create-asset-group:
+    ARG --required branch
+    FROM +env.alpine
+    RUN __install curl jq
+    COPY etc/silk-create-asset-group.sh /s/silk-create-asset-group.sh
+    RUN --no-cache --secret silk_client_id --secret silk_client_secret \
+        silk_client_id=${silk_client_id} \
+        silk_client_secret=${silk_client_secret} \
+        branch=${branch} \
+            /s/silk-create-asset-group.sh
