@@ -1446,6 +1446,7 @@ try:
         lib = ffi.dlopen(_PYMONGOCRYPT_LIB)
     else:
         try:
+            print(_path)
             lib = ffi.dlopen(_path)
         except OSError:
             # Fallback to libmongocrypt installed on the system.
