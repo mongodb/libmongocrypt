@@ -15,6 +15,7 @@
  */
 
 using System;
+using System.Linq;
 
 namespace MongoDB.Libmongocrypt
 {
@@ -34,6 +35,9 @@ namespace MongoDB.Libmongocrypt
         private static Library.Delegates.RandomCallback __randomCallback = new Library.Delegates.RandomCallback(SecureRandomCallback.GenerateRandom);
         private static Library.Delegates.CryptoHmacCallback __signRsaesPkcs1HmacCallback = new Library.Delegates.CryptoHmacCallback(SigningRSAESPKCSCallback.RsaSign);
 
+        // mongocrypt_is_crypto_available is only available in libmongocrypt version >= 1.9
+        private static readonly Version __mongocryptIsCryptoAvailableMinVersion = Version.Parse("1.9");
+
         /// <summary>Creates a CryptClient with the specified options.</summary>
         /// <param name="options">The options.</param>
         /// <returns>A CryptClient</returns>
@@ -42,14 +46,14 @@ namespace MongoDB.Libmongocrypt
             MongoCryptSafeHandle handle = null;
             Status status = null;
 
+            var cryptoAvailable = Version.Parse(Library.Version.Split('-', '+').First()) >= __mongocryptIsCryptoAvailableMinVersion && Library.mongocrypt_is_crypto_available();
+
             try
             {
                 handle = Library.mongocrypt_new();
                 status = new Status();
-
-                // The below code can be avoided on Windows. So, we don't call it on this system 
-                // to avoid restrictions on target frameworks that present in some of below
-                if (OperatingSystemHelper.CurrentOperatingSystem != OperatingSystemPlatform.Windows)
+                
+                if (!cryptoAvailable)
                 {
                     handle.Check(
                         status,

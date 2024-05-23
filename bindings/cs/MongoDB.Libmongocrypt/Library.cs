@@ -48,6 +48,9 @@ namespace MongoDB.Libmongocrypt
             _mongocrypt_ctx_setopt_key_encryption_key = new Lazy<Delegates.mongocrypt_ctx_setopt_key_encryption_key>(
                 () => __loader.Value.GetFunction<Delegates.mongocrypt_ctx_setopt_key_encryption_key>(
                     ("mongocrypt_ctx_setopt_key_encryption_key")), true);
+            
+            _mongocrypt_is_crypto_available = new Lazy<Delegates.mongocrypt_is_crypto_available>(
+                () => __loader.Value.GetFunction<Delegates.mongocrypt_is_crypto_available>("mongocrypt_is_crypto_available"), true);
 
             _mongocrypt_setopt_aes_256_ecb = new Lazy<Delegates.mongocrypt_setopt_aes_256_ecb>(
                 () => __loader.Value.GetFunction<Delegates.mongocrypt_setopt_aes_256_ecb>(
@@ -229,6 +232,8 @@ namespace MongoDB.Libmongocrypt
         internal static Delegates.mongocrypt_setopt_log_handler mongocrypt_setopt_log_handler => _mongocrypt_setopt_log_handler.Value;
         internal static Delegates.mongocrypt_setopt_kms_providers mongocrypt_setopt_kms_providers => _mongocrypt_setopt_kms_providers.Value;
         internal static Delegates.mongocrypt_ctx_setopt_key_encryption_key mongocrypt_ctx_setopt_key_encryption_key => _mongocrypt_ctx_setopt_key_encryption_key.Value;
+        
+        internal static Delegates.mongocrypt_is_crypto_available mongocrypt_is_crypto_available => _mongocrypt_is_crypto_available.Value;
 
         internal static Delegates.mongocrypt_setopt_aes_256_ecb mongocrypt_setopt_aes_256_ecb => _mongocrypt_setopt_aes_256_ecb.Value;
         internal static Delegates.mongocrypt_setopt_bypass_query_analysis mongocrypt_setopt_bypass_query_analysis => _mongocrypt_setopt_bypass_query_analysis.Value;
@@ -306,6 +311,8 @@ namespace MongoDB.Libmongocrypt
 
         private static readonly Lazy<Delegates.mongocrypt_setopt_kms_providers> _mongocrypt_setopt_kms_providers;
         private static readonly Lazy<Delegates.mongocrypt_ctx_setopt_key_encryption_key> _mongocrypt_ctx_setopt_key_encryption_key;
+        
+        private static readonly Lazy<Delegates.mongocrypt_is_crypto_available> _mongocrypt_is_crypto_available;
 
         private static readonly Lazy<Delegates.mongocrypt_setopt_aes_256_ecb> _mongocrypt_setopt_aes_256_ecb;
         private static readonly Lazy<Delegates.mongocrypt_setopt_bypass_query_analysis> _mongocrypt_setopt_bypass_query_analysis;
@@ -398,6 +405,9 @@ namespace MongoDB.Libmongocrypt
             public delegate IntPtr mongocrypt_version(out uint length);
 
             public delegate MongoCryptSafeHandle mongocrypt_new();
+
+            [return: MarshalAs(UnmanagedType.I1)]
+            public delegate bool mongocrypt_is_crypto_available();
 
             public delegate void LogCallback([MarshalAs(UnmanagedType.I4)] LogLevel level, IntPtr messasge,
                 uint message_length, IntPtr context);

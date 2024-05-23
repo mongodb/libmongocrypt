@@ -54,6 +54,9 @@ If you see `Windows Error: 126` during tests, like the example below, it means t
 2. cd <build>/bindings/cs
 3. dotnet build cs.build
 ```
+*Note*: You can use the ```LIBMONGOCRYPT_PATH``` environment variable to load a locally installed
+libmongocrypt build. You should specify the absolute path to the libmongocrypt library itself, not just the containing folder. For example on Linux:
+```$ export LIBMONGOCRYPT_PATH='/path/to/libmongocrypt.so'```.
 
 # Testing
 Do not modify xunit.runner.json
