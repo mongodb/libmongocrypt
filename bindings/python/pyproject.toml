@@ -50,7 +50,7 @@ dependencies = [
 Homepage = "https://github.com/mongodb/libmongocrypt/tree/master/bindings/python"
 
 [tool.setuptools.dynamic]
-version = {attr = "pymongocrypt/version.__version__"}
+version = {attr = "pymongocrypt.version.__version__"}
 
 [tool.setuptools.packages.find]
 include = ["pymongocrypt"]
