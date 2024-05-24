@@ -28,7 +28,7 @@ json_payload=$(cat <<EOF
 }
 EOF
 )
-silk_jwt_token=$(curl -s -X POST "https://silkapi.us1.app.silk.security/api/v1/authenticate" \
+silk_jwt_token=$(curl --no-progress-meter --fail --location -X POST "https://silkapi.us1.app.silk.security/api/v1/authenticate" \
   -H "Accept: application/json" \
   -H "Content-Type: application/json" \
   -d "$json_payload" \
@@ -51,7 +51,7 @@ json_payload=$(cat <<EOF
 }
 EOF
 )
-reply=$(curl --silent -X 'POST' \
+reply=$(curl --no-progress-meter --fail --location -X 'POST' \
   'https://silkapi.us1.app.silk.security/api/v1/raw/asset_group' \
   -H "Accept: application/json" \
   -H "Authorization: ${silk_jwt_token}" \
