@@ -18,7 +18,7 @@ FetchContent_Declare (
     PATCH_COMMAND
         ${patch_command}
             -p 1 # Strip one path component
-            ${patch_input_opt} "${PROJECT_SOURCE_DIR}/etc/libbson-remove-GCC-diagnostic-pragma.patch" # TODO: try to remove once RHEL 6.2 is dropped.
+            ${patch_input_opt} "${PROJECT_SOURCE_DIR}/etc/libbson-remove-GCC-diagnostic-pragma.patch" # TODO: try to remove once RHEL 6.2 is dropped (MONGOCRYPT-688).
             --verbose
     )
 # Populate it:
