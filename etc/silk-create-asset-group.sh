@@ -32,7 +32,7 @@ silk_jwt_token=$(curl --no-progress-meter --fail --location -X POST "https://sil
   -H "Accept: application/json" \
   -H "Content-Type: application/json" \
   -d "$json_payload" \
-  | jq -r '.token')
+  | jq -e -r '.token')
 
 asset_id="libmongocrypt-${branch}"
 
@@ -58,7 +58,7 @@ reply=$(curl --no-progress-meter --fail --location -X 'POST' \
   -H 'Content-Type: application/json' \
   -d "$json_payload")
 
-if silkid=$(echo "$reply" | jq ".silk_id"); then
+if silkid=$(echo "$reply" | jq -e ".silk_id"); then
     echo "Created silk asset group with asset_id=$asset_id and silk_id=$silkid"
 else
     echo "Reply does not contain expected 'silk_id': $reply"
