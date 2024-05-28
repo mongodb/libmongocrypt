@@ -431,6 +431,9 @@ uint32_t mongocrypt_kms_ctx_bytes_needed(mongocrypt_kms_ctx_t *kms) {
     if (!mongocrypt_status_ok(kms->status) || !_mongocrypt_buffer_empty(&kms->result)) {
         return 0;
     }
+    if (kms->should_retry) {
+        return 0;
+    }
     want_bytes = kms_response_parser_wants_bytes(kms->parser, DEFAULT_MAX_KMS_BYTE_REQUEST);
     BSON_ASSERT(want_bytes >= 0);
     return (uint32_t)want_bytes;
@@ -1094,11 +1097,18 @@ bool mongocrypt_kms_ctx_fail(mongocrypt_kms_ctx_t *kms) {
         return false;
     }
 
+    if (kms->attempts >= kms_max_attempts) {
+        mongocrypt_status_t *status = kms->status;
+        CLIENT_ERR("KMS request failed after %d retries due to a network error", kms_max_attempts);
+        return false;
+    }
+
     /* Not idempotent and can't be retried. */
     if (kms->req_type == MONGOCRYPT_KMS_KMIP_REGISTER || kms->req_type == MONGOCRYPT_KMS_KMIP_ACTIVATE
         || kms->req_type == MONGOCRYPT_KMS_KMIP_CREATE) {
         return false;
     } else {
+        kms->sleep_usec = backoff_time_usec(++kms->attempts);
         if (kms->parser) {
             kms_response_parser_reset(kms->parser);
         }
