@@ -51,12 +51,15 @@ json_payload=$(cat <<EOF
 }
 EOF
 )
-reply=$(curl --no-progress-meter --fail --location -X 'POST' \
+if ! reply=$(curl --no-progress-meter --fail-with-body --location -X 'POST' \
   'https://silkapi.us1.app.silk.security/api/v1/raw/asset_group' \
   -H "Accept: application/json" \
   -H "Authorization: ${silk_jwt_token}" \
   -H 'Content-Type: application/json' \
-  -d "$json_payload")
+  -d "$json_payload"); then
+    echo "Failed to create silk asset group. Got reply: $reply"
+    exit 1
+fi
 
 if silkid=$(echo "$reply" | jq -e ".silk_id"); then
     echo "Created silk asset group with asset_id=$asset_id and silk_id=$silkid"
