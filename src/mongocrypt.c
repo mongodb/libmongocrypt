@@ -167,7 +167,7 @@ bool mongocrypt_setopt_log_handler(mongocrypt_t *crypt, mongocrypt_log_fn_t log_
     return true;
 }
 
-bool mongocrypt_setopt_retry(mongocrypt_t *crypt, bool enable) {
+bool mongocrypt_setopt_retry_kms(mongocrypt_t *crypt, bool enable) {
     ASSERT_MONGOCRYPT_PARAM_UNINIT(crypt);
     crypt->retry_enabled = enable;
     return true;
