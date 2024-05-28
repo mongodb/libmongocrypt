@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Changes in Version 1.9.2
+------------------------
+
+- Fix support for building source distributions with setuptools >= 70.
+
+
 Changes in Version 1.9.1
 ------------------------
 
