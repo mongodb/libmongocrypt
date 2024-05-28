@@ -819,7 +819,6 @@ mongocrypt_kms_ctx_t *_mongocrypt_key_broker_next_kms(_mongocrypt_key_broker_t *
 
     if (kb->keys_returned->kms.should_retry) {
         kb->keys_returned->kms.should_retry = false;
-        mongocrypt_status_set(kb->keys_returned->kms.status, MONGOCRYPT_STATUS_OK, 0, "", -1);
         return &kb->keys_returned->kms;
     }
     while (kb->decryptor_iter) {
