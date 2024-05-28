@@ -142,11 +142,9 @@ function (_import_bson)
       set (ENABLE_EXTRA_ALIGNMENT ${_extra_alignment_default} CACHE BOOL "Toggle extra alignment of bson_t")
       # We don't want the subproject to find libmongocrypt
       set (ENABLE_CLIENT_SIDE_ENCRYPTION OFF CACHE BOOL "Disable client-side encryption for the libmongoc subproject")
-      if (BUILD_VERSION)
-         # Both libmongocrypt and C driver support setting a `BUILD_VERSION`. Do not reuse the `BUILD_VERSION` for libmongocrypt when building the C driver.
-         # Set the `BUILD_VERSION` in this file to only apply to the C driver subproject.
-         set (BUILD_VERSION ${MONGOC_FETCH_TAG_FOR_LIBBSON})
-      endif()
+      # Set `BUILD_VERSION` so C driver does not use a `BUILD_VERSION` meant for libmongocrypt.
+      # Both libmongocrypt and C driver support setting a `BUILD_VERSION` to override the version.
+      set (BUILD_VERSION ${MONGOC_FETCH_TAG_FOR_LIBBSON})
       # Disable building tests in C driver:
       set (ENABLE_TESTS OFF)
       set (BUILD_TESTING OFF)
