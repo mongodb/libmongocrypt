@@ -20,7 +20,16 @@ endif ()
 if (NOT INTEL_DFP_LIBRARY_PATCH_ENABLED)
     set (patch_disabled ON)
 endif ()
-include (Patch) # defines `patch_command` and `patch_input_opt`.
+
+include (Patch)
+make_patch_command (patch_command
+    STRIP_COMPONENTS 4
+    PATCHES
+        "${PROJECT_SOURCE_DIR}/etc/mongo-inteldfp-s390x.patch"
+        "${PROJECT_SOURCE_DIR}/etc/mongo-inteldfp-MONGOCRYPT-571.patch"
+        "${PROJECT_SOURCE_DIR}/etc/mongo-inteldfp-libmongocrypt-pr-625.patch"
+        "${PROJECT_SOURCE_DIR}/etc/mongo-inteldfp-alpine-arm-fix.patch"
+    )
 
 # NOTE: The applying of the patch expects the correct input directly from the
 #       expanded archive. If the patch needs to be reapplied, you may see errors
@@ -31,14 +40,7 @@ FetchContent_Declare (
     intel_dfp
     URL "${_default_url}"
     ${_hash_arg}
-    PATCH_COMMAND
-        ${patch_command}
-            -p 4 # Strip four path components
-            ${patch_input_opt} "${PROJECT_SOURCE_DIR}/etc/mongo-inteldfp-s390x.patch"
-            ${patch_input_opt} "${PROJECT_SOURCE_DIR}/etc/mongo-inteldfp-MONGOCRYPT-571.patch"
-            ${patch_input_opt} "${PROJECT_SOURCE_DIR}/etc/mongo-inteldfp-libmongocrypt-pr-625.patch"
-            ${patch_input_opt} "${PROJECT_SOURCE_DIR}/etc/mongo-inteldfp-alpine-arm-fix.patch"
-            --verbose
+    PATCH_COMMAND ${patch_command} --verbose
     )
 
 FetchContent_GetProperties (intel_dfp)

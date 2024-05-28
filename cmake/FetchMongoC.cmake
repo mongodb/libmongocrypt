@@ -9,17 +9,19 @@ option (LIBBSON_PATCH_ENABLED "Whether to apply patches to the libbson library" 
 if (NOT LIBBSON_PATCH_ENABLED)
     set (patch_disabled ON)
 endif ()
-include (Patch) # defines `patch_command` and `patch_input_opt`.
+
+include (Patch)
+make_patch_command (patch_command
+    STRIP_COMPONENTS 1
+    PATCHES
+        ${PROJECT_SOURCE_DIR}/etc/libbson-remove-GCC-diagnostic-pragma.patch
+    )
 
 # Fetch the source archive for the requested tag from GitHub
 FetchContent_Declare (
     embedded_mcd
     URL "https://github.com/mongodb/mongo-c-driver/archive/refs/tags/${MONGOC_FETCH_TAG_FOR_LIBBSON}.tar.gz"
-    PATCH_COMMAND
-        ${patch_command}
-            -p 1 # Strip one path component
-            ${patch_input_opt} "${PROJECT_SOURCE_DIR}/etc/libbson-remove-GCC-diagnostic-pragma.patch" # TODO: try to remove once RHEL 6.2 is dropped (MONGOCRYPT-688).
-            --verbose
+    PATCH_COMMAND ${patch_command} --verbose
     )
 # Populate it:
 FetchContent_GetProperties (embedded_mcd)
