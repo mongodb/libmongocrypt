@@ -13,6 +13,7 @@ endif ()
 include (Patch)
 make_patch_command (patch_command
     STRIP_COMPONENTS 1
+    DIRECTORY "<SOURCE_DIR>"
     PATCHES
         ${PROJECT_SOURCE_DIR}/etc/libbson-remove-GCC-diagnostic-pragma.patch
     )

@@ -24,6 +24,7 @@ endif ()
 include (Patch)
 make_patch_command (patch_command
     STRIP_COMPONENTS 4
+    DIRECTORY "<SOURCE_DIR>"
     PATCHES
         "${PROJECT_SOURCE_DIR}/etc/mongo-inteldfp-s390x.patch"
         "${PROJECT_SOURCE_DIR}/etc/mongo-inteldfp-MONGOCRYPT-571.patch"
