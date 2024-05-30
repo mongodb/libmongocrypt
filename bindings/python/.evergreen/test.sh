@@ -29,14 +29,23 @@ if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
 elif [ "Darwin" = "$(uname -s)" ]; then
     export PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/nocrypto/lib/libmongocrypt.dylib
     PYMONGOCRYPT_LIB_CRYPTO=${MONGOCRYPT_DIR}/lib/libmongocrypt.dylib
-    MACOS_VER=$(sw_vers -productVersion)
-    PYTHONS=(
-          "/Library/Frameworks/Python.framework/Versions/3.8/bin/python3"
-          "/Library/Frameworks/Python.framework/Versions/3.9/bin/python3"
-          "/Library/Frameworks/Python.framework/Versions/3.10/bin/python3"
-          "/Library/Frameworks/Python.framework/Versions/3.11/bin/python3"
-          "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3"
-          )
+    MACOS_ARCH=$(uname -p)
+    if [[ $MACOS_ARCH =~ "arm" ]]; then
+          PYTHONS=(
+               "/Library/Frameworks/Python.framework/Versions/3.9/bin/python3"
+               "/Library/Frameworks/Python.framework/Versions/3.10/bin/python3"
+               "/Library/Frameworks/Python.framework/Versions/3.11/bin/python3"
+               "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3"
+               )
+    else
+          PYTHONS=(
+               "/Library/Frameworks/Python.framework/Versions/3.8/bin/python3"
+               "/Library/Frameworks/Python.framework/Versions/3.9/bin/python3"
+               "/Library/Frameworks/Python.framework/Versions/3.10/bin/python3"
+               "/Library/Frameworks/Python.framework/Versions/3.11/bin/python3"
+               "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3"
+               )
+    fi
 
     export CRYPT_SHARED_PATH="../crypt_shared/lib/mongo_crypt_v1.dylib"
     python3 drivers-evergreen-tools/.evergreen/mongodl.py --component crypt_shared \
