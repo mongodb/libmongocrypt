@@ -31,11 +31,8 @@ function(make_patch_command out)
         if(patch_STRIP_COMPONENTS)
             list(APPEND cmd -p${patch_STRIP_COMPONENTS})
         endif()
-        # git ... apply ...
-        foreach(p IN LISTS patch_PATCHES)
-            # git ... apply ... <file>
-            list(APPEND cmd ${p})
-        endforeach()
+        # git accepts patch filepaths as positional arguments
+        list(APPEND cmd ${patch_PATCHES})
     else()
         # patch ...
         set(cmd ${PATCH_EXECUTABLE})
@@ -47,10 +44,9 @@ function(make_patch_command out)
         if(patch_STRIP_COMPONENTS)
             list(APPEND cmd -p${patch_STRIP_COMPONENTS})
         endif()
-        foreach(p IN LISTS patch_PATCHES)
-            # patch ... ---input=<file>
-            list(APPEND cmd --input=${p})
-        endforeach()
+        # Prepend "--input=" to each patch filepath and add them to the argv
+        list(TRANSFORM patch_PATCHES PREPEND "--input=")
+        list(APPEND cmd ${patch_PATCHES})
     endif()
     set("${out}" "${cmd}" PARENT_SCOPE)
 endfunction()
