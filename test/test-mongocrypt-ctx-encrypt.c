@@ -5066,6 +5066,36 @@ static void _test_bulkWrite(_mongocrypt_tester_t *tester) {
     bson_free(local_kek);
 }
 
+static void _test_encrypt_retry_tcp(_mongocrypt_tester_t *tester) {
+    mongocrypt_t *crypt;
+
+    crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+
+    // Test that an HTTP error is retried.
+    {
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "test", -1, TEST_FILE("./test/example/cmd.json")), ctx);
+        _mongocrypt_tester_run_ctx_to(tester, ctx, MONGOCRYPT_CTX_NEED_KMS);
+        mongocrypt_kms_ctx_t *kms_ctx = mongocrypt_ctx_next_kms_ctx(ctx);
+        ASSERT_OK(kms_ctx, ctx);
+        // Expect no sleep is requested before any error.
+        ASSERT_CMPINT64(mongocrypt_kms_ctx_usleep(kms_ctx), ==, 0);
+        // Feed a retryable HTTP error.
+        // TODO: use ASSERT_OK once `kms_ctx` is changed not to set error status.
+        ASSERT(mongocrypt_kms_ctx_feed(kms_ctx, TEST_FILE("./test/data/rmd/kms-decrypt-reply-429.txt")));
+        // Expect KMS request is returned again for a retry.
+        kms_ctx = mongocrypt_ctx_next_kms_ctx(ctx);
+        ASSERT_OK(kms_ctx, ctx);
+        // Feed a successful response.
+        ASSERT_OK(mongocrypt_kms_ctx_feed(kms_ctx, TEST_FILE("./test/data/kms-aws/decrypt-response.txt")), kms_ctx);
+        ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
+        _mongocrypt_tester_run_ctx_to(tester, ctx, MONGOCRYPT_CTX_DONE);
+        mongocrypt_ctx_destroy(ctx);
+    }
+
+    mongocrypt_destroy(crypt); /* recreate crypt because of caching. */
+}
+
 void _mongocrypt_tester_install_ctx_encrypt(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_explicit_encrypt_init);
     INSTALL_TEST(_test_encrypt_init);
@@ -5146,4 +5176,5 @@ void _mongocrypt_tester_install_ctx_encrypt(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_encrypt_fle2_find_range_payload_decimal128_precision);
 #endif
     INSTALL_TEST(_test_bulkWrite);
+    INSTALL_TEST(_test_encrypt_retry_tcp);
 }
