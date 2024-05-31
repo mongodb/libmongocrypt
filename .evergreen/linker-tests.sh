@@ -56,6 +56,8 @@ if is_true USE_NINJA; then
 fi
 
 run_chdir "$MONGOC_DIR" git apply --ignore-whitespace "$linker_tests_deps_root/bson_patches/libbson1.patch"
+# Apply patch to fix compile on RHEL 6.2. TODO: try to remove once RHEL 6.2 is dropped (MONGOCRYPT-688).
+run_chdir "$MONGOC_DIR" git apply "$LIBMONGOCRYPT_DIR/etc/libbson-remove-GCC-diagnostic-pragma.patch"
 
 BUILD_PATH="$MONGOC_DIR/cmake-build"
 BSON1_INSTALL_PATH="$linker_tests_root/install/bson1"
@@ -71,6 +73,8 @@ run_cmake --build "$BUILD_PATH" --target install --config RelWithDebInfo
 # Prepare libbson2
 run_chdir "$MONGOC_DIR" git reset --hard
 run_chdir "$MONGOC_DIR" git apply --ignore-whitespace "$linker_tests_deps_root/bson_patches/libbson2.patch"
+# Apply patch to fix compile on RHEL 6.2. TODO: try to remove once RHEL 6.2 is dropped (MONGOCRYPT-688).
+run_chdir "$MONGOC_DIR" git apply "$LIBMONGOCRYPT_DIR/etc/libbson-remove-GCC-diagnostic-pragma.patch"
 LIBBSON2_SRC_DIR="$MONGOC_DIR"
 
 # Build libmongocrypt, static linking against libbson2

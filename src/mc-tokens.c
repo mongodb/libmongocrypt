@@ -21,7 +21,7 @@
 /// the remaining arguments. This macro usage should be followed by the
 /// constructor body, with the implicit first argument '_mongocrypt_crypto_t*
 /// crypto' and final argument 'mongocrypt_status_t* status'
-#define DEF_TOKEN_TYPE(Name, ...) DEF_TOKEN_TYPE_1(Name, CONCAT(Name, _t), __VA_ARGS__)
+#define DEF_TOKEN_TYPE(Name, ...) DEF_TOKEN_TYPE_1(Name, BSON_CONCAT(Name, _t), __VA_ARGS__)
 
 #define DEF_TOKEN_TYPE_1(Prefix, T, ...)                                                                               \
     /* Define the struct for the token */                                                                              \
@@ -29,9 +29,9 @@
         _mongocrypt_buffer_t data;                                                                                     \
     };                                                                                                                 \
     /* Data-getter */                                                                                                  \
-    const _mongocrypt_buffer_t *CONCAT(Prefix, _get)(const T *self) { return &self->data; }                            \
+    const _mongocrypt_buffer_t *BSON_CONCAT(Prefix, _get)(const T *self) { return &self->data; }                       \
     /* Destructor */                                                                                                   \
-    void CONCAT(Prefix, _destroy)(T * self) {                                                                          \
+    void BSON_CONCAT(Prefix, _destroy)(T * self) {                                                                     \
         if (!self) {                                                                                                   \
             return;                                                                                                    \
         }                                                                                                              \
@@ -39,23 +39,23 @@
         bson_free(self);                                                                                               \
     }                                                                                                                  \
     /* Constructor. From raw buffer */                                                                                 \
-    T *CONCAT(Prefix, _new_from_buffer)(_mongocrypt_buffer_t * buf) {                                                  \
+    T *BSON_CONCAT(Prefix, _new_from_buffer)(_mongocrypt_buffer_t * buf) {                                             \
         BSON_ASSERT(buf->len == MONGOCRYPT_HMAC_SHA256_LEN);                                                           \
         T *t = bson_malloc(sizeof(T));                                                                                 \
         _mongocrypt_buffer_set_to(buf, &t->data);                                                                      \
         return t;                                                                                                      \
     }                                                                                                                  \
     /* Constructor. Parameter list given as variadic args. */                                                          \
-    T *CONCAT(Prefix, _new)(_mongocrypt_crypto_t * crypto, __VA_ARGS__, mongocrypt_status_t * status)
+    T *BSON_CONCAT(Prefix, _new)(_mongocrypt_crypto_t * crypto, __VA_ARGS__, mongocrypt_status_t * status)
 
 #define IMPL_TOKEN_NEW_1(Name, Key, Arg, Clean)                                                                        \
     {                                                                                                                  \
-        CONCAT(Name, _t) *t = bson_malloc(sizeof(CONCAT(Name, _t)));                                                   \
+        BSON_CONCAT(Name, _t) *t = bson_malloc(sizeof(BSON_CONCAT(Name, _t)));                                         \
         _mongocrypt_buffer_init(&t->data);                                                                             \
         _mongocrypt_buffer_resize(&t->data, MONGOCRYPT_HMAC_SHA256_LEN);                                               \
                                                                                                                        \
         if (!_mongocrypt_hmac_sha_256(crypto, Key, Arg, &t->data, status)) {                                           \
-            CONCAT(Name, _destroy)(t);                                                                                 \
+            BSON_CONCAT(Name, _destroy)(t);                                                                            \
             Clean;                                                                                                     \
             return NULL;                                                                                               \
         }                                                                                                              \
