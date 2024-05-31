@@ -513,7 +513,6 @@ static bool should_retry_http(int http_status, _kms_request_type_t t) {
 
 static void set_retry(mongocrypt_kms_ctx_t *kms) {
     // Set non-ok status so the parser knows to stop
-    mongocrypt_status_set(kms->status, MONGOCRYPT_STATUS_ERROR_KMS, 1, "KMS returned retryable error", -1);
     kms->should_retry = true;
     kms->attempts++;
     kms->sleep_usec = backoff_time_usec(kms->attempts);
