@@ -1,7 +1,5 @@
 
 include (FetchContent)
-find_program (GIT_EXECUTABLE git)
-find_program (PATCH_EXECUTABLE patch)
 
 # When updating the version of IntelDFP, also update the version in etc/purls.txt
 set (_default_url "${PROJECT_SOURCE_DIR}/third-party/IntelRDFPMathLib20U2.tar.xz")
@@ -19,17 +17,21 @@ if (NOT INTEL_DFP_LIBRARY_URL_SHA256 STREQUAL "no-verify")
     set (_hash_arg URL_HASH "${INTEL_DFP_LIBRARY_URL_HASH}")
 endif ()
 
-# Make the PATCH_COMMAND a no-op if it was disabled
-set (patch_command)
-set (patch_input_opt)
 if (NOT INTEL_DFP_LIBRARY_PATCH_ENABLED)
-    set (patch_command "${CMAKE_COMMAND}" -E true)
-elseif (GIT_EXECUTABLE)
-    set (patch_command "${GIT_EXECUTABLE}" --work-tree=<SOURCE_DIR> apply)
-else ()
-    set (patch_command "${PATCH_EXECUTABLE}" --dir=<SOURCE_DIR>)
-    set (patch_input_opt -i)
+    set (patch_disabled ON)
 endif ()
+
+include (Patch)
+make_patch_command (patch_command
+    STRIP_COMPONENTS 4
+    DIRECTORY "<SOURCE_DIR>"
+    DISABLED "${patch_disabled}"
+    PATCHES
+        "${PROJECT_SOURCE_DIR}/etc/mongo-inteldfp-s390x.patch"
+        "${PROJECT_SOURCE_DIR}/etc/mongo-inteldfp-MONGOCRYPT-571.patch"
+        "${PROJECT_SOURCE_DIR}/etc/mongo-inteldfp-libmongocrypt-pr-625.patch"
+        "${PROJECT_SOURCE_DIR}/etc/mongo-inteldfp-alpine-arm-fix.patch"
+    )
 
 # NOTE: The applying of the patch expects the correct input directly from the
 #       expanded archive. If the patch needs to be reapplied, you may see errors
@@ -40,14 +42,7 @@ FetchContent_Declare (
     intel_dfp
     URL "${_default_url}"
     ${_hash_arg}
-    PATCH_COMMAND
-        ${patch_command}
-            -p 4 # Strip four path components
-            ${patch_input_opt} "${PROJECT_SOURCE_DIR}/etc/mongo-inteldfp-s390x.patch"
-            ${patch_input_opt} "${PROJECT_SOURCE_DIR}/etc/mongo-inteldfp-MONGOCRYPT-571.patch"
-            ${patch_input_opt} "${PROJECT_SOURCE_DIR}/etc/mongo-inteldfp-libmongocrypt-pr-625.patch"
-            ${patch_input_opt} "${PROJECT_SOURCE_DIR}/etc/mongo-inteldfp-alpine-arm-fix.patch"
-            --verbose
+    PATCH_COMMAND ${patch_command} --verbose
     )
 
 FetchContent_GetProperties (intel_dfp)
