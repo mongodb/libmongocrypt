@@ -607,16 +607,6 @@ mongocrypt_ctx_t *mongocrypt_ctx_new(mongocrypt_t *crypt);
 MONGOCRYPT_EXPORT
 bool mongocrypt_ctx_status(mongocrypt_ctx_t *ctx, mongocrypt_status_t *status);
 
-/**
- * Enable or disable retry behavior.
- *
- * @param[in] ctx The @ref mongocrypt_ctx_t object.
- * @param[in] retry A boolean indicating whether to retry operations.
- *
- * @returns A boolean indicating success.
- */
-MONGOCRYPT_EXPORT
-bool mongocrypt_ctx_setopt_retry(mongocrypt_ctx_t *ctx, bool retry);
 
 /**
  * Set the key id to use for explicit encryption.
