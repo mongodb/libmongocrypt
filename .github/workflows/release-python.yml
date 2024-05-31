@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: wheels-${{ github.ref }}
+  group: python-release-${{ github.ref }}
   cancel-in-progress: true
 
 defaults:
