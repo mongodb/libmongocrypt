@@ -7,7 +7,7 @@ include CHANGELOG.rst
 recursive-include pymongocrypt *.py
 recursive-include requirements *.txt
 exclude build-manylinux-wheel.sh
-exclude release.sh
+exclude *.sh
 exclude RELEASE.rst
 exclude strip_header.py
 exclude synchro.py
