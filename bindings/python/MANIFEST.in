@@ -2,6 +2,7 @@ include README.rst
 include LICENSE
 include pyproject.toml
 include *requirements.txt
+include sbom.json
 include CHANGELOG.rst
 recursive-include pymongocrypt *.py
 recursive-include requirements *.txt
