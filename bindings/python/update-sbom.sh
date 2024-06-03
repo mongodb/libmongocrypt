@@ -1,11 +1,11 @@
-#!/bin/bash 
+#!/bin/bash
 
 set -eux
 
 LIBMONGOCRYPT_VERSION=$(cat ./libmongocrypt-version.txt)
 if [ $(command -v podman) ]; then
     DOCKER=podman
-else 
+else
     DOCKER=docker
 fi
 
