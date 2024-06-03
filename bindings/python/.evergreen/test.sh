@@ -107,6 +107,5 @@ if grep -q $EXPECTED sbom.json; then
   echo "SBOM is up to date!"
 else
   echo "SBOM is out of date! Run the \"update-sbom.sh\" script."
-  echo "
   exit 1
 fi
