@@ -16,7 +16,8 @@ set -o xtrace   # Write all commands first to stderr
 set -o errexit  # Exit the script with error if any of the commands fail
 
 # The libmongocrypt git revision release to embed in our wheels.
-REVISION=$(git rev-list -n 1 1.9.0)
+LIBMONGOCRYPT_VERSION=$(cat ./libmongocrypt-version.txt)
+REVISION=$(git rev-list -n 1 $LIBMONGOCRYPT_VERSION)
 # The libmongocrypt release branch.
 BRANCH="r1.9"
 # The python executable to use.

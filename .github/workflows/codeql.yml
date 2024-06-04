@@ -1,0 +1,52 @@
+name: "CodeQL"
+
+on:
+  push:
+    branches: [ "master"]
+    tags: ['*']
+  pull_request:
+    paths:
+      - bindings/python/**/*.py
+  schedule:
+    - cron: '17 10 * * 2'
+
+jobs:
+  analyze-python:
+    name: Analyze Python
+    runs-on: "ubuntu-latest"
+    timeout-minutes: 360
+    permissions:
+      # required for all workflows
+      security-events: write
+
+      # required to fetch internal or private CodeQL packs
+      packages: read
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    - uses: actions/setup-python@v3
+      with:
+        python-version: 3.x
+
+    # Initializes the CodeQL tools for scanning.
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: python
+        build-mode: manual
+        # For more details on CodeQL's query packs, refer to: https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs
+        queries: security-extended
+        config: |
+          paths:
+            - bindings/python/pymongocrypt
+
+    - name: Install package
+      run: |
+        cd bindings/python
+        bash release.sh
+        pip install dist/*.whl
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:python"
