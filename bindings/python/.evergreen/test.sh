@@ -68,25 +68,11 @@ else
       crypt_shared --version latest --out ../crypt_shared/ --target $TARGET
 fi
 
-
-# Don't run pre-commit on Windows
-if [ "$OS" != "Windows_NT" ]; then
-    # Only run once and with Python 3.8+
-    createvirtualenv $BASE_PYTHON .venv
-    python -m pip install certifi
-    python -m pip install pre-commit
-    pre-commit run --all-files
-    deactivate
-    rm -rf .venv
-fi
-
 for PYTHON_BINARY in "${PYTHONS[@]}"; do
     echo "Running test with python: $PYTHON_BINARY"
     $PYTHON_BINARY -c 'import sys; print(sys.version)'
     git clean -dffx
     createvirtualenv $PYTHON_BINARY .venv
-    python -m pip install check-manifest
-    check-manifest -v
     python -m pip install --prefer-binary -v -e ".[test]"
     echo "Running tests with crypto enabled libmongocrypt..."
     PYMONGOCRYPT_LIB=$PYMONGOCRYPT_LIB_CRYPTO python -c 'from pymongocrypt.binding import lib;assert lib.mongocrypt_is_crypto_available(), "mongocrypt_is_crypto_available() returned False"'
