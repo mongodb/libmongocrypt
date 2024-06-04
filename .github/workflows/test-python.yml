@@ -48,4 +48,7 @@ jobs:
           allow-prereleases: true
           python-version: ${{ matrix.python-version }}
       - name: Build and test dist files
-        run: bash ./release.sh
+        run: |
+          export LIBMONGOCRYPT_VERSION=$(cat ./libmongocrypt-version.txt)
+          git pull origin $LIBMONGOCRYPT_VERSION
+          bash ./release.sh
