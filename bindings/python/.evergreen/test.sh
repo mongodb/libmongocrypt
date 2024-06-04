@@ -85,3 +85,13 @@ for PYTHON_BINARY in "${PYTHONS[@]}"; do
     deactivate
     rm -rf .venv
 done
+
+# Verify the sbom file
+LIBMONGOCRYPT_VERSION=$(cat ./libmongocrypt-version.txt)
+EXPECTED="pkg:github/mongodb/libmongocrypt@$LIBMONGOCRYPT_VERSION"
+if grep -q $EXPECTED sbom.json; then
+  echo "SBOM is up to date!"
+else
+  echo "SBOM is out of date! Run the \"update-sbom.sh\" script."
+  exit 1
+fi
