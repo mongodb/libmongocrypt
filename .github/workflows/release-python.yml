@@ -7,6 +7,9 @@ on:
       - "pymongocrypt-[0-9]+.[0-9]+.[0-9]+.post[0-9]+"
       - "pymongocrypt-[0-9]+.[0-9]+.[0-9]+[a-b][0-9]+"
       - "pymongocrypt-[0-9]+.[0-9]+.[0-9]+rc[0-9]+"
+  pull_request:
+    paths:
+      - bindings/python/*
   workflow_dispatch:
 
 concurrency:
@@ -40,7 +43,10 @@ jobs:
           allow-prereleases: true
 
       - name: Build and test dist files
-        run: bash ./release.sh
+        run: |
+          export LIBMONGOCRYPT_VERSION=$(cat ./libmongocrypt-version.txt)
+          git fetch origin $LIBMONGOCRYPT_VERSION
+          bash ./release.sh
 
       - uses: actions/upload-artifact@v4
         with:
