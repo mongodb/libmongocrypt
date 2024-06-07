@@ -52,7 +52,7 @@ path = "pymongocrypt/version.py"
 files = ["requirements.txt"]
 
 [tool.hatch.metadata.hooks.requirements_txt.optional-dependencies]
-test = ["requirements-text.txt"]
+test = ["requirements-test.txt"]
 
 [tool.ruff.lint]
 select = [
