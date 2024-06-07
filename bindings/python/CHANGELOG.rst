@@ -1,11 +1,14 @@
 Changelog
 =========
 
-Changes in Version 2.0.0
+Changes in Version 1.10.0
 ------------------------
 
 - Add Python async support.
 - Drop support for Python 3.7 and PyPy 3.8. Python >=3.8 or PyPy >=3.9 is now required.
+- Add support for range-based Queryable Encryption with the new "range"
+  algorithm on MongoDB 8.0+. This replaces the experimental "rangePreview" algorithm.
+
 
 Changes in Version 1.9.2
 ------------------------
