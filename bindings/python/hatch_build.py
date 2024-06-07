@@ -1,5 +1,6 @@
 """A custom hatch build hook for pymongo."""
 from __future__ import annotations
+
 import os
 import sys
 from pathlib import Path
@@ -17,15 +18,15 @@ class CustomHook(BuildHookInterface):
 
         # Ensure wheel is marked as binary.
         # On linux, we use auditwheel to set the name.
-        if sys.platform == 'darwin': 
-            os.environ['MACOSX_DEPLOYMENT_TARGET'] = '11.0'
+        if sys.platform == "darwin":
+            os.environ["MACOSX_DEPLOYMENT_TARGET"] = "11.0"
             build_data["tag"] = "py3-none-macosx_11_0_universal2"
             patt = ".dylib"
-        elif os.name == 'nt':
+        elif os.name == "nt":
             build_data["tag"] = "py3-none-win_amd64"
             patt = ".dll"
         else:
-            patt = '.so'
+            patt = ".so"
 
         here = Path(__file__).parent.resolve()
         dpath = here / "pymongocrypt"
