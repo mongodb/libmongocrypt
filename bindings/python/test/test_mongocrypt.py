@@ -985,9 +985,9 @@ if sys.version_info >= (3, 8, 0):  # noqa: UP036
             )
             encrypted = await encrypter.encrypt(
                 value,
-                "rangePreview",
+                "range",
                 key_id=key_id,
-                query_type="rangePreview",
+                query_type="range",
                 contention_factor=4,
                 range_opts=range_opts,
                 is_expression=True,
@@ -1384,9 +1384,9 @@ class TestExplicitEncryption(unittest.TestCase):
         expected = json_data("fle2-find-range-explicit-v2/int32/encrypted-payload.json")
         encrypted = encrypter.encrypt(
             value,
-            "rangePreview",
+            "range",
             key_id=key_id,
-            query_type="rangePreview",
+            query_type="range",
             contention_factor=4,
             range_opts=range_opts,
             is_expression=True,

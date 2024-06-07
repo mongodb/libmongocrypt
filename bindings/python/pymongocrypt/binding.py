@@ -653,9 +653,7 @@ bool mongocrypt_ctx_setopt_algorithm(mongocrypt_ctx_t *ctx, const char *algorith
 /// String constant for setopt_algorithm "Random" encryption
 /// String constant for setopt_algorithm "Indexed" explicit encryption
 /// String constant for setopt_algorithm "Unindexed" explicit encryption
-/// String constant for setopt_algorithm "rangePreview" explicit encryption
-/// NOTE: The RangePreview algorithm is experimental only. It is not intended
-/// for public use.
+/// String constant for setopt_algorithm "Range" explicit encryption
 
 /**
  * Identify the AWS KMS master key to use for creating a data key.
@@ -837,9 +835,7 @@ bool mongocrypt_ctx_explicit_encrypt_init(mongocrypt_ctx_t *ctx, mongocrypt_bina
 /**
  * Explicit helper method to encrypt a Match Expression or Aggregate Expression.
  * Contexts created for explicit encryption will not go through mongocryptd.
- * Requires query_type to be "rangePreview".
- * NOTE: The RangePreview algorithm is experimental only. It is not intended for
- * public use.
+ * Requires query_type to be "range".
  *
  * This method expects the passed-in BSON to be of the form:
  * { "v" : FLE2RangeFindDriverSpec }
@@ -1376,9 +1372,7 @@ bool mongocrypt_ctx_setopt_index_key_id(mongocrypt_ctx_t *ctx, mongocrypt_binary
 bool mongocrypt_ctx_setopt_query_type(mongocrypt_ctx_t *ctx, const char *query_type, int len);
 
 /**
- * Set options for explicit encryption with the "rangePreview" algorithm.
- * NOTE: The RangePreview algorithm is experimental only. It is not intended for
- * public use.
+ * Set options for explicit encryption with the "range" algorithm.
  *
  * @p opts is a BSON document of the form:
  * {
@@ -1398,8 +1392,6 @@ bool mongocrypt_ctx_setopt_query_type(mongocrypt_ctx_t *ctx, const char *query_t
 bool mongocrypt_ctx_setopt_algorithm_range(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *opts);
 
 /// String constants for setopt_query_type
-// NOTE: The RangePreview algorithm is experimental only. It is not intended for
-// public use.
 """
 )
 

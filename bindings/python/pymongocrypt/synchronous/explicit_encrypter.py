@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from pymongocrypt.synchronous.state_machine import run_state_machine
 from pymongocrypt.mongocrypt import MongoCrypt
 from pymongocrypt.options import DataKeyOpts, ExplicitEncryptOpts
-from pymongocrypt.synchronous.state_machine import run_state_machine
 
 
 class ExplicitEncrypter:
@@ -111,7 +111,7 @@ class ExplicitEncrypter:
           - `contention_factor` (int): The contention factor to use
             when the algorithm is "Indexed".
           - `range_opts` (bytes): Options for explicit encryption
-            with the "rangePreview" algorithm encoded as a BSON document.
+            with the "range" algorithm encoded as a BSON document.
           - `is_expression` (boolean): True if this is an encryptExpression()
             context. Defaults to False.
 
