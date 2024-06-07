@@ -24,7 +24,7 @@ cd bindings/python/
 
 /opt/mongodbtoolchain/v4/bin/python3 -m venv venv
 . ./venv/bin/activate
-python -m pip install --prefer-binary -r test-requirements.txt
+python -m pip install --prefer-binary -r requirements-test.txt
 python -m pip install -e .
 
 export OUTPUT_FILE=results.json
