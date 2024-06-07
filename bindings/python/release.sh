@@ -117,7 +117,7 @@ if [ $(command -v docker) ]; then
     if [ "Linux" = "$(uname -s)" ]; then
         $PYTHON -m venv .venv
         . .venv/bin/activate
-        test_dist dist/*.whl
+        test_dist dist/*linux*.whl
     fi
 
     # Build the manylinux_2_28 aarch64 wheel.
