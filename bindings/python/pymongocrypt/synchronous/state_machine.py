@@ -14,10 +14,10 @@
 
 from abc import abstractmethod
 
+from pymongocrypt.synchronous.credentials import _ask_for_kms_credentials
 from pymongocrypt.binding import lib
 from pymongocrypt.compat import ABC
 from pymongocrypt.errors import MongoCryptError
-from pymongocrypt.synchronous.credentials import _ask_for_kms_credentials
 
 
 class MongoCryptCallback(ABC):
