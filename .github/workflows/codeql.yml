@@ -43,6 +43,8 @@ jobs:
     - name: Install package
       run: |
         cd bindings/python
+        export LIBMONGOCRYPT_VERSION=$(cat ./libmongocrypt-version.txt)
+        git fetch origin $LIBMONGOCRYPT_VERSION
         bash release.sh
         pip install dist/*.whl
 
