@@ -6,6 +6,19 @@ These steps describe releasing the libmongocrypt C library (not the language bin
 Version numbers of libmongocrypt must follow the format 1.[0-9].[0-9] for releases and 1.[0-9].[0-9]-(alpha|beta|rc)[0-9] for pre-releases.  This ensures that Linux distribution packages built from each commit are published to the correct location.
 
 ## Steps to release ##
+
+### Check Snyk
+
+Snyk is used to satisfy vulnerability scanning requirements of [DRIVERS-714](https://jira.mongodb.org/browse/DRIVERS-714). Prior to releasing, ensure necessary Snyk reported vulnerabilities meet requirements described in: [MongoDB Software Security Development Lifecycle Policy](https://docs.google.com/document/d/1u0m4Kj2Ny30zU74KoEFCN4L6D_FbEYCaJ3CQdCYXTMc/edit?tab=t.0#bookmark=id.l09k96qt24jm).
+
+Go to [Snyk](https://app.snyk.io/) and select the `dev-prod` organization. If access is needed, see [Snyk Onboarding](https://docs.google.com/document/d/1A38HvDvVFOwLtJQfQwIGcy5amAIpDwHUkNInwezLwXY/edit#heading=h.9ayipd2nt7xg). Check the CLI target named `mongodb/libmongocrypt`. The CLI targets may be identified by this icon: ![CLI icon](img/cli-icon.png). There are reference targets for each tracked branch:
+
+![Reference Targets](img/reference-targets.png)
+
+For a patch release (e.g. x.y.z) check the rx.y reference target. For a minor release (e.g. x.y.0) check the master reference target.
+
+### Release
+
 Do the following when releasing:
 - Ensure `etc/purls.txt` is up-to-date. 
 - If this is a feature release (e.g. `x.y.0` or `x.0.0`), follow these steps: [Creating SSDLC static analysis reports](https://docs.google.com/document/d/1rkFL8ymbkc0k8Apky9w5pTPbvKRm68wj17mPJt2_0yo/edit).
@@ -49,7 +62,15 @@ Do the following when releasing:
         +silk-create-asset-group \
         --branch <branch>
      ```
-   - Create a new Snyk reference target for the branch. See [Checking Snyk](https://docs.google.com/document/d/1SEUAuF923dVPL_Oq4P-TNXEby8u8fVOCcfwYrtHA-YQ/edit).
+   - Create a new Snyk reference target. Track the newly created release branch. Copy the organization ID from [Snyk settings](https://app.snyk.io/org/dev-prod/manage/settings). Example for `rx.y`:
+     ```bash
+     snyk auth
+     snyk monitor \
+      --org=$ORGANIZATION_ID \
+      --target-reference=rx.y \
+      --unmanaged \
+      --remote-repo-url=https://github.com/mongodb/libmongocrypt.git
+     ```
 - Make a PR to apply the "Update CHANGELOG.md for x.y.z" commit to the `master` branch.
 - Update the release on the [Jira releases page](https://jira.mongodb.org/projects/MONGOCRYPT/versions).
 - Record the release on [C/C++ Release Info](https://docs.google.com/spreadsheets/d/1yHfGmDnbA5-Qt8FX4tKWC5xk9AhzYZx1SKF4AD36ecY/edit?usp=sharing). This is done to meet SSDLC reporting requirements.
