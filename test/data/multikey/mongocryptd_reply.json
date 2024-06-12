@@ -1,0 +1,34 @@
+{
+    "hasEncryptionPlaceholders": true,
+    "schemaRequiresEncryption": true,
+    "result": {
+        "find": "coll",
+        "filter": {
+            "$and": [
+                {
+                    "uses_key_a": {
+                        "$eq": {
+                            "$binary": {
+                                "base64": "ADAAAAAQYQABAAAABWtpABAAAAAEYWFhYWFhYWFhYWFhYWFhYQJ2AAQAAABmb28AAA==",
+                                "subType": "06"
+                            }
+                        }
+                    }
+                },
+                {
+                    "uses_key_b": {
+                        "$eq": {
+                            "$binary": {
+                                "base64": "ADAAAAAQYQABAAAABWtpABAAAAAEYmJiYmJiYmJiYmJiYmJiYgJ2AAQAAABiYXIAAA==",
+                                "subType": "06"
+                            }
+                        }
+                    }
+                }
+            ]
+        }
+    },
+    "ok": {
+        "$numberDouble": "1.0"
+    }
+}

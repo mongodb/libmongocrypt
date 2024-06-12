@@ -1,0 +1,7 @@
+{
+    "find": "coll",
+    "filter": {
+        "uses_key_a": "foo",
+        "uses_key_b": "bar"
+    }
+}
