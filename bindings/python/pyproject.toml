@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=63.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>1.24","hatch-requirements-txt>=0.4.1"]
+build-backend = "hatchling.build"
 
 [project]
 name = "pymongocrypt"
@@ -42,14 +42,17 @@ classifiers = [
 [project.urls]
 Homepage = "https://github.com/mongodb/libmongocrypt/tree/master/bindings/python"
 
-[tool.setuptools.dynamic]
-version = {attr = "pymongocrypt.version.__version__"}
+[tool.hatch.version]
+path = "pymongocrypt/version.py"
 
-[tool.setuptools.packages.find]
-include = ["pymongocrypt", "pymongocrypt.asynchronous", "pymongocrypt.synchronous"]
+# Used to call hatch_build.py
+[tool.hatch.build.hooks.custom]
 
-[tool.setuptools.package-data]
-pymongocrypt=['*.dll', '*.so', '*.dylib']
+[tool.hatch.metadata.hooks.requirements_txt]
+files = ["requirements.txt"]
+
+[tool.hatch.metadata.hooks.requirements_txt.optional-dependencies]
+test = ["requirements-test.txt"]
 
 [tool.ruff.lint]
 select = [

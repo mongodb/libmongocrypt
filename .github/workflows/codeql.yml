@@ -13,7 +13,7 @@ on:
 jobs:
   analyze-python:
     name: Analyze Python
-    runs-on: "ubuntu-latest"
+    runs-on: "macos-latest"
     timeout-minutes: 360
     permissions:
       # required for all workflows
@@ -24,6 +24,8 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
     - uses: actions/setup-python@v5
       with:
         python-version: 3.x
@@ -43,6 +45,8 @@ jobs:
     - name: Install package
       run: |
         cd bindings/python
+        export LIBMONGOCRYPT_VERSION=$(cat ./libmongocrypt-version.txt)
+        git fetch origin $LIBMONGOCRYPT_VERSION
         bash release.sh
         pip install dist/*.whl
 
