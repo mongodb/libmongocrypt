@@ -22,7 +22,6 @@ For a patch release (e.g. x.y.z) check the rx.y reference target. For a minor re
 Do the following when releasing:
 - Ensure `etc/purls.txt` is up-to-date. 
 - If this is a feature release (e.g. `x.y.0` or `x.0.0`), follow these steps: [Creating SSDLC static analysis reports](https://docs.google.com/document/d/1rkFL8ymbkc0k8Apky9w5pTPbvKRm68wj17mPJt2_0yo/edit).
-- Ensure necessary issues are addressed in the `mongodb/libmongocrypt` target in [Snyk](https://app.snyk.io/). See [Checking Snyk](https://docs.google.com/document/d/1SEUAuF923dVPL_Oq4P-TNXEby8u8fVOCcfwYrtHA-YQ/edit).
 - Update CHANGELOG.md with the version being released.
 - Check out the release branch. For a release `x.y.z`, the release branch is `rx.y`. If this is a new minor release (`x.y.0`), create the release branch.
 - If this is a new minor release (e.g. `x.y.0`):
