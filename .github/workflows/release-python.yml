@@ -23,6 +23,7 @@ defaults:
 
 jobs:
   build_dist:
+    if: github.repository_owner == 'mongodb'
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
