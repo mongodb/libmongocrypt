@@ -20,7 +20,8 @@ For a patch release (e.g. x.y.z) check the rx.y reference target. For a minor re
 ### Release
 
 Do the following when releasing:
-- Ensure `etc/purls.txt` is up-to-date. 
+- Ensure `etc/purls.txt` is up-to-date.
+- Update `etc/third_party_vulnerabilities.md` with any updates to new or known vulnerabilities for third party dependencies that must be reported.
 - If this is a feature release (e.g. `x.y.0` or `x.0.0`), follow these steps: [Creating SSDLC static analysis reports](https://docs.google.com/document/d/1rkFL8ymbkc0k8Apky9w5pTPbvKRm68wj17mPJt2_0yo/edit).
 - Update CHANGELOG.md with the version being released.
 - Check out the release branch. For a release `x.y.z`, the release branch is `rx.y`. If this is a new minor release (`x.y.0`), create the release branch.
@@ -50,6 +51,8 @@ Do the following when releasing:
      ```
      For a new minor release, use `master` for `--branch`. For a patch release, use the release branch (e.g. `rx.y`).
      Secrets can be obtained from [AWS Secrets Manager](https://wiki.corp.mongodb.com/display/DRIVERS/Using+AWS+Secrets+Manager+to+Store+Testing+Secrets) under `drivers/libmongocrypt`.
+   - Attach `etc/third_party_vulnerabilities.md` to the release.
+   - Attach `ssdlc_compliance_report.md` to the release.
 
 - If this is a new minor release (e.g. `x.y.0`):
    - File a DOCSP ticket to update the installation instructions on [Install libmongocrypt](https://www.mongodb.com/docs/manual/core/csfle/reference/libmongocrypt/). ([Example](https://jira.mongodb.org/browse/DOCSP-36863))
