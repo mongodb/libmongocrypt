@@ -64,7 +64,7 @@ Do the following when releasing:
    - Create a new Snyk reference target. Track the newly created release branch. Copy the organization ID from [Snyk settings](https://app.snyk.io/org/dev-prod/manage/settings). Run `cmake` first so generated source files are present. Example for `rx.y`:
      ```bash
      cmake -S. -Bcmake-build -D BUILD_TESTING=OFF
-     cmake --build cmake-build --target mongocrypt_shared
+     cmake --build cmake-build --target mongocrypt
      snyk auth
      snyk monitor \
       --org=$ORGANIZATION_ID \
