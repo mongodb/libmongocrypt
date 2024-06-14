@@ -13,6 +13,7 @@ git clone https://github.com/mongodb/mongo-python-driver.git
 MACHINE=$(uname -m)
 if [ $MACHINE == "aarch64" ]; then
     PYTHON="/opt/mongodbtoolchain/v4/bin/python3"
+    TARGET=rhel82
 else
     TARGET=rhel80
     PYTHON="/opt/python/3.8/bin/python3"
