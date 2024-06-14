@@ -139,7 +139,7 @@ tasks.register<Copy>("unzipJava") {
     outputs.upToDateWhen { false }
     from(tarTree(resources.gzip("${jnaDownloadsDir}/libmongocrypt-java.tar.gz")))
     include(jnaMapping.keys.flatMap {
-        listOf("${it}/nocrypto/**/libmongocrypt.so", "${it}/nocrypto/**/libmongocrypt.dylib", "${it}/nocrypto/**/mongocrypt.dll" )
+        listOf("${it}/nocrypto/**/libmongocrypt.so", "${it}/lib/**/libmongocrypt.dylib", "${it}/bin/**/mongocrypt.dll" )
     })
     eachFile {
         path = "${jnaMapping[path.substringBefore("/")]}/${name}"
