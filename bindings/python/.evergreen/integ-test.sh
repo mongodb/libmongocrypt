@@ -2,14 +2,14 @@ set -o xtrace   # Write all commands first to stderr
 set -o errexit  # Exit the script with error if any of the commands fail
 
 # For createvirtualenv and find_python3
-. .evergreen/utils.sh
+. $(pwd)/libmongocrypt/bindings/python/.evergreen/utils.sh
 
 BASE_PYTHON=$(find_python3)
 
 # MONGOCRYPT_DIR is set by libmongocrypt/.evergreen/config.yml
 MONGOCRYPT_DIR="$MONGOCRYPT_DIR"
 git clone https://github.com/mongodb/mongo-python-driver.git
-DRIVERS_TOOLS=$(pwd)/drivers-evergreen-tools
+DRIVERS_TOOLS="$(pwd)/drivers-tools"
 
 /opt/mongodbtoolchain/v3/bin/python3 $DRIVERS_TOOLS/.evergreen/mongodl.py --component \
       crypt_shared --version latest --out ../crypt_shared/ --target rhel80
