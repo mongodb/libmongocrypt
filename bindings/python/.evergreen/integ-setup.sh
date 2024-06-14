@@ -2,8 +2,8 @@
 
 set -eux
 
-DRIVERS_TOOLS="$(dirname "$(pwd)")/drivers-tools"
-PROJECT_DIRECTORY="$(pwd)"
+DRIVERS_TOOLS="$(pwd)"/drivers-tools"
+PROJECT_DIRECTORY="$(pwd)"/libmongocrypt
 
 # Python has cygwin path problems on Windows.
 if [ "Windows_NT" = "${OS:-}" ]; then
