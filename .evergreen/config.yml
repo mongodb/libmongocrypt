@@ -147,12 +147,14 @@ functions:
         binary: bash
         args:
           - ./drivers-tools/.evergreen/run-orchestration.sh
-    - command: "shell.exec"
+    - command: "subprocess.exec"
       params:
-        script: |-
-          export DRIVERS_TOOLS="$(pwd)/drivers-tools"
-          export MONGOCRYPT_DIR="$(pwd)/all/${variant_name}"
-          cd ./libmongocrypt/bindings/python && ${test_env|} ./.evergreen/integ-test.sh
+        binary: bash
+        env:
+          DRIVERS_TOOLS: ./drivers/tools
+          MONGOCRYPT_DIR: ./libmongocrypt/all/${variant_name}"
+        args:
+          - ./.evergreen/integ-test.sh
     - command: subprocess.exec
       params:
         binary: bash
