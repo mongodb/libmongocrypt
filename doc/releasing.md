@@ -61,10 +61,21 @@ Do the following when releasing:
         +silk-create-asset-group \
         --branch <branch>
      ```
-   - Create a new Snyk reference target. Track the newly created release branch. Copy the organization ID from [Snyk settings](https://app.snyk.io/org/dev-prod/manage/settings). Run `cmake` first so generated source files are present. Example for `rx.y`:
+   - Create a new Snyk reference target. The following instructions use the example branch `rx.y`:
+
+     Run `cmake` to ensure generated source files are present:
      ```bash
      cmake -S. -Bcmake-build -D BUILD_TESTING=OFF
      cmake --build cmake-build --target mongocrypt
+     ```
+
+     Print dependencies found by Snyk and verify libbson is found:
+     ```bash
+     snyk test --unmanaged --print-dep-paths
+     ```
+
+     Copy the organization ID from [Snyk settings](https://app.snyk.io/org/dev-prod/manage/settings). Create the new Snyk reference target to track the newly created release branch:
+     ```bash
      snyk auth
      snyk monitor \
       --org=$ORGANIZATION_ID \
