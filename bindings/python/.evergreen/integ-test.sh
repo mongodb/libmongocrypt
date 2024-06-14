@@ -28,6 +28,14 @@ CRYPT_SHARED_DIR="$(pwd)/crypt_shared"
 # Get the secrets
 bash $DRIVERS_TOOLS/.evergreen/csfle/setup-secrets.sh
 
+if [ -e "${MONGOCRYPT_DIR}/lib64/" ]; then
+    export PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/nocrypto/lib64/libmongocrypt.so
+    PYMONGOCRYPT_LIB_CRYPTO=${MONGOCRYPT_DIR}/lib64/libmongocrypt.so
+else
+    export PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/nocrypto/lib/libmongocrypt.so
+    PYMONGOCRYPT_LIB_CRYPTO=${MONGOCRYPT_DIR}/lib/libmongocrypt.so
+fi
+
 createvirtualenv $PYTHON .venv
 pip install -e .
 echo "Running tests with crypto enabled libmongocrypt..."
