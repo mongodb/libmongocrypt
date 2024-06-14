@@ -624,6 +624,17 @@ public class CAPI {
     public static native boolean
     mongocrypt_status(mongocrypt_t crypt, mongocrypt_status_t status);
 
+    /**
+     * Returns true if libmongocrypt was built with native crypto support.
+     *
+     * <p>
+     * If libmongocrypt was not built with native crypto support, setting crypto hooks is required.
+     * </p>
+     *
+     * @return true if libmongocrypt was built with native crypto support
+     */
+    public static native boolean
+    mongocrypt_is_crypto_available();
 
     /**
      * Destroy the @ref mongocrypt_t object.
