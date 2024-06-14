@@ -154,7 +154,7 @@ functions:
           DRIVERS_TOOLS: ./drivers/tools
           MONGOCRYPT_DIR: ./libmongocrypt/all/${variant_name}"
         args:
-          - ./.evergreen/integ-test.sh
+          - ./libmongocrypt/bindings/python/.evergreen/integ-test.sh
     - command: subprocess.exec
       params:
         binary: bash
