@@ -141,7 +141,8 @@ functions:
       params:
         binary: git
         args: 
-          - clone https://github.com/mongodb-labs/drivers-evergreen-tools.git
+          - clone 
+          - https://github.com/mongodb-labs/drivers-evergreen-tools.git
     - command: subprocess.exec
       params:
         binary: bash
