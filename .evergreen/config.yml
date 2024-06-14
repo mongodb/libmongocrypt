@@ -141,7 +141,7 @@ functions:
       params:
         binary: bash
         args:
-          - drivers-./libmongocrypt/bindings/python/.evergreen/integ-setup.sh
+          - ./libmongocrypt/bindings/python/.evergreen/integ-setup.sh
     - command: subprocess.exec
       params:
         binary: bash
