@@ -19,15 +19,13 @@ else
     PYTHON="/opt/python/3.8/bin/python3"
 fi
 
+CRYPT_SHARED_DIR="$(pwd)/crypt_shared"
 /opt/mongodbtoolchain/v3/bin/python3 $DRIVERS_TOOLS/.evergreen/mongodl.py --component \
-      crypt_shared --version latest --out ../crypt_shared/ --target $TARGET
+      crypt_shared --version latest --out $CRYPT_SHARED_DIR --target $TARGET
 
 # Get the secrets
 bash $DRIVERS_TOOLS/.evergreen/csfle/setup-secrets.sh
 
-ROOT=$(pwd)/..
-
-git clean -dffx
 createvirtualenv $PYTHON .venv
 pip install -e .
 echo "Running tests with crypto enabled libmongocrypt..."
@@ -37,9 +35,9 @@ pip install -e .
 TEST_ENCRYPTION=1 .evergreen/run_test.sh
 
 echo "Running tests with crypt_shared on dynamic library path..."
-TEST_CRYPT_SHARED=1 DYLD_FALLBACK_LIBRARY_PATH=$ROOT/crypt_shared/lib/:$DYLD_FALLBACK_LIBRARY_PATH \
-    LD_LIBRARY_PATH=$ROOT/crypt_shared/lib:$LD_LIBRARY_PATH \
-    PATH=$ROOT/crypt_shared/bin:$PATH TEST_ENCRYPTION=1 \
+TEST_CRYPT_SHARED=1 DYLD_FALLBACK_LIBRARY_PATH=$CRYPT_SHARED_DIR/lib/:$DYLD_FALLBACK_LIBRARY_PATH \
+    LD_LIBRARY_PATH=$CRYPT_SHARED_DIR/lib:$LD_LIBRARY_PATH \
+    PATH=$CRYPT_SHARED_DIR/bin:$PATH TEST_ENCRYPTION=1 \
     .evergreen/run_test.sh
 
 popd
