@@ -142,6 +142,13 @@ functions:
         binary: bash
         args:
           - ./libmongocrypt/bindings/python/.evergreen/integ-setup.sh
+    - command: shell.exec
+      params: 
+        script: |-
+          set -ex
+          pwd
+          ls 
+          ls ./libmongocrypt
     - command: subprocess.exec
       params:
         binary: bash
