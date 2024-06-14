@@ -136,6 +136,34 @@ functions:
           export MONGOCRYPT_DIR="$(pwd)/all/${variant_name}"
           cd ./libmongocrypt/bindings/python && ${test_env|} ./.evergreen/test.sh
 
+  "test python integ":
+    - command: subprocess.exec
+      params:
+        binary: git
+        args: 
+          - clone https://github.com/mongodb-labs/drivers-evergreen-tools.git
+    - command: subprocess.exec
+      params:
+        binary: bash
+        args:
+          - drivers-evergreen-tools/.evergreen/setup.sh
+    - command: subprocess.exec
+      params:
+        binary: bash
+        args:
+          - drivers-evergreen-tools/.evergreen/run-orchestration.sh
+    - command: "shell.exec"
+      params:
+        script: |-
+          export DRIVERS-TOOLS=$(pwd)/drivers-evergreen-tools
+          export MONGOCRYPT_DIR="$(pwd)/all/${variant_name}"
+          cd ./libmongocrypt/bindings/python && ${test_env|} ./.evergreen/integ-test.sh
+    - command: subprocess.exec
+      params:
+        binary: bash
+        args:
+          - drivers-evergreen-tools/.evergreen/teardown.sh
+
   "build and test node":
     - command: "subprocess.exec"
       params:
@@ -504,6 +532,16 @@ tasks:
       vars: { variant_name: windows-test }
     - func: "test python"
       vars: { variant_name: windows-test }
+
+- name: test-python-integ
+  depends_on:
+  - build-and-test-and-upload
+  commands:
+    - func: "fetch source"
+    - func: "download tarball"
+      vars: { variant_name: "${build_variant}" }
+    - func: "test python integ"
+      vars: { variant_name: "${build_variant}" }
 
 - name: "release-python-macos-1100"
   tags: ["release_python_tag"]
@@ -1385,6 +1423,7 @@ buildvariants:
   - build-and-test-node
   - test-java
   - test-python
+  - test-python-integ
   - name: publish-packages
     distros:
     - rhel70-small
@@ -1398,6 +1437,7 @@ buildvariants:
   tasks:
   - build-and-test-and-upload
   - test-python
+  - test-python-integ
   - name: publish-packages
     distros:
     - rhel70-small
