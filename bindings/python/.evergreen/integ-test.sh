@@ -1,8 +1,10 @@
 set -o xtrace   # Write all commands first to stderr
 set -o errexit  # Exit the script with error if any of the commands fail
 
+pushd $(pwd)/libmongocrypt/bindings/python
+
 # For createvirtualenv and find_python3
-. $(pwd)/libmongocrypt/bindings/python/.evergreen/utils.sh
+. .evergreen/utils.sh
 
 BASE_PYTHON=$(find_python3)
 
@@ -43,3 +45,4 @@ TEST_CRYPT_SHARED=1 DYLD_FALLBACK_LIBRARY_PATH=$CRYPT_SHARED_DIR/lib/:$DYLD_FALL
 popd
 deactivate
 rm -rf .venv
+popd
