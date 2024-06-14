@@ -10,8 +10,16 @@ BASE_PYTHON=$(find_python3)
 MONGOCRYPT_DIR="$MONGOCRYPT_DIR"
 git clone https://github.com/mongodb/mongo-python-driver.git
 
+MACHINE=$(uname -m)
+if [ $MACHINE == "aarch64" ]; then
+    PYTHON="/opt/mongodbtoolchain/v4/bin/python3"
+else
+    TARGET=rhel80
+    PYTHON="/opt/python/3.8/bin/python3"
+fi
+
 /opt/mongodbtoolchain/v3/bin/python3 $DRIVERS_TOOLS/.evergreen/mongodl.py --component \
-      crypt_shared --version latest --out ../crypt_shared/ --target rhel80
+      crypt_shared --version latest --out ../crypt_shared/ --target $TARGET
 
 # Get the secrets
 bash $DRIVERS_TOOLS/.evergreen/csfle/setup-secrets.sh
@@ -19,7 +27,7 @@ bash $DRIVERS_TOOLS/.evergreen/csfle/setup-secrets.sh
 ROOT=$(pwd)/..
 
 git clean -dffx
-createvirtualenv /opt/python/3.9/bin/python3 .venv
+createvirtualenv $PYTHON .venv
 pip install -e .
 echo "Running tests with crypto enabled libmongocrypt..."
 PYMONGOCRYPT_LIB=$PYMONGOCRYPT_LIB_CRYPTO python -c 'from pymongocrypt.binding import lib;assert lib.mongocrypt_is_crypto_available(), "mongocrypt_is_crypto_available() returned False"'
