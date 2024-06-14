@@ -150,7 +150,7 @@ functions:
     - command: "shell.exec"
       params:
         script: |-
-          export DRIVERS-TOOLS="$(pwd)/drivers-tools"
+          export DRIVERS_TOOLS="$(pwd)/drivers-tools"
           export MONGOCRYPT_DIR="$(pwd)/all/${variant_name}"
           cd ./libmongocrypt/bindings/python && ${test_env|} ./.evergreen/integ-test.sh
     - command: subprocess.exec
