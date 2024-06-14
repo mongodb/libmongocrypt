@@ -146,7 +146,7 @@ functions:
       params:
         binary: bash
         args:
-          - drivers-evergreen-tools/.evergreen/run-orchestration.sh
+          - drivers-tools/.evergreen/run-orchestration.sh
     - command: "shell.exec"
       params:
         script: |-
