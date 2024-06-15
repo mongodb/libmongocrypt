@@ -19,7 +19,7 @@ createvirtualenv () {
         # Workaround for bug in older versions of virtualenv.
         $VIRTUALENV $VENVPATH 2>/dev/null || $VIRTUALENV $VENVPATH
     fi
-    if [ "Windows_NT" = "$OS" ]; then
+    if [ "Windows_NT" = "${OS:-}" ]; then
         # Workaround https://bugs.python.org/issue32451:
         # mongovenv/Scripts/activate: line 3: $'\r': command not found
         dos2unix $VENVPATH/Scripts/activate || true
