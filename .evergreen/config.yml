@@ -142,40 +142,44 @@ functions:
         binary: bash
         args:
           - ./libmongocrypt/bindings/python/.evergreen/integ-setup.sh
+    - command: expansions.update
+      params:
+        file: expansion.yml
     - command: subprocess.exec
       params:
         binary: bash
         background: true
         args:
-          - ./drivers-tools/.evergreen/csfle/start-servers.sh
+          - ${DRIVERS_TOOLS}/.evergreen/csfle/start-servers.sh
     - command: subprocess.exec
       params:
         binary: bash
         args:
-          - ./drivers-tools/.evergreen/csfle/await-servers.sh
+          - ${DRIVERS_TOOLS}/.evergreen/csfle/await-servers.sh
     - command: subprocess.exec
       params:
         binary: bash
         args:
-          - ./drivers-tools/.evergreen/run-orchestration.sh
+          - ${DRIVERS_TOOLS}/.evergreen/run-orchestration.sh
     - command: "subprocess.exec"
       params:
         binary: bash
-        env:
-          DRIVERS_TOOLS: ${project_directory}/drivers-tools
-          MONGOCRYPT_DIR: ${project_directory}/all/${variant_name}
+        include_expansions_in_env: 
+          - DRIVERS_TOOLS
+          - PYMONGO_DIR
+          - MONGOCRYPT_DIR
         args:
           - ./libmongocrypt/bindings/python/.evergreen/integ-test.sh
     - command: subprocess.exec
       params:
         binary: bash
-        env:
-          DRIVERS_TOOLS: ${project_directory}/drivers-tools
+        include_expansions_in_env:
+          - DRIVERS_TOOLS
         args:
            - ./libmongocrypt/bindings/python/.evergreen/integ-teardown.sh
     - command: attach.xunit_results
       params:
-        file:  ./libmongocrypt/bindings/python/mongo-python-driver/xunit-results/TEST-*.xml
+        file: ${PYMONGO_DIR}/xunit-results/TEST-*.xml
 
   "build and test node":
     - command: "subprocess.exec"
