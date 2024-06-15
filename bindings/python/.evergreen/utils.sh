@@ -49,7 +49,7 @@ find_python3() {
         elif [ -d "/Library/Frameworks/Python.Framework/Versions/3.8" ]; then
             PYTHON="/Library/Frameworks/Python.Framework/Versions/3.8/bin/python3"
         fi
-    elif [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
+    elif [ "Windows_NT" = "${OS:-}" ]; then # Magic variable in cygwin
         PYTHON="C:/python/Python38/python.exe"
     else
         # Prefer our own toolchain, fall back to mongodb toolchain if it has Python 3.8+.
