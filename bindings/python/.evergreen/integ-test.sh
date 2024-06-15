@@ -1,6 +1,7 @@
 set -o xtrace   # Write all commands first to stderr
 set -o errexit  # Exit the script with error if any of the commands fail
 
+ROOT=$(pwd)
 pushd $(pwd)/libmongocrypt/bindings/python
 
 # For createvirtualenv and find_python3
@@ -34,7 +35,7 @@ fi
 
 createvirtualenv $PYTHON .venv
 pip install -e .
-pushd mongo-python-driver
+pushd $ROOT/mongo-python-driver
 pip install -e ".[test,encryption]"
 source ${DRIVERS_TOOLS}/.evergreen/csfle/secrets-export.sh
 TEST_CRYPT_SHARED=1 DYLD_FALLBACK_LIBRARY_PATH=$CRYPT_SHARED_DIR/lib/:$DYLD_FALLBACK_LIBRARY_PATH \
