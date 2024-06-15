@@ -3,7 +3,7 @@
 set -eux
 
 DRIVERS_TOOLS="$(pwd)/drivers-tools"
-PROJECT_DIRECTORY="$(pwd)/libmongocrypt"
+PROJECT_DIRECTORY="${project_directory}"
 PYMONGO_DIR="$(pwd)/mongo-python-driver"
 
 # Python has cygwin path problems on Windows.
@@ -16,7 +16,7 @@ export DRIVERS_TOOLS
 
 export MONGO_ORCHESTRATION_HOME="$DRIVERS_TOOLS/.evergreen/orchestration"
 export MONGODB_BINARIES="$DRIVERS_TOOLS/mongodb/bin"
-export MONGOCRYPT_DIR=${project_directory}/all/${variant_name}
+export MONGOCRYPT_DIR=${PROJECT_DIRECTORY}/all/${variant_name}
 
 cat <<EOT > expansion.yml
 DRIVERS_TOOLS: "$DRIVERS_TOOLS"

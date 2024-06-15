@@ -140,6 +140,9 @@ functions:
     - command: subprocess.exec
       params:
         binary: bash
+        include_expansions_in_env:
+          - project_directory
+          - variant_name
         args:
           - ./libmongocrypt/bindings/python/.evergreen/integ-setup.sh
     - command: expansions.update
