@@ -41,7 +41,7 @@ pip install -e .
 echo "Running tests with crypto enabled libmongocrypt..."
 PYMONGOCRYPT_LIB=$PYMONGOCRYPT_LIB_CRYPTO python -c 'from pymongocrypt.binding import lib;assert lib.mongocrypt_is_crypto_available(), "mongocrypt_is_crypto_available() returned False"'
 pushd mongo-python-driver
-pip install -e .
+pip install -e ".[test]"
 TEST_ENCRYPTION=1 .evergreen/run-tests.sh
 
 echo "Running tests with crypt_shared on dynamic library path..."
