@@ -37,6 +37,7 @@ createvirtualenv $PYTHON .venv
 pip install -e .
 pushd mongo-python-driver
 pip install -e ".[test]"
+source ${DRIVERS_TOOLS}/.evergreen/csfle/secrets-export.sh
 TEST_CRYPT_SHARED=1 DYLD_FALLBACK_LIBRARY_PATH=$CRYPT_SHARED_DIR/lib/:$DYLD_FALLBACK_LIBRARY_PATH \
     LD_LIBRARY_PATH=$CRYPT_SHARED_DIR/lib:$LD_LIBRARY_PATH \
     PATH=$CRYPT_SHARED_DIR/bin:$PATH \
