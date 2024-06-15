@@ -38,8 +38,8 @@ pushd $PYMONGO_DIR
 pip install -e ".[test,encryption]"
 source ${DRIVERS_TOOLS}/.evergreen/csfle/secrets-export.sh
 set -x
-TEST_CRYPT_SHARED=1 DYLD_FALLBACK_LIBRARY_PATH=$CRYPT_SHARED_DIR/lib/:$DYLD_FALLBACK_LIBRARY_PATH \
-    LD_LIBRARY_PATH=$CRYPT_SHARED_DIR/lib:$LD_LIBRARY_PATH \
+TEST_CRYPT_SHARED=1 DYLD_FALLBACK_LIBRARY_PATH=$CRYPT_SHARED_DIR/lib/:${DYLD_FALLBACK_LIBRARY_PATH:-} \
+    LD_LIBRARY_PATH=$CRYPT_SHARED_DIR/lib:${LD_LIBRARY_PATH-}" \
     PATH=$CRYPT_SHARED_DIR/bin:$PATH \
     AUTH=auth SSL=ssl \
     .evergreen/run-tests.sh "test/test_encryption.py"
