@@ -10,7 +10,6 @@ BASE_PYTHON=$(find_python3)
 
 # MONGOCRYPT_DIR is set by libmongocrypt/.evergreen/config.yml
 MONGOCRYPT_DIR="$MONGOCRYPT_DIR"
-git clone https://github.com/mongodb/mongo-python-driver.git
 
 MACHINE=$(uname -m)
 if [ $MACHINE == "aarch64" ]; then

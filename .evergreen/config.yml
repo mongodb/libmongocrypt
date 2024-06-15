@@ -175,7 +175,7 @@ functions:
            - ./libmongocrypt/bindings/python/.evergreen/integ-teardown.sh
     - command: attach.xunit_results
       params:
-        file:  ./mongo-python-driver/xunit-results/TEST-*.xml
+        file:  ./libmongocrypt/bindings/python/mongo-python-driver/xunit-results/TEST-*.xml
 
   "build and test node":
     - command: "subprocess.exec"
