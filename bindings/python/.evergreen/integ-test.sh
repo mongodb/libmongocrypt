@@ -36,6 +36,8 @@ else
     PYMONGOCRYPT_LIB_CRYPTO=${MONGOCRYPT_DIR}/lib/libmongocrypt.so
 fi
 
+bash ${DRIVERS_TOOLS}/.evergreen/csfle/await-servers.sh
+
 createvirtualenv $PYTHON .venv
 pip install -e .
 echo "Running tests with crypto enabled libmongocrypt..."

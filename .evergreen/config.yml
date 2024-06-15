@@ -145,6 +145,12 @@ functions:
     - command: subprocess.exec
       params:
         binary: bash
+        background: true
+        args:
+          - ./drivers-tools/.evergreen/csfle/start-servers.sh
+    - command: subprocess.exec
+      params:
+        binary: bash
         args:
           - ./drivers-tools/.evergreen/run-orchestration.sh
     - command: "subprocess.exec"
@@ -158,8 +164,10 @@ functions:
     - command: subprocess.exec
       params:
         binary: bash
+        env:
+          DRIVERS_TOOLS: ${project_directory}/drivers-tools
         args:
-          - drivers-evergreen-tools/.evergreen/teardown.sh
+           - ./libmongocrypt/bindings/python/.evergreen/integ-teardown.sh
 
   "build and test node":
     - command: "subprocess.exec"
