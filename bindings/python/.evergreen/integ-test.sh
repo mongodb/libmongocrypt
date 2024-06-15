@@ -25,9 +25,6 @@ CRYPT_SHARED_DIR="$(pwd)/crypt_shared"
 /opt/mongodbtoolchain/v3/bin/python3 $DRIVERS_TOOLS/.evergreen/mongodl.py --component \
       crypt_shared --version latest --out $CRYPT_SHARED_DIR --target $TARGET
 
-# Get the secrets
-bash $DRIVERS_TOOLS/.evergreen/csfle/setup-secrets.sh
-
 if [ -e "${MONGOCRYPT_DIR}/lib64/" ]; then
     export PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/nocrypto/lib64/libmongocrypt.so
     PYMONGOCRYPT_LIB_CRYPTO=${MONGOCRYPT_DIR}/lib64/libmongocrypt.so
@@ -35,8 +32,6 @@ else
     export PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/nocrypto/lib/libmongocrypt.so
     PYMONGOCRYPT_LIB_CRYPTO=${MONGOCRYPT_DIR}/lib/libmongocrypt.so
 fi
-
-bash ${DRIVERS_TOOLS}/.evergreen/csfle/await-servers.sh
 
 createvirtualenv $PYTHON .venv
 pip install -e .

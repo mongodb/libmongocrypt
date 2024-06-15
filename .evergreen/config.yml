@@ -145,7 +145,6 @@ functions:
     - command: subprocess.exec
       params:
         binary: bash
-        background: true
         args:
           - ./drivers-tools/.evergreen/csfle/start-servers.sh
     - command: subprocess.exec
