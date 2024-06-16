@@ -7,6 +7,10 @@ elseif (DEFINED CMAKE_MSVC_RUNTIME_LIBRARY)
    message (WARNING "The CMAKE_MSVC_RUNTIME_LIBRARY variable is set, but CMake is too old to understand it")
 endif ()
 
+if (POLICY CMP0135)
+   cmake_policy (SET CMP0135 NEW)
+endif ()
+
 project (mongocrypt C)
 
 # Used for the csfle-markup util:
