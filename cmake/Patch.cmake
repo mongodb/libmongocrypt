@@ -31,6 +31,8 @@ function(make_patch_command out)
         if(patch_STRIP_COMPONENTS)
             list(APPEND cmd -p${patch_STRIP_COMPONENTS})
         endif()
+        # Ignore whitespace errors to fix patch errors on Windows: The patch file may be converted to \r\n by git, but libbson fetched with \n.
+        list(APPEND cmd "--ignore-whitespace")
         # git accepts patch filepaths as positional arguments
         list(APPEND cmd ${patch_PATCHES})
     else()

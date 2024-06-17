@@ -6,6 +6,7 @@ set (MONGOC_FETCH_TAG_FOR_LIBBSON "1.27.1" CACHE STRING "The Git tag of mongo-c-
 
 # Add an option to disable patching if a patch command is unavailable.
 option (LIBBSON_PATCH_ENABLED "Whether to apply patches to the libbson library" ON)
+set (patch_disabled OFF)
 if (NOT LIBBSON_PATCH_ENABLED)
     set (patch_disabled ON)
 endif ()

@@ -17,6 +17,7 @@ if (NOT INTEL_DFP_LIBRARY_URL_SHA256 STREQUAL "no-verify")
     set (_hash_arg URL_HASH "${INTEL_DFP_LIBRARY_URL_HASH}")
 endif ()
 
+set (patch_disabled OFF)
 if (NOT INTEL_DFP_LIBRARY_PATCH_ENABLED)
     set (patch_disabled ON)
 endif ()
