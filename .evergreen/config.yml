@@ -136,6 +136,56 @@ functions:
           export MONGOCRYPT_DIR="$(pwd)/all/${variant_name}"
           cd ./libmongocrypt/bindings/python && ${test_env|} ./.evergreen/test.sh
 
+  "test python integ":
+    - command: subprocess.exec
+      params:
+        binary: bash
+        include_expansions_in_env:
+          - project_directory
+          - variant_name
+        args:
+          - ./libmongocrypt/bindings/python/.evergreen/integ-setup.sh
+    - command: expansions.update
+      params:
+        file: expansion.yml
+    - command: subprocess.exec
+      params:
+        binary: bash
+        background: true
+        args:
+          - ${DRIVERS_TOOLS}/.evergreen/csfle/start-servers.sh
+    - command: subprocess.exec
+      params:
+        binary: bash
+        args:
+          - ${DRIVERS_TOOLS}/.evergreen/csfle/await-servers.sh
+    - command: subprocess.exec
+      params:
+        binary: bash
+        env:
+          TOPOLOGY: replica_set
+        args:
+          - ${DRIVERS_TOOLS}/.evergreen/run-orchestration.sh
+    - command: "subprocess.exec"
+      params:
+        binary: bash
+        include_expansions_in_env: 
+          - DRIVERS_TOOLS
+          - PYMONGO_DIR
+          - MONGOCRYPT_DIR
+        args:
+          - ./libmongocrypt/bindings/python/.evergreen/integ-test.sh
+    - command: subprocess.exec
+      params:
+        binary: bash
+        include_expansions_in_env:
+          - DRIVERS_TOOLS
+        args:
+           - ./libmongocrypt/bindings/python/.evergreen/integ-teardown.sh
+    - command: attach.xunit_results
+      params:
+        file: ${PYMONGO_DIR}/xunit-results/TEST-*.xml
+
   "build and test node":
     - command: "subprocess.exec"
       params:
@@ -504,6 +554,16 @@ tasks:
       vars: { variant_name: windows-test }
     - func: "test python"
       vars: { variant_name: windows-test }
+
+- name: test-python-integ
+  depends_on:
+  - build-and-test-and-upload
+  commands:
+    - func: "fetch source"
+    - func: "download tarball"
+      vars: { variant_name: "${build_variant}" }
+    - func: "test python integ"
+      vars: { variant_name: "${build_variant}" }
 
 - name: "release-python-macos-1100"
   tags: ["release_python_tag"]
@@ -1385,6 +1445,7 @@ buildvariants:
   - build-and-test-node
   - test-java
   - test-python
+  - test-python-integ
   - name: publish-packages
     distros:
     - rhel70-small
@@ -1398,6 +1459,7 @@ buildvariants:
   tasks:
   - build-and-test-and-upload
   - test-python
+  - test-python-integ
   - name: publish-packages
     distros:
     - rhel70-small
