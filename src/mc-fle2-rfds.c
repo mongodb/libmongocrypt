@@ -264,7 +264,7 @@ bool mc_FLE2RangeFindDriverSpec_parse(mc_FLE2RangeFindDriverSpec_t *spec,
             }
         }
 
-        operator_value_t op;
+        operator_value_t op = {0};
         switch (arg_type) {
         case AGGREGATE_EXPRESSION:
             if (!parse_aggregate_expression(in, &doc, &op, status)) {
