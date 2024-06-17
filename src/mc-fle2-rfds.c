@@ -217,7 +217,7 @@ bool mc_FLE2RangeFindDriverSpec_parse(mc_FLE2RangeFindDriverSpec_t *spec,
     // {$and: [{$gt: ["$age", 5]}, {$lt:["$age", 50]}]}
     // Or `in` may be a Match Expression with this form:
     // {$and: [{age: {$gt: 5}}, {age: {$lt: 50}} ]}
-    bson_iter_t and, array;
+    bson_iter_t and = {0}, array = {0};
     bool ok = false;
 
     if (!parse_and(in, &and, status)) {
