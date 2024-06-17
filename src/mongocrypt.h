@@ -690,6 +690,7 @@ bool mongocrypt_ctx_setopt_algorithm(mongocrypt_ctx_t *ctx, const char *algorith
 /// NOTE: "rangePreview" is experimental only and is not intended for public use.
 /// API for "rangePreview" may be removed in a future release.
 #define MONGOCRYPT_ALGORITHM_RANGEPREVIEW_DEPRECATED_STR "RangePreview"
+// NOTE: "Range" is currently unstable API and subject to backwards breaking changes.
 #define MONGOCRYPT_ALGORITHM_RANGE_STR "Range"
 
 /**
@@ -883,6 +884,7 @@ bool mongocrypt_ctx_explicit_encrypt_init(mongocrypt_ctx_t *ctx, mongocrypt_bina
  *
  * NOTE: "rangePreview" is experimental only and is not intended for public use.
  * API for "rangePreview" may be removed in a future release.
+ * NOTE: "range" is currently unstable API and subject to backwards breaking changes.
  *
  * This method expects the passed-in BSON to be of the form:
  * { "v" : FLE2RangeFindDriverSpec }
@@ -1418,6 +1420,7 @@ void mongocrypt_setopt_bypass_query_analysis(mongocrypt_t *crypt);
 
 /**
  * @brief Opt-into use of Queryable Encryption Range V2 protocol.
+ * NOTE: "range" is currently unstable API and subject to backwards breaking changes.
  *
  * @param[in] crypt The @ref mongocrypt_t object.
  *
@@ -1473,6 +1476,7 @@ bool mongocrypt_ctx_setopt_query_type(mongocrypt_ctx_t *ctx, const char *query_t
 
 /**
  * Set options for explicit encryption with the "range" algorithm.
+ * NOTE: "range" is currently unstable API and subject to backwards breaking changes.
  *
  * @p opts is a BSON document of the form:
  * {
@@ -1498,6 +1502,7 @@ bool mongocrypt_ctx_setopt_algorithm_range(mongocrypt_ctx_t *ctx, mongocrypt_bin
 /// NOTE: "rangePreview" is experimental only and is not intended for public use.
 /// API for "rangePreview" may be removed in a future release.
 #define MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_DEPRECATED_STR "rangePreview"
+/// NOTE: "range" is currently unstable API and subject to backwards breaking changes.
 #define MONGOCRYPT_QUERY_TYPE_RANGE_STR "range"
 
 #endif /* MONGOCRYPT_H */
