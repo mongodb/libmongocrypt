@@ -31,7 +31,7 @@ Download the Augmented SBOM using:
    --branch <branch>
 ```
 
-Check the Augmented SBOM for the "vulnerabilities" field.
+Check the contents of the "vulnerabilities" field (if present) in the Augmented SBOM.
 
 ### Release
 
