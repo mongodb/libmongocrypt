@@ -25,7 +25,17 @@ This section provides a template that may be used for actual vulnerability repor
 
 ## libbson
 
-None.
+### CVE-2023-0437
+
+- **Date Detected:** 2024-05-20
+- **Severity:** Medium
+- **Detector:** Snyk
+- **Description:** Loop with Unreachable Exit Condition ('Infinite Loop')
+- **Dependency:** libbson 1.17.0
+- **Upstream Status:** Fix Available (1.25.0, 2023-11-01).
+- **Fix Status:** Fix Committed.
+- **For Release:** The libmongocrypt release version for which the "Fix Status" above was last updated.
+- **Notes:** Fixed in libbson 1.25.0 ([CDRIVER-4747](https://jira.mongodb.org/browse/CDRIVER-4747)). Fixed in libmongocrypt by upgrading libbson to 1.27.1.
 
 ## IntelDFP
 
