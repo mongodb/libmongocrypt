@@ -35,7 +35,7 @@ This section provides a template that may be used for actual vulnerability repor
 - **Upstream Status:** Fix Available (1.25.0, 2023-11-01).
 - **Fix Status:** Fix Committed.
 - **For Release:** 1.10.1
-- **Notes:** Fixed in libbson 1.25.0 ([CDRIVER-4747](https://jira.mongodb.org/browse/CDRIVER-4747)). Fixed in libmongocrypt by upgrading libbson to 1.27.1.
+- **Notes:** Fixed in libbson 1.25.0 ([CDRIVER-4747](https://jira.mongodb.org/browse/CDRIVER-4747)). Fixed in libmongocrypt by upgrading libbson to 1.27.1 ([MONGOCRYPT-685](https://jira.mongodb.org/browse/MONGOCRYPT-685)).
 
 ## IntelDFP
 
