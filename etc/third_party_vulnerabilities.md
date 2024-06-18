@@ -34,7 +34,7 @@ This section provides a template that may be used for actual vulnerability repor
 - **Dependency:** mongodb/mongo-c-driver@1.17.7
 - **Upstream Status:** Fix Available (1.25.0, 2023-11-01).
 - **Fix Status:** Fix Committed.
-- **For Release:** The libmongocrypt release version for which the "Fix Status" above was last updated.
+- **For Release:** 1.10.1
 - **Notes:** Fixed in libbson 1.25.0 ([CDRIVER-4747](https://jira.mongodb.org/browse/CDRIVER-4747)). Fixed in libmongocrypt by upgrading libbson to 1.27.1.
 
 ## IntelDFP
