@@ -40,7 +40,7 @@ asset_id="libmongocrypt-${branch}"
 json_payload=$(cat <<EOF
 {
     "active": true,
-    "name": "libmongocrypt",
+    "name": "${asset_id}",
     "code_repo_url": "https://github.com/mongodb/libmongocrypt",
     "branch": "${branch}",
     "metadata": {
