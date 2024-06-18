@@ -31,7 +31,7 @@ This section provides a template that may be used for actual vulnerability repor
 - **Severity:** Medium
 - **Detector:** Snyk
 - **Description:** Loop with Unreachable Exit Condition ('Infinite Loop')
-- **Dependency:** libbson 1.17.0
+- **Dependency:** mongodb/mongo-c-driver@1.17.7
 - **Upstream Status:** Fix Available (1.25.0, 2023-11-01).
 - **Fix Status:** Fix Committed.
 - **For Release:** The libmongocrypt release version for which the "Fix Status" above was last updated.
