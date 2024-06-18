@@ -1434,7 +1434,7 @@ static bool _fle2_append_compactionTokens(mongocrypt_t *crypt,
                                           const char *command_name,
                                           bson_t *out,
                                           mongocrypt_status_t *status) {
-    bson_t result_compactionTokens;
+    bson_t result_compactionTokens = BSON_INITIALIZER;
     bool ret = false;
 
     BSON_ASSERT_PARAM(crypt);
