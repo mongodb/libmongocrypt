@@ -7,15 +7,31 @@ Version numbers of libmongocrypt must follow the format 1.[0-9].[0-9] for releas
 
 ## Steps to release ##
 
-### Check Snyk
+### Check for Vulnerabilities
 
-Snyk is used to satisfy vulnerability scanning requirements of [DRIVERS-714](https://jira.mongodb.org/browse/DRIVERS-714). Prior to releasing, ensure necessary Snyk reported vulnerabilities meet requirements described in: [MongoDB Software Security Development Lifecycle Policy](https://docs.google.com/document/d/1u0m4Kj2Ny30zU74KoEFCN4L6D_FbEYCaJ3CQdCYXTMc/edit?tab=t.0#bookmark=id.l09k96qt24jm).
+Snyk and Silk are used to satisfy vulnerability scanning requirements of [DRIVERS-714](https://jira.mongodb.org/browse/DRIVERS-714). Prior to releasing, ensure necessary reported vulnerabilities meet requirements described in: [MongoDB Software Security Development Lifecycle Policy](https://docs.google.com/document/d/1u0m4Kj2Ny30zU74KoEFCN4L6D_FbEYCaJ3CQdCYXTMc/edit?tab=t.0#bookmark=id.l09k96qt24jm).
+
+#### Check Snyk
 
 Go to [Snyk](https://app.snyk.io/) and select the `dev-prod` organization. If access is needed, see [Snyk Onboarding](https://docs.google.com/document/d/1A38HvDvVFOwLtJQfQwIGcy5amAIpDwHUkNInwezLwXY/edit#heading=h.9ayipd2nt7xg). Check the CLI target named `mongodb/libmongocrypt`. The CLI targets may be identified by this icon: ![CLI icon](img/cli-icon.png). There are reference targets for each tracked branch:
 
 ![Reference Targets](img/reference-targets.png)
 
 For a patch release (e.g. x.y.z) check the rx.y reference target. For a minor release (e.g. x.y.0) check the master reference target.
+
+#### Check Silk
+
+Download the Augmented SBOM using:
+```bash
+./.evergreen/earthly.sh \
+   --secret silk_client_id=${silk_client_id} \
+   --secret silk_client_secret=${silk_client_secret} \
+   +sbom-download \
+   --out cyclonedx.augmented.sbom.json \
+   --branch <branch>
+```
+
+Check the Augmented SBOM for the "vulnerabilities" field.
 
 ### Release
 
