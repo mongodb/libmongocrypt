@@ -12,6 +12,10 @@ on:
       - bindings/python/*
   workflow_dispatch:
   workflow_call:
+    inputs:
+      force:
+        required: true
+        type: boolean
 
 concurrency:
   group: python-dist-${{ github.ref }}
@@ -24,7 +28,7 @@ defaults:
 
 jobs:
   build_dist:
-    if: github.repository_owner == 'mongodb'
+    if: github.repository_owner == 'mongodb' || inputs.force == 'true'
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:

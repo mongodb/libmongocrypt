@@ -51,6 +51,8 @@ jobs:
   build-dist:
     needs: [pre-publish]
     uses: ./.github/workflows/dist-python.yml
+    with:
+      force: true
 
   static-scan:
     needs: [pre-publish]
