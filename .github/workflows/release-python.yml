@@ -42,7 +42,7 @@ jobs:
           aws_region_name: ${{ vars.AWS_REGION_NAME }}
           aws_secret_id: ${{ secrets.AWS_SECRET_ID }}
           artifactory_username: ${{ vars.ARTIFACTORY_USERNAME }}
-      - uses: mongodb-labs/drivers-github-tools/python/pre-publish@v2
+      - uses: blink1073/drivers-github-tools/python/pre-publish@test-releases
         with:
           version: ${{ inputs.version }}
           working_directory: ./bindings/python
