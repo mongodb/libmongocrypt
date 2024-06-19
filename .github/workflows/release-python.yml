@@ -49,7 +49,7 @@ jobs:
 
   build-dist:
     needs: [pre-publish]
-    uses: ./.github/workflows/dist.yml
+    uses: ./.github/workflows/dist-python.yml
 
   static-scan:
     needs: [pre-publish]
