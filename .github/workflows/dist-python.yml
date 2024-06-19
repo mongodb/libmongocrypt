@@ -28,7 +28,7 @@ defaults:
 
 jobs:
   build_dist:
-    if: github.repository_owner == 'mongodb' || inputs.force == 'true'
+    if: github.repository_owner == 'mongodb' || inputs.force == true
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
