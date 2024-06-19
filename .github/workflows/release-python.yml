@@ -45,6 +45,7 @@ jobs:
       - uses: mongodb-labs/drivers-github-tools/python/pre-publish@v2
         with:
           version: ${{ inputs.version }}
+          working_directory: ./bindings/python
           dry_run: ${{ inputs.dry_run }}
 
   build-dist:
@@ -80,6 +81,7 @@ jobs:
         with:
           version: ${{ inputs.version }}
           following_version: ${{ inputs.following_version }}
+          working_directory: ./bindings/python
           product_name: ${{ env.PRODUCT_NAME }}
           silk_asset_group: ${{ env.SILK_ASSET_GROUP }}
           token: ${{ github.token }}
