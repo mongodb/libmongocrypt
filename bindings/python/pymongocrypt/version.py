@@ -12,6 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__version__ = "4.9.18"
+__version__ = "4.9.19"
 
 _MIN_LIBMONGOCRYPT_VERSION = "1.8.0"
