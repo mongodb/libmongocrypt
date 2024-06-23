@@ -26,7 +26,7 @@ defaults:
 
 jobs:
   pre-publish:
-    environment: release
+    environment: release-python
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -63,7 +63,7 @@ jobs:
   publish:
     needs: [build-dist, static-scan]
     runs-on: ubuntu-latest
-    environment: release
+    environment: release-python
     permissions:
       id-token: write
       contents: write
