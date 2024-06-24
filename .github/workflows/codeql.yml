@@ -9,6 +9,11 @@ on:
       - bindings/python/**/*.py
   schedule:
     - cron: '17 10 * * 2'
+  workflow_call:
+    inputs:
+      ref:
+        required: true
+        type: string
 
 jobs:
   analyze-python:
@@ -26,6 +31,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
+        ref: ${{ inputs.ref }}
     - uses: actions/setup-python@v5
       with:
         python-version: 3.x

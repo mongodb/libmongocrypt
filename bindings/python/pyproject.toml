@@ -44,6 +44,7 @@ Homepage = "https://github.com/mongodb/libmongocrypt/tree/master/bindings/python
 
 [tool.hatch.version]
 path = "pymongocrypt/version.py"
+validate-bump = false
 
 # Used to call hatch_build.py
 [tool.hatch.build.hooks.custom]
