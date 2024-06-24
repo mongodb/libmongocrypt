@@ -717,7 +717,7 @@ static bool _ctx_done_azure_wrapkey_unwrapkey(mongocrypt_kms_ctx_t *kms) {
     }
     body = kms_response_get_body(response, &body_len);
 
-    if (kms->should_retry && should_retry_http(http_status, kms->req_type)) {
+    if (kms->retry_enabled && should_retry_http(http_status, kms->req_type)) {
         if (kms->attempts >= kms_max_attempts) {
             CLIENT_ERR("KMS request failed after %d retries", kms_max_attempts);
             goto fail;
@@ -822,7 +822,7 @@ static bool _ctx_done_gcp(mongocrypt_kms_ctx_t *kms, const char *json_field) {
     }
     body = kms_response_get_body(response, &body_len);
 
-    if (kms->should_retry && should_retry_http(http_status, kms->req_type)) {
+    if (kms->retry_enabled && should_retry_http(http_status, kms->req_type)) {
         if (kms->attempts >= kms_max_attempts) {
             CLIENT_ERR("KMS request failed after %d retries", kms_max_attempts);
             goto fail;

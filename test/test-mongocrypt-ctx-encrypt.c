@@ -5066,7 +5066,7 @@ static void _test_bulkWrite(_mongocrypt_tester_t *tester) {
     bson_free(local_kek);
 }
 
-static void _test_encrypt_retry_tcp(_mongocrypt_tester_t *tester) {
+static void _test_encrypt_retry(_mongocrypt_tester_t *tester) {
     mongocrypt_t *crypt;
 
     crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
@@ -5081,8 +5081,7 @@ static void _test_encrypt_retry_tcp(_mongocrypt_tester_t *tester) {
         // Expect no sleep is requested before any error.
         ASSERT_CMPINT64(mongocrypt_kms_ctx_usleep(kms_ctx), ==, 0);
         // Feed a retryable HTTP error.
-        // TODO: use ASSERT_OK once `kms_ctx` is changed not to set error status.
-        ASSERT(mongocrypt_kms_ctx_feed(kms_ctx, TEST_FILE("./test/data/rmd/kms-decrypt-reply-429.txt")));
+        ASSERT_OK(mongocrypt_kms_ctx_feed(kms_ctx, TEST_FILE("./test/data/rmd/kms-decrypt-reply-429.txt")), kms_ctx);
         // Expect KMS request is returned again for a retry.
         kms_ctx = mongocrypt_ctx_next_kms_ctx(ctx);
         ASSERT_OK(kms_ctx, ctx);
