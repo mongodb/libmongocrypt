@@ -19,6 +19,7 @@ env:
   PRODUCT_NAME: PyMongoCrypt
   # Changes per branch
   SILK_ASSET_GROUP: pymongocrypt
+  EVERGREEN_PROJECT: libmongocrypt
 
 defaults:
   run:
@@ -58,7 +59,7 @@ jobs:
     needs: [pre-publish]
     uses: ./.github/workflows/codeql.yml
     with:
-      ref: ${{ inputs.version }}
+      ref: ${{ github.ref }}
 
   publish:
     needs: [build-dist, static-scan]
@@ -86,5 +87,6 @@ jobs:
           working_directory: ./bindings/python
           product_name: ${{ env.PRODUCT_NAME }}
           silk_asset_group: ${{ env.SILK_ASSET_GROUP }}
+          evergreen_project: ${{ env.EVERGREEN_PROJECT }}
           token: ${{ github.token }}
           dry_run: ${{ inputs.dry_run }}
