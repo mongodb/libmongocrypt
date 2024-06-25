@@ -17,7 +17,43 @@ Go to [Snyk](https://app.snyk.io/) and select the `dev-prod` organization. If ac
 
 ![Reference Targets](img/reference-targets.png)
 
-For a patch release (e.g. x.y.z) check the rx.y reference target. For a minor release (e.g. x.y.0) check the master reference target.
+Copy the organization ID from [Snyk settings](https://app.snyk.io/org/dev-prod/manage/settings).
+
+##### Update Snyk
+
+Update the Snyk reference target tracking the to-be-released branch. For a patch release (e.g. x.y.z), check-out the `rx.y` branch and update the `rx.y` reference target. For a minor release (e.g. x.y.0), check out the `master` branch update the `master` reference target.
+
+Run `cmake` to ensure generated source files are present:
+```bash
+cmake -S. -Bcmake-build -D BUILD_TESTING=OFF
+cmake --build cmake-build --target mongocrypt
+```
+
+Print dependencies found by Snyk and verify libbson is found:
+```bash
+snyk test --unmanaged --print-dep-paths
+```
+
+Copy the organization ID from [Snyk settings](https://app.snyk.io/org/dev-prod/manage/settings). Create the new Snyk reference target to track the newly created release branch:
+```bash
+snyk auth
+snyk monitor \
+--org=$ORGANIZATION_ID \
+--target-reference="<rx.y or master>" \
+--unmanaged \
+--remote-repo-url=https://github.com/mongodb/libmongocrypt.git
+```
+
+```bash
+snyk auth
+snyk monitor \
+--org=$ORGANIZATION_ID \
+--target-reference=<rx.y or master> \
+--unmanaged \
+--remote-repo-url=https://github.com/mongodb/libmongocrypt.git
+```
+
+Check the updated reference targets in Snyk for detected vulnerabilities.
 
 #### Check Silk
 
