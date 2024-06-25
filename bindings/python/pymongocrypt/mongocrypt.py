@@ -60,8 +60,9 @@ class MongoCrypt:
         self.__crypt = lib.mongocrypt_new()
         if self.__crypt == ffi.NULL:
             raise MongoCryptError("unable to create new mongocrypt object")
-        if not lib.mongocrypt_setopt_use_range_v2(self.__crypt):
-            raise MongoCryptError("unable to enable QE Range Protocol V2")
+        if options.enable_range_v2:
+            if not lib.mongocrypt_setopt_use_range_v2(self.__crypt):
+                raise MongoCryptError("unable to enable QE Range Protocol V2")
 
         try:
             self.__init()

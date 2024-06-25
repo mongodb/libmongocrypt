@@ -193,6 +193,14 @@ class TestMongoCryptOptions(unittest.TestCase):
         ):
             MongoCryptOptions(valid_kms, encrypted_fields_map={})
 
+    def test_mongocrypt_options_range(self):
+        opts = MongoCryptOptions({"local": {"key": b"\x00" * 96}})
+        self.assertFalse(opts.enable_range_v2)
+        opts.enable_range_v2 = True
+        self.assertTrue(opts.enable_range_v2)
+        opts = MongoCryptOptions({"local": {"key": b"\x00" * 96}}, enable_range_v2=True)
+        self.assertTrue(opts.enable_range_v2)
+
 
 class TestMongoCrypt(unittest.TestCase):
     maxDiff = None
@@ -373,7 +381,7 @@ class TestMongoCrypt(unittest.TestCase):
         encrypted_fields_map = bson_data(
             "compact/success/encrypted-field-config-map.json"
         )
-        mc = self.create_mongocrypt(encrypted_fields_map=encrypted_fields_map)
+        mc = self.create_mongocrypt(encrypted_fields_map=encrypted_fields_map, enable_range_v2=True)
         self.addCleanup(mc.close)
         with mc.encryption_context("db", bson_data("compact/success/cmd.json")) as ctx:
             self.assertEqual(ctx.state, lib.MONGOCRYPT_CTX_NEED_MONGO_KEYS)
@@ -772,7 +780,8 @@ if sys.version_info >= (3, 8, 0):  # noqa: UP036
                 {
                     "aws": {"accessKeyId": "example", "secretAccessKey": "example"},
                     "local": {"key": b"\x00" * 96},
-                }
+                },
+                enable_range_v2=True,
             )
 
         async def _test_encrypt_decrypt(self, key_id=None, key_alt_name=None):
@@ -993,13 +1002,7 @@ if sys.version_info >= (3, 8, 0):  # noqa: UP036
                 is_expression=True,
             )
             encrypted_val = bson.decode(encrypted, OPTS)
-
-            # Workaround for the internal range payload counter in libmongocrypt
-            if encrypted_val != expected:
-                expected = json_data(
-                    "fle2-find-range-explicit-v2/int32/encrypted-payload-second.json"
-                )
-            self.assertEqual(encrypted_val, expected)
+            self.assertEqual(encrypted_val, adjust_range_counter(encrypted_val, expected))
 
 
 class TestNeedKMSAzureCredentials(unittest.TestCase):
@@ -1167,6 +1170,22 @@ class KeyVaultCallback(MockCallback):
         return bson.decode(data_key, OPTS)["_id"]
 
 
+def adjust_range_counter(encrypted_val, expected):
+    """Workaround for the internal range payload counter in libmongocrypt."""
+    if encrypted_val != expected:
+        _payload1 = expected["v"]["$and"][0]["age"]["$gte"]
+        _payload2 = expected["v"]["$and"][1]["age"]["$lte"]
+        _decoded1 = bson.decode(_payload1[1:])
+        _decoded2 = bson.decode(_payload2[1:])
+        for _ in range(10):
+            _decoded1["payloadId"] += 1
+            expected["v"]["$and"][0]["age"]["$gte"] = Binary(_payload1[0:1]+bson.encode(_decoded1), 6)
+            _decoded2["payloadId"] += 1
+            expected["v"]["$and"][1]["age"]["$lte"] = Binary(_payload2[0:1]+bson.encode(_decoded2), 6)
+            if encrypted_val == expected:
+                break
+    return expected
+
 class AsyncKeyVaultCallback(MockAsyncCallback):
     def __init__(self, kms_reply=None):
         super().__init__(kms_reply=kms_reply)
@@ -1184,12 +1203,13 @@ class TestExplicitEncryption(unittest.TestCase):
     maxDiff = None
 
     @staticmethod
-    def mongo_crypt_opts():
+    def mongo_crypt_opts(enable_range_v2=True):
         return MongoCryptOptions(
             {
                 "aws": {"accessKeyId": "example", "secretAccessKey": "example"},
                 "local": {"key": b"\x00" * 96},
-            }
+            },
+            enable_range_v2=enable_range_v2,
         )
 
     def _test_encrypt_decrypt(self, key_id=None, key_alt_name=None):
@@ -1392,13 +1412,33 @@ class TestExplicitEncryption(unittest.TestCase):
             is_expression=True,
         )
         encrypted_val = bson.decode(encrypted, OPTS)
+        self.assertEqual(encrypted_val, adjust_range_counter(encrypted_val, expected))
 
-        # Workaround for the internal range payload counter in libmongocrypt
-        if encrypted_val != expected:
-            expected = json_data(
-                "fle2-find-range-explicit-v2/int32/encrypted-payload-second.json"
-            )
-        self.assertEqual(encrypted_val, expected)
+    def test_rangePreview_query_int32(self):
+        key_path = "keys/ABCDEFAB123498761234123456789012-local-document.json"
+        key_id = json_data(key_path)["_id"]
+        encrypter = ExplicitEncrypter(
+            MockCallback(
+                key_docs=[bson_data(key_path)], kms_reply=http_data("kms-reply.txt")
+            ),
+            self.mongo_crypt_opts(enable_range_v2=False),
+        )
+        self.addCleanup(encrypter.close)
+
+        range_opts = bson_data("fle2-find-rangePreview-explicit/int32/rangeopts.json")
+        value = bson_data("fle2-find-rangePreview-explicit/int32/value-to-encrypt.json")
+        expected = json_data("fle2-find-range-explicit-v2/int32/encrypted-payload.json")
+        encrypted = encrypter.encrypt(
+            value,
+            "rangePreview",
+            key_id=key_id,
+            query_type="rangePreview",
+            contention_factor=4,
+            range_opts=range_opts,
+            is_expression=True,
+        )
+        encrypted_val = bson.decode(encrypted, OPTS)
+        self.assertEqual(encrypted_val, adjust_range_counter(encrypted_val, expected))
 
 
 def read(filename, **kwargs):
