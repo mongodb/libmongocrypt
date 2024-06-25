@@ -193,6 +193,14 @@ class TestMongoCryptOptions(unittest.TestCase):
         ):
             MongoCryptOptions(valid_kms, encrypted_fields_map={})
 
+    def test_mongocrypt_options_range(self):
+        opts = MongoCryptOptions({"local": {"key": b"\x00" * 96}})
+        self.assertFalse(opts.enable_range_v2)
+        opts.enable_range_v2 = True
+        self.assertTrue(opts.enable_range_v2)
+        opts = MongoCryptOptions({"local": {"key": b"\x00" * 96}}, enable_range_v2=True)
+        self.assertTrue(opts.enable_range_v2)
+
 
 class TestMongoCrypt(unittest.TestCase):
     maxDiff = None
@@ -373,7 +381,7 @@ class TestMongoCrypt(unittest.TestCase):
         encrypted_fields_map = bson_data(
             "compact/success/encrypted-field-config-map.json"
         )
-        mc = self.create_mongocrypt(encrypted_fields_map=encrypted_fields_map)
+        mc = self.create_mongocrypt(encrypted_fields_map=encrypted_fields_map, enable_range_v2=True)
         self.addCleanup(mc.close)
         with mc.encryption_context("db", bson_data("compact/success/cmd.json")) as ctx:
             self.assertEqual(ctx.state, lib.MONGOCRYPT_CTX_NEED_MONGO_KEYS)
@@ -772,7 +780,8 @@ if sys.version_info >= (3, 8, 0):  # noqa: UP036
                 {
                     "aws": {"accessKeyId": "example", "secretAccessKey": "example"},
                     "local": {"key": b"\x00" * 96},
-                }
+                },
+                enable_range_v2=True,
             )
 
         async def _test_encrypt_decrypt(self, key_id=None, key_alt_name=None):
@@ -1189,7 +1198,8 @@ class TestExplicitEncryption(unittest.TestCase):
             {
                 "aws": {"accessKeyId": "example", "secretAccessKey": "example"},
                 "local": {"key": b"\x00" * 96},
-            }
+            },
+            enable_range_v2=True,
         )
 
     def _test_encrypt_decrypt(self, key_id=None, key_alt_name=None):
