@@ -2,6 +2,9 @@
 ## (Next)
 ### Deprecated
 - The Windows download URLs for [stable](https://s3.amazonaws.com/mciuploads/libmongocrypt/windows/latest_release/libmongocrypt.tar.gz) and [unstable](https://s3.amazonaws.com/mciuploads/libmongocrypt/windows/latest_release/libmongocrypt_unstable.tar.gz) are now deprecated. See the GitHub Release page for Windows downloads.
+## 1.10.1
+## Fixed
+- Document `range` algorithm as unstable.
 ## 1.10.0
 ### New features
 - Support KMIP `delegated` option.
