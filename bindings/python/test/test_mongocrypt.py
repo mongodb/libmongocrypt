@@ -381,7 +381,9 @@ class TestMongoCrypt(unittest.TestCase):
         encrypted_fields_map = bson_data(
             "compact/success/encrypted-field-config-map.json"
         )
-        mc = self.create_mongocrypt(encrypted_fields_map=encrypted_fields_map, enable_range_v2=True)
+        mc = self.create_mongocrypt(
+            encrypted_fields_map=encrypted_fields_map, enable_range_v2=True
+        )
         self.addCleanup(mc.close)
         with mc.encryption_context("db", bson_data("compact/success/cmd.json")) as ctx:
             self.assertEqual(ctx.state, lib.MONGOCRYPT_CTX_NEED_MONGO_KEYS)
@@ -1002,7 +1004,9 @@ if sys.version_info >= (3, 8, 0):  # noqa: UP036
                 is_expression=True,
             )
             encrypted_val = bson.decode(encrypted, OPTS)
-            self.assertEqual(encrypted_val, adjust_range_counter(encrypted_val, expected))
+            self.assertEqual(
+                encrypted_val, adjust_range_counter(encrypted_val, expected)
+            )
 
 
 class TestNeedKMSAzureCredentials(unittest.TestCase):
@@ -1179,12 +1183,17 @@ def adjust_range_counter(encrypted_val, expected):
         _decoded2 = bson.decode(_payload2[1:])
         for _ in range(10):
             _decoded1["payloadId"] += 1
-            expected["v"]["$and"][0]["age"]["$gte"] = Binary(_payload1[0:1]+bson.encode(_decoded1), 6)
+            expected["v"]["$and"][0]["age"]["$gte"] = Binary(
+                _payload1[0:1] + bson.encode(_decoded1), 6
+            )
             _decoded2["payloadId"] += 1
-            expected["v"]["$and"][1]["age"]["$lte"] = Binary(_payload2[0:1]+bson.encode(_decoded2), 6)
+            expected["v"]["$and"][1]["age"]["$lte"] = Binary(
+                _payload2[0:1] + bson.encode(_decoded2), 6
+            )
             if encrypted_val == expected:
                 break
     return expected
+
 
 class AsyncKeyVaultCallback(MockAsyncCallback):
     def __init__(self, kms_reply=None):
