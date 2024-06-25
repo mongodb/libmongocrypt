@@ -16,6 +16,9 @@ on:
       force:
         required: true
         type: boolean
+      ref:
+        required: true
+        type: string
 
 concurrency:
   group: python-dist-${{ github.ref }}
@@ -40,6 +43,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ inputs.ref }}
 
       - uses: actions/setup-python@v5
         with:
