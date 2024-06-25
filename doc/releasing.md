@@ -57,6 +57,8 @@ Check the updated reference targets in Snyk for detected vulnerabilities.
 
 #### Check Silk
 
+Get credentials for Silk from the `drivers/libmongocrypt` vault in [AWS Secrets Manager](https://wiki.corp.mongodb.com/display/DRIVERS/Using+AWS+Secrets+Manager+to+Store+Testing+Secrets).
+
 Download the Augmented SBOM using:
 ```bash
 ./.evergreen/earthly.sh \
