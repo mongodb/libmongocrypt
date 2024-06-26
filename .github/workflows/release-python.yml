@@ -27,7 +27,8 @@ defaults:
 
 jobs:
   pre-publish:
-    environment: release-python
+    # TODO: revert to release-python before merging
+    environment: release
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -70,7 +71,8 @@ jobs:
   publish:
     needs: [build-dist, static-scan]
     runs-on: ubuntu-latest
-    environment: release-python
+    # TODO: revert to release-python before merging
+    environment: release
     permissions:
       id-token: write
       contents: write
