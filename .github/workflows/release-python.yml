@@ -88,7 +88,7 @@ jobs:
           aws_region_name: ${{ vars.AWS_REGION_NAME }}
           aws_secret_id: ${{ secrets.AWS_SECRET_ID }}
           artifactory_username: ${{ vars.ARTIFACTORY_USERNAME }}
-      - uses: mongodb-labs/drivers-github-tools/python/publish@v2
+      - uses: blink1073/drivers-github-tools/python/publish@python-tag-format
         with:
           version: ${{ inputs.version }}
           following_version: ${{ inputs.following_version }}
@@ -96,5 +96,6 @@ jobs:
           product_name: ${{ env.PRODUCT_NAME }}
           silk_asset_group: ${{ env.SILK_ASSET_GROUP }}
           evergreen_project: ${{ env.EVERGREEN_PROJECT }}
+          tag_template: "pymongocrypt-${VERSION}"
           token: ${{ github.token }}
           dry_run: ${{ inputs.dry_run }}
