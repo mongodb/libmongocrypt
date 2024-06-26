@@ -51,6 +51,8 @@ jobs:
           version: ${{ inputs.version }}
           working_directory: ./bindings/python
           dry_run: ${{ inputs.dry_run }}
+          tag_template: "pymongocrypt-${VERSION}"
+          tag_message_template:  "Release PyMongoCrypt ${VERSION}"
 
   build-dist:
     needs: [pre-publish]
@@ -92,5 +94,6 @@ jobs:
           product_name: ${{ env.PRODUCT_NAME }}
           silk_asset_group: ${{ env.SILK_ASSET_GROUP }}
           evergreen_project: ${{ env.EVERGREEN_PROJECT }}
+          tag_template: "pymongocrypt-${VERSION}"
           token: ${{ github.token }}
           dry_run: ${{ inputs.dry_run }}
