@@ -3,8 +3,9 @@ name: Python Tests
 on: 
   push:
   pull_request:
-      paths:
-        - bindings/python/*
+    paths:
+      - bindings/python/*
+      - bindings/python/**/*.py
 
 concurrency:
   group: python-test-${{ github.ref }}
