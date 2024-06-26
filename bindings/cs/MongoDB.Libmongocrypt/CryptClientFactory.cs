@@ -114,6 +114,11 @@ namespace MongoDB.Libmongocrypt
 
                 Library.mongocrypt_setopt_use_need_kms_credentials_state(handle);
 
+                if (!Library.mongocrypt_setopt_use_range_v2(handle))
+                {
+                    throw new CryptException(Library.StatusType.MONGOCRYPT_STATUS_ERROR_CLIENT, uint.MaxValue, "Unable to enable QE Range Protocol V2.");
+                }
+
                 Library.mongocrypt_init(handle);
 
                 if (options.IsCryptSharedLibRequired)
