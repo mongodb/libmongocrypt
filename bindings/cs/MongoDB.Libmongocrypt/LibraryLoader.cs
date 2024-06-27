@@ -179,6 +179,7 @@ namespace MongoDB.Libmongocrypt
                 }
                 catch
                 {
+                    _use_libdl1 = false;
                 }
             }
             
