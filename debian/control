@@ -13,6 +13,8 @@ Build-Depends: debhelper (>= 10),
 Standards-Version: 4.6.2
 Section: libs
 Homepage: https://github.com/mongodb/libmongocrypt
+Vcs-Git: https://github.com/mongodb/libmongocrypt.git
+Vcs-Browser: https://github.com/mongodb/libmongocrypt/tree/debian/unstable
 
 Package: libmongocrypt-dev
 Section: libdevel
