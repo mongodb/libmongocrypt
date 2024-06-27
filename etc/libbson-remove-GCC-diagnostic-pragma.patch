@@ -1,0 +1,27 @@
+diff --git a/src/common/bson-dsl.h b/src/common/bson-dsl.h
+index 58a14e28e..3341e603f 100644
+--- a/src/common/bson-dsl.h
++++ b/src/common/bson-dsl.h
+@@ -29,6 +29,13 @@ enum {
+    BSON_IF_WINDOWS (__declspec (selectany)) \
+    BSON_IF_POSIX (__attribute__ ((weak)))
+ 
++#if defined(__GNUC__) && !defined(__clang__) && ((__GNUC__ < 4) || (__GNUC__ == 4 && __GNUC_MINOR__ < 6))
++// Using GCC < 4.6
++// Do not define `GCC diagnostic` pragma for GCC < 4.6.
++#define _bsonDSL_disableWarnings() ((void) 0)
++#define _bsonDSL_restoreWarnings() ((void) 0)
++#else
++// Not using GCC < 4.6
+ #ifdef __GNUC__
+ // GCC has a bug handling pragma statements that disable warnings within complex
+ // nested macro expansions. If we're GCC, just disable -Wshadow outright:
+@@ -47,7 +54,7 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
+       BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic pop");) \
+    } else                                                \
+       ((void) 0)
+-
++#endif
+ /**
+  * @brief Parse the given BSON document.
+  *

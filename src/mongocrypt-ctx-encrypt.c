@@ -1434,7 +1434,7 @@ static bool _fle2_append_compactionTokens(mongocrypt_t *crypt,
                                           const char *command_name,
                                           bson_t *out,
                                           mongocrypt_status_t *status) {
-    bson_t result_compactionTokens;
+    bson_t result_compactionTokens = BSON_INITIALIZER;
     bool ret = false;
 
     BSON_ASSERT_PARAM(crypt);
@@ -2231,6 +2231,7 @@ static bool _try_schema_from_cache(mongocrypt_ctx_t *ctx) {
 
     if (collinfo) {
         if (!_set_schema_from_collinfo(ctx, collinfo)) {
+            bson_destroy(collinfo);
             return _mongocrypt_ctx_fail(ctx);
         }
         ctx->state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;

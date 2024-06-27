@@ -20,7 +20,7 @@ option (ENABLE_PIC
    ON
 )
 option (ENABLE_BUILD_FOR_PPA "Maintainer-only option for preparing PPA build" OFF)
-option (ENABLE_ONLINE_TESTS "Enable online tests and the csfle utility" ON)
+option (ENABLE_ONLINE_TESTS "Enable online tests and the csfle utility. Requires libmongoc." ON)
 # TODO MONGOCRYPT-661 When range V2 is default, remove this option.
 option (ENABLE_USE_RANGE_V2 "Enable the use_range_v2 flag by default for queryable encryption" OFF)
 if (ENABLE_USE_RANGE_V2)
@@ -426,6 +426,9 @@ if (BUILD_TESTING)
       INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/src"
       LINK_LIBRARIES _mongocrypt::libbson_for_static
       COMPILE_FEATURES cxx_std_11
+      # Define `__STDC_LIMIT_MACROS` in libbson to define integer macros (e.g. SIZE_MAX) when including in C++ code.
+      # C99 standard notes: "C++ implementations should define these macros only when __STDC_LIMIT_MACROS is defined before <stdint.h> is included."
+      COMPILE_DEFINITIONS __STDC_LIMIT_MACROS
       PREFIX ""
       )
 

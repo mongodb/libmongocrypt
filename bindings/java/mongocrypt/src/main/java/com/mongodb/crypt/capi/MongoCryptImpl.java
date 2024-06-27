@@ -57,6 +57,7 @@ import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_key_material;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_ctx_setopt_query_type;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_destroy;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_init;
+import static com.mongodb.crypt.capi.CAPI.mongocrypt_is_crypto_available;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_new;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_aes_256_ctr;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_append_crypt_shared_lib_search_path;
@@ -118,25 +119,39 @@ class MongoCryptImpl implements MongoCrypt {
 
         configure(() -> mongocrypt_setopt_log_handler(wrapped, logCallback, null));
 
-        // We specify NoPadding here because the underlying C library is responsible for padding prior
-        // to executing the callback
-        aesCBC256EncryptCallback = new CipherCallback("AES", "AES/CBC/NoPadding", Cipher.ENCRYPT_MODE);
-        aesCBC256DecryptCallback = new CipherCallback("AES", "AES/CBC/NoPadding", Cipher.DECRYPT_MODE);
-        aesCTR256EncryptCallback = new CipherCallback("AES", "AES/CTR/NoPadding", Cipher.ENCRYPT_MODE);
-        aesCTR256DecryptCallback = new CipherCallback("AES", "AES/CTR/NoPadding", Cipher.DECRYPT_MODE);
+        if (mongocrypt_is_crypto_available()) {
+            LOGGER.debug("libmongocrypt is compiled with cryptography support, so not registering Java callbacks");
+            aesCBC256EncryptCallback = null;
+            aesCBC256DecryptCallback = null;
+            aesCTR256EncryptCallback = null;
+            aesCTR256DecryptCallback = null;
+            hmacSha512Callback = null;
+            hmacSha256Callback = null;
+            sha256Callback = null;
+            secureRandomCallback = null;
+            signingRSAESPKCSCallback = null;
+        } else {
+            LOGGER.debug("libmongocrypt is compiled without cryptography support, so registering Java callbacks");
+            // We specify NoPadding here because the underlying C library is responsible for padding prior
+            // to executing the callback
+            aesCBC256EncryptCallback = new CipherCallback("AES", "AES/CBC/NoPadding", Cipher.ENCRYPT_MODE);
+            aesCBC256DecryptCallback = new CipherCallback("AES", "AES/CBC/NoPadding", Cipher.DECRYPT_MODE);
+            aesCTR256EncryptCallback = new CipherCallback("AES", "AES/CTR/NoPadding", Cipher.ENCRYPT_MODE);
+            aesCTR256DecryptCallback = new CipherCallback("AES", "AES/CTR/NoPadding", Cipher.DECRYPT_MODE);
 
-        hmacSha512Callback = new MacCallback("HmacSHA512");
-        hmacSha256Callback = new MacCallback("HmacSHA256");
-        sha256Callback = new MessageDigestCallback("SHA-256");
-        secureRandomCallback = new SecureRandomCallback(new SecureRandom());
+            hmacSha512Callback = new MacCallback("HmacSHA512");
+            hmacSha256Callback = new MacCallback("HmacSHA256");
+            sha256Callback = new MessageDigestCallback("SHA-256");
+            secureRandomCallback = new SecureRandomCallback(new SecureRandom());
 
-        configure(() -> mongocrypt_setopt_crypto_hooks(wrapped, aesCBC256EncryptCallback, aesCBC256DecryptCallback,
-                                                        secureRandomCallback, hmacSha512Callback, hmacSha256Callback,
-                                                        sha256Callback, null));
+            configure(() -> mongocrypt_setopt_crypto_hooks(wrapped, aesCBC256EncryptCallback, aesCBC256DecryptCallback,
+                    secureRandomCallback, hmacSha512Callback, hmacSha256Callback,
+                    sha256Callback, null));
 
-        signingRSAESPKCSCallback = new SigningRSAESPKCSCallback();
-        configure(() -> mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5(wrapped, signingRSAESPKCSCallback, null));
-        configure(() -> mongocrypt_setopt_aes_256_ctr(wrapped, aesCTR256EncryptCallback, aesCTR256DecryptCallback, null));
+            signingRSAESPKCSCallback = new SigningRSAESPKCSCallback();
+            configure(() -> mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5(wrapped, signingRSAESPKCSCallback, null));
+            configure(() -> mongocrypt_setopt_aes_256_ctr(wrapped, aesCTR256EncryptCallback, aesCTR256DecryptCallback, null));
+        }
 
         if (options.getLocalKmsProviderOptions() != null) {
             try (BinaryHolder localMasterKeyBinaryHolder = toBinary(options.getLocalKmsProviderOptions().getLocalMasterKey())) {

@@ -406,7 +406,7 @@ static bool _replace_ciphertext_with_plaintext(void *ctx,
 
 static bool _finalize(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
     bson_t as_bson, final_bson;
-    bson_iter_t iter;
+    bson_iter_t iter = {0};
     _mongocrypt_ctx_decrypt_t *dctx;
     bool res;
 

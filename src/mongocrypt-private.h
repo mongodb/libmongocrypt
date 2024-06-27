@@ -49,9 +49,6 @@
 
 #define MONGOCRYPT_DATA_AND_LEN(x) ((uint8_t *)x), (sizeof(x) / sizeof((x)[0]) - 1)
 
-/* TODO: remove after integrating into libmongoc */
-#define BSON_SUBTYPE_ENCRYPTED 6
-
 /* TODO: Move these to mongocrypt-log-private.h? */
 const char *tmp_json(const bson_t *bson);
 

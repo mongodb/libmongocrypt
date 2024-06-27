@@ -1,4 +1,7 @@
 # ChangeLog
+## 1.10.1
+## Fixed
+- Document `range` algorithm as unstable.
 ## 1.10.0
 ### New features
 - Support KMIP `delegated` option.

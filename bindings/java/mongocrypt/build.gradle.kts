@@ -45,7 +45,7 @@ allprojects {
 }
 
 group = "org.mongodb"
-version = "1.8.0-SNAPSHOT"
+version = "1.10.0-SNAPSHOT"
 description = "MongoDB client-side crypto support"
 
 java {
@@ -129,11 +129,17 @@ tasks.register<Download>("downloadJava") {
     overwrite(true)
 }
 
+// The `processResources` task (defined by the `java-library` plug-in) consumes files in the main source set.
+// Add a dependency on `unzipJava`. `unzipJava` adds libmongocrypt libraries to the main source set.
+tasks.processResources {
+    mustRunAfter(tasks.named("unzipJava"))
+}
+
 tasks.register<Copy>("unzipJava") {
     outputs.upToDateWhen { false }
     from(tarTree(resources.gzip("${jnaDownloadsDir}/libmongocrypt-java.tar.gz")))
     include(jnaMapping.keys.flatMap {
-        listOf("${it}/nocrypto/**/libmongocrypt.so", "${it}/nocrypto/**/libmongocrypt.dylib", "${it}/nocrypto/**/mongocrypt.dll" )
+        listOf("${it}/nocrypto/**/libmongocrypt.so", "${it}/lib/**/libmongocrypt.dylib", "${it}/bin/**/mongocrypt.dll" )
     })
     eachFile {
         path = "${jnaMapping[path.substringBefore("/")]}/${name}"
