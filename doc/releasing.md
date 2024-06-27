@@ -17,9 +17,47 @@ Go to [Snyk](https://app.snyk.io/) and select the `dev-prod` organization. If ac
 
 ![Reference Targets](img/reference-targets.png)
 
-For a patch release (e.g. x.y.z) check the rx.y reference target. For a minor release (e.g. x.y.0) check the master reference target.
+Copy the organization ID from [Snyk settings](https://app.snyk.io/org/dev-prod/manage/settings).
+
+##### Update Snyk
+
+Update the Snyk reference target tracking the to-be-released branch. For a patch release (e.g. x.y.z), check-out the `rx.y` branch and update the `rx.y` reference target. For a minor release (e.g. x.y.0), check out the `master` branch update the `master` reference target.
+
+Run `cmake` to ensure generated source files are present:
+```bash
+cmake -S. -Bcmake-build -D BUILD_TESTING=OFF
+cmake --build cmake-build --target mongocrypt
+```
+
+Print dependencies found by Snyk and verify libbson is found:
+```bash
+snyk test --unmanaged --print-dep-paths
+```
+
+Copy the organization ID from [Snyk settings](https://app.snyk.io/org/dev-prod/manage/settings). Create the new Snyk reference target to track the newly created release branch:
+```bash
+snyk auth
+snyk monitor \
+--org=$ORGANIZATION_ID \
+--target-reference="<rx.y or master>" \
+--unmanaged \
+--remote-repo-url=https://github.com/mongodb/libmongocrypt.git
+```
+
+```bash
+snyk auth
+snyk monitor \
+--org=$ORGANIZATION_ID \
+--target-reference=<rx.y or master> \
+--unmanaged \
+--remote-repo-url=https://github.com/mongodb/libmongocrypt.git
+```
+
+Check the updated reference targets in Snyk for detected vulnerabilities.
 
 #### Check Silk
+
+Get credentials for Silk from the `drivers/libmongocrypt` vault in [AWS Secrets Manager](https://wiki.corp.mongodb.com/display/DRIVERS/Using+AWS+Secrets+Manager+to+Store+Testing+Secrets).
 
 Download the Augmented SBOM using:
 ```bash
@@ -36,11 +74,11 @@ Check the contents of the "vulnerabilities" field (if present) in the Augmented 
 ### Release
 
 Do the following when releasing:
+- If this is a feature release (e.g. `x.y.0` or `x.0.0`), follow these steps: [Creating SSDLC static analysis reports](https://docs.google.com/document/d/1rkFL8ymbkc0k8Apky9w5pTPbvKRm68wj17mPJt2_0yo/edit).
+- Check out the release branch. For a release `x.y.z`, the release branch is `rx.y`. If this is a new minor release (`x.y.0`), create the release branch.
+- Update CHANGELOG.md with the version being released.
 - Ensure `etc/purls.txt` is up-to-date.
 - Update `etc/third_party_vulnerabilities.md` with any updates to new or known vulnerabilities for third party dependencies that must be reported.
-- If this is a feature release (e.g. `x.y.0` or `x.0.0`), follow these steps: [Creating SSDLC static analysis reports](https://docs.google.com/document/d/1rkFL8ymbkc0k8Apky9w5pTPbvKRm68wj17mPJt2_0yo/edit).
-- Update CHANGELOG.md with the version being released.
-- Check out the release branch. For a release `x.y.z`, the release branch is `rx.y`. If this is a new minor release (`x.y.0`), create the release branch.
 - If this is a new minor release (e.g. `x.y.0`):
    - Update the Linux distribution package installation instructions in the below sections to refer to the new version `x.y`.
    - Update the [libmongocrypt-release](https://spruce.mongodb.com/project/libmongocrypt-release/settings/general) Evergreen project (requires auth) to set `Branch Name` to `rx.y`.
@@ -106,9 +144,10 @@ Do the following when releasing:
 - Make a PR to apply the "Update CHANGELOG.md for x.y.z" commit to the `master` branch.
 - Update the release on the [Jira releases page](https://jira.mongodb.org/projects/MONGOCRYPT/versions).
 - Record the release on [C/C++ Release Info](https://docs.google.com/spreadsheets/d/1yHfGmDnbA5-Qt8FX4tKWC5xk9AhzYZx1SKF4AD36ecY/edit?usp=sharing). This is done to meet SSDLC reporting requirements.
+- Add a link to the Evergreen waterfall for the tagged commit to [libmongocrypt Security Testing Summary](https://docs.google.com/document/d/1dc7uvBzu3okAIsA8LSW5sVQGkYIvwpBVdg5v4wb4c4s/edit#heading=h.5t79jwe4p0ss).
 
 ## Homebrew steps ##
 Submit a PR to update the Homebrew package https://github.com/mongodb/homebrew-brew/blob/master/Formula/libmongocrypt.rb. ([Example](https://github.com/mongodb/homebrew-brew/pull/208)). If not on macOS, request a team member to do this step.
 
 ## Debian steps ##
-Refer to the [Debian](https://docs.google.com/document/d/1ItyBC7VN383zNXu3oUOQJYR7adfYI8ECjLMJ5kqA9X8/edit#heading=h.wqad0pesgfc6) steps. If you are not a Debian maintainer on the team, request a team member to do this step.
+Refer to the [Debian](https://github.com/mongodb/mongo-c-driver/blob/master/docs/dev/debian.rst) steps. If you are not a Debian maintainer on the team, request a team member to do this step.
