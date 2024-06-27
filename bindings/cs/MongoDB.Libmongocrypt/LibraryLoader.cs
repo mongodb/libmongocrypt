@@ -168,6 +168,20 @@ namespace MongoDB.Libmongocrypt
             // #define RTLD_GLOBAL     0x100
             public const int RTLD_GLOBAL = 0x100;
             public const int RTLD_NOW = 0x2;
+            private static readonly bool _use_libdl1;
+
+            static LinuxLibrary()
+            {
+                try
+                {
+                    Libdl1.dlerror();
+                    _use_libdl1 = true;
+                }
+                catch
+                {
+                    _use_libdl1 = false;
+                }
+            }
             
             private static readonly string[] __suffixPaths = 
             {
@@ -180,7 +194,11 @@ namespace MongoDB.Libmongocrypt
             public LinuxLibrary(List<string> candidatePaths)
             {
                 var path = __libmongocryptLibPath ?? FindLibrary(candidatePaths, __suffixPaths, "libmongocrypt.so");
-                _handle = dlopen(path, RTLD_GLOBAL | RTLD_NOW);
+                
+                _handle = _use_libdl1
+                    ? Libdl1.dlopen(path, RTLD_GLOBAL | RTLD_NOW)
+                    : Libdl2.dlopen(path, RTLD_GLOBAL | RTLD_NOW);
+                
                 if (_handle == IntPtr.Zero)
                 {
                     throw new FileNotFoundException(path);
@@ -189,16 +207,8 @@ namespace MongoDB.Libmongocrypt
 
             public IntPtr GetFunction(string name)
             {
-                return dlsym(_handle, name);
+                return _use_libdl1 ? Libdl1.dlsym(_handle, name) : Libdl2.dlsym(_handle, name);
             }
-
-#pragma warning disable IDE1006 // Naming Styles
-            [DllImport("libdl")]
-            public static extern IntPtr dlopen(string filename, int flags);
-
-            [DllImport("libdl", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
-            public static extern IntPtr dlsym(IntPtr handle, string symbol);
-#pragma warning restore IDE1006 // Naming Styles
         }
 
         /// <summary>
@@ -245,6 +255,35 @@ namespace MongoDB.Libmongocrypt
 
             [DllImport("kernel32", CharSet = CharSet.Ansi, ExactSpelling = true, SetLastError = true)]
             public static extern IntPtr GetProcAddress(IntPtr hModule, string procName);
+        }
+        
+        private static class Libdl1
+        {
+            private const string LibName = "libdl";
+            
+#pragma warning disable IDE1006 // Naming Styles
+            [DllImport(LibName)]
+            public static extern IntPtr dlopen(string filename, int flags);
+
+            [DllImport(LibName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+            public static extern IntPtr dlsym(IntPtr handle, string symbol);
+            
+            [DllImport(LibName)]
+            public static extern string dlerror();
+#pragma warning restore IDE1006 // Naming Styles
+        }
+        
+        private static class Libdl2
+        {
+            private const string LibName = "libdl.so.2";
+            
+#pragma warning disable IDE1006 // Naming Styles
+            [DllImport(LibName)]
+            public static extern IntPtr dlopen(string filename, int flags);
+
+            [DllImport(LibName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+            public static extern IntPtr dlsym(IntPtr handle, string symbol);
+#pragma warning restore IDE1006 // Naming Styles
         }
     }
 }
