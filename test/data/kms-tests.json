@@ -44,8 +44,8 @@
   {
     "ctx": ["datakey", "decrypt"],
     "description": "Empty body",
-    "http_reply": ["HTTP/1.1 500 Internal error\r\n", "\r\n"],
-    "expect": "Error in KMS response. HTTP status=500"
+    "http_reply": ["HTTP/1.1 418 I'm a teapot\r\n", "\r\n"],
+    "expect": "Error in KMS response. HTTP status=418"
   },
   {
     "ctx": ["datakey", "decrypt"],
@@ -73,11 +73,11 @@
     "ctx": ["datakey", "decrypt"],
     "description": "Content-Length explicitly 0",
     "http_reply": [
-      "HTTP/1.1 500 Internal error\r\n",
+      "HTTP/1.1 418 I'm a teapot\r\n",
       "Content-Length: 0\r\n",
       "\r\n"
     ],
-    "expect": "Error in KMS response. HTTP status=500"
+    "expect": "Error in KMS response. HTTP status=418"
   },
   {
     "description": "Non-error non-200 HTTP status",
