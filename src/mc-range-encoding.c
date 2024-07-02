@@ -239,6 +239,15 @@ bool mc_getTypeInfoDouble(mc_getTypeInfoDouble_args_t args,
                 }
             }
         }
+
+        if (!use_precision_mode && use_range_v2) {
+            CLIENT_ERR("The domain of double values specified by the min, max, and precision cannot be represented in "
+                       "fewer than 64 bits. min: %g, max: %g, precision: %" PRIu32,
+                       args.min.value,
+                       args.max.value,
+                       args.precision.value);
+            return false;
+        }
     }
 
     if (use_precision_mode) {
