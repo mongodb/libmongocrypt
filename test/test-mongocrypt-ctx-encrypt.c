@@ -18,6 +18,7 @@
 
 #include "kms_message/kms_b64.h"
 #include "mongocrypt-crypto-private.h" // MONGOCRYPT_KEY_LEN
+#include "mongocrypt.h"
 #include "test-mongocrypt-assert-match-bson.h"
 #include "test-mongocrypt-crypto-std-hooks.h"
 #include "test-mongocrypt.h"
@@ -5476,13 +5477,69 @@ static void _test_range_sends_cryptoParams(_mongocrypt_tester_t *tester) {
     _mongocrypt_buffer_cleanup(&key123_id);
 }
 
-static void _test_encrypt_retry(_mongocrypt_tester_t *tester) {
-    mongocrypt_t *crypt;
+typedef struct _responses {
+    const char *key_document;
+    const char *oauth_response;
+    const char *decrypt_response;
+} _responses;
 
-    crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+static void _test_encrypt_retry_provider(_responses r, _mongocrypt_tester_t *tester) {
+    mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+    mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
 
-    // Test that an HTTP error is retried.
+    // Create context.
     {
+        // Use explicit encryption to simplify (no schema needed).
+        ASSERT_OK(mongocrypt_ctx_setopt_key_alt_name(ctx, TEST_BSON(BSON_STR({"keyAltName" : "keyDocumentName"}))),
+                  ctx);
+        ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_DETERMINISTIC_STR, -1), ctx);
+        ASSERT_OK(mongocrypt_ctx_explicit_encrypt_init(ctx, TEST_BSON(BSON_STR({"v" : "foo"}))), ctx);
+    }
+
+    // Feed key.
+    {
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+        ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TEST_FILE(r.key_document)), ctx);
+        ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+    }
+
+    // Needs KMS for oauth token.
+    {
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_KMS);
+        mongocrypt_kms_ctx_t *kctx = mongocrypt_ctx_next_kms_ctx(ctx);
+        ASSERT(kctx);
+        ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE(r.oauth_response)), kctx);
+        ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
+    }
+
+    // Needs KMS to decrypt DEK.
+    {
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_KMS);
+        mongocrypt_kms_ctx_t *kctx = mongocrypt_ctx_next_kms_ctx(ctx);
+        ASSERT(kctx);
+        // Feed a retryable HTTP error.
+        ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/rmd/kms-decrypt-reply-429.txt")), kctx);
+        // Expect KMS request is returned again for a retry.
+        kctx = mongocrypt_ctx_next_kms_ctx(ctx);
+        ASSERT_OK(kctx, ctx);
+        ASSERT_CMPINT64(mongocrypt_kms_ctx_usleep(kctx), >, 0);
+        // Feed a successful response.
+        ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE(r.decrypt_response)), kctx);
+        ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
+    }
+
+    ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
+    mongocrypt_binary_t *bin = mongocrypt_binary_new();
+    ASSERT_OK(mongocrypt_ctx_finalize(ctx, bin), ctx);
+    mongocrypt_binary_destroy(bin);
+    mongocrypt_ctx_destroy(ctx);
+    mongocrypt_destroy(crypt);
+}
+
+static void _test_encrypt_retry(_mongocrypt_tester_t *tester) {
+    // Test that an HTTP error is retried with AWS
+    {
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
         ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "test", -1, TEST_FILE("./test/example/cmd.json")), ctx);
         _mongocrypt_tester_run_ctx_to(tester, ctx, MONGOCRYPT_CTX_NEED_KMS);
@@ -5501,6 +5558,25 @@ static void _test_encrypt_retry(_mongocrypt_tester_t *tester) {
         _mongocrypt_tester_run_ctx_to(tester, ctx, MONGOCRYPT_CTX_DONE);
         mongocrypt_ctx_destroy(ctx);
     }
+    // Azure
+    {
+        _responses r = {
+            "./test/data/key-document-azure.json",
+            "./test/data/kms-azure/oauth-response.txt",
+            "./test/data/kms-azure/decrypt-response.txt",
+        };
+        _test_encrypt_retry_provider(r, tester);
+    }
+    // GCP
+    {
+        _responses r = {
+            "./test/data/key-document-gcp.json",
+            "./test/data/kms-gcp/oauth-response.txt",
+            "./test/data/kms-gcp/decrypt-response.txt",
+        };
+        _test_encrypt_retry_provider(r, tester);
+    }
+    // Multiple keys
     {
         // Create crypt with retry enabled.
         mongocrypt_t *crypt = mongocrypt_new();
@@ -5567,7 +5643,6 @@ static void _test_encrypt_retry(_mongocrypt_tester_t *tester) {
         mongocrypt_ctx_destroy(ctx);
         mongocrypt_destroy(crypt);
     }
-    mongocrypt_destroy(crypt); /* recreate crypt because of caching. */
 }
 
 void _mongocrypt_tester_install_ctx_encrypt(_mongocrypt_tester_t *tester) {
