@@ -249,7 +249,7 @@ bool mc_RangeOpts_to_FLE2RangeInsertSpec(const mc_RangeOpts_t *ro,
     }
 
     if (use_range_v2) {
-        if (!mc_RangeOpts_appendTrimFactor(ro, bson_iter_type(&v_iter), "trimFactor", &child, status)) {
+        if (!mc_RangeOpts_appendTrimFactor(ro, bson_iter_type(&v_iter), "trimFactor", &child, status, use_range_v2)) {
             return false;
         }
     }
@@ -378,7 +378,8 @@ bool mc_RangeOpts_appendMax(const mc_RangeOpts_t *ro,
 bool mc_getNumberOfBits(const mc_RangeOpts_t *ro,
                         bson_type_t valueType,
                         uint32_t *bitsOut,
-                        mongocrypt_status_t *status) {
+                        mongocrypt_status_t *status,
+                        bool use_range_v2) {
     BSON_ASSERT_PARAM(ro);
     BSON_ASSERT_PARAM(bitsOut);
 
@@ -445,7 +446,7 @@ bool mc_getNumberOfBits(const mc_RangeOpts_t *ro,
         }
         mc_getTypeInfoDouble_args_t args = {value, rmin, rmax, prec};
         mc_OSTType_Double out;
-        if (!mc_getTypeInfoDouble(args, &out, status)) {
+        if (!mc_getTypeInfoDouble(args, &out, status, use_range_v2)) {
             return false;
         }
         *bitsOut = 64 - (uint32_t)mc_count_leading_zeros_u64(out.max);
@@ -482,7 +483,8 @@ bool mc_RangeOpts_appendTrimFactor(const mc_RangeOpts_t *ro,
                                    bson_type_t valueType,
                                    const char *fieldName,
                                    bson_t *out,
-                                   mongocrypt_status_t *status) {
+                                   mongocrypt_status_t *status,
+                                   bool use_range_v2) {
     BSON_ASSERT_PARAM(ro);
     BSON_ASSERT_PARAM(fieldName);
     BSON_ASSERT_PARAM(out);
@@ -498,7 +500,7 @@ bool mc_RangeOpts_appendTrimFactor(const mc_RangeOpts_t *ro,
     BSON_ASSERT(ro->trimFactor.value <= INT32_MAX);
 
     uint32_t nbits;
-    if (!mc_getNumberOfBits(ro, valueType, &nbits, status)) {
+    if (!mc_getNumberOfBits(ro, valueType, &nbits, status, use_range_v2)) {
         return false;
     }
     // if nbits = 0, we want to allow trim factor = 0.

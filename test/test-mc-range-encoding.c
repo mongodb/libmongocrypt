@@ -427,7 +427,8 @@ static void _test_RangeTest_Encode_Double(_mongocrypt_tester_t *tester) {
                                                                            .max = test->max,
                                                                            .precision = test->precision},
                                              &got,
-                                             status);
+                                             status,
+                                             use_range_v2);
         if (test->expectError) {
             ASSERT_OR_PRINT_MSG(!ok, "expected error, but got none");
             ASSERT_STATUS_CONTAINS(status, test->expectError);

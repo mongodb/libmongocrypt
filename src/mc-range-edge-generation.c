@@ -182,14 +182,15 @@ mc_edges_t *mc_getEdgesInt64(mc_getEdgesInt64_args_t args, mongocrypt_status_t *
     return ret;
 }
 
-mc_edges_t *mc_getEdgesDouble(mc_getEdgesDouble_args_t args, mongocrypt_status_t *status) {
+mc_edges_t *mc_getEdgesDouble(mc_getEdgesDouble_args_t args, mongocrypt_status_t *status, bool use_range_v2) {
     mc_OSTType_Double got;
     if (!mc_getTypeInfoDouble((mc_getTypeInfoDouble_args_t){.value = args.value,
                                                             .min = args.min,
                                                             .max = args.max,
                                                             .precision = args.precision},
                               &got,
-                              status)) {
+                              status,
+                              use_range_v2)) {
         return NULL;
     }
 

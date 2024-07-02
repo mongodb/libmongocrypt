@@ -75,7 +75,7 @@ typedef struct {
 
 // mc_getEdgesDouble implements the Edge Generation algorithm described in
 // SERVER-67751 for double.
-mc_edges_t *mc_getEdgesDouble(mc_getEdgesDouble_args_t args, mongocrypt_status_t *status);
+mc_edges_t *mc_getEdgesDouble(mc_getEdgesDouble_args_t args, mongocrypt_status_t *status, bool use_range_v2);
 
 #if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
 typedef struct {

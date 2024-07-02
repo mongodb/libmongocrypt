@@ -163,7 +163,10 @@ bool mc_getTypeInfo64(mc_getTypeInfo64_args_t args, mc_OSTType_Int64 *out, mongo
 
 #define exp10Double(x) pow(10, x)
 
-bool mc_getTypeInfoDouble(mc_getTypeInfoDouble_args_t args, mc_OSTType_Double *out, mongocrypt_status_t *status) {
+bool mc_getTypeInfoDouble(mc_getTypeInfoDouble_args_t args,
+                          mc_OSTType_Double *out,
+                          mongocrypt_status_t *status,
+                          bool use_range_v2) {
     if (args.min.set != args.max.set || args.min.set != args.precision.set) {
         CLIENT_ERR("min, max, and precision must all be set or must all be unset");
         return false;

@@ -99,7 +99,8 @@ bool mc_RangeOpts_appendTrimFactor(const mc_RangeOpts_t *ro,
                                    bson_type_t valueType,
                                    const char *fieldName,
                                    bson_t *out,
-                                   mongocrypt_status_t *status);
+                                   mongocrypt_status_t *status,
+                                   bool use_range_v2);
 
 void mc_RangeOpts_cleanup(mc_RangeOpts_t *ro);
 

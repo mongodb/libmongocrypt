@@ -123,6 +123,7 @@ static mc_mincover_t *_test_getMincover64(void *tests, size_t idx, mongocrypt_st
 static mc_mincover_t *_test_getMincoverDouble_helper(void *tests, size_t idx, mongocrypt_status_t *status) {
     BSON_ASSERT_PARAM(tests);
 
+    const bool use_range_v2 = true;
     DoubleTest *const test = (DoubleTest *)tests + idx;
 
     return mc_getMincoverDouble(
@@ -134,7 +135,8 @@ static mc_mincover_t *_test_getMincoverDouble_helper(void *tests, size_t idx, mo
                                       .min = test->precision.set ? test->min : (mc_optional_double_t){0},
                                       .max = test->precision.set ? test->max : (mc_optional_double_t){0},
                                       .precision = test->precision},
-        status);
+        status,
+        use_range_v2);
 }
 
 #if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
