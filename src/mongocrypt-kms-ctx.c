@@ -28,6 +28,7 @@
 #include "mongocrypt-status-private.h"
 #include "mongocrypt-util-private.h"
 #include "mongocrypt.h"
+#include <bson/bson.h>
 #include <kms_message/kms_azure_request.h>
 #include <kms_message/kms_b64.h>
 #include <kms_message/kms_gcp_request.h>
@@ -479,6 +480,7 @@ static int64_t backoff_time_usec(int64_t attempts) {
     /* Exponential backoff with jitter. */
     const int64_t base = 200000;  /* 0.2 seconds */
     const int64_t max = 20000000; /* 20 seconds */
+    BSON_ASSERT(attempts > 0);
     int64_t backoff = base * ((int64_t)1 << (attempts - 1));
     if (backoff > max) {
         backoff = max;
@@ -512,7 +514,6 @@ static bool should_retry_http(int http_status, _kms_request_type_t t) {
 }
 
 static void set_retry(mongocrypt_kms_ctx_t *kms) {
-    // Set non-ok status so the parser knows to stop
     kms->should_retry = true;
     kms->attempts++;
     kms->sleep_usec = backoff_time_usec(kms->attempts);
@@ -550,7 +551,11 @@ static bool _ctx_done_aws(mongocrypt_kms_ctx_t *kms, const char *json_field) {
 
     if (kms->retry_enabled && should_retry_http(http_status, kms->req_type)) {
         if (kms->attempts >= kms_max_attempts) {
-            CLIENT_ERR("KMS request failed after %d retries", kms_max_attempts);
+            // Wrap error to indicate maximum retries occurred.
+            _handle_non200_http_status(http_status, body, body_len, status);
+            CLIENT_ERR("KMS request failed after maximum of %d retries: %s",
+                       kms_max_attempts,
+                       mongocrypt_status_message(status, NULL));
             goto fail;
         } else {
             ret = true;
@@ -1096,7 +1101,7 @@ bool mongocrypt_kms_ctx_fail(mongocrypt_kms_ctx_t *kms) {
         return false;
     }
 
-        mongocrypt_status_t *status = kms->status;
+    mongocrypt_status_t *status = kms->status;
 
     if (!kms->retry_enabled) {
         CLIENT_ERR("KMS request failed due to network error");
@@ -1131,10 +1136,10 @@ bool mongocrypt_kms_ctx_fail(mongocrypt_kms_ctx_t *kms) {
     set_retry(kms);
 
     // Reset intermediate state of parser.
-        if (kms->parser) {
-            kms_response_parser_reset(kms->parser);
-        }
-        return true;
+    if (kms->parser) {
+        kms_response_parser_reset(kms->parser);
+    }
+    return true;
 }
 
 bool mongocrypt_kms_ctx_feed(mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes) {
