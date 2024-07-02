@@ -145,6 +145,7 @@ static mc_mincover_t *_test_getMincoverDecimal128_helper(void *tests, size_t idx
 
     Decimal128Test *const test = (Decimal128Test *)tests + idx;
 
+    const bool use_range_v2 = true;
     return mc_getMincoverDecimal128(
         (mc_getMincoverDecimal128_args_t){.lowerBound = test->lowerBound,
                                           .includeLowerBound = test->includeLowerBound,
@@ -154,7 +155,8 @@ static mc_mincover_t *_test_getMincoverDecimal128_helper(void *tests, size_t idx
                                           .min = test->precision.set ? test->min : (mc_optional_dec128_t){0},
                                           .max = test->precision.set ? test->max : (mc_optional_dec128_t){0},
                                           .precision = test->precision},
-        status);
+        status,
+        use_range_v2);
 }
 #endif // MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
 

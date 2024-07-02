@@ -327,7 +327,8 @@ static void _test_getEdgesDecimal128(_mongocrypt_tester_t *tester) {
             //  .max = test->max,
             .sparsity = (size_t)test->sparsity,
         };
-        mc_edges_t *got = mc_getEdgesDecimal128(args, status);
+        const bool use_range_v2 = true;
+        mc_edges_t *got = mc_getEdgesDecimal128(args, status, use_range_v2);
 
         if (test->expectError != NULL) {
             if (NULL != got) {

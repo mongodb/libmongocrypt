@@ -962,7 +962,7 @@ get_edges(mc_FLE2RangeInsertSpec_t *insertSpec, size_t sparsity, mongocrypt_stat
             args.max = OPT_MC_DEC128(max);
             args.precision = insertSpec->precision;
         }
-        return mc_getEdgesDecimal128(args, status);
+        return mc_getEdgesDecimal128(args, status, use_range_v2);
 #else // ↑↑↑↑↑↑↑↑ With Decimal128 / Without ↓↓↓↓↓↓↓↓↓↓
         CLIENT_ERR("unsupported BSON type (Decimal128) for range: libmongocrypt "
                    "was built without extended Decimal128 support");
@@ -1530,7 +1530,7 @@ mc_mincover_t *mc_get_mincover_from_FLE2RangeFindSpec(mc_FLE2RangeFindSpec_t *fi
             args.max = OPT_MC_DEC128(mc_dec128_from_bson_iter(&findSpec->edgesInfo.value.indexMax));
             args.precision = findSpec->edgesInfo.value.precision;
         }
-        return mc_getMincoverDecimal128(args, status);
+        return mc_getMincoverDecimal128(args, status, use_range_v2);
 #else // ↑↑↑↑↑↑↑↑ With Decimal128 / Without ↓↓↓↓↓↓↓↓↓↓
         CLIENT_ERR("FLE2 find is not supported for Decimal128: libmongocrypt "
                    "was built without Decimal128 support");

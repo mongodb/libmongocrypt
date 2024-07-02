@@ -235,7 +235,8 @@ mc_mincover_t *mc_getMincoverDouble(mc_getMincoverDouble_args_t args, mongocrypt
 }
 
 #if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
-mc_mincover_t *mc_getMincoverDecimal128(mc_getMincoverDecimal128_args_t args, mongocrypt_status_t *status) {
+mc_mincover_t *
+mc_getMincoverDecimal128(mc_getMincoverDecimal128_args_t args, mongocrypt_status_t *status, bool use_range_v2) {
     BSON_ASSERT_PARAM(status);
 #define ToString(Dec) (mc_dec128_to_string(Dec).str)
     CHECK_BOUNDS(args, "s", ToString, mc_dec128_less);
@@ -246,7 +247,8 @@ mc_mincover_t *mc_getMincoverDecimal128(mc_getMincoverDecimal128_args_t args, mo
                                                                     .max = args.max,
                                                                     .precision = args.precision},
                                   &a,
-                                  status)) {
+                                  status,
+                                  use_range_v2)) {
         return NULL;
     }
     if (!mc_getTypeInfoDecimal128((mc_getTypeInfoDecimal128_args_t){.value = args.upperBound,
@@ -254,7 +256,8 @@ mc_mincover_t *mc_getMincoverDecimal128(mc_getMincoverDecimal128_args_t args, mo
                                                                     .max = args.max,
                                                                     .precision = args.precision},
                                   &b,
-                                  status)) {
+                                  status,
+                                  use_range_v2)) {
         return NULL;
     }
 

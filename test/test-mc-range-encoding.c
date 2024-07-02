@@ -771,12 +771,17 @@ static void _test_RangeTest_Encode_Decimal128(_mongocrypt_tester_t *tester) {
         }
         fflush(stdout);
         mc_OSTType_Decimal128 got;
-        const bool ok = mc_getTypeInfoDecimal128((mc_getTypeInfoDecimal128_args_t){.value = test->value,
-                                                                                   .min = test->min,
-                                                                                   .max = test->max,
-                                                                                   .precision = test->precision},
-                                                 &got,
-                                                 status);
+        const bool use_range_v2 = true;
+        const bool ok = mc_getTypeInfoDecimal128(
+            (mc_getTypeInfoDecimal128_args_t){
+                .value = test->value,
+                .min = test->min,
+                .max = test->max,
+                .precision = test->precision,
+            },
+            &got,
+            status,
+            use_range_v2);
         if (test->expectError) {
             ASSERT_OR_PRINT_MSG(!ok, "expected error, but got none");
             ASSERT_STATUS_CONTAINS(status, test->expectError);

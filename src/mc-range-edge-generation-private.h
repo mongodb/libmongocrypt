@@ -86,7 +86,7 @@ typedef struct {
     uint32_t trimFactor;
 } mc_getEdgesDecimal128_args_t;
 
-mc_edges_t *mc_getEdgesDecimal128(mc_getEdgesDecimal128_args_t args, mongocrypt_status_t *status);
+mc_edges_t *mc_getEdgesDecimal128(mc_getEdgesDecimal128_args_t args, mongocrypt_status_t *status, bool use_range_v2);
 #endif // MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
 
 BSON_STATIC_ASSERT2(ull_is_u64, sizeof(uint64_t) == sizeof(unsigned long long));

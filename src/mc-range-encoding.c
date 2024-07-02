@@ -338,7 +338,8 @@ static mlib_int128 dec128_to_int128(mc_dec128 dec) {
 
 bool mc_getTypeInfoDecimal128(mc_getTypeInfoDecimal128_args_t args,
                               mc_OSTType_Decimal128 *out,
-                              mongocrypt_status_t *status) {
+                              mongocrypt_status_t *status,
+                              bool use_range_v2) {
     /// Basic param checks
     if (args.min.set != args.max.set || args.min.set != args.precision.set) {
         CLIENT_ERR("min, max, and precision must all be set or must all be unset");
