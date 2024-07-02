@@ -428,6 +428,14 @@ bool mc_getTypeInfoDecimal128(mc_getTypeInfoDecimal128_args_t args,
                 }
             }
         }
+        if (!use_precision_mode && use_range_v2) {
+            CLIENT_ERR("The domain of decimal values specified by the min, max, and precision cannot be represented in "
+                       "fewer than 128 bits. min: %s, max: %s, precision: %" PRIu32,
+                       mc_dec128_to_string(args.min.value).str,
+                       mc_dec128_to_string(args.max.value).str,
+                       args.precision.value);
+            return false;
+        }
     }
 
     // Constant zero
