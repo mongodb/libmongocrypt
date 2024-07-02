@@ -1096,23 +1096,45 @@ bool mongocrypt_kms_ctx_fail(mongocrypt_kms_ctx_t *kms) {
         return false;
     }
 
-    if (kms->attempts >= kms_max_attempts) {
         mongocrypt_status_t *status = kms->status;
+
+    if (!kms->retry_enabled) {
+        CLIENT_ERR("KMS request failed due to network error");
+        return false;
+    }
+
+    if (kms->attempts >= kms_max_attempts) {
         CLIENT_ERR("KMS request failed after %d retries due to a network error", kms_max_attempts);
         return false;
     }
 
-    /* Not idempotent and can't be retried. */
-    if (kms->req_type == MONGOCRYPT_KMS_KMIP_REGISTER || kms->req_type == MONGOCRYPT_KMS_KMIP_ACTIVATE
-        || kms->req_type == MONGOCRYPT_KMS_KMIP_CREATE) {
+    // Check if request type is retryable. Some requests are non-idempotent and cannot be safely retried.
+    _kms_request_type_t retryable_types[] = {MONGOCRYPT_KMS_AWS_ENCRYPT,
+                                             MONGOCRYPT_KMS_AWS_DECRYPT,
+                                             MONGOCRYPT_KMS_AZURE_WRAPKEY,
+                                             MONGOCRYPT_KMS_AZURE_UNWRAPKEY,
+                                             MONGOCRYPT_KMS_GCP_ENCRYPT,
+                                             MONGOCRYPT_KMS_GCP_DECRYPT};
+    bool is_retryable = false;
+    for (size_t i = 0; i < sizeof(retryable_types) / sizeof(retryable_types[0]); i++) {
+        if (retryable_types[i] == kms->req_type) {
+            is_retryable = true;
+            break;
+        }
+    }
+    if (!is_retryable) {
+        CLIENT_ERR("KMS request failed due to network error");
         return false;
-    } else {
-        kms->sleep_usec = backoff_time_usec(++kms->attempts);
+    }
+
+    // Mark KMS context as retryable. Return again in `mongocrypt_ctx_next_kms_ctx`.
+    set_retry(kms);
+
+    // Reset intermediate state of parser.
         if (kms->parser) {
             kms_response_parser_reset(kms->parser);
         }
         return true;
-    }
 }
 
 bool mongocrypt_kms_ctx_feed(mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes) {
