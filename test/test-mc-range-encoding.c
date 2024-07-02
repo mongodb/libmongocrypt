@@ -201,6 +201,7 @@ typedef struct {
     uint64_t expect;
     mc_optional_uint64_t expectMax;
     const char *expectError;
+    bool use_range_v1; // By default, use range v2.
 } DoubleTest;
 
 static void _test_RangeTest_Encode_Double(_mongocrypt_tester_t *tester) {
@@ -317,9 +318,19 @@ static void _test_RangeTest_Encode_Double(_mongocrypt_tester_t *tester) {
                            .max = OPT_DOUBLE_C(DBL_MAX),
                            .min = OPT_DOUBLE_C(-DBL_MAX),
                            .precision = OPT_U32_C(3),
+                           // Applying min/max/precision result in a domain needing >= 64 bits to represent.
+                           // For range v1, expect precision to be ignored.
+                           .use_range_v1 = true,
                            .expect = UINT64_C(9223372036854775808),
-                           // Expect precision not to be used.
                            .expectMax = OPT_U64_C(UINT64_MAX)},
+                          {.value = 0,
+                           .max = OPT_DOUBLE_C(DBL_MAX),
+                           .min = OPT_DOUBLE_C(-DBL_MAX),
+                           .precision = OPT_U32_C(3),
+                           // Applying min/max/precision result in a domain needing >= 64 bits to represent.
+                           // For range v2, expect an error.
+                           .expectError = "The domain of double values specified by the min, max, and precision cannot "
+                                          "be represented in fewer than 64 bits"},
                           {.value = 3.141592653589,
                            .max = OPT_DOUBLE_C(5),
                            .min = OPT_DOUBLE_C(0),
@@ -360,9 +371,19 @@ static void _test_RangeTest_Encode_Double(_mongocrypt_tester_t *tester) {
                            .max = OPT_DOUBLE_C(DBL_MAX),
                            .min = OPT_DOUBLE_C(-DBL_MAX),
                            .precision = OPT_U32_C(3),
+                           // Applying min/max/precision result in a domain needing >= 64 bits to represent.
+                           // For range v1, expect precision to be ignored.
+                           .use_range_v1 = true,
                            .expect = 15326393489903895421ULL,
-                           // Expect precision not to be used.
                            .expectMax = OPT_U64_C(UINT64_MAX)},
+                          {.value = 1E100,
+                           .max = OPT_DOUBLE_C(DBL_MAX),
+                           .min = OPT_DOUBLE_C(-DBL_MAX),
+                           .precision = OPT_U32_C(3),
+                           // Applying min/max/precision result in a domain needing >= 64 bits to represent.
+                           // For range v2, expect an error.
+                           .expectError = "The domain of double values specified by the min, max, and precision cannot "
+                                          "be represented in fewer than 64 bits"},
                           {.value = 1E9,
                            .max = OPT_DOUBLE_C(1E10),
                            .min = OPT_DOUBLE_C(0),
@@ -391,9 +412,19 @@ static void _test_RangeTest_Encode_Double(_mongocrypt_tester_t *tester) {
                            .max = OPT_DOUBLE_C(10E-30),
                            .min = OPT_DOUBLE_C(1E-30),
                            .precision = OPT_U32_C(35),
+                           // Applying min/max/precision result in a domain needing >= 64 bits to represent.
+                           // For range v1, expect precision to be ignored.
+                           .use_range_v1 = true,
                            .expect = 13381399884061196960ULL,
-                           // Expect precision not to be used.
                            .expectMax = OPT_U64_C(UINT64_MAX)},
+                          {.value = 1E-30,
+                           .max = OPT_DOUBLE_C(10E-30),
+                           .min = OPT_DOUBLE_C(1E-30),
+                           .precision = OPT_U32_C(35),
+                           // Applying min/max/precision result in a domain needing >= 64 bits to represent.
+                           // For range v2, expect an error.
+                           .expectError = "The domain of double values specified by the min, max, and precision cannot "
+                                          "be represented in fewer than 64 bits"},
                           /* Test cases copied from Double_Bounds_Precision ... end */
                           {.value = -1,
                            .min = OPT_DOUBLE_C(0),
@@ -421,6 +452,7 @@ static void _test_RangeTest_Encode_Double(_mongocrypt_tester_t *tester) {
             printf("_test_RangeTest_Encode_Double: value=%f\n", test->value);
         }
 
+        const bool use_range_v2 = !test->use_range_v1;
         mc_OSTType_Double got;
         const bool ok = mc_getTypeInfoDouble((mc_getTypeInfoDouble_args_t){.value = test->value,
                                                                            .min = test->min,
