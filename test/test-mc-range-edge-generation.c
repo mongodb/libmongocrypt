@@ -259,7 +259,8 @@ static void _test_getEdgesDouble(_mongocrypt_tester_t *tester) {
         mongocrypt_status_t *const status = mongocrypt_status_new();
         const DoubleTest *test = tests + i;
         mc_getEdgesDouble_args_t args = {.value = test->value, .sparsity = test->sparsity};
-        mc_edges_t *got = mc_getEdgesDouble(args, status);
+        const bool use_range_v2 = true;
+        mc_edges_t *got = mc_getEdgesDouble(args, status, use_range_v2);
 
         if (test->expectError != NULL) {
             if (NULL != got) {
@@ -326,7 +327,8 @@ static void _test_getEdgesDecimal128(_mongocrypt_tester_t *tester) {
             //  .max = test->max,
             .sparsity = (size_t)test->sparsity,
         };
-        mc_edges_t *got = mc_getEdgesDecimal128(args, status);
+        const bool use_range_v2 = true;
+        mc_edges_t *got = mc_getEdgesDecimal128(args, status, use_range_v2);
 
         if (test->expectError != NULL) {
             if (NULL != got) {

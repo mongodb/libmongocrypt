@@ -86,11 +86,15 @@ typedef struct {
     mc_optional_uint32_t precision;
 } mc_getTypeInfoDouble_args_t;
 
+// `mc_canUsePrecisionModeDouble` returns true if the domain can be represented in fewer than 64 bits.
+bool mc_canUsePrecisionModeDouble(double min, double max, uint32_t precision, uint32_t *maxBitsOut);
+
 /* mc_getTypeInfoDouble encodes the double `args.value` into an OSTType_Double
  * `out`. Returns false and sets `status` on error. */
 bool mc_getTypeInfoDouble(mc_getTypeInfoDouble_args_t args,
                           mc_OSTType_Double *out,
-                          mongocrypt_status_t *status) MONGOCRYPT_WARN_UNUSED_RESULT;
+                          mongocrypt_status_t *status,
+                          bool use_range_v2) MONGOCRYPT_WARN_UNUSED_RESULT;
 
 #if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
 /**
@@ -106,6 +110,9 @@ typedef struct {
     mc_optional_uint32_t precision;
 } mc_getTypeInfoDecimal128_args_t;
 
+// `mc_canUsePrecisionModeDecimal` returns true if the domain can be represented in fewer than 128 bits.
+bool mc_canUsePrecisionModeDecimal(mc_dec128 min, mc_dec128 max, uint32_t precision, uint32_t *maxBitsOut);
+
 /**
  * @brief Obtain the OST encoding of a finite Decimal128 value.
  *
@@ -116,7 +123,8 @@ typedef struct {
  */
 bool mc_getTypeInfoDecimal128(mc_getTypeInfoDecimal128_args_t args,
                               mc_OSTType_Decimal128 *out,
-                              mongocrypt_status_t *status) MONGOCRYPT_WARN_UNUSED_RESULT;
+                              mongocrypt_status_t *status,
+                              bool use_range_v2) MONGOCRYPT_WARN_UNUSED_RESULT;
 #endif // MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
 
 #endif /* MC_RANGE_ENCODING_PRIVATE_H */

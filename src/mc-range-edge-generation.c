@@ -182,14 +182,15 @@ mc_edges_t *mc_getEdgesInt64(mc_getEdgesInt64_args_t args, mongocrypt_status_t *
     return ret;
 }
 
-mc_edges_t *mc_getEdgesDouble(mc_getEdgesDouble_args_t args, mongocrypt_status_t *status) {
+mc_edges_t *mc_getEdgesDouble(mc_getEdgesDouble_args_t args, mongocrypt_status_t *status, bool use_range_v2) {
     mc_OSTType_Double got;
     if (!mc_getTypeInfoDouble((mc_getTypeInfoDouble_args_t){.value = args.value,
                                                             .min = args.min,
                                                             .max = args.max,
                                                             .precision = args.precision},
                               &got,
-                              status)) {
+                              status,
+                              use_range_v2)) {
         return NULL;
     }
 
@@ -206,7 +207,7 @@ mc_edges_t *mc_getEdgesDouble(mc_getEdgesDouble_args_t args, mongocrypt_status_t
 }
 
 #if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
-mc_edges_t *mc_getEdgesDecimal128(mc_getEdgesDecimal128_args_t args, mongocrypt_status_t *status) {
+mc_edges_t *mc_getEdgesDecimal128(mc_getEdgesDecimal128_args_t args, mongocrypt_status_t *status, bool use_range_v2) {
     mc_OSTType_Decimal128 got;
     if (!mc_getTypeInfoDecimal128(
             (mc_getTypeInfoDecimal128_args_t){
@@ -216,7 +217,8 @@ mc_edges_t *mc_getEdgesDecimal128(mc_getEdgesDecimal128_args_t args, mongocrypt_
                 .precision = args.precision,
             },
             &got,
-            status)) {
+            status,
+            use_range_v2)) {
         return NULL;
     }
 

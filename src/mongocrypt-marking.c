@@ -896,7 +896,8 @@ fail:
 
 // get_edges creates and returns edges from an FLE2RangeInsertSpec. Returns NULL
 // on error.
-static mc_edges_t *get_edges(mc_FLE2RangeInsertSpec_t *insertSpec, size_t sparsity, mongocrypt_status_t *status) {
+static mc_edges_t *
+get_edges(mc_FLE2RangeInsertSpec_t *insertSpec, size_t sparsity, mongocrypt_status_t *status, bool use_range_v2) {
     BSON_ASSERT_PARAM(insertSpec);
 
     bson_type_t value_type = bson_iter_type(&insertSpec->v);
@@ -943,7 +944,7 @@ static mc_edges_t *get_edges(mc_FLE2RangeInsertSpec_t *insertSpec, size_t sparsi
             args.precision = insertSpec->precision;
         }
 
-        return mc_getEdgesDouble(args, status);
+        return mc_getEdgesDouble(args, status, use_range_v2);
     }
 
     else if (value_type == BSON_TYPE_DECIMAL128) {
@@ -961,7 +962,7 @@ static mc_edges_t *get_edges(mc_FLE2RangeInsertSpec_t *insertSpec, size_t sparsi
             args.max = OPT_MC_DEC128(max);
             args.precision = insertSpec->precision;
         }
-        return mc_getEdgesDecimal128(args, status);
+        return mc_getEdgesDecimal128(args, status, use_range_v2);
 #else // ↑↑↑↑↑↑↑↑ With Decimal128 / Without ↓↓↓↓↓↓↓↓↓↓
         CLIENT_ERR("unsupported BSON type (Decimal128) for range: libmongocrypt "
                    "was built without extended Decimal128 support");
@@ -1025,7 +1026,7 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange_v1(
     // g:= array<EdgeTokenSet>
     {
         BSON_ASSERT(placeholder->sparsity >= 0 && (uint64_t)placeholder->sparsity <= (uint64_t)SIZE_MAX);
-        edges = get_edges(&insertSpec, (size_t)placeholder->sparsity, status);
+        edges = get_edges(&insertSpec, (size_t)placeholder->sparsity, status, kb->crypt->opts.use_range_v2);
         if (!edges) {
             goto fail;
         }
@@ -1159,7 +1160,7 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange(_mo
     // g:= array<EdgeTokenSetV2>
     {
         BSON_ASSERT(placeholder->sparsity >= 0 && (uint64_t)placeholder->sparsity <= (uint64_t)SIZE_MAX);
-        edges = get_edges(&insertSpec, (size_t)placeholder->sparsity, status);
+        edges = get_edges(&insertSpec, (size_t)placeholder->sparsity, status, kb->crypt->opts.use_range_v2);
         if (!edges) {
             goto fail;
         }
@@ -1390,8 +1391,10 @@ static bool isInfinite(bson_iter_t *iter) {
 
 // mc_get_mincover_from_FLE2RangeFindSpec creates and returns a mincover from an
 // FLE2RangeFindSpec. Returns NULL on error.
-mc_mincover_t *
-mc_get_mincover_from_FLE2RangeFindSpec(mc_FLE2RangeFindSpec_t *findSpec, size_t sparsity, mongocrypt_status_t *status) {
+mc_mincover_t *mc_get_mincover_from_FLE2RangeFindSpec(mc_FLE2RangeFindSpec_t *findSpec,
+                                                      size_t sparsity,
+                                                      mongocrypt_status_t *status,
+                                                      bool use_range_v2) {
     BSON_ASSERT_PARAM(findSpec);
     BSON_ASSERT(findSpec->edgesInfo.set);
 
@@ -1505,7 +1508,7 @@ mc_get_mincover_from_FLE2RangeFindSpec(mc_FLE2RangeFindSpec_t *findSpec, size_t 
             args.max = OPT_DOUBLE(bson_iter_double(&findSpec->edgesInfo.value.indexMax));
             args.precision = findSpec->edgesInfo.value.precision;
         }
-        return mc_getMincoverDouble(args, status);
+        return mc_getMincoverDouble(args, status, use_range_v2);
     }
     case BSON_TYPE_DECIMAL128: {
 #if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
@@ -1527,7 +1530,7 @@ mc_get_mincover_from_FLE2RangeFindSpec(mc_FLE2RangeFindSpec_t *findSpec, size_t 
             args.max = OPT_MC_DEC128(mc_dec128_from_bson_iter(&findSpec->edgesInfo.value.indexMax));
             args.precision = findSpec->edgesInfo.value.precision;
         }
-        return mc_getMincoverDecimal128(args, status);
+        return mc_getMincoverDecimal128(args, status, use_range_v2);
 #else // ↑↑↑↑↑↑↑↑ With Decimal128 / Without ↓↓↓↓↓↓↓↓↓↓
         CLIENT_ERR("FLE2 find is not supported for Decimal128: libmongocrypt "
                    "was built without Decimal128 support");
@@ -1571,6 +1574,7 @@ static bool _mongocrypt_fle2_placeholder_to_find_ciphertextForRange_v1(_mongocry
     BSON_ASSERT_PARAM(ciphertext);
     BSON_ASSERT(kb->crypt);
 
+    const bool use_range_v2 = kb->crypt->opts.use_range_v2;
     _mongocrypt_crypto_t *crypto = kb->crypt->crypto;
     mc_FLE2EncryptionPlaceholder_t *placeholder = &marking->fle2;
     mc_FLE2FindRangePayload_t payload;
@@ -1588,7 +1592,7 @@ static bool _mongocrypt_fle2_placeholder_to_find_ciphertextForRange_v1(_mongocry
     // Parse the query bounds and index bounds from FLE2EncryptionPlaceholder for
     // range find.
     mc_FLE2RangeFindSpec_t findSpec;
-    if (!mc_FLE2RangeFindSpec_parse(&findSpec, &placeholder->v_iter, kb->crypt->opts.use_range_v2, status)) {
+    if (!mc_FLE2RangeFindSpec_parse(&findSpec, &placeholder->v_iter, use_range_v2, status)) {
         goto fail;
     }
 
@@ -1615,7 +1619,8 @@ static bool _mongocrypt_fle2_placeholder_to_find_ciphertextForRange_v1(_mongocry
         // g:= array<EdgeFindTokenSet>
         {
             BSON_ASSERT(placeholder->sparsity >= 0 && (uint64_t)placeholder->sparsity <= (uint64_t)SIZE_MAX);
-            mincover = mc_get_mincover_from_FLE2RangeFindSpec(&findSpec, (size_t)placeholder->sparsity, status);
+            mincover =
+                mc_get_mincover_from_FLE2RangeFindSpec(&findSpec, (size_t)placeholder->sparsity, status, use_range_v2);
             if (!mincover) {
                 goto fail;
             }
@@ -1709,6 +1714,7 @@ static bool _mongocrypt_fle2_placeholder_to_find_ciphertextForRange(_mongocrypt_
         return _mongocrypt_fle2_placeholder_to_find_ciphertextForRange_v1(kb, marking, ciphertext, status);
     }
 
+    const bool use_range_v2 = kb->crypt->opts.use_range_v2;
     mc_FLE2EncryptionPlaceholder_t *placeholder = &marking->fle2;
     mc_FLE2FindRangePayloadV2_t payload;
     bool res = false;
@@ -1724,7 +1730,7 @@ static bool _mongocrypt_fle2_placeholder_to_find_ciphertextForRange(_mongocrypt_
     // Parse the query bounds and index bounds from FLE2EncryptionPlaceholder for
     // range find.
     mc_FLE2RangeFindSpec_t findSpec;
-    if (!mc_FLE2RangeFindSpec_parse(&findSpec, &placeholder->v_iter, kb->crypt->opts.use_range_v2, status)) {
+    if (!mc_FLE2RangeFindSpec_parse(&findSpec, &placeholder->v_iter, use_range_v2, status)) {
         goto fail;
     }
 
@@ -1735,7 +1741,8 @@ static bool _mongocrypt_fle2_placeholder_to_find_ciphertextForRange(_mongocrypt_
         // g:= array<EdgeFindTokenSet>
         {
             BSON_ASSERT(placeholder->sparsity >= 0 && (uint64_t)placeholder->sparsity <= (uint64_t)SIZE_MAX);
-            mincover = mc_get_mincover_from_FLE2RangeFindSpec(&findSpec, (size_t)placeholder->sparsity, status);
+            mincover =
+                mc_get_mincover_from_FLE2RangeFindSpec(&findSpec, (size_t)placeholder->sparsity, status, use_range_v2);
             if (!mincover) {
                 goto fail;
             }

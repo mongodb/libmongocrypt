@@ -885,7 +885,8 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
             sparsity = (size_t)test->sparsity.value;
         }
 
-        mc_mincover_t *mc = mc_get_mincover_from_FLE2RangeFindSpec(&findSpec, sparsity, status);
+        const bool use_range_v2 = true;
+        mc_mincover_t *mc = mc_get_mincover_from_FLE2RangeFindSpec(&findSpec, sparsity, status, use_range_v2);
 
         if (test->expectedError) {
             ASSERT(NULL == mc);

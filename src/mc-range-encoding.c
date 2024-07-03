@@ -163,7 +163,38 @@ bool mc_getTypeInfo64(mc_getTypeInfo64_args_t args, mc_OSTType_Int64 *out, mongo
 
 #define exp10Double(x) pow(10, x)
 
-bool mc_getTypeInfoDouble(mc_getTypeInfoDouble_args_t args, mc_OSTType_Double *out, mongocrypt_status_t *status) {
+bool mc_canUsePrecisionModeDouble(double min, double max, uint32_t precision, uint32_t *maxBitsOut) {
+    BSON_ASSERT_PARAM(maxBitsOut);
+
+    bool use_precision_mode = false;
+    double range = max - min;
+
+    // We can overflow if max = max double and min = min double so make sure
+    // we have finite number after we do subtraction
+    // Ignore conversion warnings to fix error with glibc.
+    if (mc_isfinite(range)) {
+        // This creates a range which is wider then we permit by our min/max
+        // bounds check with the +1 but it is as the algorithm is written in
+        // WRITING-11907.
+        double rangeAndPrecision = (range + 1) * exp10Double(precision);
+
+        if (mc_isfinite(rangeAndPrecision)) {
+            double bits_range_double = log2(rangeAndPrecision);
+            *maxBitsOut = (uint32_t)ceil(bits_range_double);
+
+            if (*maxBitsOut < 64) {
+                use_precision_mode = true;
+            }
+        }
+    }
+
+    return use_precision_mode;
+}
+
+bool mc_getTypeInfoDouble(mc_getTypeInfoDouble_args_t args,
+                          mc_OSTType_Double *out,
+                          mongocrypt_status_t *status,
+                          bool use_range_v2) {
     if (args.min.set != args.max.set || args.min.set != args.precision.set) {
         CLIENT_ERR("min, max, and precision must all be set or must all be unset");
         return false;
@@ -216,25 +247,15 @@ bool mc_getTypeInfoDouble(mc_getTypeInfoDouble_args_t args, mc_OSTType_Double *o
             return false;
         }
 
-        double range = args.max.value - args.min.value;
-
-        // We can overflow if max = max double and min = min double so make sure
-        // we have finite number after we do subtraction
-        // Ignore conversion warnings to fix error with glibc.
-        if (mc_isfinite(range)) {
-            // This creates a range which is wider then we permit by our min/max
-            // bounds check with the +1 but it is as the algorithm is written in
-            // WRITING-11907.
-            double rangeAndPrecision = (range + 1) * exp10Double(args.precision.value);
-
-            if (mc_isfinite(rangeAndPrecision)) {
-                double bits_range_double = log2(rangeAndPrecision);
-                bits_range = (uint32_t)ceil(bits_range_double);
-
-                if (bits_range < 64) {
-                    use_precision_mode = true;
-                }
-            }
+        use_precision_mode =
+            mc_canUsePrecisionModeDouble(args.min.value, args.max.value, args.precision.value, &bits_range);
+        if (!use_precision_mode && use_range_v2) {
+            CLIENT_ERR("The domain of double values specified by the min, max, and precision cannot be represented in "
+                       "fewer than 64 bits. min: %g, max: %g, precision: %" PRIu32,
+                       args.min.value,
+                       args.max.value,
+                       args.precision.value);
+            return false;
         }
     }
 
@@ -324,9 +345,48 @@ static mlib_int128 dec128_to_int128(mc_dec128 dec) {
     return ret;
 }
 
+bool mc_canUsePrecisionModeDecimal(mc_dec128 min, mc_dec128 max, uint32_t precision, uint32_t *maxBitsOut) {
+    BSON_ASSERT_PARAM(maxBitsOut);
+
+    bool use_precision_mode = false;
+    // max - min
+    mc_dec128 bounds_n1 = mc_dec128_sub(max, min);
+    // The size of [min, max]: (max - min) + 1
+    mc_dec128 bounds = mc_dec128_add(bounds_n1, MC_DEC128_ONE);
+
+    // We can overflow if max = max_dec128 and min = min_dec128 so make sure
+    // we have finite number after we do subtraction
+    if (mc_dec128_is_finite(bounds)) {
+        // This creates a range which is wider then we permit by our min/max
+        // bounds check with the +1 but it is as the algorithm is written in
+        // WRITING-11907.
+        mc_dec128 precision_scaled_bounds = mc_dec128_scale(bounds, precision);
+        /// The number of bits required to hold the result for the given
+        /// precision (as decimal)
+        mc_dec128 bits_range_dec = mc_dec128_log2(precision_scaled_bounds);
+
+        if (mc_dec128_is_finite(bits_range_dec) && mc_dec128_less(bits_range_dec, MC_DEC128(128))) {
+            // We need fewer than 128 bits to hold the result. But round up,
+            // just to be sure:
+            int64_t r = mc_dec128_to_int64(mc_dec128_round_integral_ex(bits_range_dec, MC_DEC128_ROUND_UPWARD, NULL));
+            BSON_ASSERT(r >= 0);
+            BSON_ASSERT(r <= UINT8_MAX);
+            // We've computed the proper 'bits_range'
+            *maxBitsOut = (uint8_t)r;
+
+            if (*maxBitsOut < 128) {
+                use_precision_mode = true;
+            }
+        }
+    }
+
+    return use_precision_mode;
+}
+
 bool mc_getTypeInfoDecimal128(mc_getTypeInfoDecimal128_args_t args,
                               mc_OSTType_Decimal128 *out,
-                              mongocrypt_status_t *status) {
+                              mongocrypt_status_t *status,
+                              bool use_range_v2) {
     /// Basic param checks
     if (args.min.set != args.max.set || args.min.set != args.precision.set) {
         CLIENT_ERR("min, max, and precision must all be set or must all be unset");
@@ -376,7 +436,7 @@ bool mc_getTypeInfoDecimal128(mc_getTypeInfoDecimal128_args_t args,
     // full range.
     bool use_precision_mode = false;
     // The number of bits required to hold the result (used for precision mode)
-    uint8_t bits_range = 0;
+    uint32_t bits_range = 0;
     if (args.precision.set) {
         // Subnormal representations can support up to 5x10^-6182 as a number
         if (args.precision.value > 6182) {
@@ -384,36 +444,16 @@ bool mc_getTypeInfoDecimal128(mc_getTypeInfoDecimal128_args_t args,
             return false;
         }
 
-        // max - min
-        mc_dec128 bounds_n1 = mc_dec128_sub(args.max.value, args.min.value);
-        // The size of [min, max]: (max - min) + 1
-        mc_dec128 bounds = mc_dec128_add(bounds_n1, MC_DEC128_ONE);
+        use_precision_mode =
+            mc_canUsePrecisionModeDecimal(args.min.value, args.max.value, args.precision.value, &bits_range);
 
-        // We can overflow if max = max_dec128 and min = min_dec128 so make sure
-        // we have finite number after we do subtraction
-        if (mc_dec128_is_finite(bounds)) {
-            // This creates a range which is wider then we permit by our min/max
-            // bounds check with the +1 but it is as the algorithm is written in
-            // WRITING-11907.
-            mc_dec128 precision_scaled_bounds = mc_dec128_scale(bounds, args.precision.value);
-            /// The number of bits required to hold the result for the given
-            /// precision (as decimal)
-            mc_dec128 bits_range_dec = mc_dec128_log2(precision_scaled_bounds);
-
-            if (mc_dec128_is_finite(bits_range_dec) && mc_dec128_less(bits_range_dec, MC_DEC128(128))) {
-                // We need fewer than 128 bits to hold the result. But round up,
-                // just to be sure:
-                int64_t r =
-                    mc_dec128_to_int64(mc_dec128_round_integral_ex(bits_range_dec, MC_DEC128_ROUND_UPWARD, NULL));
-                BSON_ASSERT(r >= 0);
-                BSON_ASSERT(r <= UINT8_MAX);
-                // We've computed the proper 'bits_range'
-                bits_range = (uint8_t)r;
-
-                if (bits_range < 128) {
-                    use_precision_mode = true;
-                }
-            }
+        if (!use_precision_mode && use_range_v2) {
+            CLIENT_ERR("The domain of decimal values specified by the min, max, and precision cannot be represented in "
+                       "fewer than 128 bits. min: %s, max: %s, precision: %" PRIu32,
+                       mc_dec128_to_string(args.min.value).str,
+                       mc_dec128_to_string(args.max.value).str,
+                       args.precision.value);
+            return false;
         }
     }
 
@@ -457,9 +497,9 @@ bool mc_getTypeInfoDecimal128(mc_getTypeInfoDecimal128_args_t args,
         v_prime2 = mc_dec128_round_integral_ex(v_prime2, MC_DEC128_ROUND_TOWARD_ZERO, NULL);
 
         BSON_ASSERT(mc_dec128_less(mc_dec128_log2(v_prime2), MC_DEC128(128)));
-
+        BSON_ASSERT(bits_range < 128);
         // Resulting OST maximum
-        mlib_int128 ost_max = mlib_int128_sub(mlib_int128_pow2(bits_range), i128_one);
+        mlib_int128 ost_max = mlib_int128_sub(mlib_int128_pow2((uint8_t)bits_range), i128_one);
 
         // Now we need to get the Decimal128 out as a 128-bit integer
         // But Decimal128 does not support conversion to Int128.
