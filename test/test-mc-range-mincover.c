@@ -19,6 +19,7 @@
 #include "mc-array-private.h"
 #include "mc-check-conversions-private.h"
 #include "mc-optional-private.h"
+#include "mc-range-encoding-private.h"
 #include "mc-range-mincover-private.h"
 
 enum {
@@ -172,13 +173,31 @@ static const char *_test_expectError64(void *tests, size_t idx) {
 
 static const char *_test_expectErrorDouble(void *tests, size_t idx) {
     BSON_ASSERT_PARAM(tests);
-    return ((DoubleTest *)tests + idx)->expectError;
+    DoubleTest *test = ((DoubleTest *)tests + idx);
+    if (test->min.set && test->max.set && test->precision.set) {
+        // Expect an error for tests including an invalid min/max/precision.
+        uint32_t ignored;
+        if (!mc_canUsePrecisionModeDouble(test->min.value, test->max.value, test->precision.value, &ignored)) {
+            return "The domain of double values specified by the min, max, and precision cannot be represented in "
+                   "fewer than 64 bits";
+        }
+    }
+    return test->expectError;
 }
 
 #if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
 static const char *_test_expectErrorDecimal128(void *tests, size_t idx) {
     BSON_ASSERT_PARAM(tests);
-    return ((Decimal128Test *)tests + idx)->expectError;
+    Decimal128Test *test = ((Decimal128Test *)tests + idx);
+    if (test->min.set && test->max.set && test->precision.set) {
+        // Expect an error for tests including an invalid min/max/precision.
+        uint32_t ignored;
+        if (!mc_canUsePrecisionModeDecimal(test->min.value, test->max.value, test->precision.value, &ignored)) {
+            return "The domain of decimal values specified by the min, max, and precision cannot be represented in "
+                   "fewer than 128 bits";
+        }
+    }
+    return test->expectError;
 }
 #endif // MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
 
