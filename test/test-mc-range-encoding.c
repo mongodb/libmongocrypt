@@ -710,12 +710,12 @@ static void _test_RangeTest_Encode_Decimal128(_mongocrypt_tester_t *tester) {
         .expect = Expect,                                                                                              \
         .use_range_v1 = true,                                                                                          \
     },                                                                                                                 \
-        (Decimal128Test){.value = mc_dec128_from_string(#Val),                                                         \
-                         .min = OPT_MC_DEC128(mc_dec128_from_string(#Min)),                                            \
-                         .max = OPT_MC_DEC128(mc_dec128_from_string(#Max)),                                            \
-                         .precision = OPT_U32(Precision),                                                              \
-                         .expectError = "The domain of decimal values specified by the min, max, and precision "       \
-                                        "cannot be represented in fewer than 128 bits"}
+        (Decimal128Test) {                                                                                             \
+        .value = mc_dec128_from_string(#Val), .min = OPT_MC_DEC128(mc_dec128_from_string(#Min)),                       \
+        .max = OPT_MC_DEC128(mc_dec128_from_string(#Max)), .precision = OPT_U32(Precision),                            \
+        .expectError = "The domain of decimal values specified by the min, max, and precision "                        \
+                       "cannot be represented in fewer than 128 bits"                                                  \
+    }
 
         ASSERT_EIBB(0, 1, -1, 3, 1000),
         ASSERT_EIBB(0, 1, -1E5, 3, 100000000),
