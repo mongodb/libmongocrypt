@@ -86,6 +86,9 @@ typedef struct {
     mc_optional_uint32_t precision;
 } mc_getTypeInfoDouble_args_t;
 
+// `mc_canUsePrecisionModeDouble` returns true if the domain can be represented in fewer than 64 bits.
+bool mc_canUsePrecisionModeDouble(double min, double max, uint32_t precision, uint32_t *maxBitsOut);
+
 /* mc_getTypeInfoDouble encodes the double `args.value` into an OSTType_Double
  * `out`. Returns false and sets `status` on error. */
 bool mc_getTypeInfoDouble(mc_getTypeInfoDouble_args_t args,
@@ -106,6 +109,9 @@ typedef struct {
     mc_optional_dec128_t min, max;
     mc_optional_uint32_t precision;
 } mc_getTypeInfoDecimal128_args_t;
+
+// `mc_canUsePrecisionModeDecimal` returns true if the domain can be represented in fewer than 128 bits.
+bool mc_canUsePrecisionModeDecimal(mc_dec128 min, mc_dec128 max, uint32_t precision, uint32_t *maxBitsOut);
 
 /**
  * @brief Obtain the OST encoding of a finite Decimal128 value.
