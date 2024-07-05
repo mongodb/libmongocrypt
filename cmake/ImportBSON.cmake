@@ -142,9 +142,16 @@ function (_import_bson)
       set (ENABLE_EXTRA_ALIGNMENT ${_extra_alignment_default} CACHE BOOL "Toggle extra alignment of bson_t")
       # We don't want the subproject to find libmongocrypt
       set (ENABLE_CLIENT_SIDE_ENCRYPTION OFF CACHE BOOL "Disable client-side encryption for the libmongoc subproject")
-      # Set `BUILD_VERSION` so C driver does not use a `BUILD_VERSION` meant for libmongocrypt.
+      # Clear `BUILD_VERSION` so C driver does not use a `BUILD_VERSION` meant for libmongocrypt.
       # Both libmongocrypt and C driver support setting a `BUILD_VERSION` to override the version.
-      set (BUILD_VERSION ${MONGOC_FETCH_TAG_FOR_LIBBSON})
+      if (DEFINED CACHE{BUILD_VERSION})
+         set (SAVED_CACHED_BUILD_VERSION "${BUILD_VERSION}")
+         unset (BUILD_VERSION CACHE) # Undefine cache variable.
+      endif ()
+      if (DEFINED BUILD_VERSION)
+         set (SAVED_BUILD_VERSION "${BUILD_VERSION}")
+         unset (BUILD_VERSION) # Undefine normal variable.
+      endif ()
       # Disable building tests in C driver:
       set (ENABLE_TESTS OFF)
       set (BUILD_TESTING OFF)
@@ -156,6 +163,12 @@ function (_import_bson)
          add_subdirectory ("${MONGOCRYPT_MONGOC_DIR}" _mongo-c-driver EXCLUDE_FROM_ALL SYSTEM)
       else ()
          add_subdirectory ("${MONGOCRYPT_MONGOC_DIR}" _mongo-c-driver EXCLUDE_FROM_ALL)
+      endif ()
+      if (DEFINED SAVED_CACHED_BUILD_VERSION)
+         set (BUILD_VERSION "${SAVED_CACHED_BUILD_VERSION}" CACHE STRING "Library version")
+      endif ()
+      if (DEFINED SAVED_BUILD_VERSION)
+         set (BUILD_VERSION "${SAVED_BUILD_VERSION}")
       endif ()
       if (TARGET mongoc_static)
          # Workaround: Embedded mongoc_static does not set its INCLUDE_DIRECTORIES for user targets
