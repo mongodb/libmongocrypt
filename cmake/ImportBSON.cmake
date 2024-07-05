@@ -145,11 +145,11 @@ function (_import_bson)
       # Clear `BUILD_VERSION` so C driver does not use a `BUILD_VERSION` meant for libmongocrypt.
       # Both libmongocrypt and C driver support setting a `BUILD_VERSION` to override the version.
       if (DEFINED CACHE{BUILD_VERSION})
-         set (SAVED_CACHED_BUILD_VERSION "${BUILD_VERSION}")
+         set (saved_cached_build_version "${BUILD_VERSION}")
          unset (BUILD_VERSION CACHE) # Undefine cache variable.
       endif ()
       if (DEFINED BUILD_VERSION)
-         set (SAVED_BUILD_VERSION "${BUILD_VERSION}")
+         set (saved_build_version "${BUILD_VERSION}")
          unset (BUILD_VERSION) # Undefine normal variable.
       endif ()
       # Disable building tests in C driver:
@@ -164,11 +164,11 @@ function (_import_bson)
       else ()
          add_subdirectory ("${MONGOCRYPT_MONGOC_DIR}" _mongo-c-driver EXCLUDE_FROM_ALL)
       endif ()
-      if (DEFINED SAVED_CACHED_BUILD_VERSION)
-         set (BUILD_VERSION "${SAVED_CACHED_BUILD_VERSION}" CACHE STRING "Library version")
+      if (DEFINED saved_cached_build_version)
+         set (BUILD_VERSION "${saved_cached_build_version}" CACHE STRING "Library version")
       endif ()
-      if (DEFINED SAVED_BUILD_VERSION)
-         set (BUILD_VERSION "${SAVED_BUILD_VERSION}")
+      if (DEFINED saved_build_version)
+         set (BUILD_VERSION "${saved_build_version}")
       endif ()
       if (TARGET mongoc_static)
          # Workaround: Embedded mongoc_static does not set its INCLUDE_DIRECTORIES for user targets
