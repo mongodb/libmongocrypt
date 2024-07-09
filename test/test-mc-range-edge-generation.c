@@ -241,6 +241,8 @@ static void _test_getEdgesInt64(_mongocrypt_tester_t *tester) {
 
 typedef struct {
     double value;
+    mc_optional_double_t min; // Unused. Kept for consistency with server test data.
+    mc_optional_double_t max; // Unused. Kept for consistency with server test data.
     size_t sparsity;
     // expectEdges includes a trailing NULL pointer.
     const char *expectEdges[MAX_DOUBLE_EDGES + 1];
