@@ -435,7 +435,13 @@ static void _test_RangeTest_Encode_Double(_mongocrypt_tester_t *tester) {
                            .min = OPT_DOUBLE_C(0),
                            .max = OPT_DOUBLE_C(201),
                            .precision = OPT_U32_C(1),
-                           .expectError = "less than or equal to the maximum value"}};
+                           .expectError = "less than or equal to the maximum value"},
+                          {.value = 1,
+                           .min = OPT_DOUBLE_C(1),
+                           .max = OPT_DOUBLE_C(2),
+                           .precision = OPT_U32_C(309),
+                           .expect = 13381399884061196960ULL,
+                           .expectMax = OPT_U64_C(UINT64_MAX)}};
 
     for (size_t i = 0; i < sizeof(tests) / sizeof(tests[0]); i++) {
         DoubleTest *test = tests + i;
@@ -732,6 +738,7 @@ static void _test_RangeTest_Encode_Decimal128(_mongocrypt_tester_t *tester) {
                              DBL_MIN,
                              3,
                              mlib_int128_from_string("170141183460469231731687303715884105728", NULL)),
+        ASSERT_EIBB_OVERFLOW(1, 2, 1, 6145, mlib_int128_from_string("231572183460469231731687303715884099585", NULL)),
 
         ASSERT_EIBB(3.141592653589, 5, 0, 0, 3),
         ASSERT_EIBB(3.141592653589, 5, 0, 1, 31),
