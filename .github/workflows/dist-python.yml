@@ -11,6 +11,7 @@ on:
     paths:
       - bindings/python/*
       - bindings/python/**/*.py
+      - .github/workflows/*python.yml
   workflow_dispatch:
   workflow_call:
     inputs:
