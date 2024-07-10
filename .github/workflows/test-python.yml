@@ -6,6 +6,7 @@ on:
     paths:
       - bindings/python/*
       - bindings/python/**/*.py
+      - .github/workflows/*python.yml
 
 concurrency:
   group: python-test-${{ github.ref }}
