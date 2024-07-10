@@ -1424,30 +1424,29 @@ class TestExplicitEncryption(unittest.TestCase):
         self.assertEqual(encrypted_val, adjust_range_counter(encrypted_val, expected))
 
     def test_rangePreview_query_int32(self):
-        key_path = "keys/ABCDEFAB123498761234123456789012-local-document.json"
-        key_id = json_data(key_path)["_id"]
-        encrypter = ExplicitEncrypter(
-            MockCallback(
-                key_docs=[bson_data(key_path)], kms_reply=http_data("kms-reply.txt")
-            ),
-            self.mongo_crypt_opts(enable_range_v2=False),
-        )
-        self.addCleanup(encrypter.close)
+        # Expect error attempting to use 'rangePreview'
+        with self.assertRaisesRegex(MongoCryptError, "Algorithm 'rangePreview' is deprecated, please use 'range'"):
+            key_path = "keys/ABCDEFAB123498761234123456789012-local-document.json"
+            key_id = json_data(key_path)["_id"]
+            encrypter = ExplicitEncrypter(
+                MockCallback(
+                    key_docs=[bson_data(key_path)], kms_reply=http_data("kms-reply.txt")
+                ),
+                self.mongo_crypt_opts(enable_range_v2=False),
+            )
+            self.addCleanup(encrypter.close)
 
-        range_opts = bson_data("fle2-find-rangePreview-explicit/int32/rangeopts.json")
-        value = bson_data("fle2-find-rangePreview-explicit/int32/value-to-encrypt.json")
-        expected = json_data("fle2-find-range-explicit-v2/int32/encrypted-payload.json")
-        encrypted = encrypter.encrypt(
-            value,
-            "rangePreview",
-            key_id=key_id,
-            query_type="rangePreview",
-            contention_factor=4,
-            range_opts=range_opts,
-            is_expression=True,
-        )
-        encrypted_val = bson.decode(encrypted, OPTS)
-        self.assertEqual(encrypted_val, adjust_range_counter(encrypted_val, expected))
+            range_opts = bson_data("fle2-find-rangePreview-explicit/int32/rangeopts.json")
+            value = bson_data("fle2-find-rangePreview-explicit/int32/value-to-encrypt.json")
+            encrypter.encrypt(
+                value,
+                "rangePreview",
+                key_id=key_id,
+                query_type="rangePreview",
+                contention_factor=4,
+                range_opts=range_opts,
+                is_expression=True,
+            )
 
 
 def read(filename, **kwargs):
