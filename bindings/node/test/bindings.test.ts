@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { MongoCrypt, MongoCryptContextCtor } from '../src';
-import { serialize, Binary, Long } from 'bson';
+import { serialize, Binary } from 'bson';
 import * as crypto from 'crypto';
 
 // the `randomHook` is necessary for some tests, so we copy it in here.
@@ -342,7 +342,7 @@ describe('MongoCryptConstructor', () => {
     });
 
     context('when algorithm is `rangePreview', () => {
-      it('throws a TypeError if rangeOptions is not provided', () => {
+      it('throws', () => {
         expect(() =>
           mc.makeExplicitEncryptionContext(value, {
             // minimum required arguments from libmongocrypt
@@ -351,40 +351,8 @@ describe('MongoCryptConstructor', () => {
             algorithm: 'rangePreview'
           })
         )
-          .to.throw(/`rangeOptions` must be provided if `algorithm` is set to RangePreview/)
+          .to.throw(/Algorithm 'rangePreview' is deprecated, please use 'range'/)
           .to.be.instanceOf(TypeError);
-      });
-
-      it('throws a TypeError if `rangeOptions` is not a Uint8Array', () => {
-        expect(() =>
-          mc.makeExplicitEncryptionContext(value, {
-            // minimum required arguments from libmongocrypt
-            keyId: keyId.buffer,
-            expressionMode: false,
-            algorithm: 'rangePreview',
-            rangeOptions: 'non-buffer'
-          })
-        )
-          .to.throw(/Parameter `rangeOptions` must be a Uint8Array./)
-          .to.be.instanceOf(TypeError);
-      });
-
-      it('checks if `rangePreview` is set case-insensitive', () => {
-        expect(
-          mc.makeExplicitEncryptionContext(value, {
-            // minimum required arguments from libmongocrypt
-            keyId: keyId.buffer,
-            expressionMode: false,
-            algorithm: 'RANGEPREVIEW',
-            rangeOptions: serialize({
-              sparsity: new Long(42)
-            }),
-
-            // contention factor is required for `rangePreview` but
-            // is enforced in libmongocrypt, not our bindings
-            contentionFactor: 2
-          })
-        ).to.be.instanceOf(MongoCryptContextCtor);
       });
     });
   });
