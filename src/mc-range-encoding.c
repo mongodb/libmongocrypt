@@ -223,6 +223,11 @@ bool mc_getTypeInfoDouble(mc_getTypeInfoDouble_args_t args,
                        args.value);
             return false;
         }
+
+        if (args.precision.set && args.precision.value > INT32_MAX) {
+            CLIENT_ERR("Precision cannot be greater than %d, got %u", INT32_MAX, args.precision.value);
+            return false;
+        }
     }
 
     const bool is_neg = args.value < 0.0;
