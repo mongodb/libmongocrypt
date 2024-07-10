@@ -456,9 +456,8 @@ static void _test_RangeTest_Encode_Double(_mongocrypt_tester_t *tester) {
                           {.value = 1,
                            .min = OPT_DOUBLE_C(1),
                            .max = OPT_DOUBLE_C(2),
-                           .precision = OPT_U32_C((uint32_t) INT32_MAX + 1),
+                           .precision = OPT_U32_C((uint32_t)INT32_MAX + 1),
                            .expectError = "cannot be greater than"}};
-
 
     for (size_t i = 0; i < sizeof(tests) / sizeof(tests[0]); i++) {
         DoubleTest *test = tests + i;
