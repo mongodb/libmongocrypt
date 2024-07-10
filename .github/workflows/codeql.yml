@@ -6,6 +6,7 @@ on:
     tags: ['*']
   pull_request:
     paths:
+      - bindings/python/*
       - bindings/python/**/*.py
   schedule:
     - cron: '17 10 * * 2'

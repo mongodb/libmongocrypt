@@ -10,6 +10,7 @@ on:
   pull_request:
     paths:
       - bindings/python/*
+      - bindings/python/**/*.py
   workflow_dispatch:
   workflow_call:
     inputs:
