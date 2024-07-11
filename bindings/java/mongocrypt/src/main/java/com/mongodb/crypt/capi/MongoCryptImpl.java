@@ -72,6 +72,7 @@ import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_log_handler;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_schema_map;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_set_crypt_shared_lib_path_override;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_use_need_kms_credentials_state;
+import static com.mongodb.crypt.capi.CAPI.mongocrypt_setopt_use_range_v2;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_status;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_status_destroy;
 import static com.mongodb.crypt.capi.CAPI.mongocrypt_status_new;
@@ -202,6 +203,7 @@ class MongoCryptImpl implements MongoCrypt {
             mongocrypt_setopt_set_crypt_shared_lib_path_override(wrapped, new cstring(options.getExtraOptions().getString("cryptSharedLibPath").getValue()));
         }
 
+        configure(() -> mongocrypt_setopt_use_range_v2(wrapped));
         configure(() -> mongocrypt_init(wrapped));
     }
 

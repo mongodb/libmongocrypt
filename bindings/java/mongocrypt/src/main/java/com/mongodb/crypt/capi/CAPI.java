@@ -583,8 +583,8 @@ public class CAPI {
     mongocrypt_ctx_setopt_query_type (mongocrypt_ctx_t ctx, cstring query_type, int len);
 
     /**
-     * Set options for explicit encryption with the "rangePreview" algorithm.
-     * NOTE: The RangePreview algorithm is experimental only. It is not intended for
+     * Set options for explicit encryption with the "range" algorithm.
+     * NOTE: The range algorithm is unstable. It is not intended for
      * public use.
      *
      * opts is a BSON document of the form:
@@ -603,6 +603,17 @@ public class CAPI {
      */
     public static native boolean
     mongocrypt_ctx_setopt_algorithm_range (mongocrypt_ctx_t ctx, mongocrypt_binary_t opts);
+
+    /**
+     * Opt-into use of Queryable Encryption Range V2 protocol.
+     * NOTE: "range" is currently unstable API and subject to backwards breaking changes.
+     *
+     * @param crypt  The @ref mongocrypt_t object.
+     * @return A boolean indicating success. If false, an error status is set.
+     * @since 1.10
+     */
+    public static native boolean
+    mongocrypt_setopt_use_range_v2(mongocrypt_t crypt);
 
     /**
      * Initialize new @ref mongocrypt_t object.
@@ -887,8 +898,8 @@ public class CAPI {
     /**
      * Explicit helper method to encrypt a Match Expression or Aggregate Expression.
      * Contexts created for explicit encryption will not go through mongocryptd.
-     * Requires query_type to be "rangePreview".
-     * NOTE: The RangePreview algorithm is experimental only. It is not intended for
+     * Requires query_type to be "range".
+     * NOTE: The range algorithm is unstable. It is not intended for
      * public use.
      *
      * This method expects the passed-in BSON to be of the form:

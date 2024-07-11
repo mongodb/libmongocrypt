@@ -23,7 +23,6 @@ import org.bson.BsonBinarySubType;
 import org.bson.BsonDocument;
 import org.bson.BsonString;
 import org.bson.RawBsonDocument;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
@@ -44,6 +43,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 
 @SuppressWarnings("SameParameterValue")
@@ -210,8 +210,8 @@ public class MongoCryptTest {
 
         MongoExplicitEncryptOptions options = MongoExplicitEncryptOptions.builder()
                 .keyId(new BsonBinary(BsonBinarySubType.UUID_STANDARD, Base64.getDecoder().decode("q83vqxI0mHYSNBI0VniQEg==")))
-                .algorithm("RangePreview")
-                .queryType("rangePreview")
+                .algorithm("Range")
+                .queryType("range")
                 .contentionFactor(4L)
                 .rangeOptions(rangeOptions)
                 .build();
@@ -227,6 +227,46 @@ public class MongoCryptTest {
         assertEquals(expectedEncryptedPayload, actualEncryptedPayload);
 
         encryptor.close();
+        mongoCrypt.close();
+    }
+
+    @Test
+    public void testRangePreviewQueryTypeIsNotSupported() {
+        MongoCrypt mongoCrypt = createMongoCrypt();
+        assertNotNull(mongoCrypt);
+
+        BsonDocument valueToEncrypt = getResourceAsDocument("fle2-find-range-explicit-v2/int32/value-to-encrypt.json");
+        BsonDocument rangeOptions = getResourceAsDocument("fle2-find-range-explicit-v2/int32/rangeopts.json");
+
+        MongoExplicitEncryptOptions options = MongoExplicitEncryptOptions.builder()
+                .keyId(new BsonBinary(BsonBinarySubType.UUID_STANDARD, Base64.getDecoder().decode("q83vqxI0mHYSNBI0VniQEg==")))
+                .algorithm("Range")
+                .queryType("rangePreview")
+                .contentionFactor(4L)
+                .rangeOptions(rangeOptions)
+                .build();
+
+        assertThrows(MongoCryptException.class, () -> mongoCrypt.createEncryptExpressionContext(valueToEncrypt, options));
+        mongoCrypt.close();
+    }
+
+    @Test
+    public void testRangePreviewAlgorithmIsNotSupported() {
+        MongoCrypt mongoCrypt = createMongoCrypt();
+        assertNotNull(mongoCrypt);
+
+        BsonDocument rangeOptions = getResourceAsDocument("fle2-find-range-explicit-v2/int32/rangeopts.json");
+
+        IllegalStateException illegalStateException = assertThrows(IllegalStateException.class, () -> MongoExplicitEncryptOptions.builder()
+                .keyId(new BsonBinary(BsonBinarySubType.UUID_STANDARD, Base64.getDecoder().decode("q83vqxI0mHYSNBI0VniQEg==")))
+                .algorithm("RangePreview")
+                .queryType("range")
+                .contentionFactor(4L)
+                .rangeOptions(rangeOptions)
+                .build());
+
+        assertEquals("Invalid configuration, contentionFactor can only be set if algorithm is 'Indexed' or 'Range'",
+                illegalStateException.getMessage());
         mongoCrypt.close();
     }
 
