@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include "mc-optional-private.h"
 #include "mc-range-edge-generation-private.h"
 
 #include "mc-array-private.h"
@@ -28,7 +29,7 @@ struct _mc_edges_t {
     char *leaf;
 };
 
-static mc_edges_t *mc_edges_new(const char *leaf, size_t sparsity, uint32_t trimFactor, mongocrypt_status_t *status) {
+static mc_edges_t *mc_edges_new(const char *leaf, size_t sparsity, mc_optional_uint32_t opt_trimFactor, mongocrypt_status_t *status) {
     BSON_ASSERT_PARAM(leaf);
     if (sparsity < 1) {
         CLIENT_ERR("sparsity must be 1 or larger");
@@ -36,6 +37,7 @@ static mc_edges_t *mc_edges_new(const char *leaf, size_t sparsity, uint32_t trim
     }
 
     const size_t leaf_len = strlen(leaf);
+    const uint32_t trimFactor = trimFactorDefault(leaf_len, opt_trimFactor);
     if (trimFactor != 0 && trimFactor >= leaf_len) {
         // We append a total of leaf_len + 1 (for the root) - trimFactor edges. When this number is equal to 1, we
         // degenerate into equality, which is not desired, so trimFactor must be less than leaf_len.
