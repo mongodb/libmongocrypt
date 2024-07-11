@@ -71,7 +71,8 @@ _parse_supported_query_types(bson_iter_t *iter, supported_query_type_flags *out,
 }
 
 /* _parse_field parses and prepends one field document to efc->fields. */
-static bool _parse_field(mc_EncryptedFieldConfig_t *efc, bson_t *field, mongocrypt_status_t *status) {
+static bool
+_parse_field(mc_EncryptedFieldConfig_t *efc, bson_t *field, mongocrypt_status_t *status, bool use_range_v2) {
     supported_query_type_flags query_types = SUPPORTS_NO_QUERIES;
     bson_iter_t field_iter;
 
@@ -133,6 +134,15 @@ static bool _parse_field(mc_EncryptedFieldConfig_t *efc, bson_t *field, mongocry
         }
     }
 
+    if (query_types & SUPPORTS_RANGE_PREVIEW_DEPRECATED_QUERIES && use_range_v2) {
+        // When rangev2 is enabled ("range") error if "rangePreview" is included.
+        // This check is intended to give an easier-to-understand earlier error.
+        CLIENT_ERR("Cannot use field '%s' with 'rangePreview' queries. 'rangePreview' is unsupported. Use 'range' "
+                   "instead. 'range' is not compatible with 'rangePreview' and requires recreating the collection.",
+                   field_path);
+        return false;
+    }
+
     /* Prepend a new mc_EncryptedField_t */
     mc_EncryptedField_t *ef = bson_malloc0(sizeof(mc_EncryptedField_t));
     _mongocrypt_buffer_copy_to(&field_keyid, &ef->keyId);
@@ -146,7 +156,8 @@ static bool _parse_field(mc_EncryptedFieldConfig_t *efc, bson_t *field, mongocry
 
 bool mc_EncryptedFieldConfig_parse(mc_EncryptedFieldConfig_t *efc,
                                    const bson_t *efc_bson,
-                                   mongocrypt_status_t *status) {
+                                   mongocrypt_status_t *status,
+                                   bool use_range_v2) {
     bson_iter_t iter;
 
     BSON_ASSERT_PARAM(efc);
@@ -170,7 +181,7 @@ bool mc_EncryptedFieldConfig_parse(mc_EncryptedFieldConfig_t *efc,
         if (!mc_iter_document_as_bson(&iter, &field, status)) {
             return false;
         }
-        if (!_parse_field(efc, &field, status)) {
+        if (!_parse_field(efc, &field, status, use_range_v2)) {
             return false;
         }
     }
