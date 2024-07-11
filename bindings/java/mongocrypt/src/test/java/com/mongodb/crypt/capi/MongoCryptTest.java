@@ -210,8 +210,8 @@ public class MongoCryptTest {
 
         MongoExplicitEncryptOptions options = MongoExplicitEncryptOptions.builder()
                 .keyId(new BsonBinary(BsonBinarySubType.UUID_STANDARD, Base64.getDecoder().decode("q83vqxI0mHYSNBI0VniQEg==")))
-                .algorithm("RangePreview")
-                .queryType("rangePreview")
+                .algorithm("Range")
+                .queryType("range")
                 .contentionFactor(4L)
                 .rangeOptions(rangeOptions)
                 .build();
