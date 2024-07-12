@@ -664,9 +664,7 @@ bool mongocrypt_ctx_setopt_algorithm(mongocrypt_ctx_t *ctx, const char *algorith
 /// String constant for setopt_algorithm "Random" encryption
 /// String constant for setopt_algorithm "Indexed" explicit encryption
 /// String constant for setopt_algorithm "Unindexed" explicit encryption
-/// String constant for setopt_algorithm "rangePreview" explicit encryption (deprecated in favor of "range")
-/// NOTE: "rangePreview" is experimental only and is not intended for public use.
-/// API for "rangePreview" may be removed in a future release.
+// DEPRECATED: support "RangePreview" has been removed in favor of "range".
 // NOTE: "Range" is currently unstable API and subject to backwards breaking changes.
 
 /**
@@ -849,10 +847,8 @@ bool mongocrypt_ctx_explicit_encrypt_init(mongocrypt_ctx_t *ctx, mongocrypt_bina
 /**
  * Explicit helper method to encrypt a Match Expression or Aggregate Expression.
  * Contexts created for explicit encryption will not go through mongocryptd.
- * Requires query_type to be "range" or "rangePreview".
+ * Requires query_type to be "range".
  *
- * NOTE: "rangePreview" is experimental only and is not intended for public use.
- * API for "rangePreview" may be removed in a future release.
  * NOTE: "range" is currently unstable API and subject to backwards breaking changes.
  *
  * This method expects the passed-in BSON to be of the form:
@@ -1363,7 +1359,7 @@ bool mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5(mongocrypt_t *crypt,
 void mongocrypt_setopt_bypass_query_analysis(mongocrypt_t *crypt);
 
 /**
- * @brief Opt-into use of Queryable Encryption Range V2 protocol.
+ * DEPRECATED: Use of `mongocrypt_setopt_use_range_v2` is deprecated. Range V2 is always enabled.
  * NOTE: "range" is currently unstable API and subject to backwards breaking changes.
  *
  * @param[in] crypt The @ref mongocrypt_t object.
@@ -1436,13 +1432,9 @@ bool mongocrypt_ctx_setopt_query_type(mongocrypt_ctx_t *ctx, const char *query_t
 bool mongocrypt_ctx_setopt_algorithm_range(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *opts);
 
 /// String constants for setopt_query_type
-// 'rangePreview' is deprecated in favor of range.
-/// NOTE: "rangePreview" is experimental only and is not intended for public use.
-/// API for "rangePreview" may be removed in a future release.
+// DEPRECATED: Support "rangePreview" has been removed in favor of "range".
 /// NOTE: "range" is currently unstable API and subject to backwards breaking changes.
-
-"""
-)
+""")
 
 
 def _to_string(cdata):
