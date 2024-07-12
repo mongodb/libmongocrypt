@@ -6,7 +6,9 @@ on:
     tags: ['*']
   pull_request:
     paths:
+      - bindings/python/*
       - bindings/python/**/*.py
+      - .github/workflows/*python.yml
   schedule:
     - cron: '17 10 * * 2'
   workflow_call:
