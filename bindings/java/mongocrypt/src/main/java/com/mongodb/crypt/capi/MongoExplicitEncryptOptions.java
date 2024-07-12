@@ -202,11 +202,13 @@ public class MongoExplicitEncryptOptions {
         this.contentionFactor = builder.contentionFactor;
         this.queryType = builder.queryType;
         this.rangeOptions = builder.rangeOptions;
-        if (!(Objects.equals(algorithm, "Indexed") || Objects.equals(algorithm, "RangePreview"))) {
+        if (!(Objects.equals(algorithm, "Indexed") || Objects.equals(algorithm, "Range"))) {
             if (contentionFactor != null) {
-                throw new IllegalStateException("Invalid configuration, contentionFactor can only be set if algorithm is 'Indexed' or 'RangePreview'");
+                throw new IllegalStateException(
+                        "Invalid configuration, contentionFactor can only be set if algorithm is 'Indexed' or 'Range'");
             } else if (queryType != null) {
-                throw new IllegalStateException("Invalid configuration, queryType can only be set if algorithm is 'Indexed'  or 'RangePreview'");
+                throw new IllegalStateException(
+                        "Invalid configuration, queryType can only be set if algorithm is 'Indexed' or 'Range'");
             }
         }
     }
