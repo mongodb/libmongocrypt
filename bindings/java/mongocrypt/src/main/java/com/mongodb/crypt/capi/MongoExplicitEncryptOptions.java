@@ -114,7 +114,7 @@ public class MongoExplicitEncryptOptions {
         /**
          * The Range Options.
          *
-         * <p>It is an error to set rangeOptions when the algorithm is not "rangePreview".</p>
+         * <p>It is an error to set rangeOptions when the algorithm is not "range".</p>
          *
          * @param rangeOptions the range options
          * @return this
