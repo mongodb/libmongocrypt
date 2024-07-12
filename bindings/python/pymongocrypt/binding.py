@@ -1434,7 +1434,8 @@ bool mongocrypt_ctx_setopt_algorithm_range(mongocrypt_ctx_t *ctx, mongocrypt_bin
 /// String constants for setopt_query_type
 // DEPRECATED: Support "rangePreview" has been removed in favor of "range".
 /// NOTE: "range" is currently unstable API and subject to backwards breaking changes.
-""")
+"""
+)
 
 
 def _to_string(cdata):

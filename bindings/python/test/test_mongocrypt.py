@@ -1425,7 +1425,10 @@ class TestExplicitEncryption(unittest.TestCase):
 
     def test_rangePreview_query_int32(self):
         # Expect error attempting to use 'rangePreview'
-        with self.assertRaisesRegex(MongoCryptError, "Algorithm 'rangePreview' is deprecated, please use 'range'"):
+        with self.assertRaisesRegex(
+            MongoCryptError,
+            "Algorithm 'rangePreview' is deprecated, please use 'range'",
+        ):
             key_path = "keys/ABCDEFAB123498761234123456789012-local-document.json"
             key_id = json_data(key_path)["_id"]
             encrypter = ExplicitEncrypter(
@@ -1436,8 +1439,12 @@ class TestExplicitEncryption(unittest.TestCase):
             )
             self.addCleanup(encrypter.close)
 
-            range_opts = bson_data("fle2-find-rangePreview-explicit/int32/rangeopts.json")
-            value = bson_data("fle2-find-rangePreview-explicit/int32/value-to-encrypt.json")
+            range_opts = bson_data(
+                "fle2-find-rangePreview-explicit/int32/rangeopts.json"
+            )
+            value = bson_data(
+                "fle2-find-rangePreview-explicit/int32/value-to-encrypt.json"
+            )
             encrypter.encrypt(
                 value,
                 "rangePreview",
