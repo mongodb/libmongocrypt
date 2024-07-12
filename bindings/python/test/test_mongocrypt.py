@@ -193,14 +193,6 @@ class TestMongoCryptOptions(unittest.TestCase):
         ):
             MongoCryptOptions(valid_kms, encrypted_fields_map={})
 
-    def test_mongocrypt_options_range(self):
-        opts = MongoCryptOptions({"local": {"key": b"\x00" * 96}})
-        self.assertFalse(opts.enable_range_v2)
-        opts.enable_range_v2 = True
-        self.assertTrue(opts.enable_range_v2)
-        opts = MongoCryptOptions({"local": {"key": b"\x00" * 96}}, enable_range_v2=True)
-        self.assertTrue(opts.enable_range_v2)
-
 
 class TestMongoCrypt(unittest.TestCase):
     maxDiff = None
@@ -381,9 +373,7 @@ class TestMongoCrypt(unittest.TestCase):
         encrypted_fields_map = bson_data(
             "compact/success/encrypted-field-config-map.json"
         )
-        mc = self.create_mongocrypt(
-            encrypted_fields_map=encrypted_fields_map, enable_range_v2=True
-        )
+        mc = self.create_mongocrypt(encrypted_fields_map=encrypted_fields_map)
         self.addCleanup(mc.close)
         with mc.encryption_context("db", bson_data("compact/success/cmd.json")) as ctx:
             self.assertEqual(ctx.state, lib.MONGOCRYPT_CTX_NEED_MONGO_KEYS)
@@ -782,8 +772,7 @@ if sys.version_info >= (3, 8, 0):  # noqa: UP036
                 {
                     "aws": {"accessKeyId": "example", "secretAccessKey": "example"},
                     "local": {"key": b"\x00" * 96},
-                },
-                enable_range_v2=True,
+                }
             )
 
         async def _test_encrypt_decrypt(self, key_id=None, key_alt_name=None):
@@ -1212,13 +1201,12 @@ class TestExplicitEncryption(unittest.TestCase):
     maxDiff = None
 
     @staticmethod
-    def mongo_crypt_opts(enable_range_v2=True):
+    def mongo_crypt_opts():
         return MongoCryptOptions(
             {
                 "aws": {"accessKeyId": "example", "secretAccessKey": "example"},
                 "local": {"key": b"\x00" * 96},
-            },
-            enable_range_v2=enable_range_v2,
+            }
         )
 
     def _test_encrypt_decrypt(self, key_id=None, key_alt_name=None):
@@ -1435,7 +1423,7 @@ class TestExplicitEncryption(unittest.TestCase):
                 MockCallback(
                     key_docs=[bson_data(key_path)], kms_reply=http_data("kms-reply.txt")
                 ),
-                self.mongo_crypt_opts(enable_range_v2=False),
+                self.mongo_crypt_opts(),
             )
             self.addCleanup(encrypter.close)
 

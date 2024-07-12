@@ -79,9 +79,7 @@ def tearDownModule():
 
 class TestBulkDecryption(unittest.TestCase):
     def setUp(self):
-        opts = MongoCryptOptions(
-            {"local": {"key": LOCAL_MASTER_KEY}}, enable_range_v2=True
-        )
+        opts = MongoCryptOptions({"local": {"key": LOCAL_MASTER_KEY}})
         callback = MockCallback(key_docs=[bson_data("keyDocument.json")])
         self.mongocrypt = MongoCrypt(opts, callback)
         self.encrypter = ExplicitEncrypter(callback, opts)
