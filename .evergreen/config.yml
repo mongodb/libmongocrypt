@@ -1093,7 +1093,7 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan-mac
-  - build-and-test-csharp
+  # - build-and-test-csharp // temporary removed to make strong named release.
   - test-java
 - name: rhel72-zseries-test
   display_name: "RHEL 7.2 on zSeries"
@@ -1134,7 +1134,7 @@ buildvariants:
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
-  - build-and-test-csharp
+  # - build-and-test-csharp // temporary removed to make strong named release.
   - test-java
 - name: windows-test-python
   display_name: "Windows Python"
@@ -1447,7 +1447,7 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - build-and-test-csharp
+  # - build-and-test-csharp // temporary removed to make strong named release.
   - test-java
   - name: publish-packages
     distros:
@@ -1489,7 +1489,7 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - build-and-test-csharp
+  # - build-and-test-csharp // temporary removed to make strong named release.
   - test-java
   - upload-java
   - publish-packages
