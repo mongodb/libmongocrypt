@@ -119,10 +119,13 @@ bool mc_RangeOpts_parse(mc_RangeOpts_t *ro, const bson_t *in, bool use_range_v2,
     }
 
     // Do not error if min/max are not present. min/max are optional.
-    CHECK_HAS(sparsity);
     // Do not error if precision is not present. Precision is optional and only
     // applies to double/decimal128.
     // Do not error if trimFactor is not present. It is optional.
+
+    if (!has_sparsity && use_range_v2) {
+        ro->sparsity = mc_FLERangeSparsityDefault;
+    }
 
     // Expect precision only to be set for double or decimal128.
     if (has_precision) {
