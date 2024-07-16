@@ -18,7 +18,7 @@ The binding uses the native language\'s foreign function interface to C.
 For example, Java can accomplish this with
 [JNA](https://github.com/java-native-access/jna), CPython with
 [extensions](https://docs.python.org/3/extending/extending.html),
-NodeJS with [add-ons](https://nodejs.org/api/addons.html), etc.
+Node.js with [add-ons](https://nodejs.org/api/addons.html), etc.
 
 The libmongocrypt library files (.so/.dll) are pre-built on its
 [Evergreen project](https://evergreen.mongodb.com/waterfall/libmongocrypt). Click
