@@ -95,7 +95,7 @@ functions:
               "PACKAGER_ARCH=${packager_arch}" \
               ${compile_env|} \
             bash libmongocrypt/.evergreen/create-packages-and-repos.sh
-  
+
   "upload packages and repos":
     - command: archive.targz_pack
       params:
@@ -169,7 +169,7 @@ functions:
     - command: "subprocess.exec"
       params:
         binary: bash
-        include_expansions_in_env: 
+        include_expansions_in_env:
           - DRIVERS_TOOLS
           - PYMONGO_DIR
           - MONGOCRYPT_DIR
@@ -185,42 +185,6 @@ functions:
     - command: attach.xunit_results
       params:
         file: ${PYMONGO_DIR}/xunit-results/TEST-*.xml
-
-  "build and test node":
-    - command: "subprocess.exec"
-      params:
-        binary: bash
-        working_dir: "./libmongocrypt/bindings/node"
-        args:
-          - "./.evergreen/test.sh"
-        env:
-          PROJECT_DIRECTORY: ${project_directory}
-          NODE_GITHUB_TOKEN: ${node_github_token}
-          DISTRO_ID: ${distro_id}
-          BUILD_VARIANT: ${build_variant}
-          NODE_LTS_VERSION: ${node_lts_version|16}
-          NPM_VERSION: "9"
-
-
-  "build and publish node":
-    - command: "subprocess.exec"
-      params:
-        binary: bash
-        working_dir: "./libmongocrypt/bindings/node"
-        args:
-          - "./.evergreen/prebuild.sh"
-        env:
-          PROJECT_DIRECTORY: ${project_directory}
-          NODE_GITHUB_TOKEN: ${node_github_token}
-          DISTRO_ID: ${distro_id}
-          BUILD_VARIANT: ${build_variant}
-          NODE_LTS_VERSION: ${node_lts_version|16}
-          NPM_VERSION: "9"
-
-  "attach node xunit results":
-    - command: attach.xunit_results
-      params:
-        file: ./libmongocrypt/bindings/node/xunit.xml
 
   "publish java":
     - command: git.get_project
@@ -426,32 +390,6 @@ functions:
         working_dir: ${working_dir|libmongocrypt}
         script: bash ${workdir}/libmongocrypt/.evergreen/earthly.sh ${args}
 
-  lint-node-cpp:
-    - command: "subprocess.exec"
-      params:
-        binary: bash
-        working_dir: "./libmongocrypt/bindings/node"
-        args:
-          - ".evergreen/check-lint.sh"
-        env:
-          PROJECT_DIRECTORY: ${project_directory}
-          NODE_LTS_VERSION: ${node_lts_version|16}
-          NPM_VERSION: "9"
-          LINT_TARGET: cpp
-
-  lint-node-typescript:
-    - command: "subprocess.exec"
-      params:
-        binary: bash
-        working_dir: "./libmongocrypt/bindings/node"
-        args:
-          - ".evergreen/check-lint.sh"
-        env:
-          PROJECT_DIRECTORY: ${project_directory}
-          NODE_LTS_VERSION: ${node_lts_version|16}
-          NPM_VERSION: "9"
-          LINT_TARGET: typescript
-
 tasks:
 - name: build-and-test-and-upload
   commands:
@@ -609,25 +547,6 @@ tasks:
   - func: "build csharp and test"
     vars:
       test_env: PROJECT_DIRECTORY=${project_directory}
-
-- name: build-and-test-node
-  commands:
-    - func: "fetch source"
-    - func: "build and test node"
-    - func: "attach node xunit results"
-
-- name: build-and-publish-node
-  commands:
-    - func: "fetch source"
-    - func: "build and publish node"
-
-
-# Note: keep this disabled unless you want master to force-push
-- name: build-and-test-node-force-publish
-  commands:
-    - func: "fetch source"
-    - func: "build and test node"
-    - func: "attach node xunit results"
 
 - name: publish-java
   depends_on:
@@ -1086,20 +1005,6 @@ tasks:
       vars:
         args: +check-format
 
-- name: check-lint-node-cpp
-  tags: [misc]
-  run_on: *docker-distros
-  commands:
-    - func: fetch source
-    - func: lint-node-cpp
-
-- name: check-lint-node-typescript
-  tags: [misc]
-  run_on: *docker-distros
-  commands:
-    - func: fetch source
-    - func: lint-node-typescript
-
 - name: benchmark-java
   commands:
     - func: "fetch source"
@@ -1173,13 +1078,10 @@ buildvariants:
     has_packages: true
     packager_distro: ubuntu1604
     packager_arch: x86_64
-    node_lts_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - build-and-test-node
-  - build-and-publish-node
   - test-java
   - name: publish-packages
     distros:
@@ -1191,8 +1093,6 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan-mac
-  - build-and-test-node
-  - build-and-publish-node
   - build-and-test-csharp
   - test-java
 - name: rhel72-zseries-test
@@ -1216,8 +1116,6 @@ buildvariants:
   run_on: rhel83-zseries-small
   tasks:
   - build-and-test-and-upload
-  - build-and-test-node
-  - build-and-publish-node
 - name: windows-vs2015-compile
   display_name: "Windows VS 2015 compile"
   run_on: windows-64-vs2015-test
@@ -1237,8 +1135,6 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-csharp
-  - build-and-test-node
-  - build-and-publish-node
   - test-java
 - name: windows-test-python
   display_name: "Windows Python"
@@ -1258,11 +1154,9 @@ buildvariants:
     has_packages: true
     packager_distro: amazon
     packager_arch: x86_64
-    node_lts_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
-  - build-and-test-node
   - test-java
   - name: publish-packages
     distros:
@@ -1274,12 +1168,10 @@ buildvariants:
     has_packages: true
     packager_distro: amazon2
     packager_arch: x86_64
-    node_lts_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - build-and-test-node
   - test-java
   - name: publish-packages
     distros:
@@ -1291,12 +1183,10 @@ buildvariants:
     has_packages: true
     packager_distro: amazon2
     packager_arch: aarch64
-    node_lts_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - build-and-test-node
   - name: publish-packages
     distros:
     - rhel70-small
@@ -1307,7 +1197,6 @@ buildvariants:
     has_packages: true
     packager_distro: amazon2023
     packager_arch: x86_64
-    node_lts_version: 16
   tasks:
   - build-and-test-and-upload
   - name: publish-packages
@@ -1320,7 +1209,6 @@ buildvariants:
     has_packages: true
     packager_distro: amazon2023
     packager_arch: aarch64
-    node_lts_version: 16
   tasks:
   - build-and-test-and-upload
   - name: publish-packages
@@ -1337,7 +1225,6 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - build-and-test-node
   - test-java
   - name: publish-packages
     distros:
@@ -1366,7 +1253,6 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - build-and-test-node
   - test-java
   - name: publish-packages
     distros:
@@ -1378,12 +1264,10 @@ buildvariants:
     has_packages: true
     packager_distro: debian92
     packager_arch: x86_64
-    node_lts_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - build-and-test-node
   - test-java
   - name: publish-packages
     distros:
@@ -1409,11 +1293,9 @@ buildvariants:
     has_packages: true
     packager_distro: rhel70
     packager_arch: x86_64
-    node_lts_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
-  - build-and-test-node
   - test-java
   - name: publish-packages
     distros:
@@ -1442,7 +1324,6 @@ buildvariants:
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
-  - build-and-test-node
   - test-java
   - test-python
   - test-python-integ
@@ -1518,12 +1399,10 @@ buildvariants:
     has_packages: true
     packager_distro: suse12
     packager_arch: x86_64
-    node_lts_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - build-and-test-node
   - name: publish-packages
     distros:
     - rhel70-small
@@ -1534,12 +1413,10 @@ buildvariants:
     has_packages: true
     packager_distro: suse15
     packager_arch: x86_64
-    node_lts_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - build-and-test-node
   - test-java
   - name: publish-packages
     distros:
@@ -1551,13 +1428,10 @@ buildvariants:
     has_packages: true
     packager_distro: ubuntu1604
     packager_arch: arm64
-    node_lts_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - build-and-test-node
-  - build-and-publish-node
   - test-java
   - name: publish-packages
     distros:
@@ -1569,12 +1443,10 @@ buildvariants:
     has_packages: true
     packager_distro: ubuntu1804
     packager_arch: x86_64
-    node_lts_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - build-and-test-node
   - build-and-test-csharp
   - test-java
   - name: publish-packages
@@ -1597,12 +1469,10 @@ buildvariants:
     has_packages: true
     packager_distro: ubuntu1804
     packager_arch: arm64
-    node_lts_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - build-and-test-node
   - test-java
   - name: publish-packages
     distros:
@@ -1614,13 +1484,11 @@ buildvariants:
     has_packages: true
     packager_distro: ubuntu2004
     packager_arch: x86_64
-    node_lts_version: 20
   tasks:
   - clang-tidy
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - build-and-test-node
   - build-and-test-csharp
   - test-java
   - upload-java
@@ -1632,12 +1500,10 @@ buildvariants:
     has_packages: true
     packager_distro: ubuntu2004
     packager_arch: arm64
-    node_lts_version: 20
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - build-and-test-node
   - name: publish-packages
     distros:
     - ubuntu2004-small
@@ -1654,7 +1520,6 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - build-and-test-node
   # see https://jira.mongodb.org/browse/MONGOCRYPT-515
   #- build-and-test-csharp
   - test-java
@@ -1674,7 +1539,6 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - build-and-test-node
   - name: publish-packages
     distros:
     - ubuntu2004-small
@@ -1702,8 +1566,6 @@ buildvariants:
     compile_env: MACOS_UNIVERSAL=ON CMAKE=/opt/homebrew/bin/cmake
   tasks:
   - build-and-test-and-upload
-  - build-and-test-node
-  - build-and-publish-node
   - test-python
   - test-java
 - name: windows-vs2017-32bit

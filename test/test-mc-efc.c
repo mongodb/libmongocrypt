@@ -34,9 +34,11 @@ static void _test_efc(_mongocrypt_tester_t *tester) {
     _mongocrypt_buffer_copy_from_hex(&expect_keyId1, "12345678123498761234123456789012");
     _mongocrypt_buffer_copy_from_hex(&expect_keyId2, "abcdefab123498761234123456789012");
 
+    const bool use_range_v2 = false;
+
     {
         _load_test_file(tester, "./test/data/efc/efc-oneField.json", &efc_bson);
-        ASSERT_OK_STATUS(mc_EncryptedFieldConfig_parse(&efc, &efc_bson, status), status);
+        ASSERT_OK_STATUS(mc_EncryptedFieldConfig_parse(&efc, &efc_bson, status, use_range_v2), status);
         ptr = efc.fields;
         ASSERT(ptr);
         ASSERT_STREQUAL(ptr->path, "firstName");
@@ -47,7 +49,7 @@ static void _test_efc(_mongocrypt_tester_t *tester) {
 
     {
         _load_test_file(tester, "./test/data/efc/efc-extraField.json", &efc_bson);
-        ASSERT_OK_STATUS(mc_EncryptedFieldConfig_parse(&efc, &efc_bson, status), status);
+        ASSERT_OK_STATUS(mc_EncryptedFieldConfig_parse(&efc, &efc_bson, status, use_range_v2), status);
         ptr = efc.fields;
         ASSERT(ptr);
         ASSERT_STREQUAL(ptr->path, "firstName");
@@ -58,7 +60,7 @@ static void _test_efc(_mongocrypt_tester_t *tester) {
 
     {
         _load_test_file(tester, "./test/data/efc/efc-twoFields.json", &efc_bson);
-        ASSERT_OK_STATUS(mc_EncryptedFieldConfig_parse(&efc, &efc_bson, status), status);
+        ASSERT_OK_STATUS(mc_EncryptedFieldConfig_parse(&efc, &efc_bson, status, use_range_v2), status);
         ptr = efc.fields;
         ASSERT(ptr);
         ASSERT_STREQUAL(ptr->path, "lastName");
@@ -73,7 +75,7 @@ static void _test_efc(_mongocrypt_tester_t *tester) {
 
     {
         _load_test_file(tester, "./test/data/efc/efc-missingKeyId.json", &efc_bson);
-        ASSERT_FAILS_STATUS(mc_EncryptedFieldConfig_parse(&efc, &efc_bson, status),
+        ASSERT_FAILS_STATUS(mc_EncryptedFieldConfig_parse(&efc, &efc_bson, status, use_range_v2),
                             status,
                             "unable to find 'keyId' in 'field' document");
         mc_EncryptedFieldConfig_cleanup(&efc);

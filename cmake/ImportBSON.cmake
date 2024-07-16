@@ -132,6 +132,8 @@ function (_import_bson)
       set (ENABLE_MONGODB_AWS_AUTH OFF CACHE BOOL "Disable kms-message content in mongoc for libmongocrypt" FORCE)
       # Disable install() for the libbson static library. We'll do it ourselves
       set (ENABLE_STATIC BUILD_ONLY)
+      # Disable zlib, which isn't necessary for libmongocrypt and isn't necessarily available.
+      set (ENABLE_ZLIB OFF CACHE BOOL "Toggle zlib for the mongoc subproject (not required by libmongocrypt)")
       # Disable libzstd, which isn't necessary for libmongocrypt and isn't necessarily available.
       set (ENABLE_ZSTD OFF CACHE BOOL "Toggle libzstd for the mongoc subproject (not required by libmongocrypt)")
       # Disable snappy, which isn't necessary for libmongocrypt and isn't necessarily available.

@@ -416,7 +416,7 @@ static bool _set_schema_from_collinfo(mongocrypt_ctx_t *ctx, bson_t *collinfo) {
         if (!_mongocrypt_buffer_to_bson(&ectx->encrypted_field_config, &efc_bson)) {
             return _mongocrypt_ctx_fail_w_msg(ctx, "unable to create BSON from encrypted_field_config");
         }
-        if (!mc_EncryptedFieldConfig_parse(&ectx->efc, &efc_bson, ctx->status)) {
+        if (!mc_EncryptedFieldConfig_parse(&ectx->efc, &efc_bson, ctx->status, ctx->crypt->opts.use_range_v2)) {
             _mongocrypt_ctx_fail(ctx);
             return false;
         }
@@ -447,7 +447,10 @@ static bool _set_schema_from_collinfo(mongocrypt_ctx_t *ctx, bson_t *collinfo) {
             bson_free(ecocCollection);
         }
 
-        if (!mc_EncryptedFieldConfig_parse(&ectx->efc, &empty_encryptedFields, ctx->status)) {
+        if (!mc_EncryptedFieldConfig_parse(&ectx->efc,
+                                           &empty_encryptedFields,
+                                           ctx->status,
+                                           ctx->crypt->opts.use_range_v2)) {
             bson_destroy(&empty_encryptedFields);
             _mongocrypt_ctx_fail(ctx);
             return false;
@@ -2219,7 +2222,7 @@ static bool _fle2_try_encrypted_field_config_from_map(mongocrypt_ctx_t *ctx) {
         if (!_mongocrypt_buffer_to_bson(&ectx->encrypted_field_config, &efc_bson)) {
             return _mongocrypt_ctx_fail_w_msg(ctx, "unable to create BSON from encrypted_field_config");
         }
-        if (!mc_EncryptedFieldConfig_parse(&ectx->efc, &efc_bson, ctx->status)) {
+        if (!mc_EncryptedFieldConfig_parse(&ectx->efc, &efc_bson, ctx->status, ctx->crypt->opts.use_range_v2)) {
             _mongocrypt_ctx_fail(ctx);
             return false;
         }

@@ -1,8 +1,5 @@
 # Code Owners will automatically be added as reviewers on PRs
 
-# NodeJS Bindings
-bindings/node @nbbeeken @durran @baileympearson @dariakp @addaleax
-
 # Python Bindings
 bindings/python @mongodb/dbx-python
 
