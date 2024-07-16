@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include "mc-range-encoding-private.h"
 #include "mc-rangeopts-private.h"
 #include "test-mongocrypt.h"
 
@@ -41,9 +42,6 @@ static void test_mc_RangeOpts_parse(_mongocrypt_tester_t *tester) {
         {.desc = "Errors if precision is set with int min/max",
          .in = RAW_STRING({"min" : 123, "max" : 456, "precision" : 2, "sparsity" : {"$numberLong" : "1"}}),
          .expectError = "expected 'precision' to be set with double or decimal128 index"},
-        {.desc = "Errors on missing fields",
-         .in = RAW_STRING({"min" : 123, "max" : 456}),
-         .expectError = "Missing field 'sparsity'"},
         {.desc = "Errors on extra fields",
          .in = RAW_STRING({"min" : 123, "max" : 456, "sparsity" : {"$numberLong" : "1"}, "foo" : 1}),
          .expectError = "Unrecognized field: 'foo'"},
@@ -73,6 +71,12 @@ static void test_mc_RangeOpts_parse(_mongocrypt_tester_t *tester) {
          .useRangeV2 = true,
          .expectSparsity = 1,
          .expectTrimFactor = OPT_U32(1)},
+        {.desc = "Does not require sparsity",
+         .in = RAW_STRING({"min" : 123, "max" : 456}),
+         .useRangeV2 = true,
+         .expectSparsity = mc_FLERangeSparsityDefault,
+         .expectMin = OPT_I32_C(123),
+         .expectMax = OPT_I32_C(456)},
         {.desc = "Errors on negative trim factor",
          .in = RAW_STRING({"trimFactor" : -1, "sparsity" : {"$numberLong" : "1"}}),
          .useRangeV2 = true,

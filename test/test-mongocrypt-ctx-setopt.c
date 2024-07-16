@@ -18,6 +18,7 @@
 
 #include <stdarg.h>
 
+#include "mc-range-encoding-private.h"
 #include "mongocrypt-binary-private.h"
 #include "mongocrypt.h"
 #include "test-mongocrypt.h"
@@ -836,6 +837,22 @@ static void _test_setopt_for_explicit_encrypt(_mongocrypt_tester_t *tester) {
         ASSERT_OK(mongocrypt_ctx_setopt_contention_factor(ctx, 0), ctx);
         ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_RANGE_STR, -1), ctx);
         ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "range opts are required");
+    }
+
+    /* Sparsity is optional. */
+    {
+        REFRESH;
+        /* Set key ID to get past the 'either key id or key alt name required'
+         * error */
+        ASSERT_KEY_ID_OK(uuid);
+        ASSERT_OK(mongocrypt_ctx_setopt_algorithm_range(
+                      ctx,
+                      TEST_BSON("{'min': 0, 'max': 1}")),
+                  ctx);
+        ASSERT_OK(mongocrypt_ctx_setopt_contention_factor(ctx, 0), ctx);
+        ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_RANGE_STR, -1), ctx);
+        ASSERT(ctx->opts.rangeopts.set && !ctx->opts.rangeopts.value.sparsity == mc_FLERangeSparsityDefault);
+        ASSERT_EX_DECRYPT_INIT_OK(bson);
     }
 
     /* Negative sparsity is prohibited. */
