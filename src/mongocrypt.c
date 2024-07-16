@@ -156,7 +156,7 @@ bool mongocrypt_setopt_fle2v2(mongocrypt_t *crypt, bool enable) {
 bool mongocrypt_setopt_use_range_v2(mongocrypt_t *crypt) {
     ASSERT_MONGOCRYPT_PARAM_UNINIT(crypt);
 
-    crypt->opts.use_range_v2 = true;
+    // Nothing to do. As of MONGOCRYPT-661, rangeV2 is the default.
     return true;
 }
 

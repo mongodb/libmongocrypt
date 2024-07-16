@@ -11,7 +11,6 @@ class MongoCryptOptions:
         crypt_shared_lib_path=None,
         crypt_shared_lib_required=False,
         bypass_encryption=False,
-        enable_range_v2=False,
     ):
         """Options for :class:`MongoCrypt`.
 
@@ -54,7 +53,9 @@ class MongoCryptOptions:
           - `crypt_shared_lib_required`: Whether to require a crypt_shared
             library.
           - `bypass_encryption`: Whether to bypass encryption.
-          - `enable_range_v2`: Whether to enable range V2.
+
+        .. versionremoved:: 1.11
+           Removed the ``enable_range_v2`` parameter.
 
         .. versionadded:: 1.10
            Added the ``enable_range_v2`` parameter.
@@ -143,7 +144,6 @@ class MongoCryptOptions:
         self.crypt_shared_lib_path = crypt_shared_lib_path
         self.crypt_shared_lib_required = crypt_shared_lib_required
         self.bypass_encryption = bypass_encryption
-        self.enable_range_v2 = enable_range_v2
 
 
 class ExplicitEncryptOpts:
