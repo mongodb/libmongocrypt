@@ -5066,6 +5066,67 @@ static void _test_bulkWrite(_mongocrypt_tester_t *tester) {
     bson_free(local_kek);
 }
 
+// `_test_rangePreview_fails` tests that use of "rangePreview" errors when rangeV2 is opted-in.
+static void _test_rangePreview_fails(_mongocrypt_tester_t *tester) {
+    // local_kek is the KEK used to encrypt the keyMaterial in ./test/data/key-document-local.json
+    uint8_t local_kek_raw[MONGOCRYPT_KEY_LEN] = {0};
+    char *local_kek = kms_message_raw_to_b64(local_kek_raw, sizeof(local_kek_raw));
+    mongocrypt_binary_t *kms_providers =
+        TEST_BSON(BSON_STR({"local" : {"key" : {"$binary" : {"base64" : "%s", "subType" : "00"}}}}), local_kek);
+
+    // Test setting 'rangePreview' as an explicit encryption algorithm results in error.
+    {
+        mongocrypt_t *crypt = mongocrypt_new();
+        mongocrypt_setopt_kms_providers(crypt, kms_providers);
+        ASSERT_OK(mongocrypt_setopt_use_range_v2(crypt), crypt);
+        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+        ASSERT_OK(ctx, crypt);
+        ASSERT_FAILS(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_RANGEPREVIEW_DEPRECATED_STR, -1),
+                     ctx,
+                     "Algorithm 'rangePreview' is deprecated");
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+
+    // Test setting 'rangePreview' as an explicit encryption queryType results in error.
+    {
+        mongocrypt_t *crypt = mongocrypt_new();
+        mongocrypt_setopt_kms_providers(crypt, kms_providers);
+        ASSERT_OK(mongocrypt_setopt_use_range_v2(crypt), crypt);
+        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+        ASSERT_OK(ctx, crypt);
+        ASSERT_FAILS(mongocrypt_ctx_setopt_query_type(ctx, MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_DEPRECATED_STR, -1),
+                     ctx,
+                     "Query type 'rangePreview' is deprecated");
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+
+    // Test setting 'rangePreview' from encryptedFields results in error.
+    {
+        mongocrypt_t *crypt = mongocrypt_new();
+        mongocrypt_setopt_kms_providers(crypt, kms_providers);
+        ASSERT_OK(mongocrypt_setopt_use_range_v2(crypt), crypt);
+        ASSERT_OK(mongocrypt_setopt_encrypted_field_config_map(
+                      crypt,
+                      TEST_FILE("./test/data/fle2-insert-range/int32/encrypted-field-map.json")), // Uses 'rangePreview'
+                  crypt);
+        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+        ASSERT_OK(ctx, crypt);
+        ASSERT_FAILS(
+            mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_FILE("./test/data/fle2-insert-range/int32/cmd.json")),
+            ctx,
+            "Cannot use field 'encrypted' with 'rangePreview' queries");
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+
+    bson_free(local_kek);
+}
+
 void _mongocrypt_tester_install_ctx_encrypt(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_explicit_encrypt_init);
     INSTALL_TEST(_test_encrypt_init);
@@ -5146,4 +5207,5 @@ void _mongocrypt_tester_install_ctx_encrypt(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_encrypt_fle2_find_range_payload_decimal128_precision);
 #endif
     INSTALL_TEST(_test_bulkWrite);
+    INSTALL_TEST(_test_rangePreview_fails);
 }

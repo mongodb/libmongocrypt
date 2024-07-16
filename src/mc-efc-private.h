@@ -48,7 +48,10 @@ typedef struct {
  * into @efc. Fields are copied from @efc_bson. It is OK to free efc_bson after
  * this call. Fields are appended in reverse order to @efc->fields. Extra
  * unrecognized fields are not considered an error for forward compatibility. */
-bool mc_EncryptedFieldConfig_parse(mc_EncryptedFieldConfig_t *efc, const bson_t *efc_bson, mongocrypt_status_t *status);
+bool mc_EncryptedFieldConfig_parse(mc_EncryptedFieldConfig_t *efc,
+                                   const bson_t *efc_bson,
+                                   mongocrypt_status_t *status,
+                                   bool use_range_v2);
 
 void mc_EncryptedFieldConfig_cleanup(mc_EncryptedFieldConfig_t *efc);
 
