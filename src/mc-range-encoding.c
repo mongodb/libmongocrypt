@@ -617,17 +617,22 @@ bool mc_getTypeInfoDecimal128(mc_getTypeInfoDecimal128_args_t args,
 
 #endif // defined MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
 
-uint32_t trimFactorDefault(size_t maxlen, mc_optional_uint32_t trimFactor) {
+const int64_t mc_FLERangeSparsityDefault = 2;
+const uint32_t mc_FLERangeTrimFactorDefault = 6;
+
+uint32_t trimFactorDefault(size_t maxlen, mc_optional_uint32_t trimFactor, bool use_range_v2) {
     if (trimFactor.set) {
         return trimFactor.value;
     }
 
+    if (!use_range_v2) {
+        // Preserve old default.
+        return 0;
+    }
+
     if (mc_FLERangeTrimFactorDefault > maxlen - 1) {
-        return (uint32_t) maxlen - 1;
+        return (uint32_t)maxlen - 1;
     } else {
         return mc_FLERangeTrimFactorDefault;
     }
 }
-
-const uint32_t mc_FLERangeSparsityDefault = 2;
-const uint32_t mc_FLERangeTrimFactorDefault = 6;

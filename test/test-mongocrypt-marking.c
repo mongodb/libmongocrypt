@@ -225,16 +225,6 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
                              "001\n"
                              "01\n"
                              "100000\n"},
-        {.description = "Range V2 enabled w/ no trim factor fails",
-         .findSpecJSON = RAW_STRING({
-             "lowerBound" : {"$numberInt" : "7"},
-             "lbIncluded" : true,
-             "upperBound" : {"$numberInt" : "32"},
-             "ubIncluded" : true,
-             "indexMin" : {"$numberInt" : "0"},
-             "indexMax" : {"$numberInt" : "32"}
-         }),
-         .expectedErrorAtParseTime = "Missing field 'trimFactor' in placeholder"},
         {.description = "Int32 Bounds included",
          .findSpecJSON = RAW_STRING({
              "lowerBound" : {"$numberInt" : "7"},
@@ -885,7 +875,7 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
             sparsity = (size_t)test->sparsity.value;
         }
 
-        const bool use_range_v2 = true;
+        const bool use_range_v2 = !test->disableRangeV2;
         mc_mincover_t *mc = mc_get_mincover_from_FLE2RangeFindSpec(&findSpec, sparsity, status, use_range_v2);
 
         if (test->expectedError) {
