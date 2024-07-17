@@ -839,20 +839,21 @@ static void _test_setopt_for_explicit_encrypt(_mongocrypt_tester_t *tester) {
         ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "range opts are required");
     }
 
-    /* Sparsity is optional. */
+    /* Sparsity is optional for rangeV2. */
     {
-        REFRESH;
+        // Create a crypt with rangeV2 enabled.
+        mongocrypt_destroy(crypt);
+        crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT | TESTER_MONGOCRYPT_WITH_RANGE_V2);
+        REFRESH_CTX;
         /* Set key ID to get past the 'either key id or key alt name required'
          * error */
         ASSERT_KEY_ID_OK(uuid);
-        ASSERT_OK(mongocrypt_ctx_setopt_algorithm_range(
-                      ctx,
-                      TEST_BSON("{'min': 0, 'max': 1}")),
-                  ctx);
+        ASSERT_OK(mongocrypt_ctx_setopt_algorithm_range(ctx, TEST_BSON("{'min': 0, 'max': 1}")), ctx);
         ASSERT_OK(mongocrypt_ctx_setopt_contention_factor(ctx, 0), ctx);
         ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_RANGE_STR, -1), ctx);
-        ASSERT(ctx->opts.rangeopts.set && !ctx->opts.rangeopts.value.sparsity == mc_FLERangeSparsityDefault);
-        ASSERT_EX_DECRYPT_INIT_OK(bson);
+        ASSERT(ctx->opts.rangeopts.set);
+        ASSERT_CMPINT64(ctx->opts.rangeopts.value.sparsity, ==, mc_FLERangeSparsityDefault);
+        ASSERT_EX_ENCRYPT_INIT_OK(bson);
     }
 
     /* Negative sparsity is prohibited. */
