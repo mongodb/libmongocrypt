@@ -1,0 +1,9 @@
+{
+    "find": "test",
+    "filter": {
+        "plainText": "sample",
+        "encrypted": {
+            "$numberInt": "123456"
+        }
+    }
+}
