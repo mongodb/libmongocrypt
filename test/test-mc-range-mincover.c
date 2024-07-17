@@ -95,6 +95,7 @@ static mc_mincover_t *_test_getMincover32(void *tests, size_t idx, mongocrypt_st
 
     Int32Test *test = (Int32Test *)tests + idx;
 
+    const bool use_range_v2 = true;
     return mc_getMincoverInt32((mc_getMincoverInt32_args_t){.lowerBound = test->lowerBound,
                                                             .includeLowerBound = test->includeLowerBound,
                                                             .upperBound = test->upperBound,
@@ -102,13 +103,15 @@ static mc_mincover_t *_test_getMincover32(void *tests, size_t idx, mongocrypt_st
                                                             .min = test->min,
                                                             .max = test->max,
                                                             .sparsity = test->sparsity,
-                                                            .trimFactor = test->trimFactor},
-                               status);
+                                                            .trimFactor = OPT_U32(test->trimFactor)},
+                               status,
+                               use_range_v2);
 }
 
 static mc_mincover_t *_test_getMincover64(void *tests, size_t idx, mongocrypt_status_t *status) {
     BSON_ASSERT_PARAM(tests);
 
+    const bool use_range_v2 = true;
     Int64Test *const test = (Int64Test *)tests + idx;
 
     return mc_getMincoverInt64((mc_getMincoverInt64_args_t){.lowerBound = test->lowerBound,
@@ -118,7 +121,8 @@ static mc_mincover_t *_test_getMincover64(void *tests, size_t idx, mongocrypt_st
                                                             .min = test->min,
                                                             .max = test->max,
                                                             .sparsity = test->sparsity},
-                               status);
+                               status,
+                               use_range_v2);
 }
 
 static mc_mincover_t *_test_getMincoverDouble_helper(void *tests, size_t idx, mongocrypt_status_t *status) {

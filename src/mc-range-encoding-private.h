@@ -129,5 +129,5 @@ bool mc_getTypeInfoDecimal128(mc_getTypeInfoDecimal128_args_t args,
 
 extern const uint32_t mc_FLERangeSparsityDefault;
 
-uint32_t trimFactorDefault(size_t maxlen, mc_optional_uint32_t trimFactor);
+uint32_t trimFactorDefault(size_t maxlen, mc_optional_uint32_t trimFactor, bool use_range_v2);
 #endif /* MC_RANGE_ENCODING_PRIVATE_H */

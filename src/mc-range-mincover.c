@@ -127,7 +127,7 @@ void mc_mincover_destroy(mc_mincover_t *mincover) {
     } else                                                                                                             \
         (void)0
 
-mc_mincover_t *mc_getMincoverInt32(mc_getMincoverInt32_args_t args, mongocrypt_status_t *status) {
+mc_mincover_t *mc_getMincoverInt32(mc_getMincoverInt32_args_t args, mongocrypt_status_t *status, bool use_range_v2) {
     BSON_ASSERT_PARAM(status);
     CHECK_BOUNDS(args, PRId32, IDENTITY, LESSTHAN);
     mc_OSTType_Int32 a, b;
@@ -150,7 +150,7 @@ mc_mincover_t *mc_getMincoverInt32(mc_getMincoverInt32_args_t args, mongocrypt_s
     }
 
     MinCoverGenerator_u32 *mcg =
-        MinCoverGenerator_new_u32(a.value, b.value, a.max, args.sparsity, args.trimFactor, status);
+        MinCoverGenerator_new_u32(a.value, b.value, a.max, args.sparsity, args.trimFactor, status, use_range_v2);
     if (!mcg) {
         return NULL;
     }
@@ -159,7 +159,7 @@ mc_mincover_t *mc_getMincoverInt32(mc_getMincoverInt32_args_t args, mongocrypt_s
     return mc;
 }
 
-mc_mincover_t *mc_getMincoverInt64(mc_getMincoverInt64_args_t args, mongocrypt_status_t *status) {
+mc_mincover_t *mc_getMincoverInt64(mc_getMincoverInt64_args_t args, mongocrypt_status_t *status, bool use_range_v2) {
     BSON_ASSERT_PARAM(status);
     CHECK_BOUNDS(args, PRId64, IDENTITY, LESSTHAN);
     mc_OSTType_Int64 a, b;
@@ -182,7 +182,7 @@ mc_mincover_t *mc_getMincoverInt64(mc_getMincoverInt64_args_t args, mongocrypt_s
     }
 
     MinCoverGenerator_u64 *mcg =
-        MinCoverGenerator_new_u64(a.value, b.value, a.max, args.sparsity, args.trimFactor, status);
+        MinCoverGenerator_new_u64(a.value, b.value, a.max, args.sparsity, args.trimFactor, status, use_range_v2);
     if (!mcg) {
         return NULL;
     }
@@ -225,7 +225,7 @@ mc_mincover_t *mc_getMincoverDouble(mc_getMincoverDouble_args_t args, mongocrypt
     }
 
     MinCoverGenerator_u64 *mcg =
-        MinCoverGenerator_new_u64(a.value, b.value, a.max, args.sparsity, args.trimFactor, status);
+        MinCoverGenerator_new_u64(a.value, b.value, a.max, args.sparsity, args.trimFactor, status, use_range_v2);
     if (!mcg) {
         return NULL;
     }
@@ -269,7 +269,7 @@ mc_getMincoverDecimal128(mc_getMincoverDecimal128_args_t args, mongocrypt_status
     }
 
     MinCoverGenerator_u128 *mcg =
-        MinCoverGenerator_new_u128(a.value, b.value, a.max, args.sparsity, args.trimFactor, status);
+        MinCoverGenerator_new_u128(a.value, b.value, a.max, args.sparsity, args.trimFactor, status, use_range_v2);
     if (!mcg) {
         return NULL;
     }

@@ -110,8 +110,8 @@ static void _test_getEdgesInt32(_mongocrypt_tester_t *tester) {
                                         .min = test->min,
                                         .max = test->max,
                                         .sparsity = test->sparsity,
-                                        .trimFactor = test->trimFactor};
-        mc_edges_t *got = mc_getEdgesInt32(args, status);
+        const bool use_range_v2 = true;
+        mc_edges_t *got = mc_getEdgesInt32(args, status, use_range_v2);
         if (test->expectError != NULL) {
             ASSERT_OR_PRINT_MSG(NULL == got, "expected error, got success");
             ASSERT_STATUS_CONTAINS(status, test->expectError);
@@ -202,8 +202,8 @@ static void _test_getEdgesInt64(_mongocrypt_tester_t *tester) {
                                         .min = test->min,
                                         .max = test->max,
                                         .sparsity = test->sparsity,
-                                        .trimFactor = test->trimFactor};
-        mc_edges_t *got = mc_getEdgesInt64(args, status);
+        const bool use_range_v2 = true;
+        mc_edges_t *got = mc_getEdgesInt64(args, status, use_range_v2);
         if (test->expectError != NULL) {
             ASSERT_OR_PRINT_MSG(NULL == got, "expected error, got success");
             ASSERT_STATUS_CONTAINS(status, test->expectError);

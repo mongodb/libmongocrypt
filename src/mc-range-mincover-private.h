@@ -50,7 +50,8 @@ typedef struct {
 // mc_getMincoverInt32 implements the Mincover Generation algorithm described in
 // SERVER-68600 for int32_t.
 mc_mincover_t *mc_getMincoverInt32(mc_getMincoverInt32_args_t args,
-                                   mongocrypt_status_t *status) MONGOCRYPT_WARN_UNUSED_RESULT;
+                                   mongocrypt_status_t *status,
+                                   bool use_range_v2) MONGOCRYPT_WARN_UNUSED_RESULT;
 
 typedef struct {
     int64_t lowerBound;
@@ -66,7 +67,8 @@ typedef struct {
 // mc_getMincoverInt64 implements the Mincover Generation algorithm described in
 // SERVER-68600 for int64_t.
 mc_mincover_t *mc_getMincoverInt64(mc_getMincoverInt64_args_t args,
-                                   mongocrypt_status_t *status) MONGOCRYPT_WARN_UNUSED_RESULT;
+                                   mongocrypt_status_t *status,
+                                   bool use_range_v2) MONGOCRYPT_WARN_UNUSED_RESULT;
 
 typedef struct {
     double lowerBound;

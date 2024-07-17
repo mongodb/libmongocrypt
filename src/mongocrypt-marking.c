@@ -908,7 +908,8 @@ get_edges(mc_FLE2RangeInsertSpec_t *insertSpec, size_t sparsity, mongocrypt_stat
                                                           .max = OPT_I32(bson_iter_int32(&insertSpec->max)),
                                                           .sparsity = sparsity,
                                                           .trimFactor = insertSpec->trimFactor},
-                                status);
+                                status,
+                                use_range_v2);
     }
 
     else if (value_type == BSON_TYPE_INT64) {
@@ -917,7 +918,8 @@ get_edges(mc_FLE2RangeInsertSpec_t *insertSpec, size_t sparsity, mongocrypt_stat
                                                           .max = OPT_I64(bson_iter_int64(&insertSpec->max)),
                                                           .sparsity = sparsity,
                                                           .trimFactor = insertSpec->trimFactor},
-                                status);
+                                status,
+                                use_range_v2);
     }
 
     else if (value_type == BSON_TYPE_DATE_TIME) {
@@ -926,7 +928,8 @@ get_edges(mc_FLE2RangeInsertSpec_t *insertSpec, size_t sparsity, mongocrypt_stat
                                                           .max = OPT_I64(bson_iter_date_time(&insertSpec->max)),
                                                           .sparsity = sparsity,
                                                           .trimFactor = insertSpec->trimFactor},
-                                status);
+                                status,
+                                use_range_v2);
     }
 
     else if (value_type == BSON_TYPE_DOUBLE) {
@@ -1453,7 +1456,8 @@ mc_mincover_t *mc_get_mincover_from_FLE2RangeFindSpec(mc_FLE2RangeFindSpec_t *fi
                                          .max = OPT_I32(bson_iter_int32(&findSpec->edgesInfo.value.indexMax)),
                                          .sparsity = sparsity,
                                          .trimFactor = findSpec->edgesInfo.value.trimFactor},
-            status);
+            status,
+            use_range_v2);
 
     case BSON_TYPE_INT64:
         BSON_ASSERT(bson_iter_type(&lowerBound) == BSON_TYPE_INT64);
@@ -1469,7 +1473,8 @@ mc_mincover_t *mc_get_mincover_from_FLE2RangeFindSpec(mc_FLE2RangeFindSpec_t *fi
                                          .max = OPT_I64(bson_iter_int64(&findSpec->edgesInfo.value.indexMax)),
                                          .sparsity = sparsity,
                                          .trimFactor = findSpec->edgesInfo.value.trimFactor},
-            status);
+            status,
+            use_range_v2);
     case BSON_TYPE_DATE_TIME:
         BSON_ASSERT(bson_iter_type(&lowerBound) == BSON_TYPE_DATE_TIME);
         BSON_ASSERT(bson_iter_type(&upperBound) == BSON_TYPE_DATE_TIME);
@@ -1484,7 +1489,8 @@ mc_mincover_t *mc_get_mincover_from_FLE2RangeFindSpec(mc_FLE2RangeFindSpec_t *fi
                                          .max = OPT_I64(bson_iter_date_time(&findSpec->edgesInfo.value.indexMax)),
                                          .sparsity = sparsity,
                                          .trimFactor = findSpec->edgesInfo.value.trimFactor},
-            status);
+            status,
+            use_range_v2);
     case BSON_TYPE_DOUBLE: {
         BSON_ASSERT(bson_iter_type(&lowerBound) == BSON_TYPE_DOUBLE);
         BSON_ASSERT(bson_iter_type(&upperBound) == BSON_TYPE_DOUBLE);
