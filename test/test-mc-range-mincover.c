@@ -112,6 +112,7 @@ static mc_mincover_t *_test_getMincover64(void *tests, size_t idx, mongocrypt_st
     BSON_ASSERT_PARAM(tests);
 
     const bool use_range_v2 = true;
+    const uint32_t trimFactor = 0; // At present, all test cases expect trimFactor=0.
     Int64Test *const test = (Int64Test *)tests + idx;
 
     return mc_getMincoverInt64((mc_getMincoverInt64_args_t){.lowerBound = test->lowerBound,
@@ -120,7 +121,8 @@ static mc_mincover_t *_test_getMincover64(void *tests, size_t idx, mongocrypt_st
                                                             .includeUpperBound = test->includeUpperBound,
                                                             .min = test->min,
                                                             .max = test->max,
-                                                            .sparsity = test->sparsity},
+                                                            .sparsity = test->sparsity,
+                                                            .trimFactor = OPT_U32(trimFactor)},
                                status,
                                use_range_v2);
 }
@@ -129,6 +131,7 @@ static mc_mincover_t *_test_getMincoverDouble_helper(void *tests, size_t idx, mo
     BSON_ASSERT_PARAM(tests);
 
     const bool use_range_v2 = true;
+    const uint32_t trimFactor = 0; // At present, all test cases expect trimFactor=0.
     DoubleTest *const test = (DoubleTest *)tests + idx;
 
     return mc_getMincoverDouble(
@@ -139,7 +142,8 @@ static mc_mincover_t *_test_getMincoverDouble_helper(void *tests, size_t idx, mo
                                       .sparsity = test->sparsity,
                                       .min = test->precision.set ? test->min : (mc_optional_double_t){0},
                                       .max = test->precision.set ? test->max : (mc_optional_double_t){0},
-                                      .precision = test->precision},
+                                      .precision = test->precision,
+                                      .trimFactor = OPT_U32(trimFactor)},
         status,
         use_range_v2);
 }
@@ -151,6 +155,7 @@ static mc_mincover_t *_test_getMincoverDecimal128_helper(void *tests, size_t idx
     Decimal128Test *const test = (Decimal128Test *)tests + idx;
 
     const bool use_range_v2 = true;
+    const uint32_t trimFactor = 0; // At present, all test cases expect trimFactor=0.
     return mc_getMincoverDecimal128(
         (mc_getMincoverDecimal128_args_t){.lowerBound = test->lowerBound,
                                           .includeLowerBound = test->includeLowerBound,
@@ -159,7 +164,8 @@ static mc_mincover_t *_test_getMincoverDecimal128_helper(void *tests, size_t idx
                                           .sparsity = test->sparsity,
                                           .min = test->precision.set ? test->min : (mc_optional_dec128_t){0},
                                           .max = test->precision.set ? test->max : (mc_optional_dec128_t){0},
-                                          .precision = test->precision},
+                                          .precision = test->precision,
+                                          .trimFactor = OPT_U32(trimFactor)},
         status,
         use_range_v2);
 }
