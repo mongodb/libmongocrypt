@@ -902,14 +902,12 @@ get_edges(mc_FLE2RangeInsertSpec_t *insertSpec, size_t sparsity, mongocrypt_stat
 
     bson_type_t value_type = bson_iter_type(&insertSpec->v);
 
-    uint32_t trimFactor = insertSpec->trimFactor.set ? insertSpec->trimFactor.value : 0;
-
     if (value_type == BSON_TYPE_INT32) {
         return mc_getEdgesInt32((mc_getEdgesInt32_args_t){.value = bson_iter_int32(&insertSpec->v),
                                                           .min = OPT_I32(bson_iter_int32(&insertSpec->min)),
                                                           .max = OPT_I32(bson_iter_int32(&insertSpec->max)),
                                                           .sparsity = sparsity,
-                                                          .trimFactor = trimFactor},
+                                                          .trimFactor = insertSpec->trimFactor},
                                 status);
     }
 
@@ -918,7 +916,7 @@ get_edges(mc_FLE2RangeInsertSpec_t *insertSpec, size_t sparsity, mongocrypt_stat
                                                           .min = OPT_I64(bson_iter_int64(&insertSpec->min)),
                                                           .max = OPT_I64(bson_iter_int64(&insertSpec->max)),
                                                           .sparsity = sparsity,
-                                                          .trimFactor = trimFactor},
+                                                          .trimFactor = insertSpec->trimFactor},
                                 status);
     }
 
@@ -927,14 +925,14 @@ get_edges(mc_FLE2RangeInsertSpec_t *insertSpec, size_t sparsity, mongocrypt_stat
                                                           .min = OPT_I64(bson_iter_date_time(&insertSpec->min)),
                                                           .max = OPT_I64(bson_iter_date_time(&insertSpec->max)),
                                                           .sparsity = sparsity,
-                                                          .trimFactor = trimFactor},
+                                                          .trimFactor = insertSpec->trimFactor},
                                 status);
     }
 
     else if (value_type == BSON_TYPE_DOUBLE) {
         mc_getEdgesDouble_args_t args = {.value = bson_iter_double(&insertSpec->v),
                                          .sparsity = sparsity,
-                                         .trimFactor = trimFactor};
+                                         .trimFactor = insertSpec->trimFactor};
         if (insertSpec->precision.set) {
             // If precision is set, pass min/max/precision to mc_getEdgesDouble.
             // Do not pass min/max if precision is not set. All three must be set
@@ -953,7 +951,7 @@ get_edges(mc_FLE2RangeInsertSpec_t *insertSpec, size_t sparsity, mongocrypt_stat
         mc_getEdgesDecimal128_args_t args = {
             .value = value,
             .sparsity = sparsity,
-            .trimFactor = trimFactor,
+            .trimFactor = insertSpec->trimFactor,
         };
         if (insertSpec->precision.set) {
             const mc_dec128 min = mc_dec128_from_bson_iter(&insertSpec->min);
