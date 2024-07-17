@@ -494,10 +494,7 @@ bool mc_RangeOpts_appendTrimFactor(const mc_RangeOpts_t *ro,
     BSON_ASSERT(status || true);
 
     if (!ro->trimFactor.set) {
-        if (!BSON_APPEND_INT32(out, fieldName, 0)) {
-            CLIENT_ERR_PREFIXED("failed to append BSON");
-            return false;
-        }
+        // A default `trimFactor` will be selected later with `trimFactorDefault`
         return true;
     }
     BSON_ASSERT(ro->trimFactor.value <= INT32_MAX);
