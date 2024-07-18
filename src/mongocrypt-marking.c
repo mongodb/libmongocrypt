@@ -1520,14 +1520,12 @@ mc_mincover_t *mc_get_mincover_from_FLE2RangeFindSpec(mc_FLE2RangeFindSpec_t *fi
         BSON_ASSERT(bson_iter_type(&findSpec->edgesInfo.value.indexMin) == BSON_TYPE_DECIMAL128);
         BSON_ASSERT(bson_iter_type(&findSpec->edgesInfo.value.indexMax) == BSON_TYPE_DECIMAL128);
 
-        mc_getMincoverDecimal128_args_t args = {
-            .lowerBound = mc_dec128_from_bson_iter(&lowerBound),
-            .includeLowerBound = includeLowerBound,
-            .upperBound = mc_dec128_from_bson_iter(&upperBound),
-            .includeUpperBound = includeUpperBound,
-            .sparsity = sparsity,
-            .trimFactor = findSpec->edgesInfo.value.trimFactor
-        };
+        mc_getMincoverDecimal128_args_t args = {.lowerBound = mc_dec128_from_bson_iter(&lowerBound),
+                                                .includeLowerBound = includeLowerBound,
+                                                .upperBound = mc_dec128_from_bson_iter(&upperBound),
+                                                .includeUpperBound = includeUpperBound,
+                                                .sparsity = sparsity,
+                                                .trimFactor = findSpec->edgesInfo.value.trimFactor};
         if (findSpec->edgesInfo.value.precision.set) {
             args.min = OPT_MC_DEC128(mc_dec128_from_bson_iter(&findSpec->edgesInfo.value.indexMin));
             args.max = OPT_MC_DEC128(mc_dec128_from_bson_iter(&findSpec->edgesInfo.value.indexMax));
