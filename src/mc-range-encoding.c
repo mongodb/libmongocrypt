@@ -162,33 +162,98 @@ bool mc_getTypeInfo64(mc_getTypeInfo64_args_t args, mc_OSTType_Int64 *out, mongo
 }
 
 #define exp10Double(x) pow(10, x)
+#define SCALED_DOUBLE_BOUNDS 9223372036854775807.0  // 2^63 - 1
+#define UINT_64_MAX 18446744073709551615ull
 
-bool mc_canUsePrecisionModeDouble(double min, double max, uint32_t precision, uint32_t *maxBitsOut) {
-    BSON_ASSERT_PARAM(maxBitsOut);
-
-    bool use_precision_mode = false;
-    double range = max - min;
-
-    // We can overflow if max = max double and min = min double so make sure
-    // we have finite number after we do subtraction
-    // Ignore conversion warnings to fix error with glibc.
-    if (mc_isfinite(range)) {
-        // This creates a range which is wider then we permit by our min/max
-        // bounds check with the +1 but it is as the algorithm is written in
-        // WRITING-11907.
-        double rangeAndPrecision = (range + 1) * exp10Double(precision);
-
-        if (mc_isfinite(rangeAndPrecision)) {
-            double bits_range_double = log2(rangeAndPrecision);
-            *maxBitsOut = (uint32_t)ceil(bits_range_double);
-
-            if (*maxBitsOut < 64) {
-                use_precision_mode = true;
-            }
-        }
+uint64_t subtract_int64_t(int64_t max, int64_t min) {
+    if (max > 0 && min > 0 || max < 0 && min < 0) {
+        return (uint64_t) (max - min);
     }
 
-    return use_precision_mode;
+    uint64_t u_return = (uint64_t) labs(max);
+    u_return += (uint64_t) labs(min);
+    return u_return;
+}
+
+bool ceil_log2_double(uint64_t i, uint32_t *maxBitsOut, mongocrypt_status_t *status) {
+    if (i == 0) {
+        CLIENT_ERR("Invalid input to ceil_log2_double function. Input cannot be 0.");
+        return false;
+    }
+
+    uint32_t clz = (uint32_t) _mlibCountLeadingZeros_u64(i);
+    uint32_t bits;
+    if ((i & (i - 1)) == 0) {
+        bits = 64 - clz - 1;
+    } else {
+        bits = 64 - clz;
+    }
+    *maxBitsOut = bits;
+    return true;
+}
+
+bool mc_canUsePrecisionModeDouble(double min, double max, uint32_t precision, uint32_t *maxBitsOut, mongocrypt_status_t *status) {
+    BSON_ASSERT_PARAM(maxBitsOut);
+
+    if (min > max) {
+        CLIENT_ERR("Invalid bounds for double range precision, max must be less than min. min: %g, max: %g", min, max);
+        return false;
+    }
+
+    const double scaled_prc = exp10Double(precision);
+
+    const double scaled_max = max * scaled_prc;
+    const double scaled_min = min * scaled_prc;
+
+    if (scaled_max != trunc(scaled_max)) {
+        CLIENT_ERR("Invalid upper bounds for double precision. Digits after the decimal must be less than specified precision value. max: %g", max);
+        return false;
+    }
+
+    if (scaled_min != trunc(scaled_min)) {
+        CLIENT_ERR("Invalid lower bounds for double precision. Digits after the decimal must be less than specified precision value. min: %g", min);
+        return false;
+    }
+
+    if (fabs(scaled_max) >= SCALED_DOUBLE_BOUNDS) {
+        CLIENT_ERR("Invalid upper bounds for double precision. abs(max) must be less than 9223372036854775807. max: %g", max);
+        return false;
+    }
+
+    if (fabs(scaled_min) >= SCALED_DOUBLE_BOUNDS) {
+        CLIENT_ERR("Invalid lower bounds for double precision. abs(min) must be less than 9223372036854775807. min: %g", min);
+        return false;
+    }
+
+    const double t_1 = scaled_max - scaled_min;
+    const double t_4 = UINT_64_MAX - t_1;
+    const double t_5 = floor(log10(t_4)) - 1;
+
+    if ((double) precision >= t_5) {
+        CLIENT_ERR("Invalid value for precision. precision: %" PRId32, precision);
+        return false;
+    }
+
+    const int64_t i_1 = (int64_t) (scaled_max);
+    const int64_t i_2 = (int64_t) (scaled_min);
+
+    const uint64_t range = subtract_int64_t(i_1, i_2);
+    const uint64_t i_3 = range + (uint64_t) (scaled_prc);
+
+    if (i_3 <= 0) {
+        CLIENT_ERR("Invalid value for upper and lower bounds for double precision. Min must be less than max. min: %g, max: %g", min, max);
+        return false;
+    }
+
+    if (!ceil_log2_double(i_3, maxBitsOut, status)) {
+        return false;
+    }
+
+    if (*maxBitsOut >= 64) {
+        return false;
+    }
+
+    return true;
 }
 
 bool mc_getTypeInfoDouble(mc_getTypeInfoDouble_args_t args,
@@ -248,8 +313,13 @@ bool mc_getTypeInfoDouble(mc_getTypeInfoDouble_args_t args,
         }
 
         use_precision_mode =
-            mc_canUsePrecisionModeDouble(args.min.value, args.max.value, args.precision.value, &bits_range);
+            mc_canUsePrecisionModeDouble(args.min.value, args.max.value, args.precision.value, &bits_range, status);
+
         if (!use_precision_mode && use_range_v2) {
+            if (!mongocrypt_status_ok(status)) {
+                return false;
+            }
+
             CLIENT_ERR("The domain of double values specified by the min, max, and precision cannot be represented in "
                        "fewer than 64 bits. min: %g, max: %g, precision: %" PRIu32,
                        args.min.value,
@@ -257,6 +327,11 @@ bool mc_getTypeInfoDouble(mc_getTypeInfoDouble_args_t args,
                        args.precision.value);
             return false;
         }
+
+        // If we are not in range_v2, then we don't care about the error returned
+        // from canUsePrecisionMode so we can reset the status.
+        _mongocrypt_status_reset(status);
+
     }
 
     if (use_precision_mode) {
@@ -319,7 +394,7 @@ bool mc_getTypeInfoDouble(mc_getTypeInfoDouble_args_t args,
  * @param dec
  * @return mlib_int128
  */
-static mlib_int128 dec128_to_int128(mc_dec128 dec) {
+static mlib_int128 dec128_to_uint128(mc_dec128 dec) {
     // Only normal numbers
     BSON_ASSERT(mc_dec128_is_finite(dec));
     BSON_ASSERT(!mc_dec128_is_nan(dec));
@@ -345,42 +420,124 @@ static mlib_int128 dec128_to_int128(mc_dec128 dec) {
     return ret;
 }
 
-bool mc_canUsePrecisionModeDecimal(mc_dec128 min, mc_dec128 max, uint32_t precision, uint32_t *maxBitsOut) {
-    BSON_ASSERT_PARAM(maxBitsOut);
+#define SIGNED_INT_128_MAX_DECIMAL mc_dec128_from_string("170141183460469231731687303715884105727")
+#define UNSIGNED_INT_128_MAX_DECIMAL mc_dec128_from_string("340282366920938463463374607431768211455")
 
-    bool use_precision_mode = false;
-    // max - min
-    mc_dec128 bounds_n1 = mc_dec128_sub(max, min);
-    // The size of [min, max]: (max - min) + 1
-    mc_dec128 bounds = mc_dec128_add(bounds_n1, MC_DEC128_ONE);
+static mlib_int128 dec128_to_int128(mc_dec128 dec) {
+    BSON_ASSERT(mc_dec128_less(dec, SIGNED_INT_128_MAX_DECIMAL));
+    
+    bool negative = false;
 
-    // We can overflow if max = max_dec128 and min = min_dec128 so make sure
-    // we have finite number after we do subtraction
-    if (mc_dec128_is_finite(bounds)) {
-        // This creates a range which is wider then we permit by our min/max
-        // bounds check with the +1 but it is as the algorithm is written in
-        // WRITING-11907.
-        mc_dec128 precision_scaled_bounds = mc_dec128_scale(bounds, precision);
-        /// The number of bits required to hold the result for the given
-        /// precision (as decimal)
-        mc_dec128 bits_range_dec = mc_dec128_log2(precision_scaled_bounds);
-
-        if (mc_dec128_is_finite(bits_range_dec) && mc_dec128_less(bits_range_dec, MC_DEC128(128))) {
-            // We need fewer than 128 bits to hold the result. But round up,
-            // just to be sure:
-            int64_t r = mc_dec128_to_int64(mc_dec128_round_integral_ex(bits_range_dec, MC_DEC128_ROUND_UPWARD, NULL));
-            BSON_ASSERT(r >= 0);
-            BSON_ASSERT(r <= UINT8_MAX);
-            // We've computed the proper 'bits_range'
-            *maxBitsOut = (uint8_t)r;
-
-            if (*maxBitsOut < 128) {
-                use_precision_mode = true;
-            }
-        }
+    if (mc_dec128_is_negative(dec)) {
+        negative = true;
+        dec = mc_dec128_mul(MC_DEC128(-1), dec);
     }
 
-    return use_precision_mode;
+    mlib_int128 ret_val = dec128_to_uint128(dec);
+
+    if (negative) {
+        ret_val = mlib_int128_mul(MLIB_INT128(-1), ret_val);
+    }
+
+    return ret_val;
+}
+
+bool ceil_log2_int128(mlib_int128 i, uint32_t *maxBitsOut, mongocrypt_status_t *status) {
+    if (mlib_int128_eq(i, MLIB_INT128(0))) {
+        CLIENT_ERR("Invalid input to ceil_log2_int128 function. Input cannot be 0.");
+        return false;
+    }
+
+    uint32_t clz = (uint32_t) _mlibCountLeadingZeros_u128(i);
+    uint32_t bits;
+
+    // if i & (i - 1) == 0
+    if (mlib_int128_eq((mlib_int128_bitand(i, (mlib_int128_sub(i, MLIB_INT128(1))))), MLIB_INT128(0))) {
+        bits = 128 - clz - 1;
+    } else {
+        bits = 128 - clz;
+    }
+    *maxBitsOut = bits;
+    return true;
+}
+
+bool mc_canUsePrecisionModeDecimal(mc_dec128 min, mc_dec128 max, uint32_t precision, uint32_t *maxBitsOut, mongocrypt_status_t *status) {
+    BSON_ASSERT_PARAM(maxBitsOut);
+
+    if (!mc_dec128_is_finite(max)) {
+        CLIENT_ERR("Invalid upper bounds for Decimal128 precision. Max is infinite.");
+        return false;
+    }
+
+    if (!mc_dec128_is_finite(min)) {
+        CLIENT_ERR("Invalid lower bounds for Decimal128 precision. Min is infinite.");
+        return false;
+    }
+
+    if (mc_dec128_greater_equal(min, max)) {
+        CLIENT_ERR("Invalid upper and lower bounds for Decimal128 precision. Min must be strictly less than max. min: %s, max: %s", mc_dec128_to_string(min).str, mc_dec128_to_string(max).str);
+        return false;
+    }
+
+    mc_dec128 scaled_max = mc_dec128_scale(max, precision);
+    mc_dec128 scaled_min = mc_dec128_scale(min, precision);
+
+    mc_dec128 scaled_max_trunc = mc_dec128_round_integral_ex(scaled_max, MC_DEC128_ROUND_TOWARD_ZERO, NULL);
+    mc_dec128 scaled_min_trunc = mc_dec128_round_integral_ex(scaled_min, MC_DEC128_ROUND_TOWARD_ZERO, NULL);
+
+    if (mc_dec128_not_equal(scaled_max, scaled_max_trunc)) {
+        CLIENT_ERR("Invalid upper bounds for Decimal128 precision. Digits after the decimal must be less than specified precision value. max: %s, precision: %" PRIu32, mc_dec128_to_string(max).str, precision);
+        return false;
+    }
+
+    if (mc_dec128_not_equal(scaled_min, scaled_min_trunc)) {
+        CLIENT_ERR("Invalid lower bounds for Decimal128 precision. Digits after the decimal must be less than specified precision value. min: %s, precision: %" PRIu32, mc_dec128_to_string(min).str, precision);
+        return false;
+    }
+
+    if (mc_dec128_greater(mc_dec128_abs(scaled_max), SIGNED_INT_128_MAX_DECIMAL)) {
+        CLIENT_ERR("Invalid upper bounds for Decimal128 precision, absolute scaled value must be less than 170141183460469231731687303715884105727. max: %s", mc_dec128_to_string(max).str);
+        return false;
+    }
+
+    if (mc_dec128_greater(mc_dec128_abs(scaled_min), SIGNED_INT_128_MAX_DECIMAL)) {
+        CLIENT_ERR("Invalid lower bounds for Decimal128 precision, absolute scaled value must be less than 170141183460469231731687303715884105727. min: %s", mc_dec128_to_string(min).str);
+        return false;
+    }
+
+    mc_dec128 t_1 = mc_dec128_sub(scaled_max, scaled_min);
+    mc_dec128 t_4 = mc_dec128_sub(UNSIGNED_INT_128_MAX_DECIMAL, t_1);
+    mc_dec128 t_5 = mc_dec128_sub(mc_dec128_round_integral_ex(mc_dec128_log10(t_4), MC_DEC128_ROUND_UPWARD, NULL), MC_DEC128(1));
+
+    if (mc_dec128_less(t_5, MC_DEC128(precision))) {
+        CLIENT_ERR("Invalid value for precision. precision: %" PRIu32, precision);
+        return false;
+    }
+
+
+    mlib_int128 i_1 = dec128_to_int128(scaled_max);
+    mlib_int128 i_2 = dec128_to_int128(scaled_min);
+
+    // Because we have guaranteed earlier that max is greater than min, we can
+    // subtract these values and guarantee that taking their unsigned
+    // representation will yield the actual range result.
+    mlib_int128 range128 = mlib_int128_sub(i_1, i_2);
+
+    if (precision > 255) {
+        CLIENT_ERR("Invalid value for precision. Must be less than 255. precision: %" PRIu32, precision);
+        return false;
+    }
+
+    mlib_int128 i_3 = mlib_int128_add(range128, mlib_int128_pow10((uint8_t) precision));
+    if (!ceil_log2_int128(i_3, maxBitsOut, status)) {
+        return false;
+    }
+
+    if (*maxBitsOut >= 128) {
+        return false;
+    }
+
+    return true;
 }
 
 bool mc_getTypeInfoDecimal128(mc_getTypeInfoDecimal128_args_t args,
@@ -445,9 +602,13 @@ bool mc_getTypeInfoDecimal128(mc_getTypeInfoDecimal128_args_t args,
         }
 
         use_precision_mode =
-            mc_canUsePrecisionModeDecimal(args.min.value, args.max.value, args.precision.value, &bits_range);
+            mc_canUsePrecisionModeDecimal(args.min.value, args.max.value, args.precision.value, &bits_range, status);
 
-        if (!use_precision_mode && use_range_v2) {
+        if (use_range_v2 && !use_precision_mode) {
+            if (!mongocrypt_status_ok(status)) {
+                return false;
+            }
+
             CLIENT_ERR("The domain of decimal values specified by the min, max, and precision cannot be represented in "
                        "fewer than 128 bits. min: %s, max: %s, precision: %" PRIu32,
                        mc_dec128_to_string(args.min.value).str,
@@ -455,6 +616,10 @@ bool mc_getTypeInfoDecimal128(mc_getTypeInfoDecimal128_args_t args,
                        args.precision.value);
             return false;
         }
+
+        // If we are not in range_v2, then we don't care about the error returned
+        // from canUsePrecisionMode so we can reset the status.
+        _mongocrypt_status_reset(status);
     }
 
     // Constant zero

@@ -177,10 +177,16 @@ static const char *_test_expectErrorDouble(void *tests, size_t idx) {
     if (test->min.set && test->max.set && test->precision.set) {
         // Expect an error for tests including an invalid min/max/precision.
         uint32_t ignored;
-        if (!mc_canUsePrecisionModeDouble(test->min.value, test->max.value, test->precision.value, &ignored)) {
+        mongocrypt_status_t *const status = mongocrypt_status_new();
+        if (!mc_canUsePrecisionModeDouble(test->min.value, test->max.value, test->precision.value, &ignored, status)) {
+            if (!mongocrypt_status_ok(status)) {
+                return mongocrypt_status_message(status, NULL);
+            }
+
             return "The domain of double values specified by the min, max, and precision cannot be represented in "
                    "fewer than 64 bits";
         }
+        mongocrypt_status_destroy(status);
     }
     return test->expectError;
 }
@@ -192,7 +198,12 @@ static const char *_test_expectErrorDecimal128(void *tests, size_t idx) {
     if (test->min.set && test->max.set && test->precision.set) {
         // Expect an error for tests including an invalid min/max/precision.
         uint32_t ignored;
-        if (!mc_canUsePrecisionModeDecimal(test->min.value, test->max.value, test->precision.value, &ignored)) {
+        mongocrypt_status_t *const status = mongocrypt_status_new();
+        if (!mc_canUsePrecisionModeDecimal(test->min.value, test->max.value, test->precision.value, &ignored, status)) {
+            if (!mongocrypt_status_ok(status)) {
+                return mongocrypt_status_message(status, NULL);
+            }
+
             return "The domain of decimal values specified by the min, max, and precision cannot be represented in "
                    "fewer than 128 bits";
         }
