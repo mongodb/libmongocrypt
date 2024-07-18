@@ -308,9 +308,7 @@ static bool mc_FLE2RangeFindSpecEdgesInfo_parse(mc_FLE2RangeFindSpecEdgesInfo_t 
     // Do not error if precision is not present. Precision optional and only
     // applies to double/decimal128.
 
-    if (use_range_v2) {
-        CHECK_HAS(trimFactor)
-    } else if (out->trimFactor.set) {
+    if (!use_range_v2 && out->trimFactor.set) {
         CLIENT_ERR_PREFIXED("'trimFactor' is not supported for QE range v1");
         return false;
     }
@@ -481,9 +479,7 @@ bool mc_FLE2RangeInsertSpec_parse(mc_FLE2RangeInsertSpec_t *out,
     // Do not error if precision is not present. Precision optional and only
     // applies to double/decimal128.
 
-    if (use_range_v2) {
-        CHECK_HAS(trimFactor)
-    } else if (out->trimFactor.set) {
+    if (!use_range_v2 && out->trimFactor.set) {
         CLIENT_ERR_PREFIXED("'trimFactor' is not supported for QE range v1");
         return false;
     }
