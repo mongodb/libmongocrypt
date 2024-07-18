@@ -817,13 +817,13 @@ mongocrypt_kms_ctx_t *_mongocrypt_key_broker_next_kms(_mongocrypt_key_broker_t *
         return NULL;
     }
 
-    // Check if any requests need retry  
-    for (key_returned_t *ptr = kb->keys_returned; ptr != NULL; ptr = ptr->next) {  
-        if (ptr->kms.should_retry) {  
-            ptr->kms.should_retry = false;  
-            return &ptr->kms;  
-        }  
-    }  
+    // Check if any requests need retry
+    for (key_returned_t *ptr = kb->keys_returned; ptr != NULL; ptr = ptr->next) {
+        if (ptr->kms.should_retry) {
+            ptr->kms.should_retry = false;
+            return &ptr->kms;
+        }
+    }
     while (kb->decryptor_iter) {
         if (!kb->decryptor_iter->decrypted) {
             key_returned_t *key_returned;

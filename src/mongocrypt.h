@@ -607,7 +607,6 @@ mongocrypt_ctx_t *mongocrypt_ctx_new(mongocrypt_t *crypt);
 MONGOCRYPT_EXPORT
 bool mongocrypt_ctx_status(mongocrypt_ctx_t *ctx, mongocrypt_status_t *status);
 
-
 /**
  * Set the key id to use for explicit encryption.
  *
