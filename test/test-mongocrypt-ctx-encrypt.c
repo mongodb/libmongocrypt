@@ -5127,6 +5127,135 @@ static void _test_rangePreview_fails(_mongocrypt_tester_t *tester) {
     bson_free(local_kek);
 }
 
+// `autoencryption_test` defines a test for the automatic encryption context.
+typedef struct {
+    const char *desc;
+    _test_rng_data_source rng_data;
+    mongocrypt_binary_t *cmd;
+    mongocrypt_binary_t *encrypted_field_map;
+    mongocrypt_binary_t *mongocryptd_reply;
+    mongocrypt_binary_t *keys_to_feed[3]; // NULL terminated list.
+    mongocrypt_binary_t *expect;
+} autoencryption_test;
+
+static void autoencryption_test_run(autoencryption_test *aet) {
+    if (!_aes_ctr_is_supported_by_os) {
+        printf("Common Crypto with no CTR support detected. Skipping.");
+        return;
+    }
+
+    printf("  auto_encryption test: '%s' ... begin\n", aet->desc);
+
+    // Reset global counter for the `payloadId` to produce deterministic payloads.
+    extern void mc_reset_payloadId_for_testing(void);
+    mc_reset_payloadId_for_testing();
+
+    // Initialize mongocrypt_t.
+    mongocrypt_t *crypt = mongocrypt_new();
+    {
+        mongocrypt_setopt_log_handler(crypt, _mongocrypt_stdout_log_fn, NULL);
+
+        // Set "local" KMS provider.
+        {
+            // `localkey_data` is the KEK used to encrypt the keyMaterial in ./test/data/keys/
+            char localkey_data[MONGOCRYPT_KEY_LEN] = {0};
+            mongocrypt_binary_t *localkey =
+                mongocrypt_binary_new_from_data((uint8_t *)localkey_data, sizeof localkey_data);
+            ASSERT_OK(mongocrypt_setopt_kms_provider_local(crypt, localkey), crypt);
+            mongocrypt_binary_destroy(localkey);
+        }
+
+        if (aet->rng_data.buf.len > 0) {
+            // Set deterministic random number generator.
+            ASSERT_OK(mongocrypt_setopt_crypto_hooks(crypt,
+                                                     _std_hook_native_crypto_aes_256_cbc_encrypt,
+                                                     _std_hook_native_crypto_aes_256_cbc_decrypt,
+                                                     _test_rng_source,
+                                                     _std_hook_native_hmac_sha512,
+                                                     _std_hook_native_hmac_sha256,
+                                                     _error_hook_native_sha256,
+                                                     &aet->rng_data /* ctx */),
+                      crypt);
+        }
+
+        ASSERT_OK(mongocrypt_setopt_encrypted_field_config_map(crypt, aet->encrypted_field_map), crypt);
+        ASSERT_OK(mongocrypt_setopt_use_range_v2(crypt), crypt);
+        ASSERT_OK(mongocrypt_init(crypt), crypt);
+    }
+
+    // Create the auto encryption context and run.
+    mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+    ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, aet->cmd), ctx);
+
+    ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+    {
+        ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, aet->mongocryptd_reply), ctx);
+        ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+    }
+
+    ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+    {
+        for (mongocrypt_binary_t **iter = aet->keys_to_feed; *iter != NULL; iter++) {
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, *iter), ctx);
+        }
+        ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+    }
+
+    ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
+    {
+        mongocrypt_binary_t *got = mongocrypt_binary_new();
+
+        bool ret = mongocrypt_ctx_finalize(ctx, got);
+        ASSERT_OK(ret, ctx);
+        ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(aet->expect, got);
+        mongocrypt_binary_destroy(got);
+    }
+
+    printf("  auto_encryption test: '%s' ... end\n", aet->desc);
+    mongocrypt_ctx_destroy(ctx);
+    mongocrypt_destroy(crypt);
+}
+
+static void _test_no_trimFactor(_mongocrypt_tester_t *tester) {
+    mongocrypt_binary_t *key123 = TEST_FILE("./test/data/keys/12345678123498761234123456789012-local-document.json");
+
+    // Test insert.
+    {
+        autoencryption_test aet = {
+            .desc = "missing trimFactor in mongocryptd reply for `insert` is OK",
+            .cmd = TEST_FILE("test/data/no-trimFactor/insert/cmd.json"),
+            .encrypted_field_map = TEST_FILE("test/data/no-trimFactor/insert/encrypted-field-map.json"),
+            .mongocryptd_reply = TEST_FILE("test/data/no-trimFactor/insert/mongocryptd-reply.json"),
+            .keys_to_feed = {key123},
+            .expect = TEST_FILE("test/data/no-trimFactor/insert/encrypted-payload.json"),
+        };
+
+        // Set fixed random data for deterministic results.
+        mongocrypt_binary_t *rng_data = TEST_BIN(1024);
+        aet.rng_data = (_test_rng_data_source){.buf = {.data = rng_data->data, .len = rng_data->len}};
+
+        autoencryption_test_run(&aet);
+    }
+
+    // Test find.
+    {
+        autoencryption_test aet = {
+            .desc = "missing trimFactor in mongocryptd reply for `find` is OK",
+            .cmd = TEST_FILE("test/data/no-trimFactor/find/cmd.json"),
+            .encrypted_field_map = TEST_FILE("test/data/no-trimFactor/find/encrypted-field-map.json"),
+            .mongocryptd_reply = TEST_FILE("test/data/no-trimFactor/find/mongocryptd-reply.json"),
+            .keys_to_feed = {key123},
+            .expect = TEST_FILE("test/data/no-trimFactor/find/encrypted-payload.json"),
+        };
+
+        // Set fixed random data for deterministic results.
+        mongocrypt_binary_t *rng_data = TEST_BIN(1024);
+        aet.rng_data = (_test_rng_data_source){.buf = {.data = rng_data->data, .len = rng_data->len}};
+
+        autoencryption_test_run(&aet);
+    }
+}
+
 void _mongocrypt_tester_install_ctx_encrypt(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_explicit_encrypt_init);
     INSTALL_TEST(_test_encrypt_init);
@@ -5208,4 +5337,5 @@ void _mongocrypt_tester_install_ctx_encrypt(_mongocrypt_tester_t *tester) {
 #endif
     INSTALL_TEST(_test_bulkWrite);
     INSTALL_TEST(_test_rangePreview_fails);
+    INSTALL_TEST(_test_no_trimFactor);
 }
