@@ -166,7 +166,7 @@ bool mc_getTypeInfo64(mc_getTypeInfo64_args_t args, mc_OSTType_Int64 *out, mongo
 #define UINT_64_MAX 18446744073709551615ull
 
 uint64_t subtract_int64_t(int64_t max, int64_t min) {
-    if (max > 0 && min > 0 || max < 0 && min < 0) {
+    if ((max > 0 && min > 0) || (max < 0 && min < 0)) {
         return (uint64_t)(max - min);
     }
 
@@ -236,7 +236,7 @@ bool mc_canUsePrecisionModeDouble(double min,
     }
 
     const double t_1 = scaled_max - scaled_min;
-    const double t_4 = UINT_64_MAX - t_1;
+    const double t_4 = (double) UINT_64_MAX - t_1;
     const double t_5 = floor(log10(t_4)) - 1;
 
     if ((double)precision >= t_5) {
