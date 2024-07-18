@@ -568,6 +568,7 @@ static void _test_rewrap_many_datakey_need_kms_retry(_mongocrypt_tester_t *teste
     ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_KMS);
     ASSERT((kms = mongocrypt_ctx_next_kms_ctx(ctx)));
     ASSERT(mongocrypt_kms_ctx_fail(kms)); //  Simulate driver-side network failure
+    ASSERT((kms = mongocrypt_ctx_next_kms_ctx(ctx)));
     ASSERT(mongocrypt_kms_ctx_usleep(kms) > 0);
     ASSERT_OK(mongocrypt_kms_ctx_feed(kms, TEST_FILE("./test/data/rmd/kms-decrypt-reply-a.txt")), kms);
     ASSERT(mongocrypt_kms_ctx_bytes_needed(kms) == 0);
