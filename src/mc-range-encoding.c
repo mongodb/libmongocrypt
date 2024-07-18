@@ -166,12 +166,17 @@ bool mc_getTypeInfo64(mc_getTypeInfo64_args_t args, mc_OSTType_Int64 *out, mongo
 #define UINT_64_MAX 18446744073709551615ull
 
 uint64_t subtract_int64_t(int64_t max, int64_t min) {
+    // If the values have the same sign, then simple subtraction
+    // will work because we know max > min.
     if ((max > 0 && min > 0) || (max < 0 && min < 0)) {
         return (uint64_t)(max - min);
     }
 
-    uint64_t u_return = (uint64_t)labs(max);
-    u_return += (uint64_t)labs(min);
+    // If they are opposite signs, then we can just do a small
+    // abs_val addition trick to perform subtraction, since it
+    // is just the sum of differences between the values and 0.
+    uint64_t u_return = (uint64_t)llabs(max);
+    u_return += (uint64_t)llabs(min);
     return u_return;
 }
 
