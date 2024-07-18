@@ -236,7 +236,7 @@ bool mc_canUsePrecisionModeDouble(double min,
     }
 
     const double t_1 = scaled_max - scaled_min;
-    const double t_4 = (double) UINT_64_MAX - t_1;
+    const double t_4 = (double)UINT_64_MAX - t_1;
     const double t_5 = floor(log10(t_4)) - 1;
 
     if ((double)precision >= t_5) {
