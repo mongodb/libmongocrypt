@@ -1799,6 +1799,15 @@ static bool _mongocrypt_fle2_placeholder_to_find_ciphertextForRange(_mongocrypt_
             }
         }
         payload.payload.set = true;
+
+        if (use_range_v2) {
+            // Include "range" payload fields introduced in SERVER-91889.
+            payload.sparsity = OPT_I64(placeholder->sparsity);
+            payload.precision = findSpec.edgesInfo.value.precision;
+            payload.trimFactor = OPT_U32(mc_mincover_get_used_trimFactor(mincover));
+            bson_value_copy(bson_iter_value(&findSpec.edgesInfo.value.indexMin), &payload.indexMin);
+            bson_value_copy(bson_iter_value(&findSpec.edgesInfo.value.indexMax), &payload.indexMax);
+        }
     }
 
     payload.payloadId = findSpec.payloadId;
@@ -1808,7 +1817,7 @@ static bool _mongocrypt_fle2_placeholder_to_find_ciphertextForRange(_mongocrypt_
     // Serialize.
     {
         bson_t out = BSON_INITIALIZER;
-        mc_FLE2FindRangePayloadV2_serialize(&payload, &out);
+        mc_FLE2FindRangePayloadV2_serialize(&payload, &out, use_range_v2);
         _mongocrypt_buffer_steal_from_bson(&ciphertext->data, &out);
     }
     _mongocrypt_buffer_steal(&ciphertext->key_id, &placeholder->index_key_id);

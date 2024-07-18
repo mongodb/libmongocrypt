@@ -17,6 +17,7 @@
 #include <bson/bson.h>
 
 #include "mc-fle2-find-range-payload-private-v2.h"
+#include "test-mongocrypt-assert-match-bson.h"
 #include "test-mongocrypt-assert.h"
 #include "test-mongocrypt.h"
 
@@ -72,7 +73,8 @@ static void _test_FLE2FindRangePayloadV2_roundtrip(_mongocrypt_tester_t *tester)
     payload.secondOperator = expect_secondOperator;
 
     bson_init(&out_bson);
-    mc_FLE2FindRangePayloadV2_serialize(&payload, &out_bson);
+    const bool use_range_v2 = false;
+    mc_FLE2FindRangePayloadV2_serialize(&payload, &out_bson, use_range_v2);
 
     ASSERT_EQUAL_BSON(&in_bson, &out_bson);
 
@@ -84,6 +86,44 @@ static void _test_FLE2FindRangePayloadV2_roundtrip(_mongocrypt_tester_t *tester)
 
 #undef TEST_FIND_RANGE_PAYLOAD_HEX_V2
 
+static void _test_FLE2FindRangePayloadV2_includes_crypto_params(_mongocrypt_tester_t *tester) {
+    mc_FLE2FindRangePayloadV2_t payload;
+    mc_FLE2FindRangePayloadV2_init(&payload);
+    payload.sparsity = OPT_I64(1);
+    payload.precision = OPT_U32(2);
+    payload.trimFactor = OPT_U32(3);
+    bson_value_t indexMin = {.value.v_int32 = 4, .value_type = BSON_TYPE_INT32};
+    bson_value_copy(&indexMin, &payload.indexMin);
+    bson_value_t indexMax = {.value.v_int32 = 5, .value_type = BSON_TYPE_INT32};
+    bson_value_copy(&indexMax, &payload.indexMax);
+
+    // Test crypto params from SERVER-91889 are included in "range" payload.
+    {
+        bson_t got = BSON_INITIALIZER;
+        const bool use_range_v2 = true;
+        ASSERT(mc_FLE2FindRangePayloadV2_serialize(&payload, &got, use_range_v2));
+        _assert_match_bson(&got, TMP_BSON(BSON_STR({"sp" : 1, "pn" : 2, "tf" : 3, "mn" : 4, "mx" : 5})));
+        bson_destroy(&got);
+    }
+
+    // Test crypto params from SERVER-91889 are excluded in "rangePreview" payload.
+    {
+        bson_t got = BSON_INITIALIZER;
+        const bool use_range_v2 = false;
+        ASSERT(mc_FLE2FindRangePayloadV2_serialize(&payload, &got, use_range_v2));
+        _assert_match_bson(&got, TMP_BSON(BSON_STR({
+            "sp" : {"$exists" : false},
+            "pn" : {"$exists" : false},
+            "tf" : {"$exists" : false},
+            "mn" : {"$exists" : false},
+            "mx" : {"$exists" : false}
+        })));
+        bson_destroy(&got);
+    }
+    mc_FLE2FindRangePayloadV2_cleanup(&payload);
+}
+
 void _mongocrypt_tester_install_fle2_payload_find_range_v2(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_FLE2FindRangePayloadV2_roundtrip);
+    INSTALL_TEST(_test_FLE2FindRangePayloadV2_includes_crypto_params);
 }

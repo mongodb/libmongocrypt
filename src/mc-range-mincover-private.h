@@ -33,6 +33,9 @@ const char *mc_mincover_get(mc_mincover_t *mincover, size_t index);
 // mc_mincover_len returns the number of represented mincover.
 size_t mc_mincover_len(mc_mincover_t *mincover);
 
+// Return the trimFactor that was used to generate this mincover.
+uint32_t mc_mincover_get_used_trimFactor(const mc_mincover_t *mincover);
+
 // mc_mincover_destroys frees `mincover`.
 void mc_mincover_destroy(mc_mincover_t *mincover);
 

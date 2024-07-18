@@ -27,6 +27,7 @@
 struct _mc_mincover_t {
     /* mincover is an array of `char*` edge strings. */
     mc_array_t mincover;
+    uint32_t usedTrimFactor; // The `trimFactor` that was used to produce this mincover.
 };
 
 static mc_mincover_t *mc_mincover_new(void) {
@@ -46,6 +47,10 @@ const char *mc_mincover_get(mc_mincover_t *mincover, size_t index) {
 size_t mc_mincover_len(mc_mincover_t *mincover) {
     BSON_ASSERT_PARAM(mincover);
     return mincover->mincover.len;
+}
+
+uint32_t mc_mincover_get_used_trimFactor(const mc_mincover_t *mincover) {
+    return mincover->usedTrimFactor;
 }
 
 void mc_mincover_destroy(mc_mincover_t *mincover) {
@@ -155,6 +160,7 @@ mc_mincover_t *mc_getMincoverInt32(mc_getMincoverInt32_args_t args, mongocrypt_s
         return NULL;
     }
     mc_mincover_t *mc = MinCoverGenerator_minCover_u32(mcg);
+    mc->usedTrimFactor = MinCoverGenerator_usedTrimFactor_u32(mcg);
     MinCoverGenerator_destroy_u32(mcg);
     return mc;
 }
@@ -187,6 +193,7 @@ mc_mincover_t *mc_getMincoverInt64(mc_getMincoverInt64_args_t args, mongocrypt_s
         return NULL;
     }
     mc_mincover_t *mc = MinCoverGenerator_minCover_u64(mcg);
+    mc->usedTrimFactor = MinCoverGenerator_usedTrimFactor_u64(mcg);
     MinCoverGenerator_destroy_u64(mcg);
     return mc;
 }
@@ -230,6 +237,7 @@ mc_mincover_t *mc_getMincoverDouble(mc_getMincoverDouble_args_t args, mongocrypt
         return NULL;
     }
     mc_mincover_t *mc = MinCoverGenerator_minCover_u64(mcg);
+    mc->usedTrimFactor = MinCoverGenerator_usedTrimFactor_u64(mcg);
     MinCoverGenerator_destroy_u64(mcg);
     return mc;
 }
@@ -274,6 +282,7 @@ mc_getMincoverDecimal128(mc_getMincoverDecimal128_args_t args, mongocrypt_status
         return NULL;
     }
     mc_mincover_t *mc = MinCoverGenerator_minCover_u128(mcg);
+    mc->usedTrimFactor = MinCoverGenerator_usedTrimFactor_u128(mcg);
     MinCoverGenerator_destroy_u128(mcg);
     return mc;
 }

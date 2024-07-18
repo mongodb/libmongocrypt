@@ -218,6 +218,11 @@ static inline mc_mincover_t *DECORATE_NAME(MinCoverGenerator_minCover)(DECORATE_
     return mc;
 }
 
+static inline uint32_t DECORATE_NAME(MinCoverGenerator_usedTrimFactor)(DECORATE_NAME(MinCoverGenerator) * mcg) {
+    BSON_ASSERT_PARAM(mcg);
+    return mcg->_trimFactor;
+}
+
 // adjustBounds increments *lowerBound if includeLowerBound is false and
 // decrements *upperBound if includeUpperBound is false.
 // lowerBound, min, upperBound, and max are expected to come from the result
