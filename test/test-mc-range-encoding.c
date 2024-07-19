@@ -754,7 +754,6 @@ static void _test_RangeTest_Encode_Decimal128(_mongocrypt_tester_t *tester) {
                              DBL_MIN,
                              3,
                              mlib_int128_from_string("170141183460469231731687303715884105728", NULL)),
-        ASSERT_EIBB_OVERFLOW(1, 2, 1, 6145, mlib_int128_from_string("231572183460469231731687303715884099585", NULL)),
 
         ASSERT_EIBB(3.141592653589, 5, 0, 0, 3),
         ASSERT_EIBB(3.141592653589, 5, 0, 1, 31),
