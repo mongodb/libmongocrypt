@@ -262,6 +262,10 @@ typedef struct {
     bool use_range_v1; // By default, use range v2.
 } DoubleTest;
 
+// Smallest and Largest integer that fits in a double before precision is lost
+#define DOUBLE_MIN_SAFE_INT -9007199254740992 // -2^53 
+#define DOUBLE_MAX_SAFE_INT 9007199254740992 // 2^53
+
 static void _test_RangeTest_Encode_Double(_mongocrypt_tester_t *tester) {
     DoubleTest tests[] = {/* Test cases copied from server Double_Bounds test ... begin */
                           // Larger numbers map to larger uint64
@@ -474,6 +478,25 @@ static void _test_RangeTest_Encode_Double(_mongocrypt_tester_t *tester) {
                            // Applying min/max/precision result in a domain needing >= 64 bits to represent.
                            // For range v2, expect an error.
                            .expectError = "Invalid upper bound for double precision."},
+                          /* Test max and min integer bounds for doubles */
+                          {.value = DOUBLE_MIN_SAFE_INT,
+                           .max = OPT_DOUBLE_C(DOUBLE_MAX_SAFE_INT),
+                           .min = OPT_DOUBLE_C(DOUBLE_MIN_SAFE_INT),
+                           .precision = OPT_U32_C(0),
+                           .expect = 0,
+                           .expectMax = OPT_U64_C(36028797018963967)},
+                          {.value = DOUBLE_MIN_SAFE_INT + 1,
+                           .max = OPT_DOUBLE_C(DOUBLE_MAX_SAFE_INT),
+                           .min = OPT_DOUBLE_C(DOUBLE_MIN_SAFE_INT),
+                           .precision = OPT_U32_C(0),
+                           .expect = 1,
+                           .expectMax = OPT_U64_C(36028797018963967)},
+                         {.value = DOUBLE_MAX_SAFE_INT,
+                           .max = OPT_DOUBLE_C(DOUBLE_MAX_SAFE_INT),
+                           .min = OPT_DOUBLE_C(DOUBLE_MIN_SAFE_INT),
+                           .precision = OPT_U32_C(0),
+                           .expect = 18014398509481984,
+                           .expectMax = OPT_U64_C(36028797018963967)},
                           /* Test cases copied from Double_Bounds_Precision ... end */
                           {.value = -1,
                            .min = OPT_DOUBLE_C(0),

@@ -366,8 +366,9 @@ bool mc_getTypeInfoDouble(mc_getTypeInfoDouble_args_t args,
     if (use_precision_mode) {
         // Take a number of xxxx.ppppp and truncate it xxxx.ppp if precision = 3.
         // We do not change the digits before the decimal place.
-        double v_prime = trunc(args.value * exp10Double(args.precision.value)) / exp10Double(args.precision.value);
-        int64_t v_prime2 = (int64_t)((v_prime - args.min.value) * exp10Double(args.precision.value));
+        int64_t v_prime = (int64_t)(trunc(args.value * exp10Double(args.precision.value)));
+        int64_t scaled_min = (int64_t)(args.min.value * exp10Double(args.precision.value));
+        int64_t v_prime2 = v_prime - scaled_min;
 
         BSON_ASSERT(v_prime2 < INT64_MAX && v_prime2 >= 0);
 
