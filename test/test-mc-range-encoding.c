@@ -434,14 +434,6 @@ static void _test_RangeTest_Encode_Double(_mongocrypt_tester_t *tester) {
                            // For range v2, expect an error.
                            .expectError = "The domain of double values specified by the min, max, and precision cannot "
                                           "be represented in fewer than 64 bits"},
-                          {.value = 1,
-                           .max = OPT_DOUBLE_C(2),
-                           .min = OPT_DOUBLE_C(1),
-                           .precision = OPT_U32_C(325),
-                           // Applying min/max/precision result in a domain needing >= 64 bits to represent.
-                           // For range v2, expect an error.
-                           .expectError = "The domain of double values specified by the min, max, and precision cannot "
-                                          "be represented in fewer than 64 bits"},
                           /* Test cases copied from Double_Bounds_Precision ... end */
                           {.value = -1,
                            .min = OPT_DOUBLE_C(0),
@@ -657,6 +649,12 @@ static void _test_RangeTest_Encode_Decimal128(_mongocrypt_tester_t *tester) {
                    OPT_NULLOPT,
                    OPT_NULLOPT,
                    "Infinity and Nan Decimal128 values are not supported."),
+
+        ERROR_CASE(MC_DEC128_C(1),
+                   OPT_MC_DEC128(MC_DEC128_C(0)),
+                   OPT_MC_DEC128(MC_DEC128_C(1)),
+                   OPT_U32((uint32_t)INT32_MAX + 1),
+                   "cannot be greater than"),
 
 /* Test cases copied from Decimal128_Bounds_Precision ... begin */
 #define ASSERT_EIBP(Value, Precision, Expect)                                                                          \
