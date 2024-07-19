@@ -391,7 +391,7 @@ bool mc_getTypeInfoDecimal128(mc_getTypeInfoDecimal128_args_t args,
         CLIENT_ERR("min, max, and precision must all be set or must all be unset");
         return false;
     }
-    
+
     if (args.precision.set && args.precision.value > INT32_MAX) {
         CLIENT_ERR("Precision cannot be greater than %d, got %u", INT32_MAX, args.precision.value);
         return false;
