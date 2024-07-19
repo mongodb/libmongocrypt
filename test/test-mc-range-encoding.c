@@ -263,8 +263,8 @@ typedef struct {
 } DoubleTest;
 
 // Smallest and Largest integer that fits in a double before precision is lost
-#define DOUBLE_MIN_SAFE_INT -9007199254740992 // -2^53 
-#define DOUBLE_MAX_SAFE_INT 9007199254740992 // 2^53
+#define DOUBLE_MIN_SAFE_INT -9007199254740992 // -2^53
+#define DOUBLE_MAX_SAFE_INT 9007199254740992  // 2^53
 
 static void _test_RangeTest_Encode_Double(_mongocrypt_tester_t *tester) {
     DoubleTest tests[] = {/* Test cases copied from server Double_Bounds test ... begin */
@@ -527,12 +527,84 @@ static void _test_RangeTest_Encode_Double(_mongocrypt_tester_t *tester) {
                            .precision = OPT_U32_C(0),
                            .expect = 9007199254740997,
                            .expectMax = OPT_U64_C(36028797018963967)},
-                         {.value = DOUBLE_MAX_SAFE_INT,
+                          {.value = 0,
+                           .max = OPT_DOUBLE_C(DOUBLE_MAX_SAFE_INT),
+                           .min = OPT_DOUBLE_C(DOUBLE_MIN_SAFE_INT),
+                           .precision = OPT_U32_C(0),
+                           .expect = 9007199254740992,
+                           .expectMax = OPT_U64_C(36028797018963967)},
+                          {.value = DOUBLE_MAX_SAFE_INT,
                            .max = OPT_DOUBLE_C(DOUBLE_MAX_SAFE_INT),
                            .min = OPT_DOUBLE_C(DOUBLE_MIN_SAFE_INT),
                            .precision = OPT_U32_C(0),
                            .expect = 18014398509481984,
                            .expectMax = OPT_U64_C(36028797018963967)},
+                          // 2^52
+                          // The expected values increase by 4503599627370496 * 2^(i-52) + j
+                          // i.e. the gaps between integers as the exponent increases since doubles lose precision as
+                          // the exponent increases
+                          {.value = 0,
+                           .max = OPT_DOUBLE_C(4503599627370496),
+                           .min = OPT_DOUBLE_C(-4503599627370496),
+                           .precision = OPT_U32_C(0),
+                           .expect = 4503599627370496,
+                           .expectMax = OPT_U64_C(18014398509481983)},
+                          // 2^53
+                          {.value = 1,
+                           .max = OPT_DOUBLE_C(9007199254740992),
+                           .min = OPT_DOUBLE_C(-9007199254740992),
+                           .precision = OPT_U32_C(0),
+                           .expect = 9007199254740993,
+                           .expectMax = OPT_U64_C(36028797018963967)},
+                          // 2^54
+                          {.value = 2,
+                           .max = OPT_DOUBLE_C(18014398509481984),
+                           .min = OPT_DOUBLE_C(-18014398509481984),
+                           .precision = OPT_U32_C(0),
+                           .expect = 18014398509481986,
+                           .expectMax = OPT_U64_C(72057594037927935)},
+                          // 2^55
+                          {.value = 3,
+                           .max = OPT_DOUBLE_C(36028797018963968),
+                           .min = OPT_DOUBLE_C(-36028797018963968),
+                           .precision = OPT_U32_C(0),
+                           .expect = 36028797018963971,
+                           .expectMax = OPT_U64_C(144115188075855871)},
+                          // 2^56
+                          {.value = 4,
+                           .max = OPT_DOUBLE_C(72057594037927936),
+                           .min = OPT_DOUBLE_C(-72057594037927936),
+                           .precision = OPT_U32_C(0),
+                           .expect = 72057594037927940,
+                           .expectMax = OPT_U64_C(288230376151711743)},
+                          // 2^57
+                          {.value = 1,
+                           .max = OPT_DOUBLE_C(144115188075855872),
+                           .min = OPT_DOUBLE_C(-144115188075855872),
+                           .precision = OPT_U32_C(0),
+                           .expect = 144115188075855873,
+                           .expectMax = OPT_U64_C(576460752303423487)},
+                          // 2^58
+                          {.value = 2,
+                           .max = OPT_DOUBLE_C(288230376151711744),
+                           .min = OPT_DOUBLE_C(-288230376151711744),
+                           .precision = OPT_U32_C(0),
+                           .expect = 288230376151711746,
+                           .expectMax = OPT_U64_C(1152921504606846975)},
+                          // 2^59
+                          {.value = 3,
+                           .max = OPT_DOUBLE_C(576460752303423488),
+                           .min = OPT_DOUBLE_C(-576460752303423488),
+                           .precision = OPT_U32_C(0),
+                           .expect = 576460752303423491,
+                           .expectMax = OPT_U64_C(2305843009213693951)},
+                          // 2^60
+                          {.value = 4,
+                           .max = OPT_DOUBLE_C(1152921504606846976),
+                           .min = OPT_DOUBLE_C(-1152921504606846976),
+                           .precision = OPT_U32_C(0),
+                           .expect = 1152921504606846980,
+                           .expectMax = OPT_U64_C(4611686018427387903)},
                           /* Test cases copied from Double_Bounds_Precision ... end */
                           {.value = -1,
                            .min = OPT_DOUBLE_C(0),
