@@ -44,13 +44,14 @@ typedef struct {
     mc_optional_int32_t min;
     mc_optional_int32_t max;
     size_t sparsity;
-    uint32_t trimFactor;
+    mc_optional_uint32_t trimFactor;
 } mc_getMincoverInt32_args_t;
 
 // mc_getMincoverInt32 implements the Mincover Generation algorithm described in
 // SERVER-68600 for int32_t.
 mc_mincover_t *mc_getMincoverInt32(mc_getMincoverInt32_args_t args,
-                                   mongocrypt_status_t *status) MONGOCRYPT_WARN_UNUSED_RESULT;
+                                   mongocrypt_status_t *status,
+                                   bool use_range_v2) MONGOCRYPT_WARN_UNUSED_RESULT;
 
 typedef struct {
     int64_t lowerBound;
@@ -60,13 +61,14 @@ typedef struct {
     mc_optional_int64_t min;
     mc_optional_int64_t max;
     size_t sparsity;
-    uint32_t trimFactor;
+    mc_optional_uint32_t trimFactor;
 } mc_getMincoverInt64_args_t;
 
 // mc_getMincoverInt64 implements the Mincover Generation algorithm described in
 // SERVER-68600 for int64_t.
 mc_mincover_t *mc_getMincoverInt64(mc_getMincoverInt64_args_t args,
-                                   mongocrypt_status_t *status) MONGOCRYPT_WARN_UNUSED_RESULT;
+                                   mongocrypt_status_t *status,
+                                   bool use_range_v2) MONGOCRYPT_WARN_UNUSED_RESULT;
 
 typedef struct {
     double lowerBound;
@@ -77,7 +79,7 @@ typedef struct {
     mc_optional_double_t min;
     mc_optional_double_t max;
     mc_optional_uint32_t precision;
-    uint32_t trimFactor;
+    mc_optional_uint32_t trimFactor;
 } mc_getMincoverDouble_args_t;
 
 // mc_getMincoverDouble implements the Mincover Generation algorithm described
@@ -95,7 +97,7 @@ typedef struct {
     size_t sparsity;
     mc_optional_dec128_t min, max;
     mc_optional_uint32_t precision;
-    uint32_t trimFactor;
+    mc_optional_uint32_t trimFactor;
 } mc_getMincoverDecimal128_args_t;
 
 // mc_getMincoverDecimal128 implements the Mincover Generation algorithm

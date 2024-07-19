@@ -119,10 +119,13 @@ bool mc_RangeOpts_parse(mc_RangeOpts_t *ro, const bson_t *in, bool use_range_v2,
     }
 
     // Do not error if min/max are not present. min/max are optional.
-    CHECK_HAS(sparsity);
     // Do not error if precision is not present. Precision is optional and only
     // applies to double/decimal128.
     // Do not error if trimFactor is not present. It is optional.
+
+    if (!has_sparsity && use_range_v2) {
+        ro->sparsity = mc_FLERangeSparsityDefault;
+    }
 
     // Expect precision only to be set for double or decimal128.
     if (has_precision) {
@@ -491,10 +494,7 @@ bool mc_RangeOpts_appendTrimFactor(const mc_RangeOpts_t *ro,
     BSON_ASSERT(status || true);
 
     if (!ro->trimFactor.set) {
-        if (!BSON_APPEND_INT32(out, fieldName, 0)) {
-            CLIENT_ERR_PREFIXED("failed to append BSON");
-            return false;
-        }
+        // A default `trimFactor` will be selected later with `trimFactorDefault`
         return true;
     }
     BSON_ASSERT(ro->trimFactor.value <= INT32_MAX);

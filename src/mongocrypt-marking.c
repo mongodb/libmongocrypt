@@ -902,15 +902,14 @@ get_edges(mc_FLE2RangeInsertSpec_t *insertSpec, size_t sparsity, mongocrypt_stat
 
     bson_type_t value_type = bson_iter_type(&insertSpec->v);
 
-    uint32_t trimFactor = insertSpec->trimFactor.set ? insertSpec->trimFactor.value : 0;
-
     if (value_type == BSON_TYPE_INT32) {
         return mc_getEdgesInt32((mc_getEdgesInt32_args_t){.value = bson_iter_int32(&insertSpec->v),
                                                           .min = OPT_I32(bson_iter_int32(&insertSpec->min)),
                                                           .max = OPT_I32(bson_iter_int32(&insertSpec->max)),
                                                           .sparsity = sparsity,
-                                                          .trimFactor = trimFactor},
-                                status);
+                                                          .trimFactor = insertSpec->trimFactor},
+                                status,
+                                use_range_v2);
     }
 
     else if (value_type == BSON_TYPE_INT64) {
@@ -918,8 +917,9 @@ get_edges(mc_FLE2RangeInsertSpec_t *insertSpec, size_t sparsity, mongocrypt_stat
                                                           .min = OPT_I64(bson_iter_int64(&insertSpec->min)),
                                                           .max = OPT_I64(bson_iter_int64(&insertSpec->max)),
                                                           .sparsity = sparsity,
-                                                          .trimFactor = trimFactor},
-                                status);
+                                                          .trimFactor = insertSpec->trimFactor},
+                                status,
+                                use_range_v2);
     }
 
     else if (value_type == BSON_TYPE_DATE_TIME) {
@@ -927,14 +927,15 @@ get_edges(mc_FLE2RangeInsertSpec_t *insertSpec, size_t sparsity, mongocrypt_stat
                                                           .min = OPT_I64(bson_iter_date_time(&insertSpec->min)),
                                                           .max = OPT_I64(bson_iter_date_time(&insertSpec->max)),
                                                           .sparsity = sparsity,
-                                                          .trimFactor = trimFactor},
-                                status);
+                                                          .trimFactor = insertSpec->trimFactor},
+                                status,
+                                use_range_v2);
     }
 
     else if (value_type == BSON_TYPE_DOUBLE) {
         mc_getEdgesDouble_args_t args = {.value = bson_iter_double(&insertSpec->v),
                                          .sparsity = sparsity,
-                                         .trimFactor = trimFactor};
+                                         .trimFactor = insertSpec->trimFactor};
         if (insertSpec->precision.set) {
             // If precision is set, pass min/max/precision to mc_getEdgesDouble.
             // Do not pass min/max if precision is not set. All three must be set
@@ -953,7 +954,7 @@ get_edges(mc_FLE2RangeInsertSpec_t *insertSpec, size_t sparsity, mongocrypt_stat
         mc_getEdgesDecimal128_args_t args = {
             .value = value,
             .sparsity = sparsity,
-            .trimFactor = trimFactor,
+            .trimFactor = insertSpec->trimFactor,
         };
         if (insertSpec->precision.set) {
             const mc_dec128 min = mc_dec128_from_bson_iter(&insertSpec->min);
@@ -1439,7 +1440,6 @@ mc_mincover_t *mc_get_mincover_from_FLE2RangeFindSpec(mc_FLE2RangeFindSpec_t *fi
         return NULL;
     }
 
-    uint32_t trimFactor = findSpec->edgesInfo.value.trimFactor.set ? findSpec->edgesInfo.value.trimFactor.value : 0;
     switch (bsonType) {
     case BSON_TYPE_INT32:
         BSON_ASSERT(bson_iter_type(&lowerBound) == BSON_TYPE_INT32);
@@ -1455,8 +1455,9 @@ mc_mincover_t *mc_get_mincover_from_FLE2RangeFindSpec(mc_FLE2RangeFindSpec_t *fi
                                          .min = OPT_I32(bson_iter_int32(&findSpec->edgesInfo.value.indexMin)),
                                          .max = OPT_I32(bson_iter_int32(&findSpec->edgesInfo.value.indexMax)),
                                          .sparsity = sparsity,
-                                         .trimFactor = trimFactor},
-            status);
+                                         .trimFactor = findSpec->edgesInfo.value.trimFactor},
+            status,
+            use_range_v2);
 
     case BSON_TYPE_INT64:
         BSON_ASSERT(bson_iter_type(&lowerBound) == BSON_TYPE_INT64);
@@ -1471,8 +1472,9 @@ mc_mincover_t *mc_get_mincover_from_FLE2RangeFindSpec(mc_FLE2RangeFindSpec_t *fi
                                          .min = OPT_I64(bson_iter_int64(&findSpec->edgesInfo.value.indexMin)),
                                          .max = OPT_I64(bson_iter_int64(&findSpec->edgesInfo.value.indexMax)),
                                          .sparsity = sparsity,
-                                         .trimFactor = trimFactor},
-            status);
+                                         .trimFactor = findSpec->edgesInfo.value.trimFactor},
+            status,
+            use_range_v2);
     case BSON_TYPE_DATE_TIME:
         BSON_ASSERT(bson_iter_type(&lowerBound) == BSON_TYPE_DATE_TIME);
         BSON_ASSERT(bson_iter_type(&upperBound) == BSON_TYPE_DATE_TIME);
@@ -1486,8 +1488,9 @@ mc_mincover_t *mc_get_mincover_from_FLE2RangeFindSpec(mc_FLE2RangeFindSpec_t *fi
                                          .min = OPT_I64(bson_iter_date_time(&findSpec->edgesInfo.value.indexMin)),
                                          .max = OPT_I64(bson_iter_date_time(&findSpec->edgesInfo.value.indexMax)),
                                          .sparsity = sparsity,
-                                         .trimFactor = trimFactor},
-            status);
+                                         .trimFactor = findSpec->edgesInfo.value.trimFactor},
+            status,
+            use_range_v2);
     case BSON_TYPE_DOUBLE: {
         BSON_ASSERT(bson_iter_type(&lowerBound) == BSON_TYPE_DOUBLE);
         BSON_ASSERT(bson_iter_type(&upperBound) == BSON_TYPE_DOUBLE);
@@ -1499,7 +1502,7 @@ mc_mincover_t *mc_get_mincover_from_FLE2RangeFindSpec(mc_FLE2RangeFindSpec_t *fi
                                             .upperBound = bson_iter_double(&upperBound),
                                             .includeUpperBound = includeUpperBound,
                                             .sparsity = sparsity,
-                                            .trimFactor = trimFactor};
+                                            .trimFactor = findSpec->edgesInfo.value.trimFactor};
         if (findSpec->edgesInfo.value.precision.set) {
             // If precision is set, pass min/max/precision to mc_getMincoverDouble.
             // Do not pass min/max if precision is not set. All three must be set
@@ -1517,14 +1520,12 @@ mc_mincover_t *mc_get_mincover_from_FLE2RangeFindSpec(mc_FLE2RangeFindSpec_t *fi
         BSON_ASSERT(bson_iter_type(&findSpec->edgesInfo.value.indexMin) == BSON_TYPE_DECIMAL128);
         BSON_ASSERT(bson_iter_type(&findSpec->edgesInfo.value.indexMax) == BSON_TYPE_DECIMAL128);
 
-        mc_getMincoverDecimal128_args_t args = {
-            .lowerBound = mc_dec128_from_bson_iter(&lowerBound),
-            .includeLowerBound = includeLowerBound,
-            .upperBound = mc_dec128_from_bson_iter(&upperBound),
-            .includeUpperBound = includeUpperBound,
-            .sparsity = sparsity,
-            .trimFactor = trimFactor,
-        };
+        mc_getMincoverDecimal128_args_t args = {.lowerBound = mc_dec128_from_bson_iter(&lowerBound),
+                                                .includeLowerBound = includeLowerBound,
+                                                .upperBound = mc_dec128_from_bson_iter(&upperBound),
+                                                .includeUpperBound = includeUpperBound,
+                                                .sparsity = sparsity,
+                                                .trimFactor = findSpec->edgesInfo.value.trimFactor};
         if (findSpec->edgesInfo.value.precision.set) {
             args.min = OPT_MC_DEC128(mc_dec128_from_bson_iter(&findSpec->edgesInfo.value.indexMin));
             args.max = OPT_MC_DEC128(mc_dec128_from_bson_iter(&findSpec->edgesInfo.value.indexMax));

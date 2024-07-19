@@ -99,8 +99,9 @@ static inline DECORATE_NAME(MinCoverGenerator)
                                            UINT_T rangeMax,
                                            UINT_T max,
                                            size_t sparsity,
-                                           uint32_t trimFactor,
-                                           mongocrypt_status_t *status) {
+                                           mc_optional_uint32_t opt_trimFactor,
+                                           mongocrypt_status_t *status,
+                                           bool use_range_v2) {
     BSON_ASSERT_PARAM(status);
 
     if (UINT_COMPARE(rangeMin, rangeMax) > 0) {
@@ -122,6 +123,7 @@ static inline DECORATE_NAME(MinCoverGenerator)
         return NULL;
     }
     size_t maxlen = (size_t)BITS - DECORATE_NAME(mc_count_leading_zeros)(max);
+    uint32_t trimFactor = trimFactorDefault(maxlen, opt_trimFactor, use_range_v2);
     if (trimFactor != 0 && trimFactor >= maxlen) {
         CLIENT_ERR("Trim factor must be less than the number of bits (%zu) used to represent an element of the domain",
                    maxlen);

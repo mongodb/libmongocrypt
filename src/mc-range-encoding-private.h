@@ -127,4 +127,7 @@ bool mc_getTypeInfoDecimal128(mc_getTypeInfoDecimal128_args_t args,
                               bool use_range_v2) MONGOCRYPT_WARN_UNUSED_RESULT;
 #endif // MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
 
+extern const int64_t mc_FLERangeSparsityDefault;
+
+uint32_t trimFactorDefault(size_t maxlen, mc_optional_uint32_t trimFactor, bool use_range_v2);
 #endif /* MC_RANGE_ENCODING_PRIVATE_H */
