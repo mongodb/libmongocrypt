@@ -223,9 +223,17 @@ bool mc_getTypeInfoDouble(mc_getTypeInfoDouble_args_t args,
                        args.value);
             return false;
         }
+    }
 
-        if (args.precision.set && args.precision.value > INT32_MAX) {
+    if (args.precision.set) {
+        if (args.precision.value > INT32_MAX) {
             CLIENT_ERR("Precision cannot be greater than %" PRId32 ", got %" PRIu32, INT32_MAX, args.precision.value);
+            return false;
+        }
+
+        double scaled = exp10Double(args.precision.value);
+        if (!mc_isfinite(scaled)) {
+            CLIENT_ERR("Precision is too large and cannot be used to calculate the scaled range bounds");
             return false;
         }
     }
@@ -392,9 +400,17 @@ bool mc_getTypeInfoDecimal128(mc_getTypeInfoDecimal128_args_t args,
         return false;
     }
 
-    if (args.precision.set && args.precision.value > INT32_MAX) {
-        CLIENT_ERR("Precision cannot be greater than %" PRId32 ", got %" PRIu32, INT32_MAX, args.precision.value);
-        return false;
+    if (args.precision.set) {
+        if (args.precision.value > INT32_MAX) {
+            CLIENT_ERR("Precision cannot be greater than %" PRId32 ", got %" PRIu32, INT32_MAX, args.precision.value);
+            return false;
+        }
+
+        mc_dec128 scaled = mc_dec128_scale(MC_DEC128(1), args.precision.value);
+        if (!mc_dec128_is_finite(scaled)) {
+            CLIENT_ERR("Precision is too large and cannot be used to calculate the scaled range bounds");
+            return false;
+        }
     }
 
     // We only accept normal numbers
