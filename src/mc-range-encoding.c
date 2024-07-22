@@ -228,16 +228,18 @@ bool mc_canUsePrecisionModeDouble(double min,
     }
 
     if (fabs(scaled_max) >= SCALED_DOUBLE_BOUNDS) {
-        CLIENT_ERR("Invalid upper bound for double precision. Absolute scaled value of max must be less than %g. max: %g",
-                   SCALED_DOUBLE_BOUNDS,
-                   max);
+        CLIENT_ERR(
+            "Invalid upper bound for double precision. Absolute scaled value of max must be less than %g. max: %g",
+            SCALED_DOUBLE_BOUNDS,
+            max);
         return false;
     }
 
     if (fabs(scaled_min) >= SCALED_DOUBLE_BOUNDS) {
-        CLIENT_ERR("Invalid lower bound for double precision. Absolute scaled value of min must be less than %g. min: %g",
-                   SCALED_DOUBLE_BOUNDS,
-                   min);
+        CLIENT_ERR(
+            "Invalid lower bound for double precision. Absolute scaled value of min must be less than %g. min: %g",
+            SCALED_DOUBLE_BOUNDS,
+            min);
         return false;
     }
 

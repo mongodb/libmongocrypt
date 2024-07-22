@@ -814,9 +814,11 @@ static void _test_RangeTest_Encode_Decimal128(_mongocrypt_tester_t *tester) {
 #undef ASSERT_EIBP
 
 #define ASSERT_EIBB(Val, Max, Min, Precision, Expect)                                                                  \
-    (Decimal128Test) {                                                                                                 \
-        .value = mc_dec128_from_string(#Val), .min = OPT_MC_DEC128(mc_dec128_from_string(#Min)),                       \
-        .max = OPT_MC_DEC128(mc_dec128_from_string(#Max)), .precision = OPT_U32(Precision),                            \
+    (Decimal128Test){                                                                                                  \
+        .value = mc_dec128_from_string(#Val),                                                                          \
+        .min = OPT_MC_DEC128(mc_dec128_from_string(#Min)),                                                             \
+        .max = OPT_MC_DEC128(mc_dec128_from_string(#Max)),                                                             \
+        .precision = OPT_U32(Precision),                                                                               \
         .expect = MLIB_INT128_CAST(Expect),                                                                            \
     }
 
