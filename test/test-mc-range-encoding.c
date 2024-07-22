@@ -20,6 +20,7 @@
 
 #include <float.h> // DBL_MAX
 #include <math.h>  // INFINITY, NAN
+#include <stdint.h>
 
 typedef struct {
     mc_getTypeInfo32_args_t args;
@@ -435,7 +436,20 @@ static void _test_RangeTest_Encode_Double(_mongocrypt_tester_t *tester) {
                            .min = OPT_DOUBLE_C(0),
                            .max = OPT_DOUBLE_C(201),
                            .precision = OPT_U32_C(1),
-                           .expectError = "less than or equal to the maximum value"}};
+                           .expectError = "less than or equal to the maximum value"},
+                          {// Expect error due to precision exceeding INT32_MAX.
+                           .value = 1,
+                           .min = OPT_DOUBLE_C(1),
+                           .max = OPT_DOUBLE_C(2),
+                           .precision = OPT_U32_C((uint32_t)INT32_MAX + 1),
+                           .expectError = "Precision cannot be greater than 2147483647"},
+                          {// Expect error due to precision exceeding max finite double.
+                           // The largest double value is 1.7976931348623157x10^308. 10^309 results in infinity.
+                           .value = 1,
+                           .min = OPT_DOUBLE_C(0),
+                           .max = OPT_DOUBLE_C(1),
+                           .precision = OPT_U32_C(309),
+                           .expectError = "Precision is too large"}};
 
     for (size_t i = 0; i < sizeof(tests) / sizeof(tests[0]); i++) {
         DoubleTest *test = tests + i;
@@ -767,7 +781,18 @@ static void _test_RangeTest_Encode_Decimal128(_mongocrypt_tester_t *tester) {
 #undef ASSERT_EIBB_OVERFLOW
 
         /* Test cases copied from Decimal128_Bounds_Precision ... end */
-    };
+
+        {// Expect error due to precision exceeding INT32_MAX.
+         .min = OPT_MC_DEC128(MC_DEC128_C(1)),
+         .max = OPT_MC_DEC128(MC_DEC128_C(2)),
+         .precision = OPT_U32((uint32_t)INT32_MAX + 1),
+         .expectError = "Precision cannot be greater than 2147483647"},
+        {// Expect error due to precision exceeding max finite Decimal128.
+         // The largest decimal128 value is 9.99999...x10^6144. 10^6145 results in infinity.
+         .min = OPT_MC_DEC128(MC_DEC128_C(0)),
+         .max = OPT_MC_DEC128(MC_DEC128_C(1)),
+         .precision = OPT_U32(6145),
+         .expectError = "Precision is too large"}};
 
     for (size_t i = 0; i < sizeof(tests) / sizeof(tests[0]); i++) {
         Decimal128Test *test = tests + i;
