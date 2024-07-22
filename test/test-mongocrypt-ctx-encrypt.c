@@ -5148,6 +5148,11 @@ typedef struct {
 } autoencryption_test;
 
 static void autoencryption_test_run(autoencryption_test *aet) {
+    if (!_aes_ctr_is_supported_by_os) {
+        printf("Common Crypto with no CTR support detected. Skipping.");
+        return;
+    }
+
     printf("  auto_encryption test: '%s' ... begin\n", aet->desc);
 
     // Reset global counter for the `payloadId` to produce deterministic payloads.
@@ -5221,6 +5226,11 @@ static void autoencryption_test_run(autoencryption_test *aet) {
 }
 
 static void _test_no_trimFactor(_mongocrypt_tester_t *tester) {
+    if (!_aes_ctr_is_supported_by_os) {
+        printf("Common Crypto with no CTR support detected. Skipping.");
+        return;
+    }
+
     mongocrypt_binary_t *key123 = TEST_FILE("./test/data/keys/12345678123498761234123456789012-local-document.json");
 
     // Test insert.
@@ -5426,8 +5436,56 @@ static void _test_range_sends_cryptoParams(_mongocrypt_tester_t *tester) {
         }
     }
 
-    // Test automatic insert.
-    // Test automatic find.
+    // Test automatic insert of int32.
+    {
+        autoencryption_test aet = {
+            .desc = "'range' sends crypto params for insert",
+            .rng_data = {.buf = {.data = rng_data->data, .len = rng_data->len}},
+            .cmd = TEST_FILE("./test/data/range-sends-cryptoParams/auto-insert-int32/cmd.json"),
+            .encrypted_field_map =
+                TEST_FILE("./test/data/range-sends-cryptoParams/auto-insert-int32/encrypted-field-map.json"),
+            .mongocryptd_reply =
+                TEST_FILE("./test/data/range-sends-cryptoParams/auto-insert-int32/mongocryptd-reply.json"),
+            .keys_to_feed = {key123},
+            .expect = TEST_FILE("./test/data/range-sends-cryptoParams/auto-insert-int32/encrypted-payload.json")};
+
+        autoencryption_test_run(&aet);
+
+        // Check the parameters are present in the final payload.
+        {
+            bson_t payload_bson;
+            lookup_payload_bson(aet.expect, "documents.0.encrypted", &payload_bson);
+            _assert_match_bson(
+                &payload_bson,
+                TMP_BSON(
+                    BSON_STR({"sp" : 2, "tf" : 6, "mn" : -2147483648, "mx" : 2147483647, "pn" : {"$exists" : false}})));
+        }
+    }
+
+    // Test automatic find of int32.
+    {
+        autoencryption_test aet = {
+            .desc = "'range' sends crypto params for find",
+            .cmd = TEST_FILE("./test/data/range-sends-cryptoParams/auto-find-int32/cmd.json"),
+            .encrypted_field_map =
+                TEST_FILE("./test/data/range-sends-cryptoParams/auto-find-int32/encrypted-field-map.json"),
+            .mongocryptd_reply =
+                TEST_FILE("./test/data/range-sends-cryptoParams/auto-find-int32/mongocryptd-reply.json"),
+            .keys_to_feed = {key123},
+            .expect = TEST_FILE("./test/data/range-sends-cryptoParams/auto-find-int32/encrypted-payload.json")};
+
+        autoencryption_test_run(&aet);
+
+        // Check the parameters are present in the final payload.
+        {
+            bson_t payload_bson;
+            lookup_payload_bson(aet.expect, "filter.$and.0.encrypted.$gte", &payload_bson);
+            _assert_match_bson(
+                &payload_bson,
+                TMP_BSON(
+                    BSON_STR({"sp" : 2, "tf" : 6, "mn" : -2147483648, "mx" : 2147483647, "pn" : {"$exists" : false}})));
+        }
+    }
 
     _mongocrypt_buffer_cleanup(&key123_id);
 }

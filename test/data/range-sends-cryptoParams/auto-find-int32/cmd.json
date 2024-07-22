@@ -1,0 +1,8 @@
+{
+    "find": "test",
+    "filter": {
+        "encrypted": {
+            "$numberInt": "123456"
+        }
+    }
+}
