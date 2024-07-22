@@ -230,17 +230,20 @@ static void _test_canUsePrecisionModeDouble(_mongocrypt_tester_t *tester) {
 
     CAN_USE_PRECISION_MODE(-1000000000.0, 9223372036844775424.0, 0, false, 64);
 
-    CAN_USE_PRECISION_MODE_ERRORS(2.710000, 314.150000, 2, "Invalid upper bounds for double precision. Digits after");
-    CAN_USE_PRECISION_MODE_ERRORS(314.150000, 350.0, 2, "Invalid lower bounds for double precision. Digits after");
+    CAN_USE_PRECISION_MODE_ERRORS(2.710000,
+                                  314.150000,
+                                  2,
+                                  "Invalid upper bound for double precision. Fractional digits");
+    CAN_USE_PRECISION_MODE_ERRORS(314.150000, 350.0, 2, "Invalid lower bound for double precision. Fractional digits");
 
     CAN_USE_PRECISION_MODE_ERRORS((double)9007199254740992,
                                   INT_64_MAX_DOUBLE,
                                   0,
-                                  "Invalid upper bounds for double precision. abs(max) must");
+                                  "Invalid upper bound for double precision. Absolute scaled value");
     CAN_USE_PRECISION_MODE_ERRORS(-1 * INT_64_MAX_DOUBLE,
                                   -1 * (double)9007199254740992,
                                   0,
-                                  "Invalid lower bounds for double precision. abs(min) must");
+                                  "Invalid lower bound for double precision. Absolute scaled value");
     CAN_USE_PRECISION_MODE_ERRORS(-92233720368547.0, 92233720368547.0, 5, "Invalid value for precision.");
 
 #undef CAN_USE_PRECISION_MODE
@@ -374,14 +377,14 @@ static void _test_RangeTest_Encode_Double(_mongocrypt_tester_t *tester) {
                            .precision = OPT_U32_C(3),
                            // Applying min/max/precision result in a domain needing >= 64 bits to represent.
                            // For range v2, expect an error.
-                           .expectError = "Invalid upper bounds for double precision."},
+                           .expectError = "Invalid upper bound for double precision."},
                           {.value = 0,
                            .max = OPT_DOUBLE_C(DBL_MAX),
                            .min = OPT_DOUBLE_C(-DBL_MAX),
                            .precision = OPT_U32_C(3),
                            // Applying min/max/precision result in a domain needing >= 64 bits to represent.
                            // For range v2, expect an error.
-                           .expectError = "Invalid upper bounds for double precision."},
+                           .expectError = "Invalid upper bound for double precision."},
                           {.value = 3.141592653589,
                            .max = OPT_DOUBLE_C(5),
                            .min = OPT_DOUBLE_C(0),
@@ -424,14 +427,14 @@ static void _test_RangeTest_Encode_Double(_mongocrypt_tester_t *tester) {
                            .precision = OPT_U32_C(3),
                            // Applying min/max/precision result in a domain needing >= 64 bits to represent.
                            // For range v2, expect an error.
-                           .expectError = "Invalid upper bounds for double precision."},
+                           .expectError = "Invalid upper bound for double precision."},
                           {.value = 1E100,
                            .max = OPT_DOUBLE_C(DBL_MAX),
                            .min = OPT_DOUBLE_C(-DBL_MAX),
                            .precision = OPT_U32_C(3),
                            // Applying min/max/precision result in a domain needing >= 64 bits to represent.
                            // For range v2, expect an error.
-                           .expectError = "Invalid upper bounds for double precision."},
+                           .expectError = "Invalid upper bound for double precision."},
                           {.value = 1E9,
                            .max = OPT_DOUBLE_C(1E10),
                            .min = OPT_DOUBLE_C(0),
@@ -462,14 +465,14 @@ static void _test_RangeTest_Encode_Double(_mongocrypt_tester_t *tester) {
                            .precision = OPT_U32_C(35),
                            // Applying min/max/precision result in a domain needing >= 64 bits to represent.
                            // For range v2, expect an error.
-                           .expectError = "Invalid upper bounds for double precision."},
+                           .expectError = "Invalid upper bound for double precision."},
                           {.value = 1E-30,
                            .max = OPT_DOUBLE_C(10E-30),
                            .min = OPT_DOUBLE_C(1E-30),
                            .precision = OPT_U32_C(35),
                            // Applying min/max/precision result in a domain needing >= 64 bits to represent.
                            // For range v2, expect an error.
-                           .expectError = "Invalid upper bounds for double precision."},
+                           .expectError = "Invalid upper bound for double precision."},
                           /* Test cases copied from Double_Bounds_Precision ... end */
                           {.value = -1,
                            .min = OPT_DOUBLE_C(0),
@@ -577,20 +580,20 @@ static void _test_canUsePrecisionModeDecimal(_mongocrypt_tester_t *tester) {
     CAN_USE_PRECISION_MODE_ERRORS(mc_dec128_from_string("788545.12392843"),
                                   mc_dec128_from_string("4607431769000000.129834923"),
                                   4,
-                                  "Invalid upper bounds for Decimal128 precision. Digits after");
+                                  "Invalid upper bound for Decimal128 precision. Fractional digits");
     CAN_USE_PRECISION_MODE_ERRORS(mc_dec128_from_string("788545.12392843"),
                                   mc_dec128_from_string("7885451.2"),
                                   4,
-                                  "Invalid lower bounds for Decimal128 precision. Digits after");
+                                  "Invalid lower bound for Decimal128 precision. Fractional digits");
     CAN_USE_PRECISION_MODE_ERRORS(mc_dec128_from_string("324518553658426726783156020576256"),
                                   mc_dec128_from_string("340282366920938463463374607431768211455"),
                                   10,
-                                  "Invalid upper bounds for Decimal128 precision, absolute scaled value must be");
+                                  "Invalid upper bound for Decimal128 precision. Absolute scaled");
 
     CAN_USE_PRECISION_MODE_ERRORS(mc_dec128_from_string("-340282366920938463463374607431768211455"),
                                   mc_dec128_from_string("-3245185536584267267831560"),
                                   10,
-                                  "Invalid lower bounds for Decimal128 precision, absolute scaled value must be");
+                                  "Invalid lower bound for Decimal128 precision. Absolute scaled");
 
     CAN_USE_PRECISION_MODE_ERRORS(mc_dec128_from_string("-17014118346046923173168730371588.0000000"),
                                   mc_dec128_from_string("17014118346046923173168730371588.0000000"),
@@ -600,7 +603,7 @@ static void _test_canUsePrecisionModeDecimal(_mongocrypt_tester_t *tester) {
     CAN_USE_PRECISION_MODE_ERRORS(MC_DEC128(788545.000000),
                                   mc_dec128_from_string("340282366920938463463374607431769000000.000000"),
                                   0,
-                                  "Invalid upper bounds for Decimal128 precision, absolute scaled value must be");
+                                  "Invalid upper bound for Decimal128 precision. Absolute scaled");
 
 #undef CAN_USE_PRECISION_MODE
 #undef CAN_USE_PRECISION_MODE_ERRORS
@@ -850,24 +853,24 @@ static void _test_RangeTest_Encode_Decimal128(_mongocrypt_tester_t *tester) {
         .max = OPT_MC_DEC128(mc_dec128_from_string(#Max)), .precision = OPT_U32(Precision), .expectError = Error       \
     }
 
-        // ASSERT_EIBB(0, 1, -1, 3, 1000),
-        // ASSERT_EIBB(0, 1, -1E5, 3, 100000000),
+        ASSERT_EIBB(0, 1, -1, 3, 1000),
+        ASSERT_EIBB(0, 1, -1E5, 3, 100000000),
 
-        // ASSERT_EIBB(-1E-33, 1, -1E5, 3, 100000000),
+        ASSERT_EIBB(-1E-33, 1, -1E5, 3, 100000000),
 
         ASSERT_EIBB_ERROR(0,
                           MC_DEC128_LARGEST_POSITIVE,
                           MC_DEC128_LARGEST_NEGATIVE,
                           3,
                           mlib_int128_from_string("170141183460469231731687303715884105728", NULL),
-                          "Invalid upper bounds for Decimal128 precision. Max is infinite."),
+                          "Invalid upper bound for Decimal128 precision. Max is infinite."),
 
         ASSERT_EIBB_ERROR(0,
                           DBL_MAX,
                           DBL_MIN,
                           3,
                           mlib_int128_from_string("170141183460469231731687303715884105728", NULL),
-                          "Invalid upper bounds for Decimal128 precision. Max is infinite."),
+                          "Invalid upper bound for Decimal128 precision. Max is infinite."),
 
         ASSERT_EIBB(3.141592653589, 5, 0, 0, 3),
         ASSERT_EIBB(3.141592653589, 5, 0, 1, 31),
@@ -884,7 +887,7 @@ static void _test_RangeTest_Encode_Decimal128(_mongocrypt_tester_t *tester) {
                           DBL_MIN,
                           3,
                           mlib_int128_from_string("232572183460469231731687303715884099485", NULL),
-                          "Invalid upper bounds for Decimal128 precision. Max is infinite."),
+                          "Invalid upper bound for Decimal128 precision. Max is infinite."),
 
         ASSERT_EIBB(1E9, 1E10, 0, 3, 1000000000000),
         ASSERT_EIBB(1E9, 1E10, 0, 0, 1000000000),
@@ -896,10 +899,6 @@ static void _test_RangeTest_Encode_Decimal128(_mongocrypt_tester_t *tester) {
 
         // Test a range that requires > 64 bits.
         ASSERT_EIBB(5, 18446744073709551616, .1, 1, 49),
-    // // Test a range that requires > 64 bits.
-    // // min has more places after the decimal than precision.
-    // ASSERT_EIBB_ERROR(5, 18446744073709551616, .01, 1, 49, "Invalid lower bounds for Decimal128 precision. Digits
-    // after the decimal"),
 
 #undef ASSERT_EIBB
 #undef ASSERT_EIBB_OVERFLOW

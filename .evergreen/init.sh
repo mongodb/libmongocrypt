@@ -222,7 +222,6 @@ run_ctest() {
 
 run_python() {
     pys=(
-        /Users/shreyaskal/dev/bin/python
         py
         python3.14
         python3.13

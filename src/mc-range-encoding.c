@@ -163,20 +163,19 @@ bool mc_getTypeInfo64(mc_getTypeInfo64_args_t args, mc_OSTType_Int64 *out, mongo
 
 #define exp10Double(x) pow(10, x)
 #define SCALED_DOUBLE_BOUNDS 9223372036854775807.0 // 2^63 - 1
-#define UINT_64_MAX 18446744073709551615ull
 
 uint64_t subtract_int64_t(int64_t max, int64_t min) {
+    BSON_ASSERT(max > min);
     // If the values have the same sign, then simple subtraction
     // will work because we know max > min.
     if ((max > 0 && min > 0) || (max < 0 && min < 0)) {
         return (uint64_t)(max - min);
     }
 
-    // If they are opposite signs, then we can just do a small
-    // abs_val addition trick to perform subtraction, since it
-    // is just the sum of differences between the values and 0.
-    uint64_t u_return = (uint64_t)llabs(max);
-    u_return += (uint64_t)llabs(min);
+    // If they are opposite signs, then we can just invert
+    // min to be positive and return the sum.
+    uint64_t u_return = (uint64_t)max;
+    u_return += (uint64_t)(~min + 1);
     return u_return;
 }
 
@@ -204,8 +203,8 @@ bool mc_canUsePrecisionModeDouble(double min,
                                   mongocrypt_status_t *status) {
     BSON_ASSERT_PARAM(maxBitsOut);
 
-    if (min > max) {
-        CLIENT_ERR("Invalid bounds for double range precision, max must be less than min. min: %g, max: %g", min, max);
+    if (min >= max) {
+        CLIENT_ERR("Invalid bounds for double range precision, min must be less than max. min: %g, max: %g", min, max);
         return false;
     }
 
@@ -215,36 +214,38 @@ bool mc_canUsePrecisionModeDouble(double min,
     const double scaled_min = min * scaled_prc;
 
     if (scaled_max != trunc(scaled_max)) {
-        CLIENT_ERR("Invalid upper bounds for double precision. Digits after the decimal must be less than specified "
+        CLIENT_ERR("Invalid upper bound for double precision. Fractional digits must be less than the specified "
                    "precision value. max: %g",
                    max);
         return false;
     }
 
     if (scaled_min != trunc(scaled_min)) {
-        CLIENT_ERR("Invalid lower bounds for double precision. Digits after the decimal must be less than specified "
+        CLIENT_ERR("Invalid lower bound for double precision. Fractional digits must be less than the specified "
                    "precision value. min: %g",
                    min);
         return false;
     }
 
     if (fabs(scaled_max) >= SCALED_DOUBLE_BOUNDS) {
-        CLIENT_ERR("Invalid upper bounds for double precision. abs(max) must be less than 9223372036854775807. max: %g",
+        CLIENT_ERR("Invalid upper bound for double precision. Absolute scaled value of max must be less than %g. max: %g",
+                   SCALED_DOUBLE_BOUNDS,
                    max);
         return false;
     }
 
     if (fabs(scaled_min) >= SCALED_DOUBLE_BOUNDS) {
-        CLIENT_ERR("Invalid lower bounds for double precision. abs(min) must be less than 9223372036854775807. min: %g",
+        CLIENT_ERR("Invalid lower bound for double precision. Absolute scaled value of min must be less than %g. min: %g",
+                   SCALED_DOUBLE_BOUNDS,
                    min);
         return false;
     }
 
     const double t_1 = scaled_max - scaled_min;
-    const double t_4 = (double)UINT_64_MAX - t_1;
+    const double t_4 = (double)UINT64_MAX - t_1;
     const double t_5 = floor(log10(t_4)) - 1;
 
-    if ((double)precision >= t_5) {
+    if ((double)precision > t_5) {
         CLIENT_ERR("Invalid value for precision. precision: %" PRId32, precision);
         return false;
     }
@@ -253,15 +254,17 @@ bool mc_canUsePrecisionModeDouble(double min,
     const int64_t i_2 = (int64_t)(scaled_min);
 
     const uint64_t range = subtract_int64_t(i_1, i_2);
-    const uint64_t i_3 = range + (uint64_t)(scaled_prc);
 
-    if (i_3 <= 0) {
-        CLIENT_ERR("Invalid value for upper and lower bounds for double precision. Min must be less than max. min: %g, "
-                   "max: %g",
+    if (((uint64_t)scaled_prc) > UINT64_MAX - range) {
+        CLIENT_ERR("Invalid value for min, max, and precision. The calculated domain size is too large. min: %g, max: "
+                   "%g, precision: %" PRIu32,
                    min,
-                   max);
+                   max,
+                   precision);
         return false;
     }
+
+    const uint64_t i_3 = range + (uint64_t)(scaled_prc);
 
     if (!ceil_log2_double(i_3, maxBitsOut, status)) {
         return false;
@@ -486,12 +489,12 @@ bool mc_canUsePrecisionModeDecimal(mc_dec128 min,
     BSON_ASSERT_PARAM(maxBitsOut);
 
     if (!mc_dec128_is_finite(max)) {
-        CLIENT_ERR("Invalid upper bounds for Decimal128 precision. Max is infinite.");
+        CLIENT_ERR("Invalid upper bound for Decimal128 precision. Max is infinite.");
         return false;
     }
 
     if (!mc_dec128_is_finite(min)) {
-        CLIENT_ERR("Invalid lower bounds for Decimal128 precision. Min is infinite.");
+        CLIENT_ERR("Invalid lower bound for Decimal128 precision. Min is infinite.");
         return false;
     }
 
@@ -510,31 +513,33 @@ bool mc_canUsePrecisionModeDecimal(mc_dec128 min,
     mc_dec128 scaled_min_trunc = mc_dec128_round_integral_ex(scaled_min, MC_DEC128_ROUND_TOWARD_ZERO, NULL);
 
     if (mc_dec128_not_equal(scaled_max, scaled_max_trunc)) {
-        CLIENT_ERR("Invalid upper bounds for Decimal128 precision. Digits after the decimal must be less than "
-                   "specified precision value. max: %s, precision: %" PRIu32,
+        CLIENT_ERR("Invalid upper bound for Decimal128 precision. Fractional digits must be less than "
+                   "the specified precision value. max: %s, precision: %" PRIu32,
                    mc_dec128_to_string(max).str,
                    precision);
         return false;
     }
 
     if (mc_dec128_not_equal(scaled_min, scaled_min_trunc)) {
-        CLIENT_ERR("Invalid lower bounds for Decimal128 precision. Digits after the decimal must be less than "
-                   "specified precision value. min: %s, precision: %" PRIu32,
+        CLIENT_ERR("Invalid lower bound for Decimal128 precision. Fractional digits must be less than "
+                   "the specified precision value. min: %s, precision: %" PRIu32,
                    mc_dec128_to_string(min).str,
                    precision);
         return false;
     }
 
     if (mc_dec128_greater(mc_dec128_abs(scaled_max), SIGNED_INT_128_MAX_DECIMAL)) {
-        CLIENT_ERR("Invalid upper bounds for Decimal128 precision, absolute scaled value must be less than "
-                   "170141183460469231731687303715884105727. max: %s",
+        CLIENT_ERR("Invalid upper bound for Decimal128 precision. Absolute scaled value must be less than "
+                   "%s. max: %s",
+                   mc_dec128_to_string(SIGNED_INT_128_MAX_DECIMAL).str,
                    mc_dec128_to_string(max).str);
         return false;
     }
 
     if (mc_dec128_greater(mc_dec128_abs(scaled_min), SIGNED_INT_128_MAX_DECIMAL)) {
-        CLIENT_ERR("Invalid lower bounds for Decimal128 precision, absolute scaled value must be less than "
-                   "170141183460469231731687303715884105727. min: %s",
+        CLIENT_ERR("Invalid lower bound for Decimal128 precision. Absolute scaled value must be less than "
+                   "%s. min: %s",
+                   mc_dec128_to_string(SIGNED_INT_128_MAX_DECIMAL).str,
                    mc_dec128_to_string(min).str);
         return false;
     }
