@@ -225,7 +225,7 @@ bool mc_getTypeInfoDouble(mc_getTypeInfoDouble_args_t args,
         }
 
         if (args.precision.set && args.precision.value > INT32_MAX) {
-            CLIENT_ERR("Precision cannot be greater than %d, got %u", INT32_MAX, args.precision.value);
+            CLIENT_ERR("Precision cannot be greater than %" PRId32 ", got %" PRIu32, INT32_MAX, args.precision.value);
             return false;
         }
     }
@@ -393,7 +393,7 @@ bool mc_getTypeInfoDecimal128(mc_getTypeInfoDecimal128_args_t args,
     }
 
     if (args.precision.set && args.precision.value > INT32_MAX) {
-        CLIENT_ERR("Precision cannot be greater than %d, got %u", INT32_MAX, args.precision.value);
+        CLIENT_ERR("Precision cannot be greater than %" PRId32 ", got %" PRIu32, INT32_MAX, args.precision.value);
         return false;
     }
 
