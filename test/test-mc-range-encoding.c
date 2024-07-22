@@ -792,8 +792,7 @@ static void _test_RangeTest_Encode_Decimal128(_mongocrypt_tester_t *tester) {
          .min = OPT_MC_DEC128(MC_DEC128_C(0)),
          .max = OPT_MC_DEC128(MC_DEC128_C(1)),
          .precision = OPT_U32(6145),
-         .expectError = "Precision is too large"}
-    };
+         .expectError = "Precision is too large"}};
 
     for (size_t i = 0; i < sizeof(tests) / sizeof(tests[0]); i++) {
         Decimal128Test *test = tests + i;
