@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "stdint.h"
 #include "test-mongocrypt.h"
 
 #include "mc-check-conversions-private.h"
@@ -21,6 +20,7 @@
 
 #include <float.h> // DBL_MAX
 #include <math.h>  // INFINITY, NAN
+#include <stdint.h>
 
 typedef struct {
     mc_getTypeInfo32_args_t args;
