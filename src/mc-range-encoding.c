@@ -272,7 +272,10 @@ bool mc_canUsePrecisionModeDouble(double min,
         return false;
     }
 
-    if (*maxBitsOut >= 64) {
+    // Integers between -2^53 and 2^53 can be exactly represented. Outside this range, doubles lose precision by a
+    // multiple of 2^(n-52) where n = #bits. We disallow users from using precision mode when the bounds exceed 2^53 to
+    // prevent the users from being surprised by how floating point math works.
+    if (*maxBitsOut >= 53) {
         return false;
     }
 
@@ -351,7 +354,7 @@ bool mc_getTypeInfoDouble(mc_getTypeInfoDouble_args_t args,
             }
 
             CLIENT_ERR("The domain of double values specified by the min, max, and precision cannot be represented in "
-                       "fewer than 64 bits. min: %g, max: %g, precision: %" PRIu32,
+                       "fewer than 53 bits. min: %g, max: %g, precision: %" PRIu32,
                        args.min.value,
                        args.max.value,
                        args.precision.value);
