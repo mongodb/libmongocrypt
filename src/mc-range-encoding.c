@@ -548,8 +548,8 @@ bool mc_canUsePrecisionModeDecimal(mc_dec128 min,
 
     mc_dec128 t_1 = mc_dec128_sub(scaled_max, scaled_min);
     mc_dec128 t_4 = mc_dec128_sub(UNSIGNED_INT_128_MAX_DECIMAL, t_1);
-    mc_dec128 t_5 =
-        mc_dec128_sub(mc_dec128_round_integral_ex(mc_dec128_log10(t_4), MC_DEC128_ROUND_TOWARD_ZERO, NULL), MC_DEC128(1));
+    mc_dec128 t_5 = mc_dec128_sub(mc_dec128_round_integral_ex(mc_dec128_log10(t_4), MC_DEC128_ROUND_TOWARD_ZERO, NULL),
+                                  MC_DEC128(1));
 
     if (mc_dec128_less(t_5, MC_DEC128(precision))) {
         CLIENT_ERR("Invalid value for precision. precision: %" PRIu32, precision);
