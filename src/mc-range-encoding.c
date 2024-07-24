@@ -442,11 +442,13 @@ static mlib_int128 dec128_to_uint128(mc_dec128 dec) {
     return ret;
 }
 
-#define SIGNED_INT_128_MAX_DECIMAL mc_dec128_from_string("170141183460469231731687303715884105727")
-#define UNSIGNED_INT_128_MAX_DECIMAL mc_dec128_from_string("340282366920938463463374607431768211455")
+// (2^127 - 1) = the maximum signed 128-bit integer value, as a decimal128
+#define INT_128_MAX_AS_DECIMAL mc_dec128_from_string("170141183460469231731687303715884105727")
+// (2^128 - 1) = the max unsigned 128-bit integer value, as a decimal128
+#define UINT_128_MAX_AS_DECIMAL mc_dec128_from_string("340282366920938463463374607431768211455")
 
 static mlib_int128 dec128_to_int128(mc_dec128 dec) {
-    BSON_ASSERT(mc_dec128_less(dec, SIGNED_INT_128_MAX_DECIMAL));
+    BSON_ASSERT(mc_dec128_less(dec, INT_128_MAX_AS_DECIMAL));
 
     bool negative = false;
 
@@ -530,24 +532,26 @@ bool mc_canUsePrecisionModeDecimal(mc_dec128 min,
         return false;
     }
 
-    if (mc_dec128_greater(mc_dec128_abs(scaled_max), SIGNED_INT_128_MAX_DECIMAL)) {
+    if (mc_dec128_greater(mc_dec128_abs(scaled_max), INT_128_MAX_AS_DECIMAL)) {
         CLIENT_ERR("Invalid upper bound for Decimal128 precision. Absolute scaled value must be less than "
                    "or equal to %s. max: %s",
-                   mc_dec128_to_string(SIGNED_INT_128_MAX_DECIMAL).str,
+                   mc_dec128_to_string(INT_128_MAX_AS_DECIMAL).str,
                    mc_dec128_to_string(max).str);
         return false;
     }
 
-    if (mc_dec128_greater(mc_dec128_abs(scaled_min), SIGNED_INT_128_MAX_DECIMAL)) {
+    if (mc_dec128_greater(mc_dec128_abs(scaled_min), INT_128_MAX_AS_DECIMAL)) {
         CLIENT_ERR("Invalid lower bound for Decimal128 precision. Absolute scaled value must be less than "
                    "or equal to %s. min: %s",
-                   mc_dec128_to_string(SIGNED_INT_128_MAX_DECIMAL).str,
+                   mc_dec128_to_string(INT_128_MAX_AS_DECIMAL).str,
                    mc_dec128_to_string(min).str);
         return false;
     }
 
     mc_dec128 t_1 = mc_dec128_sub(scaled_max, scaled_min);
-    mc_dec128 t_4 = mc_dec128_sub(UNSIGNED_INT_128_MAX_DECIMAL, t_1);
+    mc_dec128 t_4 = mc_dec128_sub(UINT_128_MAX_AS_DECIMAL, t_1);
+
+    // t_5 = floor(log10(t_4)) - 1;
     mc_dec128 t_5 = mc_dec128_sub(mc_dec128_round_integral_ex(mc_dec128_log10(t_4), MC_DEC128_ROUND_TOWARD_ZERO, NULL),
                                   MC_DEC128(1));
 
