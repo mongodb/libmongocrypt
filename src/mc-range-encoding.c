@@ -532,7 +532,7 @@ bool mc_canUsePrecisionModeDecimal(mc_dec128 min,
 
     if (mc_dec128_greater(mc_dec128_abs(scaled_max), SIGNED_INT_128_MAX_DECIMAL)) {
         CLIENT_ERR("Invalid upper bound for Decimal128 precision. Absolute scaled value must be less than "
-                   "%s. max: %s",
+                   "or equal to %s. max: %s",
                    mc_dec128_to_string(SIGNED_INT_128_MAX_DECIMAL).str,
                    mc_dec128_to_string(max).str);
         return false;
@@ -540,7 +540,7 @@ bool mc_canUsePrecisionModeDecimal(mc_dec128 min,
 
     if (mc_dec128_greater(mc_dec128_abs(scaled_min), SIGNED_INT_128_MAX_DECIMAL)) {
         CLIENT_ERR("Invalid lower bound for Decimal128 precision. Absolute scaled value must be less than "
-                   "%s. min: %s",
+                   "or equal to %s. min: %s",
                    mc_dec128_to_string(SIGNED_INT_128_MAX_DECIMAL).str,
                    mc_dec128_to_string(min).str);
         return false;
@@ -549,7 +549,7 @@ bool mc_canUsePrecisionModeDecimal(mc_dec128 min,
     mc_dec128 t_1 = mc_dec128_sub(scaled_max, scaled_min);
     mc_dec128 t_4 = mc_dec128_sub(UNSIGNED_INT_128_MAX_DECIMAL, t_1);
     mc_dec128 t_5 =
-        mc_dec128_sub(mc_dec128_round_integral_ex(mc_dec128_log10(t_4), MC_DEC128_ROUND_UPWARD, NULL), MC_DEC128(1));
+        mc_dec128_sub(mc_dec128_round_integral_ex(mc_dec128_log10(t_4), MC_DEC128_ROUND_TOWARD_ZERO, NULL), MC_DEC128(1));
 
     if (mc_dec128_less(t_5, MC_DEC128(precision))) {
         CLIENT_ERR("Invalid value for precision. precision: %" PRIu32, precision);
@@ -564,7 +564,7 @@ bool mc_canUsePrecisionModeDecimal(mc_dec128 min,
     // representation will yield the actual range result.
     mlib_int128 range128 = mlib_int128_sub(i_1, i_2);
 
-    if (precision > 255) {
+    if (precision > UINT8_MAX) {
         CLIENT_ERR("Invalid value for precision. Must be less than 255. precision: %" PRIu32, precision);
         return false;
     }
