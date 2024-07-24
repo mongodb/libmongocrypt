@@ -224,12 +224,15 @@ static void _test_canUsePrecisionModeDouble(_mongocrypt_tester_t *tester) {
     CAN_USE_PRECISION_MODE(0.0, 16.0, 0, true, 5);
     // 2^53 + 1 is where double starts to lose precision, so we need to ensure that we get the
     // correct value for max_bits out.
-    CAN_USE_PRECISION_MODE(1.0, 9007199254740992.0, 0, true, 53);
-    CAN_USE_PRECISION_MODE(0.0, 9007199254740992.0, 0, true, 54);
+    CAN_USE_PRECISION_MODE_ERRORS(1.0, 9007199254740992.0, 0, "Invalid upper bounds for double precision. abs");
+    CAN_USE_PRECISION_MODE_ERRORS(0.0, 9007199254740992.0, 0, "Invalid upper bounds for double precision. abs");
 
     CAN_USE_PRECISION_MODE(2.718281, 314.159265, 6, true, 29);
 
-    CAN_USE_PRECISION_MODE(-1000000000.0, 9223372036844775424.0, 0, false, 64);
+    CAN_USE_PRECISION_MODE_ERRORS(-1000000000.0,
+                                  9223372036844775424.0,
+                                  0,
+                                  "Invalid upper bounds for double precision. abs");
 
     CAN_USE_PRECISION_MODE_ERRORS(2.710000,
                                   314.150000,
@@ -418,7 +421,7 @@ static void _test_RangeTest_Encode_Double(_mongocrypt_tester_t *tester) {
                            .max = OPT_DOUBLE_C(5),
                            .min = OPT_DOUBLE_C(0),
                            .precision = OPT_U32_C(16),
-                           .expectError = "The domain of double values specified by the min"},
+                           .expectError = "Invalid upper bounds for double precision"},
                           {.value = -5,
                            .max = OPT_DOUBLE_C(-1),
                            .min = OPT_DOUBLE_C(-10),
@@ -485,13 +488,24 @@ static void _test_RangeTest_Encode_Double(_mongocrypt_tester_t *tester) {
                            .expect = 0,
                            // Applying min/max/precision result in a domain needing >= 53 bits to represent.
                            // For range v2, expect an error.
-                           .expectError = "The domain of double values specified by the min"},
+                           .expectError = "Invalid upper bounds for double precision. abs"},
                           {.value = 900719925474099.6,
                            .max = OPT_DOUBLE_C(900719925474100.0),
                            .min = OPT_DOUBLE_C(900719925474099.0),
                            .precision = OPT_U32_C(0),
                            .expect = 0,
                            .expectMax = OPT_U64_C(1)},
+                          // Domain size is small but min/max * 10^precision loses precision.
+                          {.value = 900719925474099.6,
+                           .max = OPT_DOUBLE_C(900719925474100.0),
+                           .min = OPT_DOUBLE_C(900719925474099.0),
+                           .precision = OPT_U32_C(1),
+                           .expectError = "Invalid upper bounds for double precision. abs"},
+                          {.value = -900719925474099.6,
+                           .max = OPT_DOUBLE_C(-900719925474099.0),
+                           .min = OPT_DOUBLE_C(-900719925474100.0),
+                           .precision = OPT_U32_C(1),
+                           .expectError = "Invalid lower bounds for double precision. abs"},
                           // 2^52
                           // The expected values increase by 4503599627370496 * 2^(i-52) + j
                           // i.e. the gaps between integers as the exponent increases since doubles lose precision as

@@ -162,7 +162,7 @@ bool mc_getTypeInfo64(mc_getTypeInfo64_args_t args, mc_OSTType_Int64 *out, mongo
 }
 
 #define exp10Double(x) pow(10, x)
-#define SCALED_DOUBLE_BOUNDS 9223372036854775807.0 // 2^63 - 1
+#define SCALED_DOUBLE_BOUNDS 9007199254740992.0 // 2^53
 
 uint64_t subtract_int64_t(int64_t max, int64_t min) {
     BSON_ASSERT(max > min);
