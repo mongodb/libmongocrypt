@@ -245,10 +245,13 @@ static void _test_canUsePrecisionModeDouble(_mongocrypt_tester_t *tester) {
                                   0,
                                   "Invalid upper bound for double precision. Absolute scaled value");
     CAN_USE_PRECISION_MODE_ERRORS(-1 * INT_64_MAX_DOUBLE,
-                                 1.0,
+                                  1.0,
                                   0,
                                   "Invalid lower bound for double precision. Absolute scaled value");
-    CAN_USE_PRECISION_MODE_ERRORS(-92233720368547.0, 92233720368547.0, 5, "Invalid upper bound for double precision. Absolute");
+    CAN_USE_PRECISION_MODE_ERRORS(-92233720368547.0,
+                                  92233720368547.0,
+                                  5,
+                                  "Invalid upper bound for double precision. Absolute");
 
 #undef CAN_USE_PRECISION_MODE
 #undef CAN_USE_PRECISION_MODE_ERRORS
