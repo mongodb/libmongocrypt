@@ -42,7 +42,7 @@ TEST_CRYPT_SHARED=1 DYLD_FALLBACK_LIBRARY_PATH=$CRYPT_SHARED_DIR/lib/:${DYLD_FAL
     LD_LIBRARY_PATH=$CRYPT_SHARED_DIR/lib:${LD_LIBRARY_PATH-} \
     PATH=$CRYPT_SHARED_DIR/bin:$PATH \
     AUTH=auth SSL=ssl \
-    .evergreen/run-tests.sh "test/test_encryption.py"
+    .evergreen/run-tests.sh -m encryption
 
 popd
 deactivate
