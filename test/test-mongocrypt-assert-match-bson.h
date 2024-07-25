@@ -26,7 +26,7 @@ bool _check_match_bson(const bson_t *doc, const bson_t *pattern, char *errmsg, s
     if (1) {                                                                                                           \
         char errmsg[1024] = "";                                                                                        \
         if (!_check_match_bson(doc, pattern, errmsg, sizeof(errmsg))) {                                                \
-            char *doc_str = doc ? bson_as_json(doc, NULL) : NULL;                                                      \
+            char *doc_str = bson_as_json(doc, NULL);                                                                   \
             char *pattern_str = bson_as_json(pattern, NULL);                                                           \
                                                                                                                        \
             TEST_ERROR("ASSERT_MATCH failed with document:\n\n"                                                        \
