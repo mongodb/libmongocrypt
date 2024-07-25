@@ -1388,6 +1388,8 @@ bool _mongocrypt_random_uint64(_mongocrypt_crypto_t *crypto,
         }
 
         memcpy(&rand_u64, rand_u64_buf.data, rand_u64_buf.len);
+        // Use little-endian to enable deterministic tests on big-endian machines.
+        rand_u64 = BSON_UINT64_FROM_LE(rand_u64);
 
         if (rand_u64 >= min) {
             break;

@@ -2469,17 +2469,10 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
  * Second 16 bytes are IV for 'p' field in FLE2InsertUpdatePayload
  * Third 16 bytes are IV for 'v' field in FLE2InsertUpdatePayload
  */
-#ifdef MONGOCRYPT_LITTLE_ENDIAN
 #define RNG_DATA                                                                                                       \
     "\x01\x00\x00\x00\x00\x00\x00\x00"                                                                                 \
     "\xc7\x43\xd6\x75\x76\x9e\xa7\x88\xd5\xe5\xc4\x40\xdb\x24\x0d\xf9"                                                 \
     "\x4c\xd9\x64\x10\x43\x81\xe6\x61\xfa\x1f\xa0\x5c\x49\x8e\xad\x21"
-#else
-#define RNG_DATA                                                                                                       \
-    "\x00\x00\x00\x00\x00\x00\x00\x01"                                                                                 \
-    "\xc7\x43\xd6\x75\x76\x9e\xa7\x88\xd5\xe5\xc4\x40\xdb\x24\x0d\xf9"                                                 \
-    "\x4c\xd9\x64\x10\x43\x81\xe6\x61\xfa\x1f\xa0\x5c\x49\x8e\xad\x21"
-#endif /* MONGOCRYPT_LITTLE_ENDIAN */
         uint8_t rng_data[] = RNG_DATA;
         tc.rng_data = (_test_rng_data_source){.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
 #undef RNG_DATA
@@ -2502,17 +2495,10 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
  * Second 16 bytes are IV for 'p' field in FLE2InsertUpdatePayload
  * Third 16 bytes are IV for 'v' field in FLE2InsertUpdatePayload
  */
-#ifdef MONGOCRYPT_LITTLE_ENDIAN
 #define RNG_DATA                                                                                                       \
     "\x01\x00\x00\x00\x00\x00\x00\x00"                                                                                 \
     "\xc7\x43\xd6\x75\x76\x9e\xa7\x88\xd5\xe5\xc4\x40\xdb\x24\x0d\xf9"                                                 \
     "\x4c\xd9\x64\x10\x43\x81\xe6\x61\xfa\x1f\xa0\x5c\x49\x8e\xad\x21"
-#else
-#define RNG_DATA                                                                                                       \
-    "\x00\x00\x00\x00\x00\x00\x00\x01"                                                                                 \
-    "\xc7\x43\xd6\x75\x76\x9e\xa7\x88\xd5\xe5\xc4\x40\xdb\x24\x0d\xf9"                                                 \
-    "\x4c\xd9\x64\x10\x43\x81\xe6\x61\xfa\x1f\xa0\x5c\x49\x8e\xad\x21"
-#endif /* MONGOCRYPT_LITTLE_ENDIAN */
         uint8_t rng_data[] = RNG_DATA;
         tc.rng_data = (_test_rng_data_source){.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
 #undef RNG_DATA
