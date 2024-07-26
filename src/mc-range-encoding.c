@@ -162,7 +162,7 @@ bool mc_getTypeInfo64(mc_getTypeInfo64_args_t args, mc_OSTType_Int64 *out, mongo
 }
 
 #define exp10Double(x) pow(10, x)
-#define SCALED_DOUBLE_BOUNDS 9223372036854775807.0 // 2^63 - 1
+#define SCALED_DOUBLE_BOUNDS 9007199254740992.0 // 2^53
 
 uint64_t subtract_int64_t(int64_t max, int64_t min) {
     BSON_ASSERT(max > min);
@@ -272,7 +272,10 @@ bool mc_canUsePrecisionModeDouble(double min,
         return false;
     }
 
-    if (*maxBitsOut >= 64) {
+    // Integers between -2^53 and 2^53 can be exactly represented. Outside this range, doubles lose precision by a
+    // multiple of 2^(n-52) where n = #bits. We disallow users from using precision mode when the bounds exceed 2^53 to
+    // prevent the users from being surprised by how floating point math works.
+    if (*maxBitsOut >= 53) {
         return false;
     }
 
@@ -351,7 +354,7 @@ bool mc_getTypeInfoDouble(mc_getTypeInfoDouble_args_t args,
             }
 
             CLIENT_ERR("The domain of double values specified by the min, max, and precision cannot be represented in "
-                       "fewer than 64 bits. min: %g, max: %g, precision: %" PRIu32,
+                       "fewer than 53 bits. min: %g, max: %g, precision: %" PRIu32,
                        args.min.value,
                        args.max.value,
                        args.precision.value);
@@ -366,8 +369,9 @@ bool mc_getTypeInfoDouble(mc_getTypeInfoDouble_args_t args,
     if (use_precision_mode) {
         // Take a number of xxxx.ppppp and truncate it xxxx.ppp if precision = 3.
         // We do not change the digits before the decimal place.
-        double v_prime = trunc(args.value * exp10Double(args.precision.value)) / exp10Double(args.precision.value);
-        int64_t v_prime2 = (int64_t)((v_prime - args.min.value) * exp10Double(args.precision.value));
+        int64_t v_prime = (int64_t)(trunc(args.value * exp10Double(args.precision.value)));
+        int64_t scaled_min = (int64_t)(args.min.value * exp10Double(args.precision.value));
+        int64_t v_prime2 = v_prime - scaled_min;
 
         BSON_ASSERT(v_prime2 < INT64_MAX && v_prime2 >= 0);
 
