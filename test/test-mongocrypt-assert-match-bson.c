@@ -888,22 +888,16 @@ const char *_mongoc_bson_type_to_str(bson_type_t t) {
     }
 }
 
-void _assert_match_bson(const bson_t *doc, const bson_t *pattern) {
+bool _check_match_bson(const bson_t *doc, const bson_t *pattern, char *errmsg, size_t errmsg_len) {
     // Set `retain_dots_in_keys` to interpret a pattern key "db.test" as a key, rather than a key path.
     match_ctx_t ctx = {.retain_dots_in_keys = true};
-    if (!match_bson_with_ctx(doc, pattern, &ctx)) {
-        char *doc_str = doc ? bson_as_json(doc, NULL) : NULL;
-        char *pattern_str = bson_as_json(pattern, NULL);
-
-        TEST_ERROR("ASSERT_MATCH failed with document:\n\n"
-                   "%s\n"
-                   "pattern:\n%s\n"
-                   "%s\n",
-                   doc_str ? doc_str : "{}",
-                   pattern_str,
-                   ctx.errmsg);
-
-        bson_free(doc_str);
-        bson_free(pattern_str);
+    bool matched = match_bson_with_ctx(doc, pattern, &ctx);
+    if (matched) {
+        bson_strncpy(errmsg, "", errmsg_len);
+    } else {
+        if (matched) {
+            bson_strncpy(errmsg, ctx.errmsg, errmsg_len);
+        }
     }
+    return matched;
 }
