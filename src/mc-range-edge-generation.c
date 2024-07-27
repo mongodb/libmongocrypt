@@ -27,7 +27,12 @@ struct _mc_edges_t {
     /* edges is an array of `char*` edge strings. */
     mc_array_t edges;
     char *leaf;
+    uint32_t usedTrimFactor; // The `trimFactor` that was used to produce these edges.
 };
+
+uint32_t mc_edges_get_used_trimFactor(const mc_edges_t *edges) {
+    return edges->usedTrimFactor;
+}
 
 static mc_edges_t *mc_edges_new(const char *leaf,
                                 size_t sparsity,
@@ -51,6 +56,7 @@ static mc_edges_t *mc_edges_new(const char *leaf,
     }
 
     mc_edges_t *edges = bson_malloc0(sizeof(mc_edges_t));
+    edges->usedTrimFactor = trimFactor;
     edges->sparsity = sparsity;
     _mc_array_init(&edges->edges, sizeof(char *));
     edges->leaf = bson_strdup(leaf);

@@ -40,6 +40,9 @@ void mc_edges_destroy(mc_edges_t *edges);
 // mc_edges_is_leaf returns whether the given edge is the leaf node of the edge set.
 bool mc_edges_is_leaf(const mc_edges_t *edges, const char *edge);
 
+// Return the trimFactor that was used to generate these edges.
+uint32_t mc_edges_get_used_trimFactor(const mc_edges_t *edges);
+
 typedef struct {
     int32_t value;
     mc_optional_int32_t min;
