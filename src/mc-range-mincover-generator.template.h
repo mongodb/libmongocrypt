@@ -125,6 +125,14 @@ static inline DECORATE_NAME(MinCoverGenerator)
     size_t maxlen = (size_t)BITS - DECORATE_NAME(mc_count_leading_zeros)(max);
     int32_t trimFactor = trimFactorDefault(maxlen, opt_trimFactor, use_range_v2);
     if (trimFactor != 0 && bson_cmp_greater_equal_su(trimFactor, maxlen)) {
+        CLIENT_ERR("Trim factor must be less than the number of bits (%ld) used to represent an element of the domain, "
+                   "but got %" PRId32,
+                   maxlen,
+                   trimFactor);
+        return NULL;
+    }
+    if (trimFactor < 0) {
+        CLIENT_ERR("Trim factor must be >= 0, but got (%" PRId32 ")", trimFactor);
         return NULL;
     }
     DECORATE_NAME(MinCoverGenerator) *mcg = bson_malloc0(sizeof(DECORATE_NAME(MinCoverGenerator)));
