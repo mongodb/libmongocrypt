@@ -27,16 +27,16 @@ struct _mc_edges_t {
     /* edges is an array of `char*` edge strings. */
     mc_array_t edges;
     char *leaf;
-    uint32_t usedTrimFactor; // The `trimFactor` that was used to produce these edges.
+    int32_t usedTrimFactor; // The `trimFactor` that was used to produce these edges.
 };
 
-uint32_t mc_edges_get_used_trimFactor(const mc_edges_t *edges) {
+int32_t mc_edges_get_used_trimFactor(const mc_edges_t *edges) {
     return edges->usedTrimFactor;
 }
 
 static mc_edges_t *mc_edges_new(const char *leaf,
                                 size_t sparsity,
-                                mc_optional_uint32_t opt_trimFactor,
+                                mc_optional_int32_t opt_trimFactor,
                                 mongocrypt_status_t *status,
                                 bool use_range_v2) {
     BSON_ASSERT_PARAM(leaf);
@@ -46,8 +46,8 @@ static mc_edges_t *mc_edges_new(const char *leaf,
     }
 
     const size_t leaf_len = strlen(leaf);
-    const uint32_t trimFactor = trimFactorDefault(leaf_len, opt_trimFactor, use_range_v2);
-    if (trimFactor != 0 && trimFactor >= leaf_len) {
+    const int32_t trimFactor = trimFactorDefault(leaf_len, opt_trimFactor, use_range_v2);
+    if (trimFactor != 0 && bson_cmp_greater_equal_su(trimFactor, leaf_len)) {
         // We append a total of leaf_len + 1 (for the root) - trimFactor edges. When this number is equal to 1, we
         // degenerate into equality, which is not desired, so trimFactor must be less than leaf_len.
         CLIENT_ERR("trimFactor must be less than the number of bits (%ld) used to represent an element of the domain",
@@ -70,7 +70,9 @@ static mc_edges_t *mc_edges_new(const char *leaf,
     _mc_array_append_val(&edges->edges, leaf_copy);
 
     // Start loop at max(trimFactor, 1). The full leaf is unconditionally appended after loop.
-    size_t startLevel = trimFactor > 0 ? trimFactor : 1;
+    BSON_ASSERT(bson_in_range_size_t_signed(trimFactor));
+    size_t trimFactor_sz = (size_t)trimFactor;
+    size_t startLevel = trimFactor > 0 ? trimFactor_sz : 1;
     for (size_t i = startLevel; i < leaf_len; i++) {
         if (i % sparsity == 0) {
             char *edge = bson_malloc(i + 1);

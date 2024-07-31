@@ -34,7 +34,7 @@ const char *mc_mincover_get(mc_mincover_t *mincover, size_t index);
 size_t mc_mincover_len(mc_mincover_t *mincover);
 
 // Return the trimFactor that was used to generate this mincover.
-uint32_t mc_mincover_get_used_trimFactor(const mc_mincover_t *mincover);
+int32_t mc_mincover_get_used_trimFactor(const mc_mincover_t *mincover);
 
 // mc_mincover_destroys frees `mincover`.
 void mc_mincover_destroy(mc_mincover_t *mincover);
@@ -47,7 +47,7 @@ typedef struct {
     mc_optional_int32_t min;
     mc_optional_int32_t max;
     size_t sparsity;
-    mc_optional_uint32_t trimFactor;
+    mc_optional_int32_t trimFactor;
 } mc_getMincoverInt32_args_t;
 
 // mc_getMincoverInt32 implements the Mincover Generation algorithm described in
@@ -64,7 +64,7 @@ typedef struct {
     mc_optional_int64_t min;
     mc_optional_int64_t max;
     size_t sparsity;
-    mc_optional_uint32_t trimFactor;
+    mc_optional_int32_t trimFactor;
 } mc_getMincoverInt64_args_t;
 
 // mc_getMincoverInt64 implements the Mincover Generation algorithm described in
@@ -82,7 +82,7 @@ typedef struct {
     mc_optional_double_t min;
     mc_optional_double_t max;
     mc_optional_uint32_t precision;
-    mc_optional_uint32_t trimFactor;
+    mc_optional_int32_t trimFactor;
 } mc_getMincoverDouble_args_t;
 
 // mc_getMincoverDouble implements the Mincover Generation algorithm described
@@ -100,7 +100,7 @@ typedef struct {
     size_t sparsity;
     mc_optional_dec128_t min, max;
     mc_optional_uint32_t precision;
-    mc_optional_uint32_t trimFactor;
+    mc_optional_int32_t trimFactor;
 } mc_getMincoverDecimal128_args_t;
 
 // mc_getMincoverDecimal128 implements the Mincover Generation algorithm

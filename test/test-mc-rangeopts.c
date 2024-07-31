@@ -29,7 +29,7 @@ static void test_mc_RangeOpts_parse(_mongocrypt_tester_t *tester) {
         mc_optional_int32_t expectMax;
         int64_t expectSparsity;
         mc_optional_uint32_t expectPrecision;
-        mc_optional_uint32_t expectTrimFactor;
+        mc_optional_int32_t expectTrimFactor;
         bool useRangeV2;
     } testcase;
 
@@ -70,7 +70,7 @@ static void test_mc_RangeOpts_parse(_mongocrypt_tester_t *tester) {
          .in = RAW_STRING({"trimFactor" : 1, "sparsity" : {"$numberLong" : "1"}}),
          .useRangeV2 = true,
          .expectSparsity = 1,
-         .expectTrimFactor = OPT_U32(1)},
+         .expectTrimFactor = OPT_I32(1)},
         {.desc = "Does not require sparsity",
          .in = RAW_STRING({"min" : 123, "max" : 456}),
          .useRangeV2 = true,

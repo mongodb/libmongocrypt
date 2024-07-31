@@ -173,7 +173,7 @@ static void _test_mc_FLE2InsertUpdatePayloadV2_includes_crypto_params(_mongocryp
     mc_FLE2InsertUpdatePayloadV2_init(&payload);
     payload.sparsity = OPT_I64(1);
     payload.precision = OPT_U32(2);
-    payload.trimFactor = OPT_U32(3);
+    payload.trimFactor = OPT_I32(3);
     bson_value_t indexMin = {.value.v_int32 = 4, .value_type = BSON_TYPE_INT32};
     bson_value_copy(&indexMin, &payload.indexMin);
     bson_value_t indexMax = {.value.v_int32 = 5, .value_type = BSON_TYPE_INT32};
@@ -231,7 +231,7 @@ static void _test_mc_FLE2InsertUpdatePayloadV2_parses_crypto_params(_mongocrypt_
     ASSERT(!got.precision.set); // Payload does not include precision.
 
     ASSERT(got.trimFactor.set);
-    ASSERT_CMPUINT32(got.trimFactor.value, ==, 4);
+    ASSERT_CMPINT32(got.trimFactor.value, ==, 4);
 
     ASSERT(got.indexMin.value_type == BSON_TYPE_INT32);
     ASSERT_CMPINT32(got.indexMin.value.v_int32, ==, 0);

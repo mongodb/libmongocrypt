@@ -152,10 +152,7 @@ bool mc_FLE2FindRangePayloadV2_serialize(const mc_FLE2FindRangePayloadV2_t *payl
         }
 
         if (payload->trimFactor.set) {
-            if (!bson_in_range_int32_t_unsigned(payload->trimFactor.value)) {
-                return false;
-            }
-            if (!BSON_APPEND_INT32(out, "tf", (int32_t)payload->trimFactor.value)) {
+            if (!BSON_APPEND_INT32(out, "tf", payload->trimFactor.value)) {
                 return false;
             }
         }

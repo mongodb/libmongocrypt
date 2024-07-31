@@ -205,7 +205,7 @@ bool mc_FLE2InsertUpdatePayloadV2_parse(mc_FLE2InsertUpdatePayloadV2_t *out,
                 CLIENT_ERR("Field 'tf' must be non-negative, got: %" PRId32, trimFactor);
                 goto fail;
             }
-            out->trimFactor = OPT_U32((uint32_t)trimFactor);
+            out->trimFactor = OPT_I32(trimFactor);
         }
         END_IF_FIELD
 
@@ -333,10 +333,7 @@ bool mc_FLE2InsertUpdatePayloadV2_serializeForRange(const mc_FLE2InsertUpdatePay
         }
 
         BSON_ASSERT(payload->trimFactor.set);
-        if (!bson_in_range_int32_t_unsigned(payload->trimFactor.value)) {
-            return false;
-        }
-        if (!BSON_APPEND_INT32(out, "tf", (int32_t)payload->trimFactor.value)) {
+        if (!BSON_APPEND_INT32(out, "tf", payload->trimFactor.value)) {
             return false;
         }
 

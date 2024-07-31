@@ -27,7 +27,7 @@
 struct _mc_mincover_t {
     /* mincover is an array of `char*` edge strings. */
     mc_array_t mincover;
-    uint32_t usedTrimFactor; // The `trimFactor` that was used to produce this mincover.
+    int32_t usedTrimFactor; // The `trimFactor` that was used to produce this mincover.
 };
 
 static mc_mincover_t *mc_mincover_new(void) {
@@ -49,7 +49,7 @@ size_t mc_mincover_len(mc_mincover_t *mincover) {
     return mincover->mincover.len;
 }
 
-uint32_t mc_mincover_get_used_trimFactor(const mc_mincover_t *mincover) {
+int32_t mc_mincover_get_used_trimFactor(const mc_mincover_t *mincover) {
     return mincover->usedTrimFactor;
 }
 

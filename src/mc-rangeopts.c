@@ -110,7 +110,7 @@ bool mc_RangeOpts_parse(mc_RangeOpts_t *ro, const bson_t *in, bool use_range_v2,
                 CLIENT_ERR_PREFIXED("'trimFactor' must be non-negative");
                 return false;
             }
-            ro->trimFactor = OPT_U32((uint32_t)val);
+            ro->trimFactor = OPT_I32(val);
         }
         END_IF_FIELD
 
@@ -497,7 +497,6 @@ bool mc_RangeOpts_appendTrimFactor(const mc_RangeOpts_t *ro,
         // A default `trimFactor` will be selected later with `trimFactorDefault`
         return true;
     }
-    BSON_ASSERT(ro->trimFactor.value <= INT32_MAX);
 
     uint32_t nbits;
     if (!mc_getNumberOfBits(ro, valueType, &nbits, status, use_range_v2)) {
@@ -505,14 +504,14 @@ bool mc_RangeOpts_appendTrimFactor(const mc_RangeOpts_t *ro,
     }
     // if nbits = 0, we want to allow trim factor = 0.
     uint32_t test = nbits ? nbits : 1;
-    if (ro->trimFactor.value >= test) {
+    if (bson_cmp_greater_equal_su(ro->trimFactor.value, test)) {
         CLIENT_ERR_PREFIXED("Trim factor (%d) must be less than the total number of bits (%d) used to represent "
                             "any element in the domain.",
                             ro->trimFactor.value,
                             nbits);
         return false;
     }
-    if (!BSON_APPEND_INT32(out, fieldName, (int32_t)ro->trimFactor.value)) {
+    if (!BSON_APPEND_INT32(out, fieldName, ro->trimFactor.value)) {
         CLIENT_ERR_PREFIXED("failed to append BSON");
         return false;
     }

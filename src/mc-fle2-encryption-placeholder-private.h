@@ -51,7 +51,7 @@ typedef struct {
     // floating point values.
     mc_optional_uint32_t precision;
     // trimFactor determines how many root levels of the hypergraph to trim.
-    mc_optional_uint32_t trimFactor;
+    mc_optional_int32_t trimFactor;
 } mc_FLE2RangeFindSpecEdgesInfo_t;
 
 /** FLE2RangeFindSpec represents the range find specification that is encoded
@@ -96,7 +96,7 @@ typedef struct {
     // floating point values.
     mc_optional_uint32_t precision;
     // trimFactor determines how many root levels of the hypergraph to trim.
-    mc_optional_uint32_t trimFactor;
+    mc_optional_int32_t trimFactor;
 } mc_FLE2RangeInsertSpec_t;
 
 bool mc_FLE2RangeInsertSpec_parse(mc_FLE2RangeInsertSpec_t *out,

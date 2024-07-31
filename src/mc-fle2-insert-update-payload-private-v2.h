@@ -80,7 +80,7 @@ typedef struct {
     mc_array_t edgeTokenSetArray;                    // g
     mc_optional_int64_t sparsity;                    // sp
     mc_optional_uint32_t precision;                  // pn
-    mc_optional_uint32_t trimFactor;                 // tf
+    mc_optional_int32_t trimFactor;                  // tf
     bson_value_t indexMin;                           // mn
     bson_value_t indexMax;                           // mx
     _mongocrypt_buffer_t plaintext;

@@ -1230,7 +1230,7 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange(_mo
     // Include "range" payload fields introduced in SERVER-91889.
     payload.sparsity = OPT_I64(placeholder->sparsity);
     payload.precision = insertSpec.precision;
-    payload.trimFactor = OPT_U32(mc_edges_get_used_trimFactor(edges));
+    payload.trimFactor = OPT_I32(mc_edges_get_used_trimFactor(edges));
     bson_value_copy(bson_iter_value(&insertSpec.min), &payload.indexMin);
     bson_value_copy(bson_iter_value(&insertSpec.max), &payload.indexMax);
 
@@ -1804,7 +1804,7 @@ static bool _mongocrypt_fle2_placeholder_to_find_ciphertextForRange(_mongocrypt_
             // Include "range" payload fields introduced in SERVER-91889.
             payload.sparsity = OPT_I64(placeholder->sparsity);
             payload.precision = findSpec.edgesInfo.value.precision;
-            payload.trimFactor = OPT_U32(mc_mincover_get_used_trimFactor(mincover));
+            payload.trimFactor = OPT_I32(mc_mincover_get_used_trimFactor(mincover));
             bson_value_copy(bson_iter_value(&findSpec.edgesInfo.value.indexMin), &payload.indexMin);
             bson_value_copy(bson_iter_value(&findSpec.edgesInfo.value.indexMax), &payload.indexMax);
         }

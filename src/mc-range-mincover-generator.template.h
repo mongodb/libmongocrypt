@@ -89,7 +89,7 @@ typedef struct {
     UINT_T _rangeMin;
     UINT_T _rangeMax;
     size_t _sparsity;
-    uint32_t _trimFactor;
+    int32_t _trimFactor;
     // _maxlen is the maximum bit length of edges in the mincover.
     size_t _maxlen;
 } DECORATE_NAME(MinCoverGenerator);
@@ -99,7 +99,7 @@ static inline DECORATE_NAME(MinCoverGenerator)
                                            UINT_T rangeMax,
                                            UINT_T max,
                                            size_t sparsity,
-                                           mc_optional_uint32_t opt_trimFactor,
+                                           mc_optional_int32_t opt_trimFactor,
                                            mongocrypt_status_t *status,
                                            bool use_range_v2) {
     BSON_ASSERT_PARAM(status);
@@ -123,10 +123,8 @@ static inline DECORATE_NAME(MinCoverGenerator)
         return NULL;
     }
     size_t maxlen = (size_t)BITS - DECORATE_NAME(mc_count_leading_zeros)(max);
-    uint32_t trimFactor = trimFactorDefault(maxlen, opt_trimFactor, use_range_v2);
-    if (trimFactor != 0 && trimFactor >= maxlen) {
-        CLIENT_ERR("Trim factor must be less than the number of bits (%zu) used to represent an element of the domain",
-                   maxlen);
+    int32_t trimFactor = trimFactorDefault(maxlen, opt_trimFactor, use_range_v2);
+    if (trimFactor != 0 && bson_cmp_greater_equal_su(trimFactor, maxlen)) {
         return NULL;
     }
     DECORATE_NAME(MinCoverGenerator) *mcg = bson_malloc0(sizeof(DECORATE_NAME(MinCoverGenerator)));
@@ -163,7 +161,9 @@ static inline bool DECORATE_NAME(MinCoverGenerator_isLevelStored)(DECORATE_NAME(
                                                                   size_t maskedBits) {
     BSON_ASSERT_PARAM(mcg);
     size_t level = mcg->_maxlen - maskedBits;
-    return 0 == maskedBits || (level >= mcg->_trimFactor && 0 == (level % mcg->_sparsity));
+    BSON_ASSERT(bson_in_range_size_t_signed(mcg->_trimFactor));
+    size_t trimFactor_sz = (size_t)mcg->_trimFactor;
+    return 0 == maskedBits || (level >= trimFactor_sz && 0 == (level % mcg->_sparsity));
 }
 
 char *
@@ -218,7 +218,7 @@ static inline mc_mincover_t *DECORATE_NAME(MinCoverGenerator_minCover)(DECORATE_
     return mc;
 }
 
-static inline uint32_t DECORATE_NAME(MinCoverGenerator_usedTrimFactor)(DECORATE_NAME(MinCoverGenerator) * mcg) {
+static inline int32_t DECORATE_NAME(MinCoverGenerator_usedTrimFactor)(DECORATE_NAME(MinCoverGenerator) * mcg) {
     BSON_ASSERT_PARAM(mcg);
     return mcg->_trimFactor;
 }
