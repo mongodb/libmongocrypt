@@ -1,0 +1,58 @@
+{
+    "hasEncryptionPlaceholders": true,
+    "schemaRequiresEncryption": true,
+    "result": {
+        "find": "test",
+        "filter": {
+            "$and": [
+                {
+                    "encrypted": {
+                        "$gte": {
+                            "$binary": {
+                                "base64": "AxABAAAQdAACAAAAEGEAAwAAAAVraQAQAAAABBI0VngSNJh2EjQSNFZ4kBIFa3UAEAAAAAQSNFZ4EjSYdhI0EjRWeJASA3YAsQAAAANlZGdlc0luZm8AawAAABBsb3dlckJvdW5kAEDiAQAIbGJJbmNsdWRlZAABEHVwcGVyQm91bmQAQOIBAAh1YkluY2x1ZGVkAAEQdHJpbUZhY3RvcgAGAAAAEGluZGV4TWluAAAAAIAQaW5kZXhNYXgA////fwAQcGF5bG9hZElkAAAAAAAQZmlyc3RPcGVyYXRvcgACAAAAEHNlY29uZE9wZXJhdG9yAAQAAAAAEmNtAAgAAAAAAAAAEnMAAgAAAAAAAAAA",
+                                "subType": "06"
+                            }
+                        }
+                    }
+                },
+                {
+                    "encrypted": {
+                        "$lte": {
+                            "$binary": {
+                                "base64": "A5oAAAAQdAACAAAAEGEAAwAAAAVraQAQAAAABBI0VngSNJh2EjQSNFZ4kBIFa3UAEAAAAAQSNFZ4EjSYdhI0EjRWeJASA3YAOwAAABBwYXlsb2FkSWQAAAAAABBmaXJzdE9wZXJhdG9yAAIAAAAQc2Vjb25kT3BlcmF0b3IABAAAAAASY20ACAAAAAAAAAAScwACAAAAAAAAAAA=",
+                                "subType": "06"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "encryptionInformation": {
+            "type": {
+                "$numberInt": "1"
+            },
+            "schema": {
+                "db.test": {
+                    "fields": [
+                        {
+                            "keyId": {
+                                "$binary": {
+                                    "base64": "EjRWeBI0mHYSNBI0VniQEg==",
+                                    "subType": "04"
+                                }
+                            },
+                            "path": "encrypted",
+                            "bsonType": "int",
+                            "queries": {
+                                "queryType": "range"
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    },
+    "ok": {
+        "$numberDouble": "1.0"
+    }
+}

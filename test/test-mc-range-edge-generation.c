@@ -32,7 +32,7 @@ typedef struct {
     // expectEdges includes a trailing NULL pointer.
     const char *expectEdges[MAX_INT32_EDGES + 1];
     const char *expectError;
-    uint32_t trimFactor;
+    int32_t trimFactor;
 } Int32Test;
 
 #undef MAX_INT32_EDGES
@@ -85,6 +85,12 @@ static void _test_getEdgesInt32(_mongocrypt_tester_t *tester) {
         {.value = 2,
          .min = OPT_I32_C(0),
          .max = OPT_I32_C(7),
+         .sparsity = 1,
+         .trimFactor = -1,
+         .expectError = "trimFactor must be >= 0"},
+        {.value = 2,
+         .min = OPT_I32_C(0),
+         .max = OPT_I32_C(7),
          .sparsity = 2,
          .trimFactor = 0,
          .expectEdges = {"root", "010", "01"}},
@@ -110,7 +116,7 @@ static void _test_getEdgesInt32(_mongocrypt_tester_t *tester) {
                                         .min = test->min,
                                         .max = test->max,
                                         .sparsity = test->sparsity,
-                                        .trimFactor = OPT_U32(test->trimFactor)};
+                                        .trimFactor = OPT_I32(test->trimFactor)};
         const bool use_range_v2 = true;
         mc_edges_t *got = mc_getEdgesInt32(args, status, use_range_v2);
         if (test->expectError != NULL) {
@@ -203,7 +209,7 @@ static void _test_getEdgesInt64(_mongocrypt_tester_t *tester) {
                                         .min = test->min,
                                         .max = test->max,
                                         .sparsity = test->sparsity,
-                                        .trimFactor = OPT_U32(test->trimFactor)};
+                                        .trimFactor = OPT_I32(test->trimFactor)};
         const bool use_range_v2 = true;
         mc_edges_t *got = mc_getEdgesInt64(args, status, use_range_v2);
         if (test->expectError != NULL) {
@@ -264,7 +270,7 @@ static void _test_getEdgesDouble(_mongocrypt_tester_t *tester) {
         const uint32_t trimFactor = 0; // At present, all test cases expect trimFactor=0.
         mc_getEdgesDouble_args_t args = {.value = test->value,
                                          .sparsity = test->sparsity,
-                                         .trimFactor = OPT_U32(trimFactor)};
+                                         .trimFactor = OPT_I32(trimFactor)};
         const bool use_range_v2 = true;
         mc_edges_t *got = mc_getEdgesDouble(args, status, use_range_v2);
 
@@ -332,7 +338,7 @@ static void _test_getEdgesDecimal128(_mongocrypt_tester_t *tester) {
                                              //  .min = test->min,
                                              //  .max = test->max,
                                              .sparsity = (size_t)test->sparsity,
-                                             .trimFactor = OPT_U32(trimFactor)};
+                                             .trimFactor = OPT_I32(trimFactor)};
         const bool use_range_v2 = true;
         mc_edges_t *got = mc_getEdgesDecimal128(args, status, use_range_v2);
 

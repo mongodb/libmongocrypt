@@ -198,10 +198,11 @@ bool ceil_log2_double(uint64_t i, uint32_t *maxBitsOut, mongocrypt_status_t *sta
 
 bool mc_canUsePrecisionModeDouble(double min,
                                   double max,
-                                  uint32_t precision,
+                                  int32_t precision,
                                   uint32_t *maxBitsOut,
                                   mongocrypt_status_t *status) {
     BSON_ASSERT_PARAM(maxBitsOut);
+    BSON_ASSERT(precision >= 0);
 
     if (min >= max) {
         CLIENT_ERR("Invalid bounds for double range precision, min must be less than max. min: %g, max: %g", min, max);
@@ -259,7 +260,7 @@ bool mc_canUsePrecisionModeDouble(double min,
 
     if (((uint64_t)scaled_prc) > UINT64_MAX - range) {
         CLIENT_ERR("Invalid value for min, max, and precision. The calculated domain size is too large. min: %g, max: "
-                   "%g, precision: %" PRIu32,
+                   "%g, precision: %" PRId32,
                    min,
                    max,
                    precision);
@@ -317,8 +318,8 @@ bool mc_getTypeInfoDouble(mc_getTypeInfoDouble_args_t args,
     }
 
     if (args.precision.set) {
-        if (args.precision.value > INT32_MAX) {
-            CLIENT_ERR("Precision cannot be greater than %" PRId32 ", got %" PRIu32, INT32_MAX, args.precision.value);
+        if (args.precision.value < 0) {
+            CLIENT_ERR("Precision must be non-negative, but got %" PRId32, args.precision.value);
             return false;
         }
 
@@ -354,7 +355,7 @@ bool mc_getTypeInfoDouble(mc_getTypeInfoDouble_args_t args,
             }
 
             CLIENT_ERR("The domain of double values specified by the min, max, and precision cannot be represented in "
-                       "fewer than 53 bits. min: %g, max: %g, precision: %" PRIu32,
+                       "fewer than 53 bits. min: %g, max: %g, precision: %" PRId32,
                        args.min.value,
                        args.max.value,
                        args.precision.value);
@@ -498,10 +499,11 @@ bool ceil_log2_int128(mlib_int128 i, uint32_t *maxBitsOut, mongocrypt_status_t *
 
 bool mc_canUsePrecisionModeDecimal(mc_dec128 min,
                                    mc_dec128 max,
-                                   uint32_t precision,
+                                   int32_t precision,
                                    uint32_t *maxBitsOut,
                                    mongocrypt_status_t *status) {
     BSON_ASSERT_PARAM(maxBitsOut);
+    BSON_ASSERT(precision >= 0);
 
     if (!mc_dec128_is_finite(max)) {
         CLIENT_ERR("Invalid upper bound for Decimal128 precision. Max is infinite.");
@@ -529,7 +531,7 @@ bool mc_canUsePrecisionModeDecimal(mc_dec128 min,
 
     if (mc_dec128_not_equal(scaled_max, scaled_max_trunc)) {
         CLIENT_ERR("Invalid upper bound for Decimal128 precision. Fractional digits must be less than "
-                   "the specified precision value. max: %s, precision: %" PRIu32,
+                   "the specified precision value. max: %s, precision: %" PRId32,
                    mc_dec128_to_string(max).str,
                    precision);
         return false;
@@ -537,7 +539,7 @@ bool mc_canUsePrecisionModeDecimal(mc_dec128 min,
 
     if (mc_dec128_not_equal(scaled_min, scaled_min_trunc)) {
         CLIENT_ERR("Invalid lower bound for Decimal128 precision. Fractional digits must be less than "
-                   "the specified precision value. min: %s, precision: %" PRIu32,
+                   "the specified precision value. min: %s, precision: %" PRId32,
                    mc_dec128_to_string(min).str,
                    precision);
         return false;
@@ -570,7 +572,7 @@ bool mc_canUsePrecisionModeDecimal(mc_dec128 min,
     mc_dec128 prc_dec = mc_dec128_from_double((double)precision);
 
     if (mc_dec128_less(t_5, prc_dec)) {
-        CLIENT_ERR("Invalid value for precision. precision: %" PRIu32, precision);
+        CLIENT_ERR("Invalid value for precision. precision: %" PRId32, precision);
         return false;
     }
 
@@ -583,7 +585,7 @@ bool mc_canUsePrecisionModeDecimal(mc_dec128 min,
     mlib_int128 range128 = mlib_int128_sub(i_1, i_2);
 
     if (precision > UINT8_MAX) {
-        CLIENT_ERR("Invalid value for precision. Must be less than 255. precision: %" PRIu32, precision);
+        CLIENT_ERR("Invalid value for precision. Must be less than 255. precision: %" PRId32, precision);
         return false;
     }
 
@@ -610,8 +612,8 @@ bool mc_getTypeInfoDecimal128(mc_getTypeInfoDecimal128_args_t args,
     }
 
     if (args.precision.set) {
-        if (args.precision.value > INT32_MAX) {
-            CLIENT_ERR("Precision cannot be greater than %" PRId32 ", got %" PRIu32, INT32_MAX, args.precision.value);
+        if (args.precision.value < 0) {
+            CLIENT_ERR("Precision must be non-negative, but got %" PRId32, args.precision.value);
             return false;
         }
 
@@ -849,9 +851,9 @@ bool mc_getTypeInfoDecimal128(mc_getTypeInfoDecimal128_args_t args,
 #endif // defined MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
 
 const int64_t mc_FLERangeSparsityDefault = 2;
-const uint32_t mc_FLERangeTrimFactorDefault = 6;
+const int32_t mc_FLERangeTrimFactorDefault = 6;
 
-uint32_t trimFactorDefault(size_t maxlen, mc_optional_uint32_t trimFactor, bool use_range_v2) {
+int32_t trimFactorDefault(size_t maxlen, mc_optional_int32_t trimFactor, bool use_range_v2) {
     if (trimFactor.set) {
         return trimFactor.value;
     }
@@ -861,8 +863,8 @@ uint32_t trimFactorDefault(size_t maxlen, mc_optional_uint32_t trimFactor, bool 
         return 0;
     }
 
-    if (mc_FLERangeTrimFactorDefault > maxlen - 1) {
-        return (uint32_t)maxlen - 1;
+    if (bson_cmp_greater_su(mc_FLERangeTrimFactorDefault, maxlen - 1)) {
+        return (int32_t)(maxlen - 1);
     } else {
         return mc_FLERangeTrimFactorDefault;
     }

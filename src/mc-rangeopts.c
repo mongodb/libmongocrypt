@@ -95,7 +95,7 @@ bool mc_RangeOpts_parse(mc_RangeOpts_t *ro, const bson_t *in, bool use_range_v2,
                 CLIENT_ERR_PREFIXED("'precision' must be non-negative");
                 return false;
             }
-            ro->precision = OPT_U32((uint32_t)val);
+            ro->precision = OPT_I32(val);
         }
         END_IF_FIELD
 
@@ -110,7 +110,7 @@ bool mc_RangeOpts_parse(mc_RangeOpts_t *ro, const bson_t *in, bool use_range_v2,
                 CLIENT_ERR_PREFIXED("'trimFactor' must be non-negative");
                 return false;
             }
-            ro->trimFactor = OPT_U32((uint32_t)val);
+            ro->trimFactor = OPT_I32(val);
         }
         END_IF_FIELD
 
@@ -440,7 +440,7 @@ bool mc_getNumberOfBits(const mc_RangeOpts_t *ro,
     } else if (valueType == BSON_TYPE_DOUBLE) {
         double value = 0;
         mc_optional_double_t rmin = {false, 0}, rmax = {false, 0};
-        mc_optional_uint32_t prec = ro->precision;
+        mc_optional_int32_t prec = ro->precision;
         if (ro->min.set) {
             BSON_ASSERT(ro->max.set);
             value = bson_iter_double(&ro->min.value);
@@ -459,7 +459,7 @@ bool mc_getNumberOfBits(const mc_RangeOpts_t *ro,
     else if (valueType == BSON_TYPE_DECIMAL128) {
         mc_dec128 value = MC_DEC128_ZERO;
         mc_optional_dec128_t rmin = {false, MC_DEC128_ZERO}, rmax = {false, MC_DEC128_ZERO};
-        mc_optional_uint32_t prec = ro->precision;
+        mc_optional_int32_t prec = ro->precision;
         if (ro->min.set) {
             BSON_ASSERT(ro->max.set);
             value = mc_dec128_from_bson_iter(&ro->min.value);
@@ -497,7 +497,6 @@ bool mc_RangeOpts_appendTrimFactor(const mc_RangeOpts_t *ro,
         // A default `trimFactor` will be selected later with `trimFactorDefault`
         return true;
     }
-    BSON_ASSERT(ro->trimFactor.value <= INT32_MAX);
 
     uint32_t nbits;
     if (!mc_getNumberOfBits(ro, valueType, &nbits, status, use_range_v2)) {
@@ -505,14 +504,14 @@ bool mc_RangeOpts_appendTrimFactor(const mc_RangeOpts_t *ro,
     }
     // if nbits = 0, we want to allow trim factor = 0.
     uint32_t test = nbits ? nbits : 1;
-    if (ro->trimFactor.value >= test) {
+    if (bson_cmp_greater_equal_su(ro->trimFactor.value, test)) {
         CLIENT_ERR_PREFIXED("Trim factor (%d) must be less than the total number of bits (%d) used to represent "
                             "any element in the domain.",
                             ro->trimFactor.value,
                             nbits);
         return false;
     }
-    if (!BSON_APPEND_INT32(out, fieldName, (int32_t)ro->trimFactor.value)) {
+    if (!BSON_APPEND_INT32(out, fieldName, ro->trimFactor.value)) {
         CLIENT_ERR_PREFIXED("failed to append BSON");
         return false;
     }

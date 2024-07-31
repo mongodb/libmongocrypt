@@ -63,7 +63,7 @@ typedef struct {
     size_t sparsity;
     mc_optional_double_t min;
     mc_optional_double_t max;
-    mc_optional_uint32_t precision;
+    mc_optional_int32_t precision;
     const char *expectMincoverStrings[MAX_MINCOVER_STRINGS];
     const char *expectError;
 } DoubleTest;
@@ -77,7 +77,7 @@ typedef struct {
     size_t sparsity;
     mc_optional_dec128_t min;
     mc_optional_dec128_t max;
-    mc_optional_uint32_t precision;
+    mc_optional_int32_t precision;
     const char *expectMincoverStrings[MAX_MINCOVER_STRINGS];
     const char *expectError;
 } Decimal128Test;
@@ -103,7 +103,7 @@ static mc_mincover_t *_test_getMincover32(void *tests, size_t idx, mongocrypt_st
                                                             .min = test->min,
                                                             .max = test->max,
                                                             .sparsity = test->sparsity,
-                                                            .trimFactor = OPT_U32(test->trimFactor)},
+                                                            .trimFactor = OPT_I32(test->trimFactor)},
                                status,
                                use_range_v2);
 }
@@ -122,7 +122,7 @@ static mc_mincover_t *_test_getMincover64(void *tests, size_t idx, mongocrypt_st
                                                             .min = test->min,
                                                             .max = test->max,
                                                             .sparsity = test->sparsity,
-                                                            .trimFactor = OPT_U32(trimFactor)},
+                                                            .trimFactor = OPT_I32(trimFactor)},
                                status,
                                use_range_v2);
 }
@@ -143,7 +143,7 @@ static mc_mincover_t *_test_getMincoverDouble_helper(void *tests, size_t idx, mo
                                       .min = test->precision.set ? test->min : (mc_optional_double_t){0},
                                       .max = test->precision.set ? test->max : (mc_optional_double_t){0},
                                       .precision = test->precision,
-                                      .trimFactor = OPT_U32(trimFactor)},
+                                      .trimFactor = OPT_I32(trimFactor)},
         status,
         use_range_v2);
 }
@@ -165,7 +165,7 @@ static mc_mincover_t *_test_getMincoverDecimal128_helper(void *tests, size_t idx
                                           .min = test->precision.set ? test->min : (mc_optional_dec128_t){0},
                                           .max = test->precision.set ? test->max : (mc_optional_dec128_t){0},
                                           .precision = test->precision,
-                                          .trimFactor = OPT_U32(trimFactor)},
+                                          .trimFactor = OPT_I32(trimFactor)},
         status,
         use_range_v2);
 }

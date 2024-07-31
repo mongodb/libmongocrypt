@@ -444,6 +444,17 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
          }),
          .expectedError =
              "Trim factor must be less than the number of bits (6) used to represent an element of the domain"},
+        {.description = "Negative trim factor fails",
+         .findSpecJSON = RAW_STRING({
+             "lowerBound" : {"$numberDouble" : "-Infinity"},
+             "lbIncluded" : true,
+             "upperBound" : {"$numberDouble" : "Infinity"},
+             "ubIncluded" : true,
+             "indexMin" : {"$numberInt" : "0"},
+             "indexMax" : {"$numberInt" : "32"},
+             "trimFactor" : -1
+         }),
+         .expectedErrorAtParseTime = "'trimFactor' must be non-negative"},
         {.description = "Int64 Bounds included",
          .findSpecJSON = RAW_STRING({
              "lowerBound" : {"$numberLong" : "0"},

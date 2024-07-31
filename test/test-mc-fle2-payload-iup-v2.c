@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
+#include "mc-fle-blob-subtype-private.h"
 #include "mc-fle2-insert-update-payload-private-v2.h"
+#include "test-mongocrypt-assert-match-bson.h"
 #include "test-mongocrypt.h"
 
 #define TEST_IUP_HEX_V2                                                                                                \
@@ -166,7 +168,81 @@ static void _test_mc_FLE2InsertUpdatePayloadV2_decrypt(_mongocrypt_tester_t *tes
 
 #undef TEST_IUP_HEX_V2
 
+static void _test_mc_FLE2InsertUpdatePayloadV2_includes_crypto_params(_mongocrypt_tester_t *tester) {
+    mc_FLE2InsertUpdatePayloadV2_t payload;
+    mc_FLE2InsertUpdatePayloadV2_init(&payload);
+    payload.sparsity = OPT_I64(1);
+    payload.precision = OPT_I32(2);
+    payload.trimFactor = OPT_I32(3);
+    bson_value_t indexMin = {.value.v_int32 = 4, .value_type = BSON_TYPE_INT32};
+    bson_value_copy(&indexMin, &payload.indexMin);
+    bson_value_t indexMax = {.value.v_int32 = 5, .value_type = BSON_TYPE_INT32};
+    bson_value_copy(&indexMax, &payload.indexMax);
+
+    // Test crypto params from SERVER-91889 are included in "range" payload.
+    {
+        bson_t got = BSON_INITIALIZER;
+        const bool use_range_v2 = true;
+        ASSERT(mc_FLE2InsertUpdatePayloadV2_serializeForRange(&payload, &got, use_range_v2));
+        _assert_match_bson(&got, TMP_BSON(BSON_STR({"sp" : 1, "pn" : 2, "tf" : 3, "mn" : 4, "mx" : 5})));
+        bson_destroy(&got);
+    }
+
+    // Test crypto params from SERVER-91889 are excluded in "rangePreview" payload.
+    {
+        bson_t got = BSON_INITIALIZER;
+        const bool use_range_v2 = false;
+        ASSERT(mc_FLE2InsertUpdatePayloadV2_serializeForRange(&payload, &got, use_range_v2));
+        _assert_match_bson(&got, TMP_BSON(BSON_STR({
+            "sp" : {"$exists" : false},
+            "pn" : {"$exists" : false},
+            "tf" : {"$exists" : false},
+            "mn" : {"$exists" : false},
+            "mx" : {"$exists" : false}
+        })));
+        bson_destroy(&got);
+    }
+    mc_FLE2InsertUpdatePayloadV2_cleanup(&payload);
+}
+
+static void _test_mc_FLE2InsertUpdatePayloadV2_parses_crypto_params(_mongocrypt_tester_t *tester) {
+    mongocrypt_binary_t *payload = TEST_FILE("test/data/range-sends-cryptoParams/explicit-insert-int32/expected.json");
+
+    _mongocrypt_buffer_t payload_buf;
+    // Unwrap the { "v": <BSON binary> } into a `_mongocrypt_buffer_t`.
+    {
+        bson_t payload_bson;
+        ASSERT(_mongocrypt_binary_to_bson(payload, &payload_bson));
+        bson_iter_t iter;
+        ASSERT(bson_iter_init_find(&iter, &payload_bson, "v"));
+        ASSERT(_mongocrypt_buffer_from_binary_iter(&payload_buf, &iter));
+    }
+
+    mc_FLE2InsertUpdatePayloadV2_t got;
+    mc_FLE2InsertUpdatePayloadV2_init(&got);
+
+    mongocrypt_status_t *status = mongocrypt_status_new();
+    ASSERT_OK_STATUS(mc_FLE2InsertUpdatePayloadV2_parse(&got, &payload_buf, status), status);
+    mongocrypt_status_destroy(status);
+
+    ASSERT(got.sparsity.set);
+    ASSERT_CMPINT64(got.sparsity.value, ==, 3);
+
+    ASSERT(!got.precision.set); // Payload does not include precision.
+
+    ASSERT(got.trimFactor.set);
+    ASSERT_CMPINT32(got.trimFactor.value, ==, 4);
+
+    ASSERT(got.indexMin.value_type == BSON_TYPE_INT32);
+    ASSERT_CMPINT32(got.indexMin.value.v_int32, ==, 0);
+
+    ASSERT(got.indexMax.value_type == BSON_TYPE_INT32);
+    ASSERT_CMPINT32(got.indexMax.value.v_int32, ==, 1234567);
+}
+
 void _mongocrypt_tester_install_fle2_payload_iup_v2(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_FLE2InsertUpdatePayloadV2_parse);
     INSTALL_TEST(_test_mc_FLE2InsertUpdatePayloadV2_decrypt);
+    INSTALL_TEST(_test_mc_FLE2InsertUpdatePayloadV2_includes_crypto_params);
+    INSTALL_TEST(_test_mc_FLE2InsertUpdatePayloadV2_parses_crypto_params);
 }
