@@ -72,7 +72,7 @@ typedef struct {
     // was generated. Only populated for two-sided ranges. It is 0 if unset.
     mc_FLE2RangeOperator_t secondOperator;
     mc_optional_int64_t sparsity;   // sp
-    mc_optional_uint32_t precision; // pn
+    mc_optional_int32_t precision;  // pn
     mc_optional_int32_t trimFactor; // tf
     bson_value_t indexMin;          // mn
     bson_value_t indexMax;          // mx

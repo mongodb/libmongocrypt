@@ -364,8 +364,7 @@ bool mc_makeRangeFindPlaceholder(mc_makeRangeFindPlaceholder_args_t *args,
         TRY(bson_append_iter(edgesInfo, "indexMin", -1, &args->indexMin));
         TRY(bson_append_iter(edgesInfo, "indexMax", -1, &args->indexMax));
         if (args->precision.set) {
-            BSON_ASSERT(args->precision.value <= INT32_MAX);
-            TRY(BSON_APPEND_INT32(edgesInfo, "precision", (int32_t)args->precision.value));
+            TRY(BSON_APPEND_INT32(edgesInfo, "precision", args->precision.value));
         }
         if (args->trimFactor.set) {
             TRY(BSON_APPEND_INT32(edgesInfo, "trimFactor", args->trimFactor.value));

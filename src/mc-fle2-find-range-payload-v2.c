@@ -143,10 +143,7 @@ bool mc_FLE2FindRangePayloadV2_serialize(const mc_FLE2FindRangePayloadV2_t *payl
         }
 
         if (payload->precision.set) {
-            if (!bson_in_range_int32_t_unsigned(payload->precision.value)) {
-                return false;
-            }
-            if (!BSON_APPEND_INT32(out, "pn", (int32_t)payload->precision.value)) {
+            if (!BSON_APPEND_INT32(out, "pn", payload->precision.value)) {
                 return false;
             }
         }

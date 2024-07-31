@@ -90,7 +90,7 @@ static void _test_FLE2FindRangePayloadV2_includes_crypto_params(_mongocrypt_test
     mc_FLE2FindRangePayloadV2_t payload;
     mc_FLE2FindRangePayloadV2_init(&payload);
     payload.sparsity = OPT_I64(1);
-    payload.precision = OPT_U32(2);
+    payload.precision = OPT_I32(2);
     payload.trimFactor = OPT_I32(3);
     bson_value_t indexMin = {.value.v_int32 = 4, .value_type = BSON_TYPE_INT32};
     bson_value_copy(&indexMin, &payload.indexMin);

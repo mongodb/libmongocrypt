@@ -63,7 +63,7 @@ typedef struct {
     size_t sparsity;
     mc_optional_double_t min;
     mc_optional_double_t max;
-    mc_optional_uint32_t precision;
+    mc_optional_int32_t precision;
     const char *expectMincoverStrings[MAX_MINCOVER_STRINGS];
     const char *expectError;
 } DoubleTest;
@@ -77,7 +77,7 @@ typedef struct {
     size_t sparsity;
     mc_optional_dec128_t min;
     mc_optional_dec128_t max;
-    mc_optional_uint32_t precision;
+    mc_optional_int32_t precision;
     const char *expectMincoverStrings[MAX_MINCOVER_STRINGS];
     const char *expectError;
 } Decimal128Test;

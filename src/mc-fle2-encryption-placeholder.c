@@ -279,7 +279,7 @@ static bool mc_FLE2RangeFindSpecEdgesInfo_parse(mc_FLE2RangeFindSpecEdgesInfo_t 
                 goto fail;
             }
 
-            out->precision = OPT_U32((uint32_t)val);
+            out->precision = OPT_I32(val);
         }
         END_IF_FIELD
 
@@ -454,7 +454,7 @@ bool mc_FLE2RangeInsertSpec_parse(mc_FLE2RangeInsertSpec_t *out,
                 CLIENT_ERR_PREFIXED("'precision' must be non-negative");
                 goto fail;
             }
-            out->precision = OPT_U32((uint32_t)val);
+            out->precision = OPT_I32(val);
         }
         END_IF_FIELD
 

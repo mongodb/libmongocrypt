@@ -83,13 +83,13 @@ typedef struct {
     double value;
     mc_optional_double_t min;
     mc_optional_double_t max;
-    mc_optional_uint32_t precision;
+    mc_optional_int32_t precision;
 } mc_getTypeInfoDouble_args_t;
 
 // `mc_canUsePrecisionModeDouble` returns true if the domain can be represented in fewer than 64 bits.
 bool mc_canUsePrecisionModeDouble(double min,
                                   double max,
-                                  uint32_t precision,
+                                  int32_t precision,
                                   uint32_t *maxBitsOut,
                                   mongocrypt_status_t *status);
 
@@ -111,13 +111,13 @@ typedef struct {
 typedef struct {
     mc_dec128 value;
     mc_optional_dec128_t min, max;
-    mc_optional_uint32_t precision;
+    mc_optional_int32_t precision;
 } mc_getTypeInfoDecimal128_args_t;
 
 // `mc_canUsePrecisionModeDecimal` returns true if the domain can be represented in fewer than 128 bits.
 bool mc_canUsePrecisionModeDecimal(mc_dec128 min,
                                    mc_dec128 max,
-                                   uint32_t precision,
+                                   int32_t precision,
                                    uint32_t *maxBitsOut,
                                    mongocrypt_status_t *status);
 

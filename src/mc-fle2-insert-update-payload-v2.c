@@ -190,7 +190,7 @@ bool mc_FLE2InsertUpdatePayloadV2_parse(mc_FLE2InsertUpdatePayloadV2_t *out,
                 CLIENT_ERR("Field 'pn' must be non-negative, got: %" PRId32, precision);
                 goto fail;
             }
-            out->precision = OPT_U32((uint32_t)precision);
+            out->precision = OPT_I32(precision);
         }
         END_IF_FIELD
 
@@ -324,10 +324,7 @@ bool mc_FLE2InsertUpdatePayloadV2_serializeForRange(const mc_FLE2InsertUpdatePay
 
         // Precision may be unset.
         if (payload->precision.set) {
-            if (!bson_in_range_int32_t_unsigned(payload->precision.value)) {
-                return false;
-            }
-            if (!BSON_APPEND_INT32(out, "pn", (int32_t)payload->precision.value)) {
+            if (!BSON_APPEND_INT32(out, "pn", payload->precision.value)) {
                 return false;
             }
         }

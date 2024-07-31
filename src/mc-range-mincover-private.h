@@ -81,7 +81,7 @@ typedef struct {
     size_t sparsity;
     mc_optional_double_t min;
     mc_optional_double_t max;
-    mc_optional_uint32_t precision;
+    mc_optional_int32_t precision;
     mc_optional_int32_t trimFactor;
 } mc_getMincoverDouble_args_t;
 
@@ -99,7 +99,7 @@ typedef struct {
     bool includeUpperBound;
     size_t sparsity;
     mc_optional_dec128_t min, max;
-    mc_optional_uint32_t precision;
+    mc_optional_int32_t precision;
     mc_optional_int32_t trimFactor;
 } mc_getMincoverDecimal128_args_t;
 

@@ -75,7 +75,7 @@ typedef struct {
     bson_iter_t indexMax;
     int64_t maxContentionFactor;
     int64_t sparsity;
-    mc_optional_uint32_t precision;
+    mc_optional_int32_t precision;
     mc_optional_int32_t trimFactor;
 } mc_makeRangeFindPlaceholder_args_t;
 

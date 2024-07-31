@@ -261,7 +261,7 @@ typedef struct {
     double value;
     mc_optional_double_t min;
     mc_optional_double_t max;
-    mc_optional_uint32_t precision;
+    mc_optional_int32_t precision;
     uint64_t expect;
     mc_optional_uint64_t expectMax;
     const char *expectError;
@@ -323,43 +323,43 @@ static void _test_RangeTest_Encode_Double(_mongocrypt_tester_t *tester) {
 
                           /* Test cases copied from Double_Bounds_Precision ... begin */
                           {.value = 3.141592653589,
-                           .precision = OPT_U32_C(1),
+                           .precision = OPT_I32_C(1),
                            .min = OPT_DOUBLE_C(-100000),
                            .max = OPT_DOUBLE_C(100000),
                            .expect = UINT64_C(1000031),
                            .expectMax = OPT_U64_C(2097151)},
                           {.value = 3.141592653589,
-                           .precision = OPT_U32_C(2),
+                           .precision = OPT_I32_C(2),
                            .min = OPT_DOUBLE_C(-100000),
                            .max = OPT_DOUBLE_C(100000),
                            .expect = 10000314,
                            .expectMax = OPT_U64_C(33554431)},
                           {.value = 3.141592653589,
-                           .precision = OPT_U32_C(3),
+                           .precision = OPT_I32_C(3),
                            .min = OPT_DOUBLE_C(-100000),
                            .max = OPT_DOUBLE_C(100000),
                            .expect = 100003141,
                            .expectMax = OPT_U64_C(268435455)},
                           {.value = 3.141592653589,
-                           .precision = OPT_U32_C(4),
+                           .precision = OPT_I32_C(4),
                            .min = OPT_DOUBLE_C(-100000),
                            .max = OPT_DOUBLE_C(100000),
                            .expect = 1000031415,
                            .expectMax = OPT_U64_C(2147483647)},
                           {.value = 3.141592653589,
-                           .precision = OPT_U32_C(5),
+                           .precision = OPT_I32_C(5),
                            .min = OPT_DOUBLE_C(-100000),
                            .max = OPT_DOUBLE_C(100000),
                            .expect = 10000314159,
                            .expectMax = OPT_U64_C(34359738367)},
                           {.value = 3.141592653589,
-                           .precision = OPT_U32_C(6),
+                           .precision = OPT_I32_C(6),
                            .min = OPT_DOUBLE_C(-100000),
                            .max = OPT_DOUBLE_C(100000),
                            .expect = 100003141592,
                            .expectMax = OPT_U64_C(274877906943)},
                           {.value = 3.141592653589,
-                           .precision = OPT_U32_C(7),
+                           .precision = OPT_I32_C(7),
                            .min = OPT_DOUBLE_C(-100000),
                            .max = OPT_DOUBLE_C(100000),
                            .expect = 1000031415926,
@@ -367,119 +367,119 @@ static void _test_RangeTest_Encode_Double(_mongocrypt_tester_t *tester) {
                           {.value = 0,
                            .max = OPT_DOUBLE_C(1),
                            .min = OPT_DOUBLE_C(-1),
-                           .precision = OPT_U32_C(3),
+                           .precision = OPT_I32_C(3),
                            .expect = 1000,
                            .expectMax = OPT_U64_C(4095)},
                           {.value = 0,
                            .max = OPT_DOUBLE_C(1),
                            .min = OPT_DOUBLE_C(-1E5),
-                           .precision = OPT_U32_C(3),
+                           .precision = OPT_I32_C(3),
                            .expect = 100000000,
                            .expectMax = OPT_U64_C(134217727)},
                           {.value = -1E-33,
                            .max = OPT_DOUBLE_C(1),
                            .min = OPT_DOUBLE_C(-1E5),
-                           .precision = OPT_U32_C(3),
+                           .precision = OPT_I32_C(3),
                            .expect = 100000000,
                            .expectMax = OPT_U64_C(134217727)},
                           {.value = 0,
                            .max = OPT_DOUBLE_C(DBL_MAX),
                            .min = OPT_DOUBLE_C(-DBL_MAX),
-                           .precision = OPT_U32_C(3),
+                           .precision = OPT_I32_C(3),
                            // Applying min/max/precision result in a domain needing >= 64 bits to represent.
                            // For range v2, expect an error.
                            .expectError = "Invalid upper bound for double precision."},
                           {.value = 0,
                            .max = OPT_DOUBLE_C(DBL_MAX),
                            .min = OPT_DOUBLE_C(-DBL_MAX),
-                           .precision = OPT_U32_C(3),
+                           .precision = OPT_I32_C(3),
                            // Applying min/max/precision result in a domain needing >= 64 bits to represent.
                            // For range v2, expect an error.
                            .expectError = "Invalid upper bound for double precision."},
                           {.value = 3.141592653589,
                            .max = OPT_DOUBLE_C(5),
                            .min = OPT_DOUBLE_C(0),
-                           .precision = OPT_U32_C(0),
+                           .precision = OPT_I32_C(0),
                            .expect = 3,
                            .expectMax = OPT_U64_C(7)},
                           {.value = 3.141592653589,
                            .max = OPT_DOUBLE_C(5),
                            .min = OPT_DOUBLE_C(0),
-                           .precision = OPT_U32_C(1),
+                           .precision = OPT_I32_C(1),
                            .expect = 31,
                            .expectMax = OPT_U64_C(63)},
                           {.value = 3.141592653589,
                            .max = OPT_DOUBLE_C(5),
                            .min = OPT_DOUBLE_C(0),
-                           .precision = OPT_U32_C(2),
+                           .precision = OPT_I32_C(2),
                            .expect = 314,
                            .expectMax = OPT_U64_C(1023)},
                           {.value = 3.141592653589,
                            .max = OPT_DOUBLE_C(5),
                            .min = OPT_DOUBLE_C(0),
-                           .precision = OPT_U32_C(3),
+                           .precision = OPT_I32_C(3),
                            .expect = 3141,
                            .expectMax = OPT_U64_C(8191)},
                           {.value = 3.141592653589,
                            .max = OPT_DOUBLE_C(5),
                            .min = OPT_DOUBLE_C(0),
-                           .precision = OPT_U32_C(16),
+                           .precision = OPT_I32_C(16),
                            .expectError = "Invalid upper bound for double precision"},
                           {.value = -5,
                            .max = OPT_DOUBLE_C(-1),
                            .min = OPT_DOUBLE_C(-10),
-                           .precision = OPT_U32_C(3),
+                           .precision = OPT_I32_C(3),
                            .expect = 5000,
                            .expectMax = OPT_U64_C(16383)},
                           {.value = 1E100,
                            .max = OPT_DOUBLE_C(DBL_MAX),
                            .min = OPT_DOUBLE_C(-DBL_MAX),
-                           .precision = OPT_U32_C(3),
+                           .precision = OPT_I32_C(3),
                            // Applying min/max/precision result in a domain needing >= 64 bits to represent.
                            // For range v2, expect an error.
                            .expectError = "Invalid upper bound for double precision."},
                           {.value = 1E100,
                            .max = OPT_DOUBLE_C(DBL_MAX),
                            .min = OPT_DOUBLE_C(-DBL_MAX),
-                           .precision = OPT_U32_C(3),
+                           .precision = OPT_I32_C(3),
                            // Applying min/max/precision result in a domain needing >= 64 bits to represent.
                            // For range v2, expect an error.
                            .expectError = "Invalid upper bound for double precision."},
                           {.value = 1E9,
                            .max = OPT_DOUBLE_C(1E10),
                            .min = OPT_DOUBLE_C(0),
-                           .precision = OPT_U32_C(3),
+                           .precision = OPT_I32_C(3),
                            .expect = 1000000000000,
                            .expectMax = OPT_U64_C(17592186044415)},
                           {.value = 1E9,
                            .max = OPT_DOUBLE_C(1E10),
                            .min = OPT_DOUBLE_C(0),
-                           .precision = OPT_U32_C(0),
+                           .precision = OPT_I32_C(0),
                            .expect = 1000000000,
                            .expectMax = OPT_U64_C(17179869183)},
                           {.value = -5,
                            .max = OPT_DOUBLE_C(10),
                            .min = OPT_DOUBLE_C(-10),
-                           .precision = OPT_U32_C(0),
+                           .precision = OPT_I32_C(0),
                            .expect = 5,
                            .expectMax = OPT_U64_C(31)},
                           {.value = -5,
                            .max = OPT_DOUBLE_C(10),
                            .min = OPT_DOUBLE_C(-10),
-                           .precision = OPT_U32_C(2),
+                           .precision = OPT_I32_C(2),
                            .expect = 500,
                            .expectMax = OPT_U64_C(4095)},
                           {.value = 1E-30,
                            .max = OPT_DOUBLE_C(10E-30),
                            .min = OPT_DOUBLE_C(1E-30),
-                           .precision = OPT_U32_C(35),
+                           .precision = OPT_I32_C(35),
                            // Applying min/max/precision result in a domain needing >= 53 bits to represent.
                            // For range v2, expect an error.
                            .expectError = "Invalid upper bound for double precision."},
                           {.value = 1E-30,
                            .max = OPT_DOUBLE_C(10E-30),
                            .min = OPT_DOUBLE_C(1E-30),
-                           .precision = OPT_U32_C(35),
+                           .precision = OPT_I32_C(35),
                            // Applying min/max/precision result in a domain needing >= 53 bits to represent.
                            // For range v2, expect an error.
                            .expectError = "Invalid upper bound for double precision."},
@@ -487,7 +487,7 @@ static void _test_RangeTest_Encode_Double(_mongocrypt_tester_t *tester) {
                           {.value = DOUBLE_MIN_SAFE_INT,
                            .max = OPT_DOUBLE_C(DOUBLE_MAX_SAFE_INT),
                            .min = OPT_DOUBLE_C(DOUBLE_MIN_SAFE_INT),
-                           .precision = OPT_U32_C(0),
+                           .precision = OPT_I32_C(0),
                            .expect = 0,
                            // Applying min/max/precision result in a domain needing >= 53 bits to represent.
                            // For range v2, expect an error.
@@ -495,19 +495,19 @@ static void _test_RangeTest_Encode_Double(_mongocrypt_tester_t *tester) {
                           {.value = 900719925474099.6,
                            .max = OPT_DOUBLE_C(900719925474100.0),
                            .min = OPT_DOUBLE_C(900719925474099.0),
-                           .precision = OPT_U32_C(0),
+                           .precision = OPT_I32_C(0),
                            .expect = 0,
                            .expectMax = OPT_U64_C(1)},
                           // Domain size is small but min/max * 10^precision loses precision.
                           {.value = 900719925474099.6,
                            .max = OPT_DOUBLE_C(900719925474100.0),
                            .min = OPT_DOUBLE_C(900719925474099.0),
-                           .precision = OPT_U32_C(1),
+                           .precision = OPT_I32_C(1),
                            .expectError = "Invalid upper bound for double precision. Absolute"},
                           {.value = -900719925474099.6,
                            .max = OPT_DOUBLE_C(-900719925474099.0),
                            .min = OPT_DOUBLE_C(-900719925474100.0),
-                           .precision = OPT_U32_C(1),
+                           .precision = OPT_I32_C(1),
                            .expectError = "Invalid lower bound for double precision. Absolute"},
                           // 2^52
                           // The expected values increase by 4503599627370496 * 2^(i-52) + j
@@ -516,7 +516,7 @@ static void _test_RangeTest_Encode_Double(_mongocrypt_tester_t *tester) {
                           {.value = 0,
                            .max = OPT_DOUBLE_C(4503599627370496),
                            .min = OPT_DOUBLE_C(-4503599627370496),
-                           .precision = OPT_U32_C(0),
+                           .precision = OPT_I32_C(0),
                            .expect = 0,
                            // Applying min/max/precision result in a domain needing >= 53 bits to represent.
                            // For range v2, expect an error.
@@ -525,25 +525,25 @@ static void _test_RangeTest_Encode_Double(_mongocrypt_tester_t *tester) {
                           {.value = -1,
                            .min = OPT_DOUBLE_C(0),
                            .max = OPT_DOUBLE_C(200),
-                           .precision = OPT_U32_C(1),
+                           .precision = OPT_I32_C(1),
                            .expectError = "greater than or equal to the minimum value"},
                           {.value = -1,
                            .min = OPT_DOUBLE_C(0),
                            .max = OPT_DOUBLE_C(201),
-                           .precision = OPT_U32_C(1),
+                           .precision = OPT_I32_C(1),
                            .expectError = "less than or equal to the maximum value"},
                           {// Expect error due to precision exceeding INT32_MAX.
                            .value = 1,
                            .min = OPT_DOUBLE_C(1),
                            .max = OPT_DOUBLE_C(2),
-                           .precision = OPT_U32_C((uint32_t)INT32_MAX + 1),
-                           .expectError = "Precision cannot be greater than 2147483647"},
+                           .precision = OPT_I32_C(-1),
+                           .expectError = "Precision must be non-negative"},
                           {// Expect error due to precision exceeding max finite double.
                            // The largest double value is 1.7976931348623157x10^308. 10^309 results in infinity.
                            .value = 1,
                            .min = OPT_DOUBLE_C(0),
                            .max = OPT_DOUBLE_C(1),
-                           .precision = OPT_U32_C(309),
+                           .precision = OPT_I32_C(309),
                            .expectError = "Precision is too large"}};
 
     for (size_t i = 0; i < sizeof(tests) / sizeof(tests[0]); i++) {
@@ -588,7 +588,7 @@ typedef struct {
     mc_dec128 value;
     mc_optional_dec128_t min;
     mc_optional_dec128_t max;
-    mc_optional_uint32_t precision;
+    mc_optional_int32_t precision;
     mlib_int128 expect;
     const char *expectError;
     bool use_range_v1; // By default, use range v2.
@@ -772,29 +772,29 @@ static void _test_RangeTest_Encode_Decimal128(_mongocrypt_tester_t *tester) {
         ERROR_CASE(MC_DEC128_C(1),
                    OPT_NULLOPT,
                    OPT_MC_DEC128(MC_DEC128_C(2)),
-                   OPT_U32(5),
+                   OPT_I32(5),
                    "min, max, and precision must all be set or must all be unset"),
         ERROR_CASE(MC_DEC128_C(1),
                    OPT_MC_DEC128(MC_DEC128_C(0)),
                    OPT_NULLOPT,
-                   OPT_U32(5),
+                   OPT_I32(5),
                    "min, max, and precision must all be set or must all be unset"),
         ERROR_CASE(MC_DEC128_C(1),
                    OPT_MC_DEC128(MC_DEC128_C(2)),
                    OPT_MC_DEC128(MC_DEC128_C(1)),
-                   OPT_U32(5),
+                   OPT_I32(5),
                    "The minimum value must be less than the maximum value"),
 
         ERROR_CASE(MC_DEC128_C(1),
                    OPT_MC_DEC128(MC_DEC128_C(2)),
                    OPT_MC_DEC128(MC_DEC128_C(3)),
-                   OPT_U32(5),
+                   OPT_I32(5),
                    "Value must be greater than or equal to the minimum value "
                    "and less than or equal to the maximum value"),
         ERROR_CASE(MC_DEC128_C(4),
                    OPT_MC_DEC128(MC_DEC128_C(2)),
                    OPT_MC_DEC128(MC_DEC128_C(3)),
-                   OPT_U32(5),
+                   OPT_I32(5),
                    "Value must be greater than or equal to the minimum value "
                    "and less than or equal to the maximum value"),
 
@@ -827,7 +827,7 @@ static void _test_RangeTest_Encode_Decimal128(_mongocrypt_tester_t *tester) {
         .value = mc_dec128_from_string(Value),                                                                         \
         .min = OPT_MC_DEC128(MC_DEC128_C(-100000)),                                                                    \
         .max = OPT_MC_DEC128(MC_DEC128_C(100000)),                                                                     \
-        .precision = OPT_U32(Precision),                                                                               \
+        .precision = OPT_I32(Precision),                                                                               \
         .expect = MLIB_INT128(Expect),                                                                                 \
     }
         ASSERT_EIBP("3.141592653589E-1", 10, 1000003141592653),
@@ -845,7 +845,7 @@ static void _test_RangeTest_Encode_Decimal128(_mongocrypt_tester_t *tester) {
         .value = mc_dec128_from_string(Value),                                                                         \
         .min = OPT_MC_DEC128(MC_DEC128_C(-100000)),                                                                    \
         .max = OPT_MC_DEC128(mc_dec128_from_string("1E22")),                                                           \
-        .precision = OPT_U32(Precision),                                                                               \
+        .precision = OPT_I32(Precision),                                                                               \
         .expect = mlib_int128_from_string(Expect, NULL),                                                               \
     }
 
@@ -862,7 +862,7 @@ static void _test_RangeTest_Encode_Decimal128(_mongocrypt_tester_t *tester) {
         .value = mc_dec128_from_string(#Value),                                                                        \
         .min = OPT_MC_DEC128(MC_DEC128_C(-100000)),                                                                    \
         .max = OPT_MC_DEC128(MC_DEC128_C(100000)),                                                                     \
-        .precision = OPT_U32(Precision),                                                                               \
+        .precision = OPT_I32(Precision),                                                                               \
         .expect = MLIB_INT128_CAST(Expect),                                                                            \
     }
         ASSERT_EIBP(3.141592653589, 1, 1000031),
@@ -879,7 +879,7 @@ static void _test_RangeTest_Encode_Decimal128(_mongocrypt_tester_t *tester) {
         .value = mc_dec128_from_string(#Val),                                                                          \
         .min = OPT_MC_DEC128(mc_dec128_from_string(#Min)),                                                             \
         .max = OPT_MC_DEC128(mc_dec128_from_string(#Max)),                                                             \
-        .precision = OPT_U32(Precision),                                                                               \
+        .precision = OPT_I32(Precision),                                                                               \
         .expect = MLIB_INT128_CAST(Expect),                                                                            \
     }
 
@@ -891,13 +891,13 @@ static void _test_RangeTest_Encode_Decimal128(_mongocrypt_tester_t *tester) {
         .value = mc_dec128_from_string(#Val),                                                                          \
         .min = OPT_MC_DEC128(mc_dec128_from_string(#Min)),                                                             \
         .max = OPT_MC_DEC128(mc_dec128_from_string(#Max)),                                                             \
-        .precision = OPT_U32(Precision),                                                                               \
+        .precision = OPT_I32(Precision),                                                                               \
         .expect = Expect,                                                                                              \
         .use_range_v1 = true,                                                                                          \
     },                                                                                                                 \
         (Decimal128Test) {                                                                                             \
         .value = mc_dec128_from_string(#Val), .min = OPT_MC_DEC128(mc_dec128_from_string(#Min)),                       \
-        .max = OPT_MC_DEC128(mc_dec128_from_string(#Max)), .precision = OPT_U32(Precision),                            \
+        .max = OPT_MC_DEC128(mc_dec128_from_string(#Max)), .precision = OPT_I32(Precision),                            \
         .expectError = "The domain of decimal values specified by the min, max, and precision "                        \
                        "cannot be represented in fewer than 128 bits"                                                  \
     }
@@ -907,13 +907,13 @@ static void _test_RangeTest_Encode_Decimal128(_mongocrypt_tester_t *tester) {
         .value = mc_dec128_from_string(#Val),                                                                          \
         .min = OPT_MC_DEC128(mc_dec128_from_string(#Min)),                                                             \
         .max = OPT_MC_DEC128(mc_dec128_from_string(#Max)),                                                             \
-        .precision = OPT_U32(Precision),                                                                               \
+        .precision = OPT_I32(Precision),                                                                               \
         .expect = Expect,                                                                                              \
         .use_range_v1 = true,                                                                                          \
     },                                                                                                                 \
         (Decimal128Test) {                                                                                             \
         .value = mc_dec128_from_string(#Val), .min = OPT_MC_DEC128(mc_dec128_from_string(#Min)),                       \
-        .max = OPT_MC_DEC128(mc_dec128_from_string(#Max)), .precision = OPT_U32(Precision), .expectError = Error       \
+        .max = OPT_MC_DEC128(mc_dec128_from_string(#Max)), .precision = OPT_I32(Precision), .expectError = Error       \
     }
 
         ASSERT_EIBB(0, 1, -1, 3, 1000),
@@ -972,13 +972,13 @@ static void _test_RangeTest_Encode_Decimal128(_mongocrypt_tester_t *tester) {
         {// Expect error due to precision exceeding INT32_MAX.
          .min = OPT_MC_DEC128(MC_DEC128_C(1)),
          .max = OPT_MC_DEC128(MC_DEC128_C(2)),
-         .precision = OPT_U32((uint32_t)INT32_MAX + 1),
-         .expectError = "Precision cannot be greater than 2147483647"},
+         .precision = OPT_I32(-1),
+         .expectError = "Precision must be non-negative"},
         {// Expect error due to precision exceeding max finite Decimal128.
          // The largest decimal128 value is 9.99999...x10^6144. 10^6145 results in infinity.
          .min = OPT_MC_DEC128(MC_DEC128_C(0)),
          .max = OPT_MC_DEC128(MC_DEC128_C(1)),
-         .precision = OPT_U32(6145),
+         .precision = OPT_I32(6145),
          .expectError = "Precision is too large"}};
 
     for (size_t i = 0; i < sizeof(tests) / sizeof(tests[0]); i++) {

@@ -49,7 +49,7 @@ typedef struct {
     bson_iter_t indexMax;
     // precision determines the number of digits after the decimal point for
     // floating point values.
-    mc_optional_uint32_t precision;
+    mc_optional_int32_t precision;
     // trimFactor determines how many root levels of the hypergraph to trim.
     mc_optional_int32_t trimFactor;
 } mc_FLE2RangeFindSpecEdgesInfo_t;
@@ -94,7 +94,7 @@ typedef struct {
     bson_iter_t max;
     // precision determines the number of digits after the decimal point for
     // floating point values.
-    mc_optional_uint32_t precision;
+    mc_optional_int32_t precision;
     // trimFactor determines how many root levels of the hypergraph to trim.
     mc_optional_int32_t trimFactor;
 } mc_FLE2RangeInsertSpec_t;
