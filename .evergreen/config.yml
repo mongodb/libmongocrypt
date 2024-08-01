@@ -404,10 +404,7 @@ tasks:
   - func: "fetch source"
   - func: "earthly"
     vars:
-      args: +build --env=${earthly_env}
-  - func: "earthly"
-    vars:
-      args: --artifact +build/libmongocrypt-install ${workdir}/install
+      args: --artifact +build/libmongocrypt-install --env=${earthly_env} ${workdir}/install
   - func: "tar and upload libmongocrypt libraries"
 
 - name: build-deb-packages-with-earthly
