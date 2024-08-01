@@ -42,15 +42,6 @@ snyk monitor \
 --remote-repo-url=https://github.com/mongodb/libmongocrypt.git
 ```
 
-```bash
-snyk auth
-snyk monitor \
---org=$ORGANIZATION_ID \
---target-reference=<rx.y or master> \
---unmanaged \
---remote-repo-url=https://github.com/mongodb/libmongocrypt.git
-```
-
 Check the updated reference targets in Snyk for detected vulnerabilities.
 
 #### Check Silk
