@@ -95,7 +95,7 @@ Do the following when releasing:
      For a new minor release, use `master` for `--branch`. For a patch release, use the release branch (e.g. `rx.y`).
      Secrets can be obtained from [AWS Secrets Manager](https://wiki.corp.mongodb.com/display/DRIVERS/Using+AWS+Secrets+Manager+to+Store+Testing+Secrets) under `drivers/libmongocrypt`.
    - Attach `etc/third_party_vulnerabilities.md` to the release.
-   - Attach `ssdlc_compliance_report.md` to the release.
+   - Attach `etc/ssdlc_compliance_report.md` to the release.
 
 - If this is a new minor release (e.g. `x.y.0`):
    - File a DOCSP ticket to update the installation instructions on [Install libmongocrypt](https://www.mongodb.com/docs/manual/core/csfle/reference/libmongocrypt/). ([Example](https://jira.mongodb.org/browse/DOCSP-36863))
