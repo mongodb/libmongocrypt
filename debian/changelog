@@ -1,6 +1,7 @@
 libmongocrypt (1.11.0-1) UNRELEASED; urgency=medium
 
   * New upstream release.
+  * Remove Kyle from uploaders.
 
  -- Roberto C. Sanchez <roberto@connexer.com>  Fri, 02 Aug 2024 17:54:28 -0400
 
