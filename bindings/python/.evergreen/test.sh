@@ -29,9 +29,7 @@ if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
 elif [ "Darwin" = "$(uname -s)" ]; then
     export PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/nocrypto/lib/libmongocrypt.dylib
     PYMONGOCRYPT_LIB_CRYPTO=${MONGOCRYPT_DIR}/lib/libmongocrypt.dylib
-    MACOS_VER=$(sw_vers -productVersion)
     PYTHONS=(
-          "/Library/Frameworks/Python.framework/Versions/3.8/bin/python3"
           "/Library/Frameworks/Python.framework/Versions/3.9/bin/python3"
           "/Library/Frameworks/Python.framework/Versions/3.10/bin/python3"
           "/Library/Frameworks/Python.framework/Versions/3.11/bin/python3"
@@ -70,25 +68,11 @@ else
       crypt_shared --version latest --out ../crypt_shared/ --target $TARGET
 fi
 
-
-# Don't run pre-commit on Windows
-if [ "$OS" != "Windows_NT" ]; then
-    # Only run once and with Python 3.8+
-    createvirtualenv $BASE_PYTHON .venv
-    python -m pip install certifi
-    python -m pip install pre-commit
-    pre-commit run --all-files
-    deactivate
-    rm -rf .venv
-fi
-
 for PYTHON_BINARY in "${PYTHONS[@]}"; do
     echo "Running test with python: $PYTHON_BINARY"
     $PYTHON_BINARY -c 'import sys; print(sys.version)'
     git clean -dffx
     createvirtualenv $PYTHON_BINARY .venv
-    python -m pip install check-manifest
-    check-manifest -v
     python -m pip install --prefer-binary -v -e ".[test]"
     echo "Running tests with crypto enabled libmongocrypt..."
     PYMONGOCRYPT_LIB=$PYMONGOCRYPT_LIB_CRYPTO python -c 'from pymongocrypt.binding import lib;assert lib.mongocrypt_is_crypto_available(), "mongocrypt_is_crypto_available() returned False"'
@@ -101,3 +85,13 @@ for PYTHON_BINARY in "${PYTHONS[@]}"; do
     deactivate
     rm -rf .venv
 done
+
+# Verify the sbom file
+LIBMONGOCRYPT_VERSION=$(cat ./libmongocrypt-version.txt)
+EXPECTED="pkg:github/mongodb/libmongocrypt@$LIBMONGOCRYPT_VERSION"
+if grep -q $EXPECTED sbom.json; then
+  echo "SBOM is up to date!"
+else
+  echo "SBOM is out of date! Run the \"update-sbom.sh\" script."
+  exit 1
+fi

@@ -225,16 +225,6 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
                              "001\n"
                              "01\n"
                              "100000\n"},
-        {.description = "Range V2 enabled w/ no trim factor fails",
-         .findSpecJSON = RAW_STRING({
-             "lowerBound" : {"$numberInt" : "7"},
-             "lbIncluded" : true,
-             "upperBound" : {"$numberInt" : "32"},
-             "ubIncluded" : true,
-             "indexMin" : {"$numberInt" : "0"},
-             "indexMax" : {"$numberInt" : "32"}
-         }),
-         .expectedErrorAtParseTime = "Missing field 'trimFactor' in placeholder"},
         {.description = "Int32 Bounds included",
          .findSpecJSON = RAW_STRING({
              "lowerBound" : {"$numberInt" : "7"},
@@ -454,6 +444,17 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
          }),
          .expectedError =
              "Trim factor must be less than the number of bits (6) used to represent an element of the domain"},
+        {.description = "Negative trim factor fails",
+         .findSpecJSON = RAW_STRING({
+             "lowerBound" : {"$numberDouble" : "-Infinity"},
+             "lbIncluded" : true,
+             "upperBound" : {"$numberDouble" : "Infinity"},
+             "ubIncluded" : true,
+             "indexMin" : {"$numberInt" : "0"},
+             "indexMax" : {"$numberInt" : "32"},
+             "trimFactor" : -1
+         }),
+         .expectedErrorAtParseTime = "'trimFactor' must be non-negative"},
         {.description = "Int64 Bounds included",
          .findSpecJSON = RAW_STRING({
              "lowerBound" : {"$numberLong" : "0"},
@@ -885,7 +886,8 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
             sparsity = (size_t)test->sparsity.value;
         }
 
-        mc_mincover_t *mc = mc_get_mincover_from_FLE2RangeFindSpec(&findSpec, sparsity, status);
+        const bool use_range_v2 = !test->disableRangeV2;
+        mc_mincover_t *mc = mc_get_mincover_from_FLE2RangeFindSpec(&findSpec, sparsity, status, use_range_v2);
 
         if (test->expectedError) {
             ASSERT(NULL == mc);

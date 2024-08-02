@@ -7,6 +7,10 @@ elseif (DEFINED CMAKE_MSVC_RUNTIME_LIBRARY)
    message (WARNING "The CMAKE_MSVC_RUNTIME_LIBRARY variable is set, but CMake is too old to understand it")
 endif ()
 
+if (POLICY CMP0135)
+   cmake_policy (SET CMP0135 NEW)
+endif ()
+
 project (mongocrypt C)
 
 # Used for the csfle-markup util:
@@ -21,11 +25,6 @@ option (ENABLE_PIC
 )
 option (ENABLE_BUILD_FOR_PPA "Maintainer-only option for preparing PPA build" OFF)
 option (ENABLE_ONLINE_TESTS "Enable online tests and the csfle utility. Requires libmongoc." ON)
-# TODO MONGOCRYPT-661 When range V2 is default, remove this option.
-option (ENABLE_USE_RANGE_V2 "Enable the use_range_v2 flag by default for queryable encryption" OFF)
-if (ENABLE_USE_RANGE_V2)
-   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DQE_USE_RANGE_V2")
-endif ()
 
 if (ENABLE_WINDOWS_STATIC_RUNTIME)
    if (POLICY CMP0091)

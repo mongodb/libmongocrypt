@@ -468,6 +468,17 @@ void mongocrypt_setopt_set_crypt_shared_lib_path_override(mongocrypt_t *crypt, c
 void mongocrypt_setopt_use_need_kms_credentials_state(mongocrypt_t *crypt);
 
 /**
+ * @brief Opt-into handling the MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB state.
+ *
+ * A context enters the MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB state when
+ * processing a `bulkWrite` command. The target database of the `bulkWrite` may differ from the command database
+ * ("admin").
+ *
+ * @param[in] crypt The @ref mongocrypt_t object to update
+ */
+void mongocrypt_setopt_use_need_mongo_collinfo_with_db_state(mongocrypt_t *crypt);
+
+/**
  * Initialize new @ref mongocrypt_t object.
  *
  * Set options before using @ref mongocrypt_setopt_kms_provider_local, @ref
@@ -653,9 +664,8 @@ bool mongocrypt_ctx_setopt_algorithm(mongocrypt_ctx_t *ctx, const char *algorith
 /// String constant for setopt_algorithm "Random" encryption
 /// String constant for setopt_algorithm "Indexed" explicit encryption
 /// String constant for setopt_algorithm "Unindexed" explicit encryption
-/// String constant for setopt_algorithm "rangePreview" explicit encryption
-/// NOTE: The RangePreview algorithm is experimental only. It is not intended
-/// for public use.
+// DEPRECATED: support "RangePreview" has been removed in favor of "range".
+// NOTE: "Range" is currently unstable API and subject to backwards breaking changes.
 
 /**
  * Identify the AWS KMS master key to use for creating a data key.
@@ -837,9 +847,9 @@ bool mongocrypt_ctx_explicit_encrypt_init(mongocrypt_ctx_t *ctx, mongocrypt_bina
 /**
  * Explicit helper method to encrypt a Match Expression or Aggregate Expression.
  * Contexts created for explicit encryption will not go through mongocryptd.
- * Requires query_type to be "rangePreview".
- * NOTE: The RangePreview algorithm is experimental only. It is not intended for
- * public use.
+ * Requires query_type to be "range".
+ *
+ * NOTE: "range" is currently unstable API and subject to backwards breaking changes.
  *
  * This method expects the passed-in BSON to be of the form:
  * { "v" : FLE2RangeFindDriverSpec }
@@ -932,9 +942,10 @@ bool mongocrypt_ctx_rewrap_many_datakey_init(mongocrypt_ctx_t *ctx, mongocrypt_b
  */
 typedef enum {
     MONGOCRYPT_CTX_ERROR = 0,
-    MONGOCRYPT_CTX_NEED_MONGO_COLLINFO = 1, /* run on main MongoClient */
-    MONGOCRYPT_CTX_NEED_MONGO_MARKINGS = 2, /* run on mongocryptd. */
-    MONGOCRYPT_CTX_NEED_MONGO_KEYS = 3,     /* run on key vault */
+    MONGOCRYPT_CTX_NEED_MONGO_COLLINFO = 1,         /* run on main MongoClient */
+    MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB = 8, /* run on main MongoClient */
+    MONGOCRYPT_CTX_NEED_MONGO_MARKINGS = 2,         /* run on mongocryptd. */
+    MONGOCRYPT_CTX_NEED_MONGO_KEYS = 3,             /* run on key vault */
     MONGOCRYPT_CTX_NEED_KMS = 4,
     MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS = 7, /* fetch/renew KMS credentials */
     MONGOCRYPT_CTX_READY = 5,                /* ready for encryption/decryption */
@@ -954,7 +965,7 @@ mongocrypt_ctx_state_t mongocrypt_ctx_state(mongocrypt_ctx_t *ctx);
  * is in MONGOCRYPT_CTX_NEED_MONGO_* states.
  *
  * @p op_bson is a BSON document to be used for the operation.
- * - For MONGOCRYPT_CTX_NEED_MONGO_COLLINFO it is a listCollections filter.
+ * - For MONGOCRYPT_CTX_NEED_MONGO_COLLINFO(_WITH_DB) it is a listCollections filter.
  * - For MONGOCRYPT_CTX_NEED_MONGO_KEYS it is a find filter.
  * - For MONGOCRYPT_CTX_NEED_MONGO_MARKINGS it is a command to send to
  * mongocryptd.
@@ -972,12 +983,27 @@ mongocrypt_ctx_state_t mongocrypt_ctx_state(mongocrypt_ctx_t *ctx);
 bool mongocrypt_ctx_mongo_op(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *op_bson);
 
 /**
+ * Get the database to run the mongo operation.
+ *
+ * Only applies when mongocrypt_ctx_t is in the state:
+ * MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB.
+ *
+ * The lifetime of the returned string is tied to the lifetime of @p ctx. It is
+ * valid until @ref mongocrypt_ctx_destroy is called.
+ *
+ * @param[in] ctx The @ref mongocrypt_ctx_t object.
+ * @returns A string or NULL. If NULL, an error status is set. Retrieve it with
+ * @ref mongocrypt_ctx_status
+ */
+const char *mongocrypt_ctx_mongo_db(mongocrypt_ctx_t *ctx);
+
+/**
  * Feed a BSON reply or result when mongocrypt_ctx_t is in
  * MONGOCRYPT_CTX_NEED_MONGO_* states. This may be called multiple times
  * depending on the operation.
  *
  * reply is a BSON document result being fed back for this operation.
- * - For MONGOCRYPT_CTX_NEED_MONGO_COLLINFO it is a doc from a listCollections
+ * - For MONGOCRYPT_CTX_NEED_MONGO_COLLINFO(_WITH_DB) it is a doc from a listCollections
  * cursor. (Note, if listCollections returned no result, do not call this
  * function.)
  * - For MONGOCRYPT_CTX_NEED_MONGO_KEYS it is a doc from a find cursor.
@@ -1273,8 +1299,7 @@ bool mongocrypt_setopt_crypto_hooks(mongocrypt_t *crypt,
  * operation.
  * @param[in] aes_256_ctr_decrypt The crypto callback function for decrypt
  * operation.
- * @param[in] ctx A context passed as an argument to the crypto callback
- * every invocation.
+ * @param[in] ctx Unused.
  * @pre @ref mongocrypt_init has not been called on @p crypt.
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_status
@@ -1293,8 +1318,7 @@ bool mongocrypt_setopt_aes_256_ctr(mongocrypt_t *crypt,
  * @param[in] crypt The @ref mongocrypt_t object.
  * @param[in] aes_256_ecb_encrypt The crypto callback function for encrypt
  * operation.
- * @param[in] ctx A context passed as an argument to the crypto callback
- * every invocation.
+ * @param[in] ctx Unused.
  * @pre @ref mongocrypt_init has not been called on @p crypt.
  * @returns A boolean indicating success. If false, an error status is set.
  * Retrieve it with @ref mongocrypt_status
@@ -1333,6 +1357,17 @@ bool mongocrypt_setopt_crypto_hook_sign_rsaes_pkcs1_v1_5(mongocrypt_t *crypt,
  * @param[in] crypt The @ref mongocrypt_t object to update
  */
 void mongocrypt_setopt_bypass_query_analysis(mongocrypt_t *crypt);
+
+/**
+ * DEPRECATED: Use of `mongocrypt_setopt_use_range_v2` is deprecated. Range V2 is always enabled.
+ * NOTE: "range" is currently unstable API and subject to backwards breaking changes.
+ *
+ * @param[in] crypt The @ref mongocrypt_t object.
+ *
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_status
+ */
+bool mongocrypt_setopt_use_range_v2(mongocrypt_t *crypt);
 
 /**
  * Set the contention factor used for explicit encryption.
@@ -1376,9 +1411,8 @@ bool mongocrypt_ctx_setopt_index_key_id(mongocrypt_ctx_t *ctx, mongocrypt_binary
 bool mongocrypt_ctx_setopt_query_type(mongocrypt_ctx_t *ctx, const char *query_type, int len);
 
 /**
- * Set options for explicit encryption with the "rangePreview" algorithm.
- * NOTE: The RangePreview algorithm is experimental only. It is not intended for
- * public use.
+ * Set options for explicit encryption with the "range" algorithm.
+ * NOTE: "range" is currently unstable API and subject to backwards breaking changes.
  *
  * @p opts is a BSON document of the form:
  * {
@@ -1398,8 +1432,8 @@ bool mongocrypt_ctx_setopt_query_type(mongocrypt_ctx_t *ctx, const char *query_t
 bool mongocrypt_ctx_setopt_algorithm_range(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *opts);
 
 /// String constants for setopt_query_type
-// NOTE: The RangePreview algorithm is experimental only. It is not intended for
-// public use.
+// DEPRECATED: Support "rangePreview" has been removed in favor of "range".
+/// NOTE: "range" is currently unstable API and subject to backwards breaking changes.
 """
 )
 
@@ -1446,7 +1480,7 @@ try:
         lib = ffi.dlopen(_PYMONGOCRYPT_LIB)
     else:
         try:
-            lib = ffi.dlopen(_path)
+            lib = ffi.dlopen(str(_path))
         except OSError:
             # Fallback to libmongocrypt installed on the system.
             lib = ffi.dlopen("mongocrypt")

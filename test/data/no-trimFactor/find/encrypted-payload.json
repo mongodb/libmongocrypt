@@ -1,0 +1,62 @@
+{
+    "find": "test",
+    "filter": {
+        "$and": [
+            {
+                "plainText": {
+                    "$eq": "sample"
+                }
+            },
+            {
+                "$and": [
+                    {
+                        "encrypted": {
+                            "$gte": {
+                                "$binary": {
+                                    "base64": "DQEBAAADcGF5bG9hZACZAAAABGcAhQAAAAMwAH0AAAAFZAAgAAAAABVoe9wkcCyHpbOGCU+k9auwnEcS2CtNpRqiecg98ONpBXMAIAAAAABvqHHsxgHdi12FXVttMVYYwNK4R2zYUjeXQHAURNBvzwVsACAAAAAAfmp4QWZF7LiYXH6RYjf1kc6OpgRnCadlHki6cRrMilsAABJjbQAIAAAAAAAAAAAQcGF5bG9hZElkAAAAAAAQZmlyc3RPcGVyYXRvcgACAAAAEHNlY29uZE9wZXJhdG9yAAQAAAASc3AAAQAAAAAAAAAQdGYABgAAABBtbgAAAACAEG14AP///38A",
+                                    "subType": "06"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "encrypted": {
+                            "$lte": {
+                                "$binary": {
+                                    "base64": "DTsAAAAQcGF5bG9hZElkAAAAAAAQZmlyc3RPcGVyYXRvcgACAAAAEHNlY29uZE9wZXJhdG9yAAQAAAAA",
+                                    "subType": "06"
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        ]
+    },
+    "encryptionInformation": {
+        "type": {
+            "$numberInt": "1"
+        },
+        "schema": {
+            "db.test": {
+                "fields": [
+                    {
+                        "keyId": {
+                            "$binary": {
+                                "base64": "EjRWeBI0mHYSNBI0VniQEg==",
+                                "subType": "04"
+                            }
+                        },
+                        "path": "encrypted",
+                        "bsonType": "int",
+                        "queries": {
+                            "queryType": "range"
+                        }
+                    }
+                ],
+                "escCollection": "enxcol_.test.esc",
+                "ecocCollection": "enxcol_.test.ecoc"
+            }
+        }
+    }
+}

@@ -1,0 +1,14 @@
+# These package URLs (purls) point to the versions (tags) of external dependencies
+# that are committed to the project. Refer: https://github.com/package-url/purl-spec
+
+# This file is fed to silkbomb to generate the cyclonedx.sbom.json file. Edit this file
+# instead of modifying the SBOM JSON directly. After modifying this file, be sure to
+# re-generate the SBOM JSON file with: `./.evergreen/earthly.sh +sbom-generate`. If
+# adding a new dependency, ensure the resulting SBOM JSON includes the `licenses` and
+# `copyright` property. This information can be manually added.
+
+# libbson is obtained via `cmake/FetchMongoC.cmake`.
+pkg:github/mongodb/mongo-c-driver@v1.27.1?#src/libbson
+
+# IntelDFP is obtained via `cmake/IntelDFP.cmake`
+pkg:generic/IntelRDFPMathLib@20U2?download_url=https://www.netlib.org/misc/intel/IntelRDFPMathLib20U2.tar.gz

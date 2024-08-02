@@ -686,9 +686,7 @@ bool mongocrypt_ctx_setopt_algorithm(mongocrypt_ctx_t *ctx, const char *algorith
 #define MONGOCRYPT_ALGORITHM_INDEXED_STR "Indexed"
 /// String constant for setopt_algorithm "Unindexed" explicit encryption
 #define MONGOCRYPT_ALGORITHM_UNINDEXED_STR "Unindexed"
-/// String constant for setopt_algorithm "rangePreview" explicit encryption (deprecated in favor of "range")
-/// NOTE: "rangePreview" is experimental only and is not intended for public use.
-/// API for "rangePreview" may be removed in a future release.
+// DEPRECATED: support "RangePreview" has been removed in favor of "range".
 #define MONGOCRYPT_ALGORITHM_RANGEPREVIEW_DEPRECATED_STR "RangePreview"
 // NOTE: "Range" is currently unstable API and subject to backwards breaking changes.
 #define MONGOCRYPT_ALGORITHM_RANGE_STR "Range"
@@ -880,11 +878,7 @@ bool mongocrypt_ctx_explicit_encrypt_init(mongocrypt_ctx_t *ctx, mongocrypt_bina
 /**
  * Explicit helper method to encrypt a Match Expression or Aggregate Expression.
  * Contexts created for explicit encryption will not go through mongocryptd.
- * Requires query_type to be "range" or "rangePreview".
- *
- * NOTE: "rangePreview" is experimental only and is not intended for public use.
- * API for "rangePreview" may be removed in a future release.
- * NOTE: "range" is currently unstable API and subject to backwards breaking changes.
+ * Requires query_type to be "range".
  *
  * This method expects the passed-in BSON to be of the form:
  * { "v" : FLE2RangeFindDriverSpec }
@@ -1419,8 +1413,7 @@ MONGOCRYPT_EXPORT
 void mongocrypt_setopt_bypass_query_analysis(mongocrypt_t *crypt);
 
 /**
- * @brief Opt-into use of Queryable Encryption Range V2 protocol.
- * NOTE: "range" is currently unstable API and subject to backwards breaking changes.
+ * DEPRECATED: Use of `mongocrypt_setopt_use_range_v2` is deprecated. Range V2 is always enabled.
  *
  * @param[in] crypt The @ref mongocrypt_t object.
  *
@@ -1498,9 +1491,7 @@ bool mongocrypt_ctx_setopt_algorithm_range(mongocrypt_ctx_t *ctx, mongocrypt_bin
 
 /// String constants for setopt_query_type
 #define MONGOCRYPT_QUERY_TYPE_EQUALITY_STR "equality"
-// 'rangePreview' is deprecated in favor of range.
-/// NOTE: "rangePreview" is experimental only and is not intended for public use.
-/// API for "rangePreview" may be removed in a future release.
+// DEPRECATED: Support "rangePreview" has been removed in favor of "range".
 #define MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_DEPRECATED_STR "rangePreview"
 /// NOTE: "range" is currently unstable API and subject to backwards breaking changes.
 #define MONGOCRYPT_QUERY_TYPE_RANGE_STR "range"

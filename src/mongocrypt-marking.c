@@ -896,20 +896,20 @@ fail:
 
 // get_edges creates and returns edges from an FLE2RangeInsertSpec. Returns NULL
 // on error.
-static mc_edges_t *get_edges(mc_FLE2RangeInsertSpec_t *insertSpec, size_t sparsity, mongocrypt_status_t *status) {
+static mc_edges_t *
+get_edges(mc_FLE2RangeInsertSpec_t *insertSpec, size_t sparsity, mongocrypt_status_t *status, bool use_range_v2) {
     BSON_ASSERT_PARAM(insertSpec);
 
     bson_type_t value_type = bson_iter_type(&insertSpec->v);
-
-    uint32_t trimFactor = insertSpec->trimFactor.set ? insertSpec->trimFactor.value : 0;
 
     if (value_type == BSON_TYPE_INT32) {
         return mc_getEdgesInt32((mc_getEdgesInt32_args_t){.value = bson_iter_int32(&insertSpec->v),
                                                           .min = OPT_I32(bson_iter_int32(&insertSpec->min)),
                                                           .max = OPT_I32(bson_iter_int32(&insertSpec->max)),
                                                           .sparsity = sparsity,
-                                                          .trimFactor = trimFactor},
-                                status);
+                                                          .trimFactor = insertSpec->trimFactor},
+                                status,
+                                use_range_v2);
     }
 
     else if (value_type == BSON_TYPE_INT64) {
@@ -917,8 +917,9 @@ static mc_edges_t *get_edges(mc_FLE2RangeInsertSpec_t *insertSpec, size_t sparsi
                                                           .min = OPT_I64(bson_iter_int64(&insertSpec->min)),
                                                           .max = OPT_I64(bson_iter_int64(&insertSpec->max)),
                                                           .sparsity = sparsity,
-                                                          .trimFactor = trimFactor},
-                                status);
+                                                          .trimFactor = insertSpec->trimFactor},
+                                status,
+                                use_range_v2);
     }
 
     else if (value_type == BSON_TYPE_DATE_TIME) {
@@ -926,14 +927,15 @@ static mc_edges_t *get_edges(mc_FLE2RangeInsertSpec_t *insertSpec, size_t sparsi
                                                           .min = OPT_I64(bson_iter_date_time(&insertSpec->min)),
                                                           .max = OPT_I64(bson_iter_date_time(&insertSpec->max)),
                                                           .sparsity = sparsity,
-                                                          .trimFactor = trimFactor},
-                                status);
+                                                          .trimFactor = insertSpec->trimFactor},
+                                status,
+                                use_range_v2);
     }
 
     else if (value_type == BSON_TYPE_DOUBLE) {
         mc_getEdgesDouble_args_t args = {.value = bson_iter_double(&insertSpec->v),
                                          .sparsity = sparsity,
-                                         .trimFactor = trimFactor};
+                                         .trimFactor = insertSpec->trimFactor};
         if (insertSpec->precision.set) {
             // If precision is set, pass min/max/precision to mc_getEdgesDouble.
             // Do not pass min/max if precision is not set. All three must be set
@@ -943,7 +945,7 @@ static mc_edges_t *get_edges(mc_FLE2RangeInsertSpec_t *insertSpec, size_t sparsi
             args.precision = insertSpec->precision;
         }
 
-        return mc_getEdgesDouble(args, status);
+        return mc_getEdgesDouble(args, status, use_range_v2);
     }
 
     else if (value_type == BSON_TYPE_DECIMAL128) {
@@ -952,7 +954,7 @@ static mc_edges_t *get_edges(mc_FLE2RangeInsertSpec_t *insertSpec, size_t sparsi
         mc_getEdgesDecimal128_args_t args = {
             .value = value,
             .sparsity = sparsity,
-            .trimFactor = trimFactor,
+            .trimFactor = insertSpec->trimFactor,
         };
         if (insertSpec->precision.set) {
             const mc_dec128 min = mc_dec128_from_bson_iter(&insertSpec->min);
@@ -961,7 +963,7 @@ static mc_edges_t *get_edges(mc_FLE2RangeInsertSpec_t *insertSpec, size_t sparsi
             args.max = OPT_MC_DEC128(max);
             args.precision = insertSpec->precision;
         }
-        return mc_getEdgesDecimal128(args, status);
+        return mc_getEdgesDecimal128(args, status, use_range_v2);
 #else // ↑↑↑↑↑↑↑↑ With Decimal128 / Without ↓↓↓↓↓↓↓↓↓↓
         CLIENT_ERR("unsupported BSON type (Decimal128) for range: libmongocrypt "
                    "was built without extended Decimal128 support");
@@ -1025,7 +1027,7 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange_v1(
     // g:= array<EdgeTokenSet>
     {
         BSON_ASSERT(placeholder->sparsity >= 0 && (uint64_t)placeholder->sparsity <= (uint64_t)SIZE_MAX);
-        edges = get_edges(&insertSpec, (size_t)placeholder->sparsity, status);
+        edges = get_edges(&insertSpec, (size_t)placeholder->sparsity, status, kb->crypt->opts.use_range_v2);
         if (!edges) {
             goto fail;
         }
@@ -1128,6 +1130,7 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange(_mo
     BSON_ASSERT_PARAM(ciphertext);
     BSON_ASSERT(kb->crypt);
     BSON_ASSERT(marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION);
+    const bool use_range_v2 = kb->crypt->opts.use_range_v2;
 
     if (!kb->crypt->opts.use_fle2_v2) {
         return _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange_v1(kb, marking, ciphertext, status);
@@ -1143,7 +1146,7 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange(_mo
     // Parse the value ("v"), min ("min"), and max ("max") from
     // FLE2EncryptionPlaceholder for range insert.
     mc_FLE2RangeInsertSpec_t insertSpec;
-    if (!mc_FLE2RangeInsertSpec_parse(&insertSpec, &placeholder->v_iter, kb->crypt->opts.use_range_v2, status)) {
+    if (!mc_FLE2RangeInsertSpec_parse(&insertSpec, &placeholder->v_iter, use_range_v2, status)) {
         goto fail;
     }
 
@@ -1159,7 +1162,7 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange(_mo
     // g:= array<EdgeTokenSetV2>
     {
         BSON_ASSERT(placeholder->sparsity >= 0 && (uint64_t)placeholder->sparsity <= (uint64_t)SIZE_MAX);
-        edges = get_edges(&insertSpec, (size_t)placeholder->sparsity, status);
+        edges = get_edges(&insertSpec, (size_t)placeholder->sparsity, status, kb->crypt->opts.use_range_v2);
         if (!edges) {
             goto fail;
         }
@@ -1224,10 +1227,17 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange(_mo
         }
     }
 
+    // Include "range" payload fields introduced in SERVER-91889.
+    payload.sparsity = OPT_I64(placeholder->sparsity);
+    payload.precision = insertSpec.precision;
+    payload.trimFactor = OPT_I32(mc_edges_get_used_trimFactor(edges));
+    bson_value_copy(bson_iter_value(&insertSpec.min), &payload.indexMin);
+    bson_value_copy(bson_iter_value(&insertSpec.max), &payload.indexMax);
+
     {
         bson_t out;
         bson_init(&out);
-        mc_FLE2InsertUpdatePayloadV2_serializeForRange(&payload, &out);
+        mc_FLE2InsertUpdatePayloadV2_serializeForRange(&payload, &out, use_range_v2);
         _mongocrypt_buffer_steal_from_bson(&ciphertext->data, &out);
     }
     // Do not set ciphertext->original_bson_type and ciphertext->key_id. They are
@@ -1390,8 +1400,10 @@ static bool isInfinite(bson_iter_t *iter) {
 
 // mc_get_mincover_from_FLE2RangeFindSpec creates and returns a mincover from an
 // FLE2RangeFindSpec. Returns NULL on error.
-mc_mincover_t *
-mc_get_mincover_from_FLE2RangeFindSpec(mc_FLE2RangeFindSpec_t *findSpec, size_t sparsity, mongocrypt_status_t *status) {
+mc_mincover_t *mc_get_mincover_from_FLE2RangeFindSpec(mc_FLE2RangeFindSpec_t *findSpec,
+                                                      size_t sparsity,
+                                                      mongocrypt_status_t *status,
+                                                      bool use_range_v2) {
     BSON_ASSERT_PARAM(findSpec);
     BSON_ASSERT(findSpec->edgesInfo.set);
 
@@ -1436,7 +1448,6 @@ mc_get_mincover_from_FLE2RangeFindSpec(mc_FLE2RangeFindSpec_t *findSpec, size_t 
         return NULL;
     }
 
-    uint32_t trimFactor = findSpec->edgesInfo.value.trimFactor.set ? findSpec->edgesInfo.value.trimFactor.value : 0;
     switch (bsonType) {
     case BSON_TYPE_INT32:
         BSON_ASSERT(bson_iter_type(&lowerBound) == BSON_TYPE_INT32);
@@ -1452,8 +1463,9 @@ mc_get_mincover_from_FLE2RangeFindSpec(mc_FLE2RangeFindSpec_t *findSpec, size_t 
                                          .min = OPT_I32(bson_iter_int32(&findSpec->edgesInfo.value.indexMin)),
                                          .max = OPT_I32(bson_iter_int32(&findSpec->edgesInfo.value.indexMax)),
                                          .sparsity = sparsity,
-                                         .trimFactor = trimFactor},
-            status);
+                                         .trimFactor = findSpec->edgesInfo.value.trimFactor},
+            status,
+            use_range_v2);
 
     case BSON_TYPE_INT64:
         BSON_ASSERT(bson_iter_type(&lowerBound) == BSON_TYPE_INT64);
@@ -1468,8 +1480,9 @@ mc_get_mincover_from_FLE2RangeFindSpec(mc_FLE2RangeFindSpec_t *findSpec, size_t 
                                          .min = OPT_I64(bson_iter_int64(&findSpec->edgesInfo.value.indexMin)),
                                          .max = OPT_I64(bson_iter_int64(&findSpec->edgesInfo.value.indexMax)),
                                          .sparsity = sparsity,
-                                         .trimFactor = trimFactor},
-            status);
+                                         .trimFactor = findSpec->edgesInfo.value.trimFactor},
+            status,
+            use_range_v2);
     case BSON_TYPE_DATE_TIME:
         BSON_ASSERT(bson_iter_type(&lowerBound) == BSON_TYPE_DATE_TIME);
         BSON_ASSERT(bson_iter_type(&upperBound) == BSON_TYPE_DATE_TIME);
@@ -1483,8 +1496,9 @@ mc_get_mincover_from_FLE2RangeFindSpec(mc_FLE2RangeFindSpec_t *findSpec, size_t 
                                          .min = OPT_I64(bson_iter_date_time(&findSpec->edgesInfo.value.indexMin)),
                                          .max = OPT_I64(bson_iter_date_time(&findSpec->edgesInfo.value.indexMax)),
                                          .sparsity = sparsity,
-                                         .trimFactor = trimFactor},
-            status);
+                                         .trimFactor = findSpec->edgesInfo.value.trimFactor},
+            status,
+            use_range_v2);
     case BSON_TYPE_DOUBLE: {
         BSON_ASSERT(bson_iter_type(&lowerBound) == BSON_TYPE_DOUBLE);
         BSON_ASSERT(bson_iter_type(&upperBound) == BSON_TYPE_DOUBLE);
@@ -1496,7 +1510,7 @@ mc_get_mincover_from_FLE2RangeFindSpec(mc_FLE2RangeFindSpec_t *findSpec, size_t 
                                             .upperBound = bson_iter_double(&upperBound),
                                             .includeUpperBound = includeUpperBound,
                                             .sparsity = sparsity,
-                                            .trimFactor = trimFactor};
+                                            .trimFactor = findSpec->edgesInfo.value.trimFactor};
         if (findSpec->edgesInfo.value.precision.set) {
             // If precision is set, pass min/max/precision to mc_getMincoverDouble.
             // Do not pass min/max if precision is not set. All three must be set
@@ -1505,7 +1519,7 @@ mc_get_mincover_from_FLE2RangeFindSpec(mc_FLE2RangeFindSpec_t *findSpec, size_t 
             args.max = OPT_DOUBLE(bson_iter_double(&findSpec->edgesInfo.value.indexMax));
             args.precision = findSpec->edgesInfo.value.precision;
         }
-        return mc_getMincoverDouble(args, status);
+        return mc_getMincoverDouble(args, status, use_range_v2);
     }
     case BSON_TYPE_DECIMAL128: {
 #if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
@@ -1514,20 +1528,18 @@ mc_get_mincover_from_FLE2RangeFindSpec(mc_FLE2RangeFindSpec_t *findSpec, size_t 
         BSON_ASSERT(bson_iter_type(&findSpec->edgesInfo.value.indexMin) == BSON_TYPE_DECIMAL128);
         BSON_ASSERT(bson_iter_type(&findSpec->edgesInfo.value.indexMax) == BSON_TYPE_DECIMAL128);
 
-        mc_getMincoverDecimal128_args_t args = {
-            .lowerBound = mc_dec128_from_bson_iter(&lowerBound),
-            .includeLowerBound = includeLowerBound,
-            .upperBound = mc_dec128_from_bson_iter(&upperBound),
-            .includeUpperBound = includeUpperBound,
-            .sparsity = sparsity,
-            .trimFactor = trimFactor,
-        };
+        mc_getMincoverDecimal128_args_t args = {.lowerBound = mc_dec128_from_bson_iter(&lowerBound),
+                                                .includeLowerBound = includeLowerBound,
+                                                .upperBound = mc_dec128_from_bson_iter(&upperBound),
+                                                .includeUpperBound = includeUpperBound,
+                                                .sparsity = sparsity,
+                                                .trimFactor = findSpec->edgesInfo.value.trimFactor};
         if (findSpec->edgesInfo.value.precision.set) {
             args.min = OPT_MC_DEC128(mc_dec128_from_bson_iter(&findSpec->edgesInfo.value.indexMin));
             args.max = OPT_MC_DEC128(mc_dec128_from_bson_iter(&findSpec->edgesInfo.value.indexMax));
             args.precision = findSpec->edgesInfo.value.precision;
         }
-        return mc_getMincoverDecimal128(args, status);
+        return mc_getMincoverDecimal128(args, status, use_range_v2);
 #else // ↑↑↑↑↑↑↑↑ With Decimal128 / Without ↓↓↓↓↓↓↓↓↓↓
         CLIENT_ERR("FLE2 find is not supported for Decimal128: libmongocrypt "
                    "was built without Decimal128 support");
@@ -1571,6 +1583,7 @@ static bool _mongocrypt_fle2_placeholder_to_find_ciphertextForRange_v1(_mongocry
     BSON_ASSERT_PARAM(ciphertext);
     BSON_ASSERT(kb->crypt);
 
+    const bool use_range_v2 = kb->crypt->opts.use_range_v2;
     _mongocrypt_crypto_t *crypto = kb->crypt->crypto;
     mc_FLE2EncryptionPlaceholder_t *placeholder = &marking->fle2;
     mc_FLE2FindRangePayload_t payload;
@@ -1588,7 +1601,7 @@ static bool _mongocrypt_fle2_placeholder_to_find_ciphertextForRange_v1(_mongocry
     // Parse the query bounds and index bounds from FLE2EncryptionPlaceholder for
     // range find.
     mc_FLE2RangeFindSpec_t findSpec;
-    if (!mc_FLE2RangeFindSpec_parse(&findSpec, &placeholder->v_iter, kb->crypt->opts.use_range_v2, status)) {
+    if (!mc_FLE2RangeFindSpec_parse(&findSpec, &placeholder->v_iter, use_range_v2, status)) {
         goto fail;
     }
 
@@ -1615,7 +1628,8 @@ static bool _mongocrypt_fle2_placeholder_to_find_ciphertextForRange_v1(_mongocry
         // g:= array<EdgeFindTokenSet>
         {
             BSON_ASSERT(placeholder->sparsity >= 0 && (uint64_t)placeholder->sparsity <= (uint64_t)SIZE_MAX);
-            mincover = mc_get_mincover_from_FLE2RangeFindSpec(&findSpec, (size_t)placeholder->sparsity, status);
+            mincover =
+                mc_get_mincover_from_FLE2RangeFindSpec(&findSpec, (size_t)placeholder->sparsity, status, use_range_v2);
             if (!mincover) {
                 goto fail;
             }
@@ -1709,6 +1723,7 @@ static bool _mongocrypt_fle2_placeholder_to_find_ciphertextForRange(_mongocrypt_
         return _mongocrypt_fle2_placeholder_to_find_ciphertextForRange_v1(kb, marking, ciphertext, status);
     }
 
+    const bool use_range_v2 = kb->crypt->opts.use_range_v2;
     mc_FLE2EncryptionPlaceholder_t *placeholder = &marking->fle2;
     mc_FLE2FindRangePayloadV2_t payload;
     bool res = false;
@@ -1724,7 +1739,7 @@ static bool _mongocrypt_fle2_placeholder_to_find_ciphertextForRange(_mongocrypt_
     // Parse the query bounds and index bounds from FLE2EncryptionPlaceholder for
     // range find.
     mc_FLE2RangeFindSpec_t findSpec;
-    if (!mc_FLE2RangeFindSpec_parse(&findSpec, &placeholder->v_iter, kb->crypt->opts.use_range_v2, status)) {
+    if (!mc_FLE2RangeFindSpec_parse(&findSpec, &placeholder->v_iter, use_range_v2, status)) {
         goto fail;
     }
 
@@ -1735,7 +1750,8 @@ static bool _mongocrypt_fle2_placeholder_to_find_ciphertextForRange(_mongocrypt_
         // g:= array<EdgeFindTokenSet>
         {
             BSON_ASSERT(placeholder->sparsity >= 0 && (uint64_t)placeholder->sparsity <= (uint64_t)SIZE_MAX);
-            mincover = mc_get_mincover_from_FLE2RangeFindSpec(&findSpec, (size_t)placeholder->sparsity, status);
+            mincover =
+                mc_get_mincover_from_FLE2RangeFindSpec(&findSpec, (size_t)placeholder->sparsity, status, use_range_v2);
             if (!mincover) {
                 goto fail;
             }
@@ -1783,6 +1799,15 @@ static bool _mongocrypt_fle2_placeholder_to_find_ciphertextForRange(_mongocrypt_
             }
         }
         payload.payload.set = true;
+
+        if (use_range_v2) {
+            // Include "range" payload fields introduced in SERVER-91889.
+            payload.sparsity = OPT_I64(placeholder->sparsity);
+            payload.precision = findSpec.edgesInfo.value.precision;
+            payload.trimFactor = OPT_I32(mc_mincover_get_used_trimFactor(mincover));
+            bson_value_copy(bson_iter_value(&findSpec.edgesInfo.value.indexMin), &payload.indexMin);
+            bson_value_copy(bson_iter_value(&findSpec.edgesInfo.value.indexMax), &payload.indexMax);
+        }
     }
 
     payload.payloadId = findSpec.payloadId;
@@ -1792,7 +1817,7 @@ static bool _mongocrypt_fle2_placeholder_to_find_ciphertextForRange(_mongocrypt_
     // Serialize.
     {
         bson_t out = BSON_INITIALIZER;
-        mc_FLE2FindRangePayloadV2_serialize(&payload, &out);
+        mc_FLE2FindRangePayloadV2_serialize(&payload, &out, use_range_v2);
         _mongocrypt_buffer_steal_from_bson(&ciphertext->data, &out);
     }
     _mongocrypt_buffer_steal(&ciphertext->key_id, &placeholder->index_key_id);

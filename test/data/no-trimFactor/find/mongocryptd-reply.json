@@ -1,0 +1,69 @@
+{
+    "hasEncryptionPlaceholders": true,
+    "schemaRequiresEncryption": true,
+    "result": {
+        "find": "test",
+        "filter": {
+            "$and": [
+                {
+                    "plainText": {
+                        "$eq": "sample"
+                    }
+                },
+                {
+                    "$and": [
+                        {
+                            "encrypted": {
+                                "$gte": {
+                                    "$binary": {
+                                        "base64": "AwABAAAQdAACAAAAEGEAAwAAAAVraQAQAAAABBI0VngSNJh2EjQSNFZ4kBIFa3UAEAAAAAQSNFZ4EjSYdhI0EjRWeJASA3YAoQAAAANlZGdlc0luZm8AWwAAABBsb3dlckJvdW5kAEDiAQAIbGJJbmNsdWRlZAABEHVwcGVyQm91bmQAQOIBAAh1YkluY2x1ZGVkAAEQaW5kZXhNaW4AAAAAgBBpbmRleE1heAD///9/ABBwYXlsb2FkSWQAAAAAABBmaXJzdE9wZXJhdG9yAAIAAAAQc2Vjb25kT3BlcmF0b3IABAAAAAASY20ACAAAAAAAAAAScwABAAAAAAAAAAA=",
+                                        "subType": "06"
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "encrypted": {
+                                "$lte": {
+                                    "$binary": {
+                                        "base64": "A5oAAAAQdAACAAAAEGEAAwAAAAVraQAQAAAABBI0VngSNJh2EjQSNFZ4kBIFa3UAEAAAAAQSNFZ4EjSYdhI0EjRWeJASA3YAOwAAABBwYXlsb2FkSWQAAAAAABBmaXJzdE9wZXJhdG9yAAIAAAAQc2Vjb25kT3BlcmF0b3IABAAAAAASY20ACAAAAAAAAAAScwABAAAAAAAAAAA=",
+                                        "subType": "06"
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        "encryptionInformation": {
+            "type": {
+                "$numberInt": "1"
+            },
+            "schema": {
+                "db.test": {
+                    "fields": [
+                        {
+                            "keyId": {
+                                "$binary": {
+                                    "base64": "EjRWeBI0mHYSNBI0VniQEg==",
+                                    "subType": "04"
+                                }
+                            },
+                            "path": "encrypted",
+                            "bsonType": "int",
+                            "queries": {
+                                "queryType": "range"
+                            }
+                        }
+                    ],
+                    "escCollection": "enxcol_.test.esc",
+                    "ecocCollection": "enxcol_.test.ecoc"
+                }
+            }
+        }
+    },
+    "ok": {
+        "$numberDouble": "1.0"
+    }
+}

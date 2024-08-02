@@ -54,8 +54,14 @@ class MongoCryptOptions:
             library.
           - `bypass_encryption`: Whether to bypass encryption.
 
+        .. versionremoved:: 1.11
+           Removed the ``enable_range_v2`` parameter.
+
+        .. versionadded:: 1.10
+           Added the ``enable_range_v2`` parameter.
+
         .. versionadded:: 1.3
-           ``crypt_shared_lib_path``, ``crypt_shared_lib_path``,
+           Added the ``crypt_shared_lib_path``, ``crypt_shared_lib_path``, and
            ``bypass_encryption`` parameters.
 
         .. versionadded:: 1.1
@@ -163,7 +169,7 @@ class ExplicitEncryptOpts:
           - `contention_factor` (int): The contention factor to use
             when the algorithm is "Indexed".
           - `range_opts` (bytes): Options for explicit encryption
-            with the "rangePreview" algorithm encoded as a BSON document.
+            with the "range" algorithm encoded as a BSON document.
           - `is_expression` (boolean): True if this is an encryptExpression()
             context. Defaults to False.
 

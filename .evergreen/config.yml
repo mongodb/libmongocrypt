@@ -95,7 +95,7 @@ functions:
               "PACKAGER_ARCH=${packager_arch}" \
               ${compile_env|} \
             bash libmongocrypt/.evergreen/create-packages-and-repos.sh
-  
+
   "upload packages and repos":
     - command: archive.targz_pack
       params:
@@ -136,41 +136,55 @@ functions:
           export MONGOCRYPT_DIR="$(pwd)/all/${variant_name}"
           cd ./libmongocrypt/bindings/python && ${test_env|} ./.evergreen/test.sh
 
-  "build and test node":
+  "test python integ":
+    - command: subprocess.exec
+      params:
+        binary: bash
+        include_expansions_in_env:
+          - project_directory
+          - variant_name
+        args:
+          - ./libmongocrypt/bindings/python/.evergreen/integ-setup.sh
+    - command: expansions.update
+      params:
+        file: expansion.yml
+    - command: subprocess.exec
+      params:
+        binary: bash
+        background: true
+        args:
+          - ${DRIVERS_TOOLS}/.evergreen/csfle/start-servers.sh
+    - command: subprocess.exec
+      params:
+        binary: bash
+        args:
+          - ${DRIVERS_TOOLS}/.evergreen/csfle/await-servers.sh
+    - command: subprocess.exec
+      params:
+        binary: bash
+        env:
+          TOPOLOGY: replica_set
+        args:
+          - ${DRIVERS_TOOLS}/.evergreen/run-orchestration.sh
     - command: "subprocess.exec"
       params:
         binary: bash
-        working_dir: "./libmongocrypt/bindings/node"
+        include_expansions_in_env:
+          - DRIVERS_TOOLS
+          - PYMONGO_DIR
+          - MONGOCRYPT_DIR
         args:
-          - "./.evergreen/test.sh"
-        env:
-          PROJECT_DIRECTORY: ${project_directory}
-          NODE_GITHUB_TOKEN: ${node_github_token}
-          DISTRO_ID: ${distro_id}
-          BUILD_VARIANT: ${build_variant}
-          NODE_LTS_VERSION: ${node_lts_version|16}
-          NPM_VERSION: "9"
-
-
-  "build and publish node":
-    - command: "subprocess.exec"
+          - ./libmongocrypt/bindings/python/.evergreen/integ-test.sh
+    - command: subprocess.exec
       params:
         binary: bash
-        working_dir: "./libmongocrypt/bindings/node"
+        include_expansions_in_env:
+          - DRIVERS_TOOLS
         args:
-          - "./.evergreen/prebuild.sh"
-        env:
-          PROJECT_DIRECTORY: ${project_directory}
-          NODE_GITHUB_TOKEN: ${node_github_token}
-          DISTRO_ID: ${distro_id}
-          BUILD_VARIANT: ${build_variant}
-          NODE_LTS_VERSION: ${node_lts_version|16}
-          NPM_VERSION: "9"
-
-  "attach node xunit results":
+           - ./libmongocrypt/bindings/python/.evergreen/integ-teardown.sh
     - command: attach.xunit_results
       params:
-        file: ./libmongocrypt/bindings/node/xunit.xml
+        file: ${PYMONGO_DIR}/xunit-results/TEST-*.xml
 
   "publish java":
     - command: git.get_project
@@ -376,32 +390,6 @@ functions:
         working_dir: ${working_dir|libmongocrypt}
         script: bash ${workdir}/libmongocrypt/.evergreen/earthly.sh ${args}
 
-  lint-node-cpp:
-    - command: "subprocess.exec"
-      params:
-        binary: bash
-        working_dir: "./libmongocrypt/bindings/node"
-        args:
-          - ".evergreen/check-lint.sh"
-        env:
-          PROJECT_DIRECTORY: ${project_directory}
-          NODE_LTS_VERSION: ${node_lts_version|16}
-          NPM_VERSION: "9"
-          LINT_TARGET: cpp
-
-  lint-node-typescript:
-    - command: "subprocess.exec"
-      params:
-        binary: bash
-        working_dir: "./libmongocrypt/bindings/node"
-        args:
-          - ".evergreen/check-lint.sh"
-        env:
-          PROJECT_DIRECTORY: ${project_directory}
-          NODE_LTS_VERSION: ${node_lts_version|16}
-          NPM_VERSION: "9"
-          LINT_TARGET: typescript
-
 tasks:
 - name: build-and-test-and-upload
   commands:
@@ -410,6 +398,14 @@ tasks:
   - func: "tar and upload libmongocrypt libraries"
   - func: "create packages and repos"
   - func: "upload packages and repos"
+
+- name: build-with-earthly
+  commands:
+  - func: "fetch source"
+  - func: "earthly"
+    vars:
+      args: --artifact +build/libmongocrypt-install --env=${earthly_env} ${workdir}/install
+  - func: "tar and upload libmongocrypt libraries"
 
 - name: build-deb-packages-with-earthly
   commands:
@@ -494,6 +490,16 @@ tasks:
     - func: "test python"
       vars: { variant_name: windows-test }
 
+- name: test-python-integ
+  depends_on:
+  - build-and-test-and-upload
+  commands:
+    - func: "fetch source"
+    - func: "download tarball"
+      vars: { variant_name: "${build_variant}" }
+    - func: "test python integ"
+      vars: { variant_name: "${build_variant}" }
+
 - name: "release-python-macos-1100"
   tags: ["release_python_tag"]
   run_on: macos-1100
@@ -538,25 +544,6 @@ tasks:
   - func: "build csharp and test"
     vars:
       test_env: PROJECT_DIRECTORY=${project_directory}
-
-- name: build-and-test-node
-  commands:
-    - func: "fetch source"
-    - func: "build and test node"
-    - func: "attach node xunit results"
-
-- name: build-and-publish-node
-  commands:
-    - func: "fetch source"
-    - func: "build and publish node"
-
-
-# Note: keep this disabled unless you want master to force-push
-- name: build-and-test-node-force-publish
-  commands:
-    - func: "fetch source"
-    - func: "build and test node"
-    - func: "attach node xunit results"
 
 - name: publish-java
   depends_on:
@@ -700,6 +687,10 @@ tasks:
       name: build-and-test-and-upload
     - variant: macos
       name: build-and-test-and-upload
+    - variant: alpine-amd64-earthly
+      name: build-with-earthly
+    - variant: alpine-arm64-earthly
+      name: build-with-earthly
   commands:
     - func: "fetch source"
     - command: shell.exec
@@ -769,6 +760,10 @@ tasks:
       vars: { variant_name: "ubuntu2204-arm64" }
     - func: "download tarball"
       vars: { variant_name: "macos" }
+    - func: "download tarball"
+      vars: { variant_name: "alpine-amd64-earthly" }
+    - func: "download tarball"
+      vars: { variant_name: "alpine-arm64-earthly" }
     - command: archive.targz_pack
       params:
         target: libmongocrypt-all.tar.gz
@@ -819,41 +814,44 @@ tasks:
     - func: "fetch source"
     - func: "setup packaging credentials"
     - func: "publish packages"
-- name: windows-upload-check
-  depends_on: build-and-test-and-upload
+- name: windows-upload-release
+  depends_on:
+  - variant: windows-test
+    name: build-and-test-and-upload
   commands:
     - func: "fetch source"
     - command: shell.exec
       params:
+        shell: bash
         working_dir: libmongocrypt
         script: |-
           set -o xtrace
           set -o errexit
 
-          CMAKE=/cygdrive/c/cmake/bin/cmake
-          mongocrypt_version="$(python etc/calc_release_version.py)"
-          case "$mongocrypt_version" in
+          . .evergreen/init.sh
+          libmongocrypt_release_version=$(run_python ./etc/calc_release_version.py)
+          case "$libmongocrypt_release_version" in
             *+*)
-              # Not a tagged release.
-              echo "{}" > ./.evergreen/windows-upload.json
+              # Not a tagged release. Use full release version suffix.
+              upload_suffix="$libmongocrypt_release_version"
               ;;
             *-*)
-              # This is an unstable release, like 1.1.0-beta1 or 1.0.1-rc0
-              cp ./.evergreen/windows-upload-doit-unstable.json ./.evergreen/windows-upload.json
+              # Unstable release, like 1.1.0-beta1 or 1.0.1-rc0. Overwrite the latest unstable URL.
+              upload_suffix='_unstable'
               ;;
             *)
-              # It is a tagged release.
-              cp ./.evergreen/windows-upload-doit.json ./.evergreen/windows-upload.json
+              # Tagged release. Overwrite the latest stable URL.
+              upload_suffix=''
               ;;
           esac
-    - command: generate.tasks
-      params:
-        files:
-          - libmongocrypt/.evergreen/windows-upload.json
 
-- name: windows-upload
-  commands:
-    - command: s3.get
+          # Add expansions used in later commands:
+          echo "libmongocrypt_release_version: '$libmongocrypt_release_version'" > expansions.yml
+          echo "upload_suffix: '$upload_suffix'" >> expansions.yml
+    - command: expansions.update
+      params:
+        file: libmongocrypt/expansions.yml
+    - command: s3.get # Download Windows build.
       params:
         aws_key: '${aws_key}'
         aws_secret: '${aws_secret}'
@@ -878,14 +876,52 @@ tasks:
         source_dir: libmongocrypt_upload
         include: [./**]
     - command: s3.put
+      # Windows tarballs were previously documented as available from these fixed URLs:
+      # (stable)  : https://s3.amazonaws.com/mciuploads/libmongocrypt/windows/latest_release/libmongocrypt.tar.gz
+      # (unstable): https://s3.amazonaws.com/mciuploads/libmongocrypt/windows/latest_release/libmongocrypt_unstable.tar.gz
+      # Documentation now refers to the GitHub release page, which includes the per-release tarball.
+      # The fixed URL upload is kept to avoid possibly breaking expectations. Consider removing in the future.
       params:
         aws_key: '${aws_key}'
         aws_secret: '${aws_secret}'
         remote_file: 'libmongocrypt/windows/latest_release/libmongocrypt${upload_suffix}.tar.gz'
+        display_name: (Deprecated) libmongocrypt${upload_suffix}.tar.gz
         bucket: mciuploads
         permissions: public-read
         local_file: 'libmongocrypt_upload.tar.gz'
-        content_type: '${content_type|application/x-gzip}'
+        content_type: 'application/x-gzip'
+    - command: s3.put # Upload tarball for GitHub Release.
+      params:
+        aws_key: '${aws_key}'
+        aws_secret: '${aws_secret}'
+        remote_file: '${project}/${build_variant}/${branch_name}/${revision}/${version_id}/libmongocrypt-windows-x86_64-${libmongocrypt_release_version}.tar.gz'
+        display_name: libmongocrypt-windows-x86_64-${libmongocrypt_release_version}.tar.gz
+        bucket: mciuploads
+        permissions: public-read
+        local_file: 'libmongocrypt_upload.tar.gz'
+        content_type: 'application/x-gzip'
+    - command: shell.exec
+      params:
+        shell: bash
+        script: |-
+          set -o errexit
+          # Authenticate to artifactory for signing image.
+          echo "${artifactory_password}" | docker login --password-stdin --username "${artifactory_username}" artifactory.corp.mongodb.com
+          # Copy file to sign into `libmongocrypt` directory to be used by Earthly.
+          cp libmongocrypt_upload.tar.gz libmongocrypt
+    - func: "earthly" # Sign tarball.
+      vars:
+        args: --secret garasign_username=${garasign_username} --secret garasign_password=${garasign_password} +sign --file_to_sign=libmongocrypt_upload.tar.gz --output_file=libmongocrypt_upload.asc
+    - command: s3.put # Upload signature for GitHub Release.
+      params:
+        aws_key: '${aws_key}'
+        aws_secret: '${aws_secret}'
+        remote_file: '${project}/${build_variant}/${branch_name}/${revision}/${version_id}/libmongocrypt-windows-x86_64-${libmongocrypt_release_version}.asc'
+        display_name: libmongocrypt-windows-x86_64-${libmongocrypt_release_version}.asc
+        bucket: mciuploads
+        permissions: public-read
+        local_file: 'libmongocrypt/libmongocrypt_upload.asc'
+        content_type: 'application/pgp-signature'
 
 - name: debian-package-build
   run_on: &deb-package-build-run_on
@@ -966,20 +1002,6 @@ tasks:
       vars:
         args: +check-format
 
-- name: check-lint-node-cpp
-  tags: [misc]
-  run_on: *docker-distros
-  commands:
-    - func: fetch source
-    - func: lint-node-cpp
-
-- name: check-lint-node-typescript
-  tags: [misc]
-  run_on: *docker-distros
-  commands:
-    - func: fetch source
-    - func: lint-node-typescript
-
 - name: benchmark-java
   commands:
     - func: "fetch source"
@@ -1053,13 +1075,10 @@ buildvariants:
     has_packages: true
     packager_distro: ubuntu1604
     packager_arch: x86_64
-    node_lts_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - build-and-test-node
-  - build-and-publish-node
   - test-java
   - name: publish-packages
     distros:
@@ -1071,9 +1090,7 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan-mac
-  - build-and-test-node
-  - build-and-publish-node
-  - build-and-test-csharp
+  # - build-and-test-csharp // temporary removed to make strong named release.
   - test-java
 - name: rhel72-zseries-test
   display_name: "RHEL 7.2 on zSeries"
@@ -1096,8 +1113,6 @@ buildvariants:
   run_on: rhel83-zseries-small
   tasks:
   - build-and-test-and-upload
-  - build-and-test-node
-  - build-and-publish-node
 - name: windows-vs2015-compile
   display_name: "Windows VS 2015 compile"
   run_on: windows-64-vs2015-test
@@ -1116,11 +1131,8 @@ buildvariants:
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
-  - build-and-test-csharp
-  - build-and-test-node
-  - build-and-publish-node
+  # - build-and-test-csharp // temporary removed to make strong named release.
   - test-java
-  - windows-upload-check
 - name: windows-test-python
   display_name: "Windows Python"
   run_on: windows-64-vsMulti-small
@@ -1139,11 +1151,9 @@ buildvariants:
     has_packages: true
     packager_distro: amazon
     packager_arch: x86_64
-    node_lts_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
-  - build-and-test-node
   - test-java
   - name: publish-packages
     distros:
@@ -1155,12 +1165,10 @@ buildvariants:
     has_packages: true
     packager_distro: amazon2
     packager_arch: x86_64
-    node_lts_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - build-and-test-node
   - test-java
   - name: publish-packages
     distros:
@@ -1172,12 +1180,10 @@ buildvariants:
     has_packages: true
     packager_distro: amazon2
     packager_arch: aarch64
-    node_lts_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - build-and-test-node
   - name: publish-packages
     distros:
     - rhel70-small
@@ -1188,7 +1194,6 @@ buildvariants:
     has_packages: true
     packager_distro: amazon2023
     packager_arch: x86_64
-    node_lts_version: 16
   tasks:
   - build-and-test-and-upload
   - name: publish-packages
@@ -1201,7 +1206,6 @@ buildvariants:
     has_packages: true
     packager_distro: amazon2023
     packager_arch: aarch64
-    node_lts_version: 16
   tasks:
   - build-and-test-and-upload
   - name: publish-packages
@@ -1218,7 +1222,6 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - build-and-test-node
   - test-java
   - name: publish-packages
     distros:
@@ -1247,7 +1250,6 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - build-and-test-node
   - test-java
   - name: publish-packages
     distros:
@@ -1259,12 +1261,10 @@ buildvariants:
     has_packages: true
     packager_distro: debian92
     packager_arch: x86_64
-    node_lts_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - build-and-test-node
   - test-java
   - name: publish-packages
     distros:
@@ -1290,11 +1290,9 @@ buildvariants:
     has_packages: true
     packager_distro: rhel70
     packager_arch: x86_64
-    node_lts_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
-  - build-and-test-node
   - test-java
   - name: publish-packages
     distros:
@@ -1323,9 +1321,9 @@ buildvariants:
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
-  - build-and-test-node
   - test-java
   - test-python
+  - test-python-integ
   - name: publish-packages
     distros:
     - rhel70-small
@@ -1339,6 +1337,7 @@ buildvariants:
   tasks:
   - build-and-test-and-upload
   - test-python
+  - test-python-integ
   - name: publish-packages
     distros:
     - rhel70-small
@@ -1397,12 +1396,10 @@ buildvariants:
     has_packages: true
     packager_distro: suse12
     packager_arch: x86_64
-    node_lts_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - build-and-test-node
   - name: publish-packages
     distros:
     - rhel70-small
@@ -1413,12 +1410,10 @@ buildvariants:
     has_packages: true
     packager_distro: suse15
     packager_arch: x86_64
-    node_lts_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - build-and-test-node
   - test-java
   - name: publish-packages
     distros:
@@ -1430,13 +1425,10 @@ buildvariants:
     has_packages: true
     packager_distro: ubuntu1604
     packager_arch: arm64
-    node_lts_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - build-and-test-node
-  - build-and-publish-node
   - test-java
   - name: publish-packages
     distros:
@@ -1448,13 +1440,11 @@ buildvariants:
     has_packages: true
     packager_distro: ubuntu1804
     packager_arch: x86_64
-    node_lts_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - build-and-test-node
-  - build-and-test-csharp
+  # - build-and-test-csharp // temporary removed to make strong named release.
   - test-java
   - name: publish-packages
     distros:
@@ -1476,12 +1466,10 @@ buildvariants:
     has_packages: true
     packager_distro: ubuntu1804
     packager_arch: arm64
-    node_lts_version: 16
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - build-and-test-node
   - test-java
   - name: publish-packages
     distros:
@@ -1493,14 +1481,12 @@ buildvariants:
     has_packages: true
     packager_distro: ubuntu2004
     packager_arch: x86_64
-    node_lts_version: 20
   tasks:
   - clang-tidy
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - build-and-test-node
-  - build-and-test-csharp
+  # - build-and-test-csharp // temporary removed to make strong named release.
   - test-java
   - upload-java
   - publish-packages
@@ -1511,12 +1497,10 @@ buildvariants:
     has_packages: true
     packager_distro: ubuntu2004
     packager_arch: arm64
-    node_lts_version: 20
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - build-and-test-node
   - name: publish-packages
     distros:
     - ubuntu2004-small
@@ -1533,7 +1517,6 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - build-and-test-node
   # see https://jira.mongodb.org/browse/MONGOCRYPT-515
   #- build-and-test-csharp
   - test-java
@@ -1541,6 +1524,7 @@ buildvariants:
   - name: publish-packages
     distros:
     - ubuntu2004-small
+  - windows-upload-release
 - name: ubuntu2204-arm64
   display_name: "Ubuntu 22.04 arm64"
   run_on: ubuntu2204-arm64-small
@@ -1552,7 +1536,6 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - build-and-test-node
   - name: publish-packages
     distros:
     - ubuntu2004-small
@@ -1580,8 +1563,6 @@ buildvariants:
     compile_env: MACOS_UNIVERSAL=ON CMAKE=/opt/homebrew/bin/cmake
   tasks:
   - build-and-test-and-upload
-  - build-and-test-node
-  - build-and-publish-node
   - test-python
   - test-java
 - name: windows-vs2017-32bit
@@ -1602,6 +1583,22 @@ buildvariants:
   tasks:
   - benchmark-java
   - benchmark-python
+
+- name: alpine-amd64-earthly
+  display_name: "Alpine Linux 3.18 amd64 (via Earthly)"
+  expansions:
+    earthly_env: alpine
+  tasks:
+  - name: build-with-earthly
+    run_on: ubuntu2204-small
+
+- name: alpine-arm64-earthly
+  display_name: "Alpine Linux 3.18 arm64 (via Earthly)"
+  expansions:
+    earthly_env: alpine
+  tasks:
+  - name: build-with-earthly
+    run_on: ubuntu2204-arm64-small
 
 - name: debian11-arm64-earthly
   display_name: "Debian 11 arm64 (via Earthly)"

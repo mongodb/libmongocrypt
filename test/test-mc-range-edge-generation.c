@@ -32,7 +32,7 @@ typedef struct {
     // expectEdges includes a trailing NULL pointer.
     const char *expectEdges[MAX_INT32_EDGES + 1];
     const char *expectError;
-    uint32_t trimFactor;
+    int32_t trimFactor;
 } Int32Test;
 
 #undef MAX_INT32_EDGES
@@ -85,6 +85,12 @@ static void _test_getEdgesInt32(_mongocrypt_tester_t *tester) {
         {.value = 2,
          .min = OPT_I32_C(0),
          .max = OPT_I32_C(7),
+         .sparsity = 1,
+         .trimFactor = -1,
+         .expectError = "trimFactor must be >= 0"},
+        {.value = 2,
+         .min = OPT_I32_C(0),
+         .max = OPT_I32_C(7),
          .sparsity = 2,
          .trimFactor = 0,
          .expectEdges = {"root", "010", "01"}},
@@ -110,8 +116,9 @@ static void _test_getEdgesInt32(_mongocrypt_tester_t *tester) {
                                         .min = test->min,
                                         .max = test->max,
                                         .sparsity = test->sparsity,
-                                        .trimFactor = test->trimFactor};
-        mc_edges_t *got = mc_getEdgesInt32(args, status);
+                                        .trimFactor = OPT_I32(test->trimFactor)};
+        const bool use_range_v2 = true;
+        mc_edges_t *got = mc_getEdgesInt32(args, status, use_range_v2);
         if (test->expectError != NULL) {
             ASSERT_OR_PRINT_MSG(NULL == got, "expected error, got success");
             ASSERT_STATUS_CONTAINS(status, test->expectError);
@@ -202,8 +209,9 @@ static void _test_getEdgesInt64(_mongocrypt_tester_t *tester) {
                                         .min = test->min,
                                         .max = test->max,
                                         .sparsity = test->sparsity,
-                                        .trimFactor = test->trimFactor};
-        mc_edges_t *got = mc_getEdgesInt64(args, status);
+                                        .trimFactor = OPT_I32(test->trimFactor)};
+        const bool use_range_v2 = true;
+        mc_edges_t *got = mc_getEdgesInt64(args, status, use_range_v2);
         if (test->expectError != NULL) {
             ASSERT_OR_PRINT_MSG(NULL == got, "expected error, got success");
             ASSERT_STATUS_CONTAINS(status, test->expectError);
@@ -241,11 +249,12 @@ static void _test_getEdgesInt64(_mongocrypt_tester_t *tester) {
 
 typedef struct {
     double value;
+    mc_optional_double_t min; // Unused. Kept for consistency with server test data.
+    mc_optional_double_t max; // Unused. Kept for consistency with server test data.
     size_t sparsity;
     // expectEdges includes a trailing NULL pointer.
     const char *expectEdges[MAX_DOUBLE_EDGES + 1];
     const char *expectError;
-    uint32_t trimFactor;
 } DoubleTest;
 
 #undef MAX_DOUBLE_EDGES
@@ -258,8 +267,12 @@ static void _test_getEdgesDouble(_mongocrypt_tester_t *tester) {
     for (size_t i = 0; i < sizeof(tests) / sizeof(tests[0]); i++) {
         mongocrypt_status_t *const status = mongocrypt_status_new();
         const DoubleTest *test = tests + i;
-        mc_getEdgesDouble_args_t args = {.value = test->value, .sparsity = test->sparsity};
-        mc_edges_t *got = mc_getEdgesDouble(args, status);
+        const uint32_t trimFactor = 0; // At present, all test cases expect trimFactor=0.
+        mc_getEdgesDouble_args_t args = {.value = test->value,
+                                         .sparsity = test->sparsity,
+                                         .trimFactor = OPT_I32(trimFactor)};
+        const bool use_range_v2 = true;
+        mc_edges_t *got = mc_getEdgesDouble(args, status, use_range_v2);
 
         if (test->expectError != NULL) {
             if (NULL != got) {
@@ -319,14 +332,15 @@ static void _test_getEdgesDecimal128(_mongocrypt_tester_t *tester) {
     for (size_t i = 0; i < sizeof(tests) / sizeof(tests[0]); i++) {
         const Decimal128Test *test = tests + i;
         mongocrypt_status_t *const status = mongocrypt_status_new();
-        mc_getEdgesDecimal128_args_t args = {
-            .value = test->value,
-            // Some edges specify min/max values, but we don't use them (yet)
-            //  .min = test->min,
-            //  .max = test->max,
-            .sparsity = (size_t)test->sparsity,
-        };
-        mc_edges_t *got = mc_getEdgesDecimal128(args, status);
+        const uint32_t trimFactor = 0; // At present, all test cases expect trimFactor=0.
+        mc_getEdgesDecimal128_args_t args = {.value = test->value,
+                                             // Some edges specify min/max values, but we don't use them (yet)
+                                             //  .min = test->min,
+                                             //  .max = test->max,
+                                             .sparsity = (size_t)test->sparsity,
+                                             .trimFactor = OPT_I32(trimFactor)};
+        const bool use_range_v2 = true;
+        mc_edges_t *got = mc_getEdgesDecimal128(args, status, use_range_v2);
 
         if (test->expectError != NULL) {
             if (NULL != got) {

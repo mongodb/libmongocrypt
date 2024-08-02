@@ -985,21 +985,17 @@ if sys.version_info >= (3, 8, 0):  # noqa: UP036
             )
             encrypted = await encrypter.encrypt(
                 value,
-                "rangePreview",
+                "range",
                 key_id=key_id,
-                query_type="rangePreview",
+                query_type="range",
                 contention_factor=4,
                 range_opts=range_opts,
                 is_expression=True,
             )
             encrypted_val = bson.decode(encrypted, OPTS)
-
-            # Workaround for the internal range payload counter in libmongocrypt
-            if encrypted_val != expected:
-                expected = json_data(
-                    "fle2-find-range-explicit-v2/int32/encrypted-payload-second.json"
-                )
-            self.assertEqual(encrypted_val, expected)
+            self.assertEqual(
+                encrypted_val, adjust_range_counter(encrypted_val, expected)
+            )
 
 
 class TestNeedKMSAzureCredentials(unittest.TestCase):
@@ -1165,6 +1161,27 @@ class KeyVaultCallback(MockCallback):
     def insert_data_key(self, data_key):
         self.data_key = data_key
         return bson.decode(data_key, OPTS)["_id"]
+
+
+def adjust_range_counter(encrypted_val, expected):
+    """Workaround for the internal range payload counter in libmongocrypt."""
+    if encrypted_val != expected:
+        _payload1 = expected["v"]["$and"][0]["age"]["$gte"]
+        _payload2 = expected["v"]["$and"][1]["age"]["$lte"]
+        _decoded1 = bson.decode(_payload1[1:])
+        _decoded2 = bson.decode(_payload2[1:])
+        for _ in range(10):
+            _decoded1["payloadId"] += 1
+            expected["v"]["$and"][0]["age"]["$gte"] = Binary(
+                _payload1[0:1] + bson.encode(_decoded1), 6
+            )
+            _decoded2["payloadId"] += 1
+            expected["v"]["$and"][1]["age"]["$lte"] = Binary(
+                _payload2[0:1] + bson.encode(_decoded2), 6
+            )
+            if encrypted_val == expected:
+                break
+    return expected
 
 
 class AsyncKeyVaultCallback(MockAsyncCallback):
@@ -1384,21 +1401,47 @@ class TestExplicitEncryption(unittest.TestCase):
         expected = json_data("fle2-find-range-explicit-v2/int32/encrypted-payload.json")
         encrypted = encrypter.encrypt(
             value,
-            "rangePreview",
+            "range",
             key_id=key_id,
-            query_type="rangePreview",
+            query_type="range",
             contention_factor=4,
             range_opts=range_opts,
             is_expression=True,
         )
         encrypted_val = bson.decode(encrypted, OPTS)
+        self.assertEqual(encrypted_val, adjust_range_counter(encrypted_val, expected))
 
-        # Workaround for the internal range payload counter in libmongocrypt
-        if encrypted_val != expected:
-            expected = json_data(
-                "fle2-find-range-explicit-v2/int32/encrypted-payload-second.json"
+    def test_rangePreview_query_int32(self):
+        # Expect error attempting to use 'rangePreview'
+        with self.assertRaisesRegex(
+            MongoCryptError,
+            "Algorithm 'rangePreview' is deprecated, please use 'range'",
+        ):
+            key_path = "keys/ABCDEFAB123498761234123456789012-local-document.json"
+            key_id = json_data(key_path)["_id"]
+            encrypter = ExplicitEncrypter(
+                MockCallback(
+                    key_docs=[bson_data(key_path)], kms_reply=http_data("kms-reply.txt")
+                ),
+                self.mongo_crypt_opts(),
             )
-        self.assertEqual(encrypted_val, expected)
+            self.addCleanup(encrypter.close)
+
+            range_opts = bson_data(
+                "fle2-find-rangePreview-explicit/int32/rangeopts.json"
+            )
+            value = bson_data(
+                "fle2-find-rangePreview-explicit/int32/value-to-encrypt.json"
+            )
+            encrypter.encrypt(
+                value,
+                "rangePreview",
+                key_id=key_id,
+                query_type="rangePreview",
+                contention_factor=4,
+                range_opts=range_opts,
+                is_expression=True,
+            )
 
 
 def read(filename, **kwargs):

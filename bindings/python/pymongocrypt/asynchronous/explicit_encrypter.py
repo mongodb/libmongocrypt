@@ -111,7 +111,7 @@ class AsyncExplicitEncrypter:
           - `contention_factor` (int): The contention factor to use
             when the algorithm is "Indexed".
           - `range_opts` (bytes): Options for explicit encryption
-            with the "rangePreview" algorithm encoded as a BSON document.
+            with the "range" algorithm encoded as a BSON document.
           - `is_expression` (boolean): True if this is an encryptExpression()
             context. Defaults to False.
 

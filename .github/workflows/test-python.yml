@@ -1,0 +1,61 @@
+name: Python Tests
+
+on: 
+  push:
+  pull_request:
+    paths:
+      - bindings/python/*
+      - bindings/python/**/*.py
+      - .github/workflows/*python.yml
+
+concurrency:
+  group: python-test-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: ./bindings/python
+    shell: bash -eux {0}
+ 
+jobs:
+
+  static:
+    if: github.repository_owner == 'mongodb'
+    runs-on: ubuntu-latest
+    steps:
+     - uses: actions/checkout@v4
+     - uses: actions/setup-python@v5
+     - name: "Run pre-commit"
+       working-directory: .
+       run: |
+         pip install -U -q pre-commit
+         pre-commit run --all-files --hook-stage manual
+     - run: |
+        pip install check-manifest
+        check-manifest -v
+
+  build:
+    if: github.repository_owner == 'mongodb'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.8", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          allow-prereleases: true
+          python-version: ${{ matrix.python-version }}
+      - name: Build and test dist files
+        run: |
+          if [ "${{ matrix.python-version }}" == "3.13" ]; then 
+            export PIP_PRE=1
+          fi
+          export LIBMONGOCRYPT_VERSION=$(cat ./libmongocrypt-version.txt)
+          git fetch origin $LIBMONGOCRYPT_VERSION
+          bash ./release.sh

@@ -6,6 +6,8 @@
 
     <Platforms>AnyCPU</Platforms>
     <IsPackable>false</IsPackable>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\MongoDB.Driver.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
   <ItemGroup>

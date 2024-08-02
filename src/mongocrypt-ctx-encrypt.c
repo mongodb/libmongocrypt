@@ -416,7 +416,7 @@ static bool _set_schema_from_collinfo(mongocrypt_ctx_t *ctx, bson_t *collinfo) {
         if (!_mongocrypt_buffer_to_bson(&ectx->encrypted_field_config, &efc_bson)) {
             return _mongocrypt_ctx_fail_w_msg(ctx, "unable to create BSON from encrypted_field_config");
         }
-        if (!mc_EncryptedFieldConfig_parse(&ectx->efc, &efc_bson, ctx->status)) {
+        if (!mc_EncryptedFieldConfig_parse(&ectx->efc, &efc_bson, ctx->status, ctx->crypt->opts.use_range_v2)) {
             _mongocrypt_ctx_fail(ctx);
             return false;
         }
@@ -447,7 +447,10 @@ static bool _set_schema_from_collinfo(mongocrypt_ctx_t *ctx, bson_t *collinfo) {
             bson_free(ecocCollection);
         }
 
-        if (!mc_EncryptedFieldConfig_parse(&ectx->efc, &empty_encryptedFields, ctx->status)) {
+        if (!mc_EncryptedFieldConfig_parse(&ectx->efc,
+                                           &empty_encryptedFields,
+                                           ctx->status,
+                                           ctx->crypt->opts.use_range_v2)) {
             bson_destroy(&empty_encryptedFields);
             _mongocrypt_ctx_fail(ctx);
             return false;
@@ -1370,6 +1373,7 @@ typedef struct {
 static moe_result must_omit_encryptionInformation(const char *command_name,
                                                   const bson_t *command,
                                                   bool use_range_v2,
+                                                  const mc_EncryptedFieldConfig_t *efc,
                                                   mongocrypt_status_t *status) {
     // eligible_commands may omit encryptionInformation if the command does not
     // contain payloads requiring encryption.
@@ -1382,10 +1386,23 @@ static moe_result must_omit_encryptionInformation(const char *command_name,
 
     BSON_ASSERT_PARAM(command_name);
     BSON_ASSERT_PARAM(command);
+    BSON_ASSERT_PARAM(efc);
 
-    // Before range v2, compact is a prohibited command. After, it must have encryption information.
-    if (!use_range_v2 && 0 == strcmp("compactStructuredEncryptionData", command_name)) {
-        return (moe_result){.ok = true, .must_omit = true};
+    if (0 == strcmp("compactStructuredEncryptionData", command_name)) {
+        // `compactStructuredEncryptionData` is a special case:
+        // - Server 7.0 prohibits `encryptionInformation`.
+        // - Server 8.0 requires `encryptionInformation` if "range" fields are referenced. Otherwise ignores.
+        // Only send `encryptionInformation` if "range" fields are present to support both server versions.
+        bool uses_range_fields = false;
+        if (use_range_v2) {
+            for (const mc_EncryptedField_t *ef = efc->fields; ef != NULL; ef = ef->next) {
+                if (ef->supported_queries & SUPPORTS_RANGE_QUERIES) {
+                    uses_range_fields = true;
+                    break;
+                }
+            }
+        }
+        return (moe_result){.ok = true, .must_omit = !uses_range_fields};
     }
 
     for (i = 0; i < sizeof(prohibited_commands) / sizeof(prohibited_commands[0]); i++) {
@@ -1727,8 +1744,11 @@ static bool _fle2_finalize(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
         }
     }
 
-    moe_result result =
-        must_omit_encryptionInformation(command_name, &converted, ctx->crypt->opts.use_range_v2, ctx->status);
+    moe_result result = must_omit_encryptionInformation(command_name,
+                                                        &converted,
+                                                        ctx->crypt->opts.use_range_v2,
+                                                        &ectx->efc,
+                                                        ctx->status);
     if (!result.ok) {
         bson_destroy(&converted);
         bson_destroy(deleteTokens);
@@ -2202,7 +2222,7 @@ static bool _fle2_try_encrypted_field_config_from_map(mongocrypt_ctx_t *ctx) {
         if (!_mongocrypt_buffer_to_bson(&ectx->encrypted_field_config, &efc_bson)) {
             return _mongocrypt_ctx_fail_w_msg(ctx, "unable to create BSON from encrypted_field_config");
         }
-        if (!mc_EncryptedFieldConfig_parse(&ectx->efc, &efc_bson, ctx->status)) {
+        if (!mc_EncryptedFieldConfig_parse(&ectx->efc, &efc_bson, ctx->status, ctx->crypt->opts.use_range_v2)) {
             _mongocrypt_ctx_fail(ctx);
             return false;
         }

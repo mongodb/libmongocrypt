@@ -16,11 +16,11 @@ var libmongocryptAllDirectory=buildDirectory.Combine("libmongocrypt-all");
 var downloadedMongocryptDirectory=buildDirectory.Combine("downloadedMongocryptDirectory");
 var localReleaseVersion = "0.0.0-local";
 var releaseVersion = GetSettingValue("releaseVersion", localReleaseVersion);
-var fork = GetSettingValue("fork", "https://github.com/mongodb/libmongocrypt.git");
+var fork = GetSettingValue("fork", "git@github.com:mongodb/libmongocrypt.git");
 var branch = GetSettingValue("branch", "master");
 
-// 1.8.4 - latest libmongocrypt release
-var libmongocryptAllUrl = GetSettingValue("url", "https://mciuploads.s3.amazonaws.com/libmongocrypt/all/1.8.4/libmongocrypt-all.tar.gz");
+// 1.10.0 - latest libmongocrypt release
+var libmongocryptAllUrl = GetSettingValue("url", "https://mciuploads.s3.amazonaws.com/libmongocrypt/all/1.10.0/libmongocrypt-all.tar.gz");
 
 var csharpBindingsGitTagName = $"csharp-v{releaseVersion}";
 var csharpBindingsDirectory = buildDirectory.Combine(csharpBindingsGitTagName);
@@ -72,7 +72,7 @@ Task("Prepare")
             libmongocryptAllDirectory.Combine("ubuntu1804-64").Combine("nocrypto").Combine("lib").CombineWithFilePath("libmongocrypt.so"),
             downloadedMongocryptDirectory.CombineWithFilePath("libmongocrypt.so"));
         CopyFile(
-            libmongocryptAllDirectory.Combine("macos").Combine("nocrypto").Combine("lib").CombineWithFilePath("libmongocrypt.dylib"),
+            libmongocryptAllDirectory.Combine("macos").Combine("lib").CombineWithFilePath("libmongocrypt.dylib"),
             downloadedMongocryptDirectory.CombineWithFilePath("libmongocrypt.dylib"));
         CopyDirectory(downloadedMongocryptDirectory, libmongocryptRelWithDebInfoDirectory);
     });
@@ -137,9 +137,9 @@ Task("NugetPush")
         var nugetApi = GetSettingValue("NugetApiKey", null);
         var packageFilePath = artifactsDirectory.CombineWithFilePath($"{libmongocryptSolutionFile.GetFilenameWithoutExtension().ToString()}.{releaseVersion}.nupkg");
         Information(packageFilePath);
-        NuGetPush(
+        DotNetNuGetPush(
             packageFilePath,
-            new NuGetPushSettings 
+            new DotNetNuGetPushSettings 
             {
                 ApiKey = nugetApi,
                 Source = "https://api.nuget.org/v3/index.json"

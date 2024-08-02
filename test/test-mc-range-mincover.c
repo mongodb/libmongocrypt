@@ -19,6 +19,7 @@
 #include "mc-array-private.h"
 #include "mc-check-conversions-private.h"
 #include "mc-optional-private.h"
+#include "mc-range-encoding-private.h"
 #include "mc-range-mincover-private.h"
 
 enum {
@@ -62,7 +63,7 @@ typedef struct {
     size_t sparsity;
     mc_optional_double_t min;
     mc_optional_double_t max;
-    mc_optional_uint32_t precision;
+    mc_optional_int32_t precision;
     const char *expectMincoverStrings[MAX_MINCOVER_STRINGS];
     const char *expectError;
 } DoubleTest;
@@ -76,7 +77,7 @@ typedef struct {
     size_t sparsity;
     mc_optional_dec128_t min;
     mc_optional_dec128_t max;
-    mc_optional_uint32_t precision;
+    mc_optional_int32_t precision;
     const char *expectMincoverStrings[MAX_MINCOVER_STRINGS];
     const char *expectError;
 } Decimal128Test;
@@ -94,6 +95,7 @@ static mc_mincover_t *_test_getMincover32(void *tests, size_t idx, mongocrypt_st
 
     Int32Test *test = (Int32Test *)tests + idx;
 
+    const bool use_range_v2 = true;
     return mc_getMincoverInt32((mc_getMincoverInt32_args_t){.lowerBound = test->lowerBound,
                                                             .includeLowerBound = test->includeLowerBound,
                                                             .upperBound = test->upperBound,
@@ -101,13 +103,16 @@ static mc_mincover_t *_test_getMincover32(void *tests, size_t idx, mongocrypt_st
                                                             .min = test->min,
                                                             .max = test->max,
                                                             .sparsity = test->sparsity,
-                                                            .trimFactor = test->trimFactor},
-                               status);
+                                                            .trimFactor = OPT_I32(test->trimFactor)},
+                               status,
+                               use_range_v2);
 }
 
 static mc_mincover_t *_test_getMincover64(void *tests, size_t idx, mongocrypt_status_t *status) {
     BSON_ASSERT_PARAM(tests);
 
+    const bool use_range_v2 = true;
+    const uint32_t trimFactor = 0; // At present, all test cases expect trimFactor=0.
     Int64Test *const test = (Int64Test *)tests + idx;
 
     return mc_getMincoverInt64((mc_getMincoverInt64_args_t){.lowerBound = test->lowerBound,
@@ -116,13 +121,17 @@ static mc_mincover_t *_test_getMincover64(void *tests, size_t idx, mongocrypt_st
                                                             .includeUpperBound = test->includeUpperBound,
                                                             .min = test->min,
                                                             .max = test->max,
-                                                            .sparsity = test->sparsity},
-                               status);
+                                                            .sparsity = test->sparsity,
+                                                            .trimFactor = OPT_I32(trimFactor)},
+                               status,
+                               use_range_v2);
 }
 
 static mc_mincover_t *_test_getMincoverDouble_helper(void *tests, size_t idx, mongocrypt_status_t *status) {
     BSON_ASSERT_PARAM(tests);
 
+    const bool use_range_v2 = true;
+    const uint32_t trimFactor = 0; // At present, all test cases expect trimFactor=0.
     DoubleTest *const test = (DoubleTest *)tests + idx;
 
     return mc_getMincoverDouble(
@@ -133,8 +142,10 @@ static mc_mincover_t *_test_getMincoverDouble_helper(void *tests, size_t idx, mo
                                       .sparsity = test->sparsity,
                                       .min = test->precision.set ? test->min : (mc_optional_double_t){0},
                                       .max = test->precision.set ? test->max : (mc_optional_double_t){0},
-                                      .precision = test->precision},
-        status);
+                                      .precision = test->precision,
+                                      .trimFactor = OPT_I32(trimFactor)},
+        status,
+        use_range_v2);
 }
 
 #if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
@@ -143,6 +154,8 @@ static mc_mincover_t *_test_getMincoverDecimal128_helper(void *tests, size_t idx
 
     Decimal128Test *const test = (Decimal128Test *)tests + idx;
 
+    const bool use_range_v2 = true;
+    const uint32_t trimFactor = 0; // At present, all test cases expect trimFactor=0.
     return mc_getMincoverDecimal128(
         (mc_getMincoverDecimal128_args_t){.lowerBound = test->lowerBound,
                                           .includeLowerBound = test->includeLowerBound,
@@ -151,8 +164,10 @@ static mc_mincover_t *_test_getMincoverDecimal128_helper(void *tests, size_t idx
                                           .sparsity = test->sparsity,
                                           .min = test->precision.set ? test->min : (mc_optional_dec128_t){0},
                                           .max = test->precision.set ? test->max : (mc_optional_dec128_t){0},
-                                          .precision = test->precision},
-        status);
+                                          .precision = test->precision,
+                                          .trimFactor = OPT_I32(trimFactor)},
+        status,
+        use_range_v2);
 }
 #endif // MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
 
@@ -168,13 +183,42 @@ static const char *_test_expectError64(void *tests, size_t idx) {
 
 static const char *_test_expectErrorDouble(void *tests, size_t idx) {
     BSON_ASSERT_PARAM(tests);
-    return ((DoubleTest *)tests + idx)->expectError;
+    DoubleTest *test = ((DoubleTest *)tests + idx);
+    if (test->min.set && test->max.set && test->precision.set) {
+        // Expect an error for tests including an invalid min/max/precision.
+        uint32_t ignored;
+        mongocrypt_status_t *const status = mongocrypt_status_new();
+        if (!mc_canUsePrecisionModeDouble(test->min.value, test->max.value, test->precision.value, &ignored, status)) {
+            if (!mongocrypt_status_ok(status)) {
+                return mongocrypt_status_message(status, NULL);
+            }
+
+            return "The domain of double values specified by the min, max, and precision cannot be represented in "
+                   "fewer than 64 bits";
+        }
+        mongocrypt_status_destroy(status);
+    }
+    return test->expectError;
 }
 
 #if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
 static const char *_test_expectErrorDecimal128(void *tests, size_t idx) {
     BSON_ASSERT_PARAM(tests);
-    return ((Decimal128Test *)tests + idx)->expectError;
+    Decimal128Test *test = ((Decimal128Test *)tests + idx);
+    if (test->min.set && test->max.set && test->precision.set) {
+        // Expect an error for tests including an invalid min/max/precision.
+        uint32_t ignored;
+        mongocrypt_status_t *const status = mongocrypt_status_new();
+        if (!mc_canUsePrecisionModeDecimal(test->min.value, test->max.value, test->precision.value, &ignored, status)) {
+            if (!mongocrypt_status_ok(status)) {
+                return mongocrypt_status_message(status, NULL);
+            }
+
+            return "The domain of decimal values specified by the min, max, and precision cannot be represented in "
+                   "fewer than 128 bits";
+        }
+    }
+    return test->expectError;
 }
 #endif // MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
 

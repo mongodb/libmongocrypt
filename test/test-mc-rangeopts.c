@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include "mc-range-encoding-private.h"
 #include "mc-rangeopts-private.h"
 #include "test-mongocrypt.h"
 
@@ -28,7 +29,7 @@ static void test_mc_RangeOpts_parse(_mongocrypt_tester_t *tester) {
         mc_optional_int32_t expectMax;
         int64_t expectSparsity;
         mc_optional_uint32_t expectPrecision;
-        mc_optional_uint32_t expectTrimFactor;
+        mc_optional_int32_t expectTrimFactor;
         bool useRangeV2;
     } testcase;
 
@@ -41,9 +42,6 @@ static void test_mc_RangeOpts_parse(_mongocrypt_tester_t *tester) {
         {.desc = "Errors if precision is set with int min/max",
          .in = RAW_STRING({"min" : 123, "max" : 456, "precision" : 2, "sparsity" : {"$numberLong" : "1"}}),
          .expectError = "expected 'precision' to be set with double or decimal128 index"},
-        {.desc = "Errors on missing fields",
-         .in = RAW_STRING({"min" : 123, "max" : 456}),
-         .expectError = "Missing field 'sparsity'"},
         {.desc = "Errors on extra fields",
          .in = RAW_STRING({"min" : 123, "max" : 456, "sparsity" : {"$numberLong" : "1"}, "foo" : 1}),
          .expectError = "Unrecognized field: 'foo'"},
@@ -72,7 +70,13 @@ static void test_mc_RangeOpts_parse(_mongocrypt_tester_t *tester) {
          .in = RAW_STRING({"trimFactor" : 1, "sparsity" : {"$numberLong" : "1"}}),
          .useRangeV2 = true,
          .expectSparsity = 1,
-         .expectTrimFactor = OPT_U32(1)},
+         .expectTrimFactor = OPT_I32(1)},
+        {.desc = "Does not require sparsity",
+         .in = RAW_STRING({"min" : 123, "max" : 456}),
+         .useRangeV2 = true,
+         .expectSparsity = mc_FLERangeSparsityDefault,
+         .expectMin = OPT_I32_C(123),
+         .expectMax = OPT_I32_C(456)},
         {.desc = "Errors on negative trim factor",
          .in = RAW_STRING({"trimFactor" : -1, "sparsity" : {"$numberLong" : "1"}}),
          .useRangeV2 = true,
@@ -123,7 +127,7 @@ static void test_mc_RangeOpts_to_FLE2RangeInsertSpec(_mongocrypt_tester_t *teste
         {.desc = "Works",
          .in = RAW_STRING({"min" : 123, "max" : 456, "sparsity" : {"$numberLong" : "1"}}),
          .v = RAW_STRING({"v" : 789}),
-         .expect = RAW_STRING({"v" : {"v" : 789, "min" : 123, "max" : 456, "trimFactor" : 0}})},
+         .expect = RAW_STRING({"v" : {"v" : 789, "min" : 123, "max" : 456}})},
         {.desc = "Trim factor not appended if range V2 disabled",
          .in = RAW_STRING({"min" : 123, "max" : 456, "sparsity" : {"$numberLong" : "1"}}),
          .v = RAW_STRING({"v" : 789}),
@@ -132,7 +136,7 @@ static void test_mc_RangeOpts_to_FLE2RangeInsertSpec(_mongocrypt_tester_t *teste
         {.desc = "Works with precision",
          .in = RAW_STRING({"min" : 123.0, "max" : 456.0, "precision" : 2, "sparsity" : {"$numberLong" : "1"}}),
          .v = RAW_STRING({"v" : 789.0}),
-         .expect = RAW_STRING({"v" : {"v" : 789.0, "min" : 123.0, "max" : 456.0, "precision" : 2, "trimFactor" : 0}})},
+         .expect = RAW_STRING({"v" : {"v" : 789.0, "min" : 123.0, "max" : 456.0, "precision" : 2}})},
         {.desc = "Errors with missing 'v'",
          .in = RAW_STRING({"min" : 123, "max" : 456, "sparsity" : {"$numberLong" : "1"}}),
          .v = RAW_STRING({"foo" : "bar"}),

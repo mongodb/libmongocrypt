@@ -16,9 +16,10 @@ set -o xtrace   # Write all commands first to stderr
 set -o errexit  # Exit the script with error if any of the commands fail
 
 # The libmongocrypt git revision release to embed in our wheels.
-REVISION=$(git rev-list -n 1 1.9.0)
+LIBMONGOCRYPT_VERSION=$(cat ./libmongocrypt-version.txt)
+REVISION=$(git rev-list -n 1 $LIBMONGOCRYPT_VERSION)
 # The libmongocrypt release branch.
-BRANCH="r1.9"
+BRANCH="r1.10"
 # The python executable to use.
 PYTHON=${PYTHON:-python}
 
@@ -116,7 +117,7 @@ if [ $(command -v docker) ]; then
     if [ "Linux" = "$(uname -s)" ]; then
         $PYTHON -m venv .venv
         . .venv/bin/activate
-        test_dist dist/*.whl
+        test_dist dist/*linux*.whl
     fi
 
     # Build the manylinux_2_28 aarch64 wheel.

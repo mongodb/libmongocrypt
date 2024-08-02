@@ -36,8 +36,8 @@ typedef struct {
     } max;
 
     int64_t sparsity;
-    mc_optional_uint32_t precision;
-    mc_optional_uint32_t trimFactor;
+    mc_optional_int32_t precision;
+    mc_optional_int32_t trimFactor;
 } mc_RangeOpts_t;
 
 /* mc_RangeOpts_parse parses a BSON document into mc_RangeOpts_t.
@@ -46,8 +46,8 @@ typedef struct {
  *    "min": BSON value,
  *    "max": BSON value,
  *    "sparsity": Int64,
- *    "precision": Optional<Uint32>,
- *    "trimFactor": Optional<Uint32>,
+ *    "precision": Optional<Int32>,
+ *    "trimFactor": Optional<Int32>,
  * }
  */
 bool mc_RangeOpts_parse(mc_RangeOpts_t *ro, const bson_t *in, bool use_range_v2, mongocrypt_status_t *status);
@@ -99,7 +99,8 @@ bool mc_RangeOpts_appendTrimFactor(const mc_RangeOpts_t *ro,
                                    bson_type_t valueType,
                                    const char *fieldName,
                                    bson_t *out,
-                                   mongocrypt_status_t *status);
+                                   mongocrypt_status_t *status,
+                                   bool use_range_v2);
 
 void mc_RangeOpts_cleanup(mc_RangeOpts_t *ro);
 

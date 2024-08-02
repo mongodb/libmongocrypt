@@ -817,7 +817,7 @@ def generate(code: str, parser: Callable[[Tokenizer], Iterable[T]],
     """
     scan = Scanner(code)
     toks = LazyList(tokenize(scan))
-    print('// This code is GENERATED! Do not edit!')
+    print('// This code is GENERATED! Do not edit! Regenerate with `test/util/make_includes.py`')
     print('// clang-format off')
     items = parser(toks)
     each_rendered = map(render, items)

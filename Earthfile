@@ -212,7 +212,7 @@ env.sles15:
     DO +SLES_SETUP
 
 env.alpine:
-    FROM +init --base=docker.io/library/alpine:3.17
+    FROM +init --base=docker.io/library/alpine:3.18
     DO +ALPINE_SETUP
 
 # Utility: Warm-up obtaining CMake and Ninja for the build. This is usually
@@ -382,6 +382,7 @@ build:
         CACHE /s/libmongocrypt/cmake-build
     END
     RUN env USE_NINJA=1 bash libmongocrypt/.evergreen/build_all.sh
+    SAVE ARTIFACT /s/install /libmongocrypt-install
 
 # `create-deb-packages-and-repos` creates the .deb packages and repo directories intended for the PPA on debian-like distros. Options:
 #   • --env=[...]
@@ -435,3 +436,87 @@ test-deb-packages-from-ppa:
         }" > test.c
     RUN gcc -o test.out test.c $(pkg-config --libs --cflags libmongocrypt)
     RUN ./test.out
+
+# `sign` uses Garasign to sign a file with the libmongocrypt key.
+# Requires prior authentication with Artifactory.
+# See: https://docs.devprod.prod.corp.mongodb.com/release-tools-container-images/garasign/garasign_signing/.
+sign:
+    ARG --required file_to_sign
+    ARG --required output_file
+    FROM artifactory.corp.mongodb.com/release-tools-container-registry-local/garasign-gpg
+    WORKDIR /s
+    COPY ${file_to_sign} /s/file
+    RUN --secret garasign_username --secret garasign_password \
+        GRS_CONFIG_USER1_USERNAME=${garasign_username} \
+        GRS_CONFIG_USER1_PASSWORD=${garasign_password} \
+        /bin/bash -c "gpgloader && gpg --yes -v --armor -o /s/file.asc --detach-sign /s/file"
+    # Verify the signature
+    RUN touch /keyring
+    RUN curl -sS https://pgp.mongodb.com/libmongocrypt.pub | gpg -q --no-default-keyring --keyring "/keyring" --import -
+    RUN gpgv --keyring "/keyring" "/s/file.asc" "/s/file"
+    SAVE ARTIFACT /s/file.asc AS LOCAL ${output_file}
+
+# silkbomb:
+#   An environment with the `silkbomb` command.
+#
+# See https://docs.devprod.prod.corp.mongodb.com/mms/python/src/sbom/silkbomb/ for documentation of silkbomb.
+silkbomb:
+    FROM artifactory.corp.mongodb.com/release-tools-container-registry-public-local/silkbomb:1.0
+    # Alias the silkbom executable to a simpler name:
+    RUN ln -s /python/src/sbom/silkbomb/bin /usr/local/bin/silkbomb
+
+# sbom-generate:
+#   Generate/update the etc/cyclonedx.sbom.json file from the etc/purls.txt file.
+#
+# This target will update the existing etc/cyclonedx.sbom.json file in-place based
+# on the content of etc/purls.txt.
+#
+sbom-generate:
+    FROM +silkbomb
+    # Copy in the relevant files:
+    WORKDIR /s
+    COPY etc/purls.txt etc/cyclonedx.sbom.json /s/
+    # Update the SBOM file:
+    RUN silkbomb update \
+        --purls purls.txt \
+        --sbom-in cyclonedx.sbom.json \
+        --sbom-out cyclonedx.sbom.json
+    # Save the result back to the host:
+    SAVE ARTIFACT /s/cyclonedx.sbom.json AS LOCAL etc/cyclonedx.sbom.json
+
+# sbom-download:
+#   Download the Augmented SBOM file from Silk.
+#
+# See https://wiki.corp.mongodb.com/display/DRIVERS/Using+AWS+Secrets+Manager+to+Store+Testing+Secrets for instructions to get secrets from AWS Secrets Manager. Secrets are available under `drivers/libmongocrypt`.
+#
+sbom-download:
+    ARG --required out
+    ARG --required branch
+    FROM +silkbomb
+    WORKDIR /s
+    # Download the Augmented SBOM file:
+    RUN --no-cache --secret silk_client_id --secret silk_client_secret \
+        SILK_CLIENT_ID=${silk_client_id} \
+        SILK_CLIENT_SECRET=${silk_client_secret} \
+        silkbomb download \
+        --sbom-out cyclonedx.augmented.sbom.json \
+        --silk-asset-group libmongocrypt-${branch}
+    # Save the result back to the host:
+    SAVE ARTIFACT /s/cyclonedx.augmented.sbom.json AS LOCAL ${out}
+    RUN echo "Augmented SBOM saved to ${out}"
+
+# silk-create-asset-group:
+#   Create an asset group for Silk.
+#
+# See https://wiki.corp.mongodb.com/display/DRIVERS/Using+AWS+Secrets+Manager+to+Store+Testing+Secrets for instructions to get secrets from AWS Secrets Manager. Secrets are available under `drivers/libmongocrypt`.
+#
+silk-create-asset-group:
+    ARG --required branch
+    FROM +env.alpine
+    RUN __install curl jq
+    COPY etc/silk-create-asset-group.sh /s/silk-create-asset-group.sh
+    RUN --no-cache --secret silk_client_id --secret silk_client_secret \
+        silk_client_id=${silk_client_id} \
+        silk_client_secret=${silk_client_secret} \
+        branch=${branch} \
+            /s/silk-create-asset-group.sh

@@ -1,0 +1,19 @@
+{
+   "db.test": {
+      "fields": [
+         {
+            "keyId": {
+               "$binary": {
+                  "base64": "EjRWeBI0mHYSNBI0VniQEg==",
+                  "subType": "04"
+               }
+            },
+            "path": "encrypted",
+            "bsonType": "int",
+            "queries": {
+               "queryType": "range"
+            }
+         }
+      ]
+   }
+}

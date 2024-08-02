@@ -1,5 +1,6 @@
 
 configure_file(cs.sln cs.sln COPYONLY)
+configure_file(MongoDB.Driver.snk MongoDB.Driver.snk COPYONLY)
 
 configure_file(MongoDB.Libmongocrypt/MongoDB.Libmongocrypt.csproj MongoDB.Libmongocrypt/MongoDB.Libmongocrypt.csproj COPYONLY)
 configure_file(MongoDB.Libmongocrypt/Package.include.template.csproj MongoDB.Libmongocrypt/Package.csproj.include)

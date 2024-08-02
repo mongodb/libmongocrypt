@@ -1,4 +1,4 @@
-// This code is GENERATED! Do not edit!
+// This code is GENERATED! Do not edit! Regenerate with `test/util/make_includes.py`
 // clang-format off
 {
   .lowerBound = mc_dec128_from_string("-100.000000"),

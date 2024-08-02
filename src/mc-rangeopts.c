@@ -95,7 +95,7 @@ bool mc_RangeOpts_parse(mc_RangeOpts_t *ro, const bson_t *in, bool use_range_v2,
                 CLIENT_ERR_PREFIXED("'precision' must be non-negative");
                 return false;
             }
-            ro->precision = OPT_U32((uint32_t)val);
+            ro->precision = OPT_I32(val);
         }
         END_IF_FIELD
 
@@ -110,7 +110,7 @@ bool mc_RangeOpts_parse(mc_RangeOpts_t *ro, const bson_t *in, bool use_range_v2,
                 CLIENT_ERR_PREFIXED("'trimFactor' must be non-negative");
                 return false;
             }
-            ro->trimFactor = OPT_U32((uint32_t)val);
+            ro->trimFactor = OPT_I32(val);
         }
         END_IF_FIELD
 
@@ -119,10 +119,13 @@ bool mc_RangeOpts_parse(mc_RangeOpts_t *ro, const bson_t *in, bool use_range_v2,
     }
 
     // Do not error if min/max are not present. min/max are optional.
-    CHECK_HAS(sparsity);
     // Do not error if precision is not present. Precision is optional and only
     // applies to double/decimal128.
     // Do not error if trimFactor is not present. It is optional.
+
+    if (!has_sparsity && use_range_v2) {
+        ro->sparsity = mc_FLERangeSparsityDefault;
+    }
 
     // Expect precision only to be set for double or decimal128.
     if (has_precision) {
@@ -249,7 +252,7 @@ bool mc_RangeOpts_to_FLE2RangeInsertSpec(const mc_RangeOpts_t *ro,
     }
 
     if (use_range_v2) {
-        if (!mc_RangeOpts_appendTrimFactor(ro, bson_iter_type(&v_iter), "trimFactor", &child, status)) {
+        if (!mc_RangeOpts_appendTrimFactor(ro, bson_iter_type(&v_iter), "trimFactor", &child, status, use_range_v2)) {
             return false;
         }
     }
@@ -378,7 +381,8 @@ bool mc_RangeOpts_appendMax(const mc_RangeOpts_t *ro,
 bool mc_getNumberOfBits(const mc_RangeOpts_t *ro,
                         bson_type_t valueType,
                         uint32_t *bitsOut,
-                        mongocrypt_status_t *status) {
+                        mongocrypt_status_t *status,
+                        bool use_range_v2) {
     BSON_ASSERT_PARAM(ro);
     BSON_ASSERT_PARAM(bitsOut);
 
@@ -436,7 +440,7 @@ bool mc_getNumberOfBits(const mc_RangeOpts_t *ro,
     } else if (valueType == BSON_TYPE_DOUBLE) {
         double value = 0;
         mc_optional_double_t rmin = {false, 0}, rmax = {false, 0};
-        mc_optional_uint32_t prec = ro->precision;
+        mc_optional_int32_t prec = ro->precision;
         if (ro->min.set) {
             BSON_ASSERT(ro->max.set);
             value = bson_iter_double(&ro->min.value);
@@ -445,7 +449,7 @@ bool mc_getNumberOfBits(const mc_RangeOpts_t *ro,
         }
         mc_getTypeInfoDouble_args_t args = {value, rmin, rmax, prec};
         mc_OSTType_Double out;
-        if (!mc_getTypeInfoDouble(args, &out, status)) {
+        if (!mc_getTypeInfoDouble(args, &out, status, use_range_v2)) {
             return false;
         }
         *bitsOut = 64 - (uint32_t)mc_count_leading_zeros_u64(out.max);
@@ -455,7 +459,7 @@ bool mc_getNumberOfBits(const mc_RangeOpts_t *ro,
     else if (valueType == BSON_TYPE_DECIMAL128) {
         mc_dec128 value = MC_DEC128_ZERO;
         mc_optional_dec128_t rmin = {false, MC_DEC128_ZERO}, rmax = {false, MC_DEC128_ZERO};
-        mc_optional_uint32_t prec = ro->precision;
+        mc_optional_int32_t prec = ro->precision;
         if (ro->min.set) {
             BSON_ASSERT(ro->max.set);
             value = mc_dec128_from_bson_iter(&ro->min.value);
@@ -464,7 +468,7 @@ bool mc_getNumberOfBits(const mc_RangeOpts_t *ro,
         }
         mc_getTypeInfoDecimal128_args_t args = {value, rmin, rmax, prec};
         mc_OSTType_Decimal128 out;
-        if (!mc_getTypeInfoDecimal128(args, &out, status)) {
+        if (!mc_getTypeInfoDecimal128(args, &out, status, use_range_v2)) {
             return false;
         }
         *bitsOut = 128 - (uint32_t)mc_count_leading_zeros_u128(out.max);
@@ -482,35 +486,32 @@ bool mc_RangeOpts_appendTrimFactor(const mc_RangeOpts_t *ro,
                                    bson_type_t valueType,
                                    const char *fieldName,
                                    bson_t *out,
-                                   mongocrypt_status_t *status) {
+                                   mongocrypt_status_t *status,
+                                   bool use_range_v2) {
     BSON_ASSERT_PARAM(ro);
     BSON_ASSERT_PARAM(fieldName);
     BSON_ASSERT_PARAM(out);
     BSON_ASSERT(status || true);
 
     if (!ro->trimFactor.set) {
-        if (!BSON_APPEND_INT32(out, fieldName, 0)) {
-            CLIENT_ERR_PREFIXED("failed to append BSON");
-            return false;
-        }
+        // A default `trimFactor` will be selected later with `trimFactorDefault`
         return true;
     }
-    BSON_ASSERT(ro->trimFactor.value <= INT32_MAX);
 
     uint32_t nbits;
-    if (!mc_getNumberOfBits(ro, valueType, &nbits, status)) {
+    if (!mc_getNumberOfBits(ro, valueType, &nbits, status, use_range_v2)) {
         return false;
     }
     // if nbits = 0, we want to allow trim factor = 0.
     uint32_t test = nbits ? nbits : 1;
-    if (ro->trimFactor.value >= test) {
+    if (bson_cmp_greater_equal_su(ro->trimFactor.value, test)) {
         CLIENT_ERR_PREFIXED("Trim factor (%d) must be less than the total number of bits (%d) used to represent "
                             "any element in the domain.",
                             ro->trimFactor.value,
                             nbits);
         return false;
     }
-    if (!BSON_APPEND_INT32(out, fieldName, (int32_t)ro->trimFactor.value)) {
+    if (!BSON_APPEND_INT32(out, fieldName, ro->trimFactor.value)) {
         CLIENT_ERR_PREFIXED("failed to append BSON");
         return false;
     }
