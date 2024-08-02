@@ -1,5 +1,5 @@
 # ChangeLog
-## (Next)
+## 1.11.0
 ### New features
 - Support `range` algorithm as stable.
 ### Deprecated
