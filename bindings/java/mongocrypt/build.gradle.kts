@@ -45,7 +45,7 @@ allprojects {
 }
 
 group = "org.mongodb"
-version = "1.11.0-SNAPSHOT"
+version = "1.11.0"
 description = "MongoDB client-side crypto support"
 
 java {
