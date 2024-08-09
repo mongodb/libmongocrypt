@@ -546,7 +546,7 @@ const char *mongocrypt_crypt_shared_lib_version_string(const mongocrypt_t *crypt
  * @brief Obtain a 64-bit constant encoding the version of the loaded
  * crypt_shared library, if available.
  *
- * @param[in] crypt The mongocrypt_t object after a successul call to
+ * @param[in] crypt The mongocrypt_t object after a successful call to
  * mongocrypt_init.
  *
  * @return A 64-bit encoded version number, with the version encoded as four
@@ -1264,7 +1264,7 @@ void mongocrypt_ctx_destroy(mongocrypt_ctx_t *ctx);
  * @param[out] status An optional status to pass error messages. See @ref
  * mongocrypt_status_set.
  * @returns A boolean indicating success. If returning false, set @p status
- * with a message indiciating the error using @ref mongocrypt_status_set.
+ * with a message indicating the error using @ref mongocrypt_status_set.
  */
 typedef bool (*mongocrypt_crypto_fn)(void *ctx,
                                      mongocrypt_binary_t *key,
@@ -1289,7 +1289,7 @@ typedef bool (*mongocrypt_crypto_fn)(void *ctx,
  * @param[out] status An optional status to pass error messages. See @ref
  * mongocrypt_status_set.
  * @returns A boolean indicating success. If returning false, set @p status
- * with a message indiciating the error using @ref mongocrypt_status_set.
+ * with a message indicating the error using @ref mongocrypt_status_set.
  */
 typedef bool (*mongocrypt_hmac_fn)(void *ctx,
                                    mongocrypt_binary_t *key,
@@ -1308,7 +1308,7 @@ typedef bool (*mongocrypt_hmac_fn)(void *ctx,
  * @param[out] status An optional status to pass error messages. See @ref
  * mongocrypt_status_set.
  * @returns A boolean indicating success. If returning false, set @p status
- * with a message indiciating the error using @ref mongocrypt_status_set.
+ * with a message indicating the error using @ref mongocrypt_status_set.
  */
 typedef bool (*mongocrypt_hash_fn)(void *ctx,
                                    mongocrypt_binary_t *in,
@@ -1326,7 +1326,7 @@ typedef bool (*mongocrypt_hash_fn)(void *ctx,
  * @param[out] status An optional status to pass error messages. See @ref
  * mongocrypt_status_set.
  * @returns A boolean indicating success. If returning false, set @p status
- * with a message indiciating the error using @ref mongocrypt_status_set.
+ * with a message indicating the error using @ref mongocrypt_status_set.
  */
 typedef bool (*mongocrypt_random_fn)(void *ctx, mongocrypt_binary_t *out, uint32_t count, mongocrypt_status_t *status);
 
@@ -1473,7 +1473,7 @@ bool mongocrypt_ctx_setopt_query_type(mongocrypt_ctx_t *ctx, const char *query_t
  * {
  *    "min": Optional<BSON value>,
  *    "max": Optional<BSON value>,
- *    "sparsity": Int64,
+ *    "sparsity": Optional<Int64>,
  *    "precision": Optional<Int32>,
  *    "trimFactor": Optional<Int32>
  * }
