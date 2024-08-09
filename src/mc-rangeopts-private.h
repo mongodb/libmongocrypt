@@ -45,7 +45,7 @@ typedef struct {
  * {
  *    "min": BSON value,
  *    "max": BSON value,
- *    "sparsity": Int64,
+ *    "sparsity": Optional<Int64>,
  *    "precision": Optional<Int32>,
  *    "trimFactor": Optional<Int32>,
  * }
