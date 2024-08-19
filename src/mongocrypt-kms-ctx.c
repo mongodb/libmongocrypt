@@ -724,7 +724,11 @@ static bool _ctx_done_azure_wrapkey_unwrapkey(mongocrypt_kms_ctx_t *kms) {
 
     if (kms->retry_enabled && should_retry_http(http_status, kms->req_type)) {
         if (kms->attempts >= kms_max_attempts) {
-            CLIENT_ERR("KMS request failed after %d retries", kms_max_attempts);
+            // Wrap error to indicate maximum retries occurred.
+            _handle_non200_http_status(http_status, body, body_len, status);
+            CLIENT_ERR("KMS request failed after maximum of %d retries: %s",
+                       kms_max_attempts,
+                       mongocrypt_status_message(status, NULL));
             goto fail;
         } else {
             ret = true;
@@ -829,7 +833,11 @@ static bool _ctx_done_gcp(mongocrypt_kms_ctx_t *kms, const char *json_field) {
 
     if (kms->retry_enabled && should_retry_http(http_status, kms->req_type)) {
         if (kms->attempts >= kms_max_attempts) {
-            CLIENT_ERR("KMS request failed after %d retries", kms_max_attempts);
+            // Wrap error to indicate maximum retries occurred.
+            _handle_non200_http_status(http_status, body, body_len, status);
+            CLIENT_ERR("KMS request failed after maximum of %d retries: %s",
+                       kms_max_attempts,
+                       mongocrypt_status_message(status, NULL));
             goto fail;
         } else {
             ret = true;
