@@ -468,5 +468,5 @@ void _mongocrypt_tester_install_data_key(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_datakey_kms_per_ctx_credentials);
     INSTALL_TEST(_test_datakey_kms_per_ctx_credentials_not_requested);
     INSTALL_TEST(_test_datakey_kms_per_ctx_credentials_local);
-    INSTALL_TEST (_test_create_datakey_with_retry);
+    INSTALL_TEST(_test_create_datakey_with_retry);
 }
