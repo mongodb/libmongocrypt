@@ -43,6 +43,7 @@ static mongocrypt_kms_ctx_t *_next_kms_ctx(mongocrypt_ctx_t *ctx) {
     if (!dkctx->kms.should_retry && dkctx->kms_returned) {
         return NULL;
     }
+    dkctx->kms.should_retry = false; // Reset retry state.
     dkctx->kms_returned = true;
     return &dkctx->kms;
 }

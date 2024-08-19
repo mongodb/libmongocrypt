@@ -503,10 +503,6 @@ static void _test_rewrap_many_datakey_need_kms_retry(_mongocrypt_tester_t *teste
     mongocrypt_ctx_t *ctx = NULL;
     mongocrypt_kms_ctx_t *kms = NULL;
 
-    /* Clear key cache. */
-    mongocrypt_destroy(crypt);
-    crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
-
     /* Ensure KMS decrypt requests retry for HTTP errors */
     ctx = mongocrypt_ctx_new(crypt);
     ASSERT_OK(mongocrypt_ctx_rewrap_many_datakey_init(ctx, filter), ctx);
