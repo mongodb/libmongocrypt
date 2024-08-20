@@ -164,6 +164,7 @@ functions:
         binary: bash
         env:
           TOPOLOGY: replica_set
+          MONGODB_VERSION: "8.0"
         args:
           - ${DRIVERS_TOOLS}/.evergreen/run-orchestration.sh
     - command: "subprocess.exec"

@@ -134,7 +134,7 @@ async def run_state_machine(ctx, callback):
             ctx.complete_mongo_operation()
         elif state == lib.MONGOCRYPT_CTX_NEED_MONGO_KEYS:
             key_filter = ctx.mongo_operation()
-            for key in await callback.fetch_keys(key_filter):
+            async for key in callback.fetch_keys(key_filter):
                 ctx.add_mongo_operation_result(key)
             ctx.complete_mongo_operation()
         elif state == lib.MONGOCRYPT_CTX_NEED_KMS:
