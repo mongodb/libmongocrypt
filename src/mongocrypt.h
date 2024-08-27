@@ -1082,6 +1082,8 @@ typedef struct _mongocrypt_kms_ctx_t mongocrypt_kms_ctx_t;
  * If KMS handles are being handled synchronously, the driver can reuse the same
  * TLS socket to send HTTP requests and receive responses.
  *
+ * The returned KMS handle does not outlive `ctx`.
+ *
  * @param[in] ctx A @ref mongocrypt_ctx_t.
  * @returns a new @ref mongocrypt_kms_ctx_t or NULL.
  */
