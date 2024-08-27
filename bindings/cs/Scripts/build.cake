@@ -19,8 +19,8 @@ var releaseVersion = GetSettingValue("releaseVersion", localReleaseVersion);
 var fork = GetSettingValue("fork", "git@github.com:mongodb/libmongocrypt.git");
 var branch = GetSettingValue("branch", "master");
 
-// 1.10.0 - latest libmongocrypt release
-var libmongocryptAllUrl = GetSettingValue("url", "https://mciuploads.s3.amazonaws.com/libmongocrypt/all/1.10.0/libmongocrypt-all.tar.gz");
+// 1.11.0 - latest libmongocrypt release
+var libmongocryptAllUrl = GetSettingValue("url", "https://mciuploads.s3.amazonaws.com/libmongocrypt/all/1.11.0/libmongocrypt-all.tar.gz");
 
 var csharpBindingsGitTagName = $"csharp-v{releaseVersion}";
 var csharpBindingsDirectory = buildDirectory.Combine(csharpBindingsGitTagName);
