@@ -440,7 +440,7 @@ static void _test_create_datakey_with_retry(_mongocrypt_tester_t *tester) {
         ASSERT_OK(kms_ctx, ctx);
         // Expect no sleep is requested before any error.
         ASSERT_CMPINT64(mongocrypt_kms_ctx_usleep(kms_ctx), ==, 0);
-        // Feed a retryable HTTP error.
+        // Mark a network error.
         ASSERT_OK(mongocrypt_kms_ctx_fail(kms_ctx), kms_ctx);
         // Expect KMS request is returned again for a retry.
         kms_ctx = mongocrypt_ctx_next_kms_ctx(ctx);
