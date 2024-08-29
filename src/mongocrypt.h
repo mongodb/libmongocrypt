@@ -311,6 +311,18 @@ MONGOCRYPT_EXPORT
 bool mongocrypt_setopt_log_handler(mongocrypt_t *crypt, mongocrypt_log_fn_t log_fn, void *log_ctx);
 
 /**
+ * Enable or disable KMS retry behavior.
+ *
+ * @param[in] crypt The @ref mongocrypt_t object.
+ * @param[in] enable A boolean indicating whether to retry operations.
+ * @pre @ref mongocrypt_init has not been called on @p crypt.
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_ctx_status
+ */
+MONGOCRYPT_EXPORT
+bool mongocrypt_setopt_retry_kms(mongocrypt_t *crypt, bool enable);
+
+/**
  * Configure an AWS KMS provider on the @ref mongocrypt_t object.
  *
  * This has been superseded by the more flexible:
@@ -1133,6 +1145,15 @@ MONGOCRYPT_EXPORT
 uint32_t mongocrypt_kms_ctx_bytes_needed(mongocrypt_kms_ctx_t *kms);
 
 /**
+ * Indicates how long to sleep before sending this request.
+ *
+ * @param[in] kms The @ref mongocrypt_kms_ctx_t.
+ * @returns How long to sleep in microseconds.
+ */
+MONGOCRYPT_EXPORT
+int64_t mongocrypt_kms_ctx_usleep(mongocrypt_kms_ctx_t *kms);
+
+/**
  * Feed bytes from the HTTP response.
  *
  * Feeding more bytes than what has been returned in @ref
@@ -1146,6 +1167,15 @@ uint32_t mongocrypt_kms_ctx_bytes_needed(mongocrypt_kms_ctx_t *kms);
  */
 MONGOCRYPT_EXPORT
 bool mongocrypt_kms_ctx_feed(mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes);
+
+/**
+ * Indicate a network-level failure.
+ *
+ * @param[in] kms The @ref mongocrypt_kms_ctx_t.
+ * @return A boolean indicating whether the failed request may be retried.
+ */
+MONGOCRYPT_EXPORT
+bool mongocrypt_kms_ctx_fail(mongocrypt_kms_ctx_t *kms);
 
 /**
  * Get the status associated with a @ref mongocrypt_kms_ctx_t object.

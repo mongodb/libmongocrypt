@@ -203,18 +203,25 @@ The responses from one or more HTTP messages to KMS.
     (Note, the driver MAY fan out all HTTP requests at the same time).
 2.  For each context:
 
-    a.  Create/reuse a TLS socket connected to the endpoint indicated by
+    a.  Delay the message by the time in microseconds indicated by
+        `mongocrypt_kms_ctx_usleep` if returned value is greater than 0.
+
+    b.  Create/reuse a TLS socket connected to the endpoint indicated by
         `mongocrypt_kms_ctx_endpoint`. The endpoint string is a host name with
         a port number separated by a colon. E.g.
         "kms.us-east-1.amazonaws.com:443". A port number will always be
         included. Drivers may assume the host name is not an IP address or IP
         literal.
 
-    b.  Write the message from `mongocrypt_kms_ctx_message` to the
+    c.  Write the message from `mongocrypt_kms_ctx_message` to the
         > socket.
 
-    c.  Feed the reply back with `mongocrypt_kms_ctx_feed`. Repeat
+    d.  Feed the reply back with `mongocrypt_kms_ctx_feed`. Repeat
         > until `mongocrypt_kms_ctx_bytes_needed` returns 0.
+
+    If any step encounters a network error, continue to the next KMS context if
+    `mongocrypt_kms_ctx_fail` returns true. Otherwise, abort and report an
+    error.
 
 3.  When done feeding all replies, call `mongocrypt_ctx_kms_done`.
 
