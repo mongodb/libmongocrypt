@@ -570,7 +570,7 @@ tasks:
     - variant: macos
       name: build-and-test-and-upload
   commands:
-    - func: "fetch source"
+    - func: "fetch source" # To set `tag_upload_location` expansion.
     - command: shell.exec
       params:
         script: mkdir all
