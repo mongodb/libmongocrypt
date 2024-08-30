@@ -570,6 +570,7 @@ tasks:
     - variant: macos
       name: build-and-test-and-upload
   commands:
+    - func: "fetch source"
     - command: shell.exec
       params:
         script: mkdir all
