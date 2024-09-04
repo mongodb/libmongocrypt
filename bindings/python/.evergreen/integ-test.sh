@@ -17,7 +17,7 @@ if [ $MACHINE == "aarch64" ]; then
     TARGET=rhel82
 else
     TARGET=rhel80
-    PYTHON="/opt/python/3.8/bin/python3"
+    PYTHON="/opt/python/3.13/bin/python3"
 fi
 
 CRYPT_SHARED_DIR="$(pwd)/crypt_shared"

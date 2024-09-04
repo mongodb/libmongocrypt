@@ -499,7 +499,7 @@ tasks:
     - func: "download tarball"
       vars: { variant_name: "${build_variant}" }
     - func: "test python integ"
-      vars: { variant_name: "${build_variant}", PYTHON: /Library/Frameworks/Python.framework/Versions/3.13/bin/python3 }
+      vars: { variant_name: "${build_variant}" }
 
 - name: "release-python-macos-1100"
   tags: ["release_python_tag"]
