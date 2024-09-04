@@ -17,7 +17,7 @@ else
     export PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/nocrypto/lib/libmongocrypt.so
 fi
 
-createvirtualenv $PYTHON .venv
+createvirtualenv $BASE_PYTHON .venv
 pip install -e .
 pushd $PYMONGO_DIR
 pip install -e ".[test,encryption]"
