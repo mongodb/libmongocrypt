@@ -44,8 +44,7 @@ else
 fi
 export PYMONGOCRYPT_LIB
 
-CRYPT_SHARED_DIR="$(pwd)/drivers-tools"
-bash $CRYPT_SHARED_DIR/.evergreen/run-orchestration.sh
+CRYPT_SHARED_DIR="$DRIVERS_TOOLS"
 
 createvirtualenv $PYTHON .venv
 pip install -e .
