@@ -62,6 +62,7 @@ else
           "/opt/python/3.10/bin/python3"
           "/opt/python/3.11/bin/python3"
           "/opt/python/3.12/bin/python3"
+          "/opt/python/3.13/bin/python3"
         )
     fi
     /opt/mongodbtoolchain/v3/bin/python3 drivers-evergreen-tools/.evergreen/mongodl.py --component \
