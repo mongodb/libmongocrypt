@@ -116,6 +116,34 @@ To install the latest unstable development package, change `1.11` to `developmen
 
 ### .deb Packages (Debian and Ubuntu) ###
 
+The repository containing the Debian and Ubuntu .deb packages can be configured automatically, using extrepo, or manually. Once the repository is configured then the packages can be installed.
+
+#### Repository configuration with extrepo ####
+
+Extrepo is available on Debian 11 and newer, as well as Ubuntu 20.04 and newer.
+
+First, install the extrepo package:
+
+```
+sudo apt install extrepo
+```
+
+If you would like to see the information about the repository, it can be viewed with the search command:
+
+```
+extrepo search libmongocrypt
+```
+
+In order to enable the repository, execute this command:
+
+```
+sudo extrepo enable libmongocrypt
+```
+
+Once the repository is configured, continue with package installation.
+
+#### Manual repository configuration ####
+
 First, import the public key used to sign the package repositories:
 
 ```
@@ -134,15 +162,12 @@ For Debian systems (be sure to change `<release>` to `stretch`, `buster`, `bulls
 echo "deb https://libmongocrypt.s3.amazonaws.com/apt/debian <release>/libmongocrypt/1.11 main" | sudo tee /etc/apt/sources.list.d/libmongocrypt.list
 ```
 
-Third, update the package cache:
+#### Package installation ####
+
+Finally, update the package cache and install the libmongocrypt packages:
 
 ```
 sudo apt-get update
-```
-
-Finally, install the libmongocrypt packages:
-
-```
 sudo apt-get install -y libmongocrypt-dev
 ```
 

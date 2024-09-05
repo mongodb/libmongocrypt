@@ -139,4 +139,25 @@ Do the following when releasing:
 Submit a PR to update the Homebrew package https://github.com/mongodb/homebrew-brew/blob/master/Formula/libmongocrypt.rb. ([Example](https://github.com/mongodb/homebrew-brew/pull/208)). If not on macOS, request a team member to do this step.
 
 ## Debian steps ##
-Refer to the [Debian](https://github.com/mongodb/mongo-c-driver/blob/master/docs/dev/debian.rst) steps. If you are not a Debian maintainer on the team, request a team member to do this step.
+If you are not a Debian maintainer on the team, request a team member to do the steps in this section.
+
+Refer to the [Debian](https://github.com/mongodb/mongo-c-driver/blob/master/docs/dev/debian.rst) steps.
+
+For a minor release (e.g. x.y.0), submit a merge request to the [extrepo-data](https://salsa.debian.org/extrepo-team/extrepo-data) project in Debian to update the PPA. The change would look something like this:
+
+```
+diff --git a/repos/debian/libmongocrypt.yaml b/repos/debian/libmongocrypt.yaml
+index 609dc0b..f7530a9 100644
+--- a/repos/debian/libmongocrypt.yaml
++++ b/repos/debian/libmongocrypt.yaml
+@@ -4,7 +4,7 @@ libmongocrypt:
+   source:
+     Types: deb
+     URIs: https://libmongocrypt.s3.amazonaws.com/apt/debian
+-    Suites: <SUITE>/libmongocrypt/1.11
++    Suites: <SUITE>/libmongocrypt/1.12
+     Components: main
+     Architectures: amd64 arm64
+   suites:
+```
+
