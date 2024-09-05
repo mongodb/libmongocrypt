@@ -162,6 +162,7 @@ functions:
     - command: subprocess.exec
       params:
         binary: bash
+        working_dir: "${DRIVERS_TOOLS}"
         env:
           TOPOLOGY: replica_set
           MONGODB_VERSION: "8.0"
