@@ -45,11 +45,6 @@ fi
 export PYMONGOCRYPT_LIB
 
 CRYPT_SHARED_DIR="$DRIVERS_TOOLS"
-ls -ls $CRYPT_SHARED_DIR
-ls -ls $CRYPT_SHARED_DIR/.evergreen
-ls -ls $CRYPT_SHARED_DIR/mongodb
-
-exit 1
 
 createvirtualenv $PYTHON .venv
 pip install -e .
