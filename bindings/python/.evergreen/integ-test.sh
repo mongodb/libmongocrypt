@@ -45,6 +45,7 @@ fi
 export PYMONGOCRYPT_LIB
 
 CRYPT_SHARED_DIR="$DRIVERS_TOOLS"
+ls -ls $CRYPT_SHARED_DIR
 
 createvirtualenv $PYTHON .venv
 pip install -e .
