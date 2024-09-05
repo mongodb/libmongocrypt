@@ -9,20 +9,27 @@ pushd $(pwd)/libmongocrypt/bindings/python
 BASE_PYTHON=$(find_python3)
 
 # MONGOCRYPT_DIR is set by libmongocrypt/.evergreen/config.yml
-MONGOCRYPT_DIR="$MONGOCRYPT_DIR"
+# MONGOCRYPT_DIR="$MONGOCRYPT_DIR"
 
 MACHINE=$(uname -m)
 if [ $MACHINE == "aarch64" ]; then
     PYTHON="/opt/mongodbtoolchain/v4/bin/python3"
-    TARGET=rhel82
+    TARGET_CRYPT=rhel82
+    TARGET_LIB=rhel-82-arm64
 else
-    TARGET=rhel80
+    TARGET_CRYPT=rhel80
+    TARGET_LIB=rhel-80-64-bit
     PYTHON="/opt/python/3.13/bin/python3"
 fi
+LIBMONGOCRYPT_URL="https://s3.amazonaws.com/mciuploads/libmongocrypt/$TARGET_LIB/master/latest/libmongocrypt.tar.gz"
+curl -O "$LIBMONGOCRYPT_URL"
+mkdir libmongocrypt
+tar xzf libmongocrypt.tar.gz -C ./libmongocrypt
+MONGOCRYPT_DIR=./libmongocrypt
 
 CRYPT_SHARED_DIR="$(pwd)/crypt_shared"
 /opt/mongodbtoolchain/v3/bin/python3 $DRIVERS_TOOLS/.evergreen/mongodl.py --component \
-      crypt_shared --version latest --out $CRYPT_SHARED_DIR --target $TARGET
+      crypt_shared --version latest --out $CRYPT_SHARED_DIR --target $TARGET_CRYPT
 
 if [ -e "${MONGOCRYPT_DIR}/lib64/" ]; then
     export PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/lib64/libmongocrypt.so
