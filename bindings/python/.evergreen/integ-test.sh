@@ -25,17 +25,28 @@ LIBMONGOCRYPT_URL="https://s3.amazonaws.com/mciuploads/libmongocrypt/$TARGET_LIB
 curl -O "$LIBMONGOCRYPT_URL"
 mkdir libmongocrypt
 tar xzf libmongocrypt.tar.gz -C ./libmongocrypt
-MONGOCRYPT_DIR=./libmongocrypt
+MONGOCRYPT_DIR=./libmongocrypt/nocrypto
+BASE=$(pwd)/libmongocrypt/nocrypto
+if [ -f "${BASE}/lib/libmongocrypt.so" ]; then
+    PYMONGOCRYPT_LIB=${BASE}/lib/libmongocrypt.so
+elif [ -f "${BASE}/lib/libmongocrypt.dylib" ]; then
+    PYMONGOCRYPT_LIB=${BASE}/lib/libmongocrypt.dylib
+elif [ -f "${BASE}/bin/mongocrypt.dll" ]; then
+    PYMONGOCRYPT_LIB=${BASE}/bin/mongocrypt.dll
+    # libmongocrypt's windows dll is not marked executable.
+    chmod +x $PYMONGOCRYPT_LIB
+    PYMONGOCRYPT_LIB=$(cygpath -m $PYMONGOCRYPT_LIB)
+elif [ -f "${BASE}/lib64/libmongocrypt.so" ]; then
+    PYMONGOCRYPT_LIB=${BASE}/lib64/libmongocrypt.so
+else
+    echo "Cannot find libmongocrypt shared object file"
+    exit 1
+fi
+export PYMONGOCRYPT_LIB
 
 CRYPT_SHARED_DIR="$(pwd)/crypt_shared"
 /opt/mongodbtoolchain/v3/bin/python3 $DRIVERS_TOOLS/.evergreen/mongodl.py --component \
       crypt_shared --version latest --out $CRYPT_SHARED_DIR --target $TARGET_CRYPT
-
-if [ -e "${MONGOCRYPT_DIR}/lib64/" ]; then
-    export PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/lib64/libmongocrypt.so
-else
-    export PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/lib/libmongocrypt.so
-fi
 
 createvirtualenv $PYTHON .venv
 pip install -e .
