@@ -15,10 +15,14 @@ CRYPT_SHARED_DIR="$DRIVERS_TOOLS"
 MACHINE=$(uname -m)
 if [ $MACHINE == "aarch64" ]; then
     PYTHON="/opt/mongodbtoolchain/v4/bin/python3"
-    PYMONGOCRYPT_LIB="${MONGOCRYPT_DIR}/nocrypto/lib/libmongocrypt.so"
 else
     PYTHON="/opt/python/3.13/bin/python3"
+fi
+
+if [ -d "${MONGOCRYPT_DIR}/nocrypto/lib64" ]; then
     PYMONGOCRYPT_LIB="${MONGOCRYPT_DIR}/nocrypto/lib64/libmongocrypt.so"
+else
+    PYMONGOCRYPT_LIB="${MONGOCRYPT_DIR}/nocrypto/lib/libmongocrypt.so"
 fi
 export PYMONGOCRYPT_LIB
 
