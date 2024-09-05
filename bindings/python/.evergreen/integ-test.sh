@@ -44,9 +44,7 @@ else
 fi
 export PYMONGOCRYPT_LIB
 
-CRYPT_SHARED_DIR="$(pwd)/crypt_shared"
-/opt/mongodbtoolchain/v3/bin/python3 $DRIVERS_TOOLS/.evergreen/mongodl.py --component \
-      crypt_shared --version latest --out $CRYPT_SHARED_DIR --target $TARGET_CRYPT
+CRYPT_SHARED_DIR="$(pwd)/drivers-tools"
 
 createvirtualenv $PYTHON .venv
 pip install -e .
@@ -54,9 +52,9 @@ pushd $PYMONGO_DIR
 pip install -e ".[test,encryption]"
 source ${DRIVERS_TOOLS}/.evergreen/csfle/secrets-export.sh
 set -x
-TEST_CRYPT_SHARED=1 DYLD_FALLBACK_LIBRARY_PATH=$CRYPT_SHARED_DIR/lib/:${DYLD_FALLBACK_LIBRARY_PATH:-} \
-    LD_LIBRARY_PATH=$CRYPT_SHARED_DIR/lib:${LD_LIBRARY_PATH-} \
-    PATH=$CRYPT_SHARED_DIR/bin:$PATH \
+TEST_CRYPT_SHARED=1 DYLD_FALLBACK_LIBRARY_PATH=$CRYPT_SHARED_DIR:${DYLD_FALLBACK_LIBRARY_PATH:-} \
+    LD_LIBRARY_PATH=$CRYPT_SHARED_DIR:${LD_LIBRARY_PATH-} \
+    PATH=$CRYPT_SHARED_DIR:$PATH \
     AUTH=auth SSL=ssl \
     .evergreen/run-tests.sh -m encryption
 
