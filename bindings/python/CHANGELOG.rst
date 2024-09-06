@@ -1,8 +1,15 @@
 Changelog
 =========
 
+Changes in Version 1.11.0
+-------------------------
+
+- Bundle libmongocrypt 1.11.0 in release wheels.
+- Add support for Python 3.13.
+- Fix bug in Python async support for ``AsyncMongoCryptCallback.fetch_keys``.
+
 Changes in Version 1.10.1
-------------------------
+-------------------------
 
 - Bundle libmongocrypt 1.10.1 in release wheels.
 
