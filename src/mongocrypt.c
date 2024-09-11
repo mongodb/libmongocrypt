@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include "mongocrypt.h"
 #include "mlib/error.h"
 #include "mlib/path.h"
 #include "mlib/thread.h"
@@ -24,6 +25,7 @@
 #include "mongocrypt-binary-private.h"
 #include "mongocrypt-cache-collinfo-private.h"
 #include "mongocrypt-cache-key-private.h"
+#include "mongocrypt-cache-private.h"
 #include "mongocrypt-config.h"
 #include "mongocrypt-crypto-private.h"
 #include "mongocrypt-log-private.h"
@@ -211,6 +213,12 @@ bool mongocrypt_setopt_kms_provider_aws(mongocrypt_t *crypt,
                         aws_secret_access_key_len);
     }
     kms_providers->configured_providers |= MONGOCRYPT_KMS_PROVIDER_AWS;
+    return true;
+}
+
+bool mongocrypt_setopt_key_expiration(mongocrypt_t *crypt, uint64_t cache_expiration_ms) {
+    ASSERT_MONGOCRYPT_PARAM_UNINIT(crypt);
+    crypt->cache_key.expiration = cache_expiration_ms;
     return true;
 }
 

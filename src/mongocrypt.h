@@ -1487,6 +1487,16 @@ bool mongocrypt_ctx_setopt_query_type(mongocrypt_ctx_t *ctx, const char *query_t
 MONGOCRYPT_EXPORT
 bool mongocrypt_ctx_setopt_algorithm_range(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *opts);
 
+/**
+ * Set the expiration time for the key encryption key cache. Defaults to 60 seconds if not set.
+ *
+ * @param[in] ctx The @ref mongocrypt_ctx_t object.
+ * @param[in] cache_expiration_ms The cache expiration time in milliseconds. If zero, the cache
+ * never expires.
+ */
+MONGOCRYPT_EXPORT
+bool mongocrypt_setopt_key_expiration(mongocrypt_t *crypt, uint64_t cache_expiration_ms);
+
 /// String constants for setopt_query_type
 #define MONGOCRYPT_QUERY_TYPE_EQUALITY_STR "equality"
 // DEPRECATED: Support "rangePreview" has been removed in favor of "range".
