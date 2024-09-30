@@ -142,13 +142,14 @@ static void _test_one_kms_response(_mongocrypt_tester_t *tester, bson_t *test) {
         BSON_ASSERT(bson_iter_init_find(&iter, test, "expect"));
         if (BSON_ITER_HOLDS_ARRAY(&iter)) {
             // Concatenate array into one string.
-            bson_string_t *builder = bson_string_new(NULL);
+            expect = bson_strdup("");
             bson_iter_recurse(&iter, &iter);
             while (bson_iter_next(&iter)) {
                 ASSERT(BSON_ITER_HOLDS_UTF8(&iter));
-                bson_string_append(builder, bson_iter_utf8(&iter, NULL));
+                char *previous = expect;
+                expect = bson_strdup_printf("%s%s", expect, bson_iter_utf8(&iter, NULL));
+                bson_free(previous);
             }
-            expect = bson_string_free(builder, false /* free segment */);
         } else {
             expect = bson_strdup(bson_iter_utf8(&iter, NULL));
         }
