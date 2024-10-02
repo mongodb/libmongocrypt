@@ -18,8 +18,7 @@
 #ifndef MLIB_CMP_H
 #define MLIB_CMP_H
 
-#include <bson/bson-compat.h> /* ssize_t */
-#include <bson/bson-macros.h> /* BSON_CONCAT */
+#include <bson/bson.h> /* ssize_t + BSON_CONCAT */
 
 #include <limits.h>
 #include <stdbool.h>
