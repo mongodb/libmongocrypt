@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-#ifndef BSON_CMP_H
-#define BSON_CMP_H
+// `cmp.h` is a modified copy of `bson-cmp.h` from libbson 1.28.0.
+#ifndef MLIB_CMP_H
+#define MLIB_CMP_H
 
 #include <bson/bson-compat.h> /* ssize_t */
 #include <bson/bson-macros.h> /* BSON_CONCAT */
