@@ -22,6 +22,7 @@
 #include "mc-range-edge-generation-private.h" // mc_count_leading_zeros_u32
 #include "mc-range-encoding-private.h"        // mc_getTypeInfo32, trimFactorDefault
 #include "mc-range-mincover-private.h"
+#include "mlib/cmp.h"
 #include "mongocrypt-private.h"
 
 struct _mc_mincover_t {
