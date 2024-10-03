@@ -807,6 +807,13 @@ mongocrypt_kms_ctx_t *_mongocrypt_key_broker_next_kms(_mongocrypt_key_broker_t *
         // Return the first not-yet-returned auth request.
         for (size_t i = 0; i < mc_mapof_kmsid_to_authrequest_len(kb->auth_requests); i++) {
             auth_request_t *ar = mc_mapof_kmsid_to_authrequest_at(kb->auth_requests, i);
+
+            if (ar->kms.should_retry) {
+                ar->kms.should_retry = false;
+                ar->returned = true;
+                return &ar->kms;
+            }
+
             if (ar->returned) {
                 continue;
             }
