@@ -499,13 +499,14 @@ static bool should_retry_http(int http_status, _kms_request_type_t t) {
                 return true;
             }
         }
-    } else if (t == MONGOCRYPT_KMS_AZURE_WRAPKEY || t == MONGOCRYPT_KMS_AZURE_UNWRAPKEY) {
+    } else if (t == MONGOCRYPT_KMS_AZURE_WRAPKEY || t == MONGOCRYPT_KMS_AZURE_UNWRAPKEY
+               || t == MONGOCRYPT_KMS_AZURE_OAUTH) {
         for (size_t i = 0; i < sizeof(retryable_azure) / sizeof(retryable_azure[0]); i++) {
             if (http_status == retryable_azure[i]) {
                 return true;
             }
         }
-    } else if (t == MONGOCRYPT_KMS_GCP_ENCRYPT || t == MONGOCRYPT_KMS_GCP_DECRYPT) {
+    } else if (t == MONGOCRYPT_KMS_GCP_ENCRYPT || t == MONGOCRYPT_KMS_GCP_DECRYPT || t == MONGOCRYPT_KMS_GCP_OAUTH) {
         if (http_status == 408 || http_status == 429 || http_status / 500 == 1) {
             return true;
         }
@@ -644,6 +645,21 @@ static bool _ctx_done_oauth(mongocrypt_kms_ctx_t *kms) {
         goto fail;
     }
     body = kms_response_get_body(response, &body_len);
+
+    if (kms->retry_enabled && should_retry_http(http_status, kms->req_type)) {
+        if (kms->attempts >= kms_max_attempts) {
+            // Wrap error to indicate maximum retries occurred.
+            _handle_non200_http_status(http_status, body, body_len, status);
+            CLIENT_ERR("KMS request failed after maximum of %d retries: %s",
+                       kms_max_attempts,
+                       mongocrypt_status_message(status, NULL));
+            goto fail;
+        } else {
+            ret = true;
+            set_retry(kms);
+            goto fail;
+        }
+    }
 
     if (body_len == 0) {
         CLIENT_ERR("Empty KMS response. HTTP status=%d", http_status);
@@ -1123,7 +1139,9 @@ bool mongocrypt_kms_ctx_fail(mongocrypt_kms_ctx_t *kms) {
     }
 
     // Check if request type is retryable. Some requests are non-idempotent and cannot be safely retried.
-    _kms_request_type_t retryable_types[] = {MONGOCRYPT_KMS_AWS_ENCRYPT,
+    _kms_request_type_t retryable_types[] = {MONGOCRYPT_KMS_AZURE_OAUTH,
+                                             MONGOCRYPT_KMS_GCP_OAUTH,
+                                             MONGOCRYPT_KMS_AWS_ENCRYPT,
                                              MONGOCRYPT_KMS_AWS_DECRYPT,
                                              MONGOCRYPT_KMS_AZURE_WRAPKEY,
                                              MONGOCRYPT_KMS_AZURE_UNWRAPKEY,
