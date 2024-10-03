@@ -5557,6 +5557,7 @@ static void _test_encrypt_retry(_mongocrypt_tester_t *tester) {
         ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
         _mongocrypt_tester_run_ctx_to(tester, ctx, MONGOCRYPT_CTX_DONE);
         mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
     }
     // Azure
     {
