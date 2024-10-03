@@ -24,8 +24,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-BSON_BEGIN_DECLS
-
 /* Based on the "Safe Integral Comparisons" proposal merged in C++20:
  * http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p0586r2.html
  *
@@ -147,7 +145,5 @@ MLIB_IN_RANGE_SET_UNSIGNED(size_t, SIZE_MAX)
 /* Return true if the value with *unsigned* type is in the representable range
  * of Type and false otherwise. */
 #define mlib_in_range_unsigned(Type, value) BSON_CONCAT3(mlib_in_range, _##Type, _unsigned)(value)
-
-BSON_END_DECLS
 
 #endif /* MLIB_CMP_H */
