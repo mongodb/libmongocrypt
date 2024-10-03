@@ -34,7 +34,7 @@ Please open a case in our issue management tool, JIRA:
 - Navigate to `the PYTHON project <https://jira.mongodb.org/browse/PYTHON>`_.
 - Click **Create Issue** - Please provide as much information as possible about the issue type and how to reproduce it.
 
-Bug reports in JIRA for all driver projects (i.e. PYTHON, CSHARP, JAVA) and the
+Bug reports in JIRA for all driver projects (i.e. PYTHON, CSHARP) and the
 Core Server (i.e. SERVER) project are **public**.
 
 How To Ask For Help

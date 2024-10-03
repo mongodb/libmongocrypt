@@ -122,13 +122,6 @@ functions:
               bash libmongocrypt/.evergreen/build_all.sh
           ./libmongocrypt/.evergreen/clang-tidy.sh
 
-  "test java":
-    - command: "shell.exec"
-      params:
-        script: |-
-          export GIT_REVISION="${revision}"
-          cd ./libmongocrypt/bindings/java/mongocrypt && ${test_env|} ./.evergreen/test.sh
-
   "test python":
     - command: "shell.exec"
       params:
@@ -187,32 +180,6 @@ functions:
     - command: attach.xunit_results
       params:
         file: ${PYMONGO_DIR}/xunit-results/TEST-*.xml
-
-  "publish java":
-    - command: git.get_project
-      params: {directory: libmongocrypt}
-    - command: shell.exec
-      params:
-        script: |-
-          set -o errexit
-          chmod u+x libmongocrypt/.evergreen/*.sh
-          ./libmongocrypt/.evergreen/print-env-info.sh
-    - command: shell.exec
-      params:
-        include_expansions_in_env:
-          - nexus_username
-          - nexus_password
-          - signing_password
-          - signing_keyId
-          - ring_file_gpg_base64
-
-        script: |-
-          if [ "${is_patch}" = "true" ]; then
-            echo "Patch build detected, skipping"
-            exit 0
-          fi
-          export PROJECT_DIRECTORY=${project_directory}
-          cd ./libmongocrypt/bindings/java/mongocrypt && ${test_env|} ./.evergreen/publish.sh
 
   "download tarball":
     - command: s3.get
@@ -461,15 +428,6 @@ tasks:
     vars:
       compile_env: ${compile_env|} LIBMONGOCRYPT_EXTRA_CFLAGS="-fsanitize=address"
 
-- name: test-java
-  depends_on:
-    - variant: ubuntu2004-64
-      name: upload-java
-  commands:
-    - func: "fetch source"
-    - func: "test java"
-      vars: { variant_name: "${build_variant}" }
-
 - name: test-python
   depends_on:
   - build-and-test-and-upload
@@ -546,13 +504,6 @@ tasks:
   - func: "build csharp and test"
     vars:
       test_env: PROJECT_DIRECTORY=${project_directory}
-
-- name: publish-java
-  depends_on:
-    - variant: ubuntu2004-64
-      name: upload-java
-  commands:
-    - func: "publish java"
 
 - name: upload-java
   depends_on:
@@ -1005,19 +956,6 @@ tasks:
       vars:
         args: +check-format
 
-- name: benchmark-java
-  commands:
-    - func: "fetch source"
-    - command: "subprocess.exec"
-      params:
-        binary: bash
-        working_dir: "./libmongocrypt"
-        args:
-          - "./.evergreen/benchmark-java.sh"
-    - command: "perf.send"
-      params:
-        file: libmongocrypt/bindings/java/mongocrypt/benchmarks/results.json
-
 - name: benchmark-python
   commands:
     - func: "fetch source"
@@ -1082,7 +1020,6 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - test-java
   - name: publish-packages
     distros:
     - ubuntu2004-small
@@ -1094,7 +1031,6 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan-mac
   # - build-and-test-csharp // temporary removed to make strong named release.
-  - test-java
 - name: rhel72-zseries-test
   display_name: "RHEL 7.2 on zSeries"
   run_on: rhel72-zseries-test
@@ -1105,7 +1041,6 @@ buildvariants:
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
-  - test-java
   - name: publish-packages
     distros:
     - rhel70-small
@@ -1135,7 +1070,6 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   # - build-and-test-csharp // temporary removed to make strong named release.
-  - test-java
 - name: windows-test-python
   display_name: "Windows Python"
   run_on: windows-64-vsMulti-small
@@ -1157,7 +1091,6 @@ buildvariants:
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
-  - test-java
   - name: publish-packages
     distros:
     - rhel70-small
@@ -1172,7 +1105,6 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - test-java
   - name: publish-packages
     distros:
     - rhel70-small
@@ -1225,7 +1157,6 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - test-java
   - name: publish-packages
     distros:
     - ubuntu2004-small
@@ -1253,7 +1184,6 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - test-java
   - name: publish-packages
     distros:
     - ubuntu2004-small
@@ -1268,7 +1198,6 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - test-java
   - name: publish-packages
     distros:
     - ubuntu2004-small
@@ -1282,7 +1211,6 @@ buildvariants:
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
-  - test-java
   - name: publish-packages
     distros:
     - rhel70-small
@@ -1296,7 +1224,6 @@ buildvariants:
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
-  - test-java
   - name: publish-packages
     distros:
     - rhel70-small
@@ -1310,7 +1237,6 @@ buildvariants:
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
-  - test-java
   - name: publish-packages
     distros:
     - rhel70-small
@@ -1324,7 +1250,6 @@ buildvariants:
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
-  - test-java
   - test-python
   - test-python-integ
   - name: publish-packages
@@ -1417,7 +1342,6 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - test-java
   - name: publish-packages
     distros:
     - rhel70-small
@@ -1432,7 +1356,6 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - test-java
   - name: publish-packages
     distros:
     - ubuntu2004-small
@@ -1448,7 +1371,6 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan
   # - build-and-test-csharp // temporary removed to make strong named release.
-  - test-java
   - name: publish-packages
     distros:
     - ubuntu2004-small
@@ -1473,7 +1395,6 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  - test-java
   - name: publish-packages
     distros:
     - ubuntu2004-small
@@ -1490,7 +1411,6 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan
   # - build-and-test-csharp // temporary removed to make strong named release.
-  - test-java
   - upload-java
   - publish-packages
 - name: ubuntu2004-arm64
@@ -1522,7 +1442,6 @@ buildvariants:
   - build-and-test-asan
   # see https://jira.mongodb.org/browse/MONGOCRYPT-515
   #- build-and-test-csharp
-  - test-java
   - upload-java
   - name: publish-packages
     distros:
@@ -1548,11 +1467,6 @@ buildvariants:
   tasks:
     - name: "upload-java"
     - name: "upload-all"
-- name: java-release
-  display_name: Java Release
-  run_on: ubuntu2004-small
-  tasks:
-    - "publish-java"
 - name: packaging
   display_name: "Linux Distro Packaging"
   tasks: [.packaging]
@@ -1567,7 +1481,6 @@ buildvariants:
   tasks:
   - build-and-test-and-upload
   - test-python
-  - test-java
 - name: windows-vs2017-32bit
   # Test Windows 32 bit builds for PHPC. PHPC builds libmongocrypt from source. See MONGOCRYPT-391.
   display_name: "Windows VS 2017 32-bit compile"
@@ -1584,7 +1497,6 @@ buildvariants:
   # rhel90-dbx-perf-large is the dedicated performance distro referenced in DRIVERS-2666.
   run_on: rhel90-dbx-perf-large
   tasks:
-  - benchmark-java
   - benchmark-python
 
 - name: alpine-amd64-earthly
