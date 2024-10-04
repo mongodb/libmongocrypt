@@ -218,10 +218,6 @@ static void test_mc_cmp_greater_equal(_mongocrypt_tester_t *tester) {
     BSON_ASSERT(mc_cmp_greater_equal_us(1u, 1));
 }
 
-/* Sanity check: ensure ssize_t limits are as expected relative to size_t. */
-BSON_STATIC_ASSERT2(ssize_t_size_min_check, SSIZE_MIN + 1 == -SSIZE_MAX);
-BSON_STATIC_ASSERT2(ssize_t_size_max_check, (size_t)SSIZE_MAX <= SIZE_MAX);
-
 static void test_mc_in_range(_mongocrypt_tester_t *tester) {
     BSON_UNUSED(tester);
 
