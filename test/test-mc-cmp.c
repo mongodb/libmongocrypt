@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+// `test-mc-cmp.h` is a modified copy of `test-bson-cmp.c` from libbson 1.28.0.
+
 #include "test-mongocrypt.h"
 
 #include "mc-cmp-private.h"
