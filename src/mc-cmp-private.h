@@ -15,8 +15,8 @@
  */
 
 // `cmp.h` is a modified copy of `bson-cmp.h` from libbson 1.28.0.
-#ifndef MLIB_CMP_H
-#define MLIB_CMP_H
+#ifndef MC_CMP_H
+#define MC_CMP_H
 
 #include <bson/bson.h> /* ssize_t + BSON_CONCAT */
 
@@ -30,112 +30,112 @@
  * Due to lack of type deduction in C, relational comparison functions (e.g.
  * `cmp_less`) are defined in sets of four "functions" according to the
  * signedness of each value argument, e.g.:
- *  - mlib_cmp_less_ss (signed-value, signed-value)
- *  - mlib_cmp_less_uu (unsigned-value, unsigned-value)
- *  - mlib_cmp_less_su (signed-value, unsigned-value)
- *  - mlib_cmp_less_us (unsigned-value, signed-value)
+ *  - mc_cmp_less_ss (signed-value, signed-value)
+ *  - mc_cmp_less_uu (unsigned-value, unsigned-value)
+ *  - mc_cmp_less_su (signed-value, unsigned-value)
+ *  - mc_cmp_less_us (unsigned-value, signed-value)
  *
  * Similarly, the `in_range` function is defined as a set of two "functions"
  * according to the signedness of the value argument:
- *  - mlib_in_range_signed (Type, signed-value)
- *  - mlib_in_range_unsigned (Type, unsigned-value)
+ *  - mc_in_range_signed (Type, signed-value)
+ *  - mc_in_range_unsigned (Type, unsigned-value)
  *
  * The user must take care to use the correct signedness for the provided
  * argument(s). Enabling compiler warnings for implicit sign conversions is
  * recommended.
  */
 
-#define MLIB_CMP_SET(op, ss, uu, su, us)                                                                               \
-    static BSON_INLINE bool BSON_CONCAT3(mlib_cmp_, op, _ss)(int64_t t, int64_t u) { return (ss); }                    \
+#define MC_CMP_SET(op, ss, uu, su, us)                                                                                 \
+    static BSON_INLINE bool BSON_CONCAT3(mc_cmp_, op, _ss)(int64_t t, int64_t u) {                                     \
+        return (ss);                                                                                                   \
+    }                                                                                                                  \
                                                                                                                        \
-    static BSON_INLINE bool BSON_CONCAT3(mlib_cmp_, op, _uu)(uint64_t t, uint64_t u) { return (uu); }                  \
+    static BSON_INLINE bool BSON_CONCAT3(mc_cmp_, op, _uu)(uint64_t t, uint64_t u) {                                   \
+        return (uu);                                                                                                   \
+    }                                                                                                                  \
                                                                                                                        \
-    static BSON_INLINE bool BSON_CONCAT3(mlib_cmp_, op, _su)(int64_t t, uint64_t u) { return (su); }                   \
+    static BSON_INLINE bool BSON_CONCAT3(mc_cmp_, op, _su)(int64_t t, uint64_t u) {                                    \
+        return (su);                                                                                                   \
+    }                                                                                                                  \
                                                                                                                        \
-    static BSON_INLINE bool BSON_CONCAT3(mlib_cmp_, op, _us)(uint64_t t, int64_t u) { return (us); }
+    static BSON_INLINE bool BSON_CONCAT3(mc_cmp_, op, _us)(uint64_t t, int64_t u) {                                    \
+        return (us);                                                                                                   \
+    }
 
-MLIB_CMP_SET(equal, t == u, t == u, t < 0 ? false : (uint64_t)(t) == u, u < 0 ? false : t == (uint64_t)(u))
+MC_CMP_SET(equal, t == u, t == u, t < 0 ? false : (uint64_t)(t) == u, u < 0 ? false : t == (uint64_t)(u))
 
-MLIB_CMP_SET(not_equal,
-             !mlib_cmp_equal_ss(t, u),
-             !mlib_cmp_equal_uu(t, u),
-             !mlib_cmp_equal_su(t, u),
-             !mlib_cmp_equal_us(t, u))
+MC_CMP_SET(not_equal, !mc_cmp_equal_ss(t, u), !mc_cmp_equal_uu(t, u), !mc_cmp_equal_su(t, u), !mc_cmp_equal_us(t, u))
 
-MLIB_CMP_SET(less, t < u, t < u, t < 0 ? true : (uint64_t)(t) < u, u < 0 ? false : t < (uint64_t)(u))
+MC_CMP_SET(less, t < u, t < u, t < 0 ? true : (uint64_t)(t) < u, u < 0 ? false : t < (uint64_t)(u))
 
-MLIB_CMP_SET(greater, mlib_cmp_less_ss(u, t), mlib_cmp_less_uu(u, t), mlib_cmp_less_us(u, t), mlib_cmp_less_su(u, t))
+MC_CMP_SET(greater, mc_cmp_less_ss(u, t), mc_cmp_less_uu(u, t), mc_cmp_less_us(u, t), mc_cmp_less_su(u, t))
 
-MLIB_CMP_SET(less_equal,
-             !mlib_cmp_greater_ss(t, u),
-             !mlib_cmp_greater_uu(t, u),
-             !mlib_cmp_greater_su(t, u),
-             !mlib_cmp_greater_us(t, u))
+MC_CMP_SET(less_equal,
+           !mc_cmp_greater_ss(t, u),
+           !mc_cmp_greater_uu(t, u),
+           !mc_cmp_greater_su(t, u),
+           !mc_cmp_greater_us(t, u))
 
-MLIB_CMP_SET(greater_equal,
-             !mlib_cmp_less_ss(t, u),
-             !mlib_cmp_less_uu(t, u),
-             !mlib_cmp_less_su(t, u),
-             !mlib_cmp_less_us(t, u))
+MC_CMP_SET(greater_equal, !mc_cmp_less_ss(t, u), !mc_cmp_less_uu(t, u), !mc_cmp_less_su(t, u), !mc_cmp_less_us(t, u))
 
-#undef MLIB_CMP_SET
+#undef MC_CMP_SET
 
 /* Return true if the given value is within the range of the corresponding
  * signed type. The suffix must match the signedness of the given value. */
-#define MLIB_IN_RANGE_SET_SIGNED(Type, min, max)                                                                       \
-    static BSON_INLINE bool BSON_CONCAT3(mlib_in_range, _##Type, _signed)(int64_t value) {                             \
-        return mlib_cmp_greater_equal_ss(value, min) && mlib_cmp_less_equal_ss(value, max);                            \
+#define MC_IN_RANGE_SET_SIGNED(Type, min, max)                                                                         \
+    static BSON_INLINE bool BSON_CONCAT3(mc_in_range, _##Type, _signed)(int64_t value) {                               \
+        return mc_cmp_greater_equal_ss(value, min) && mc_cmp_less_equal_ss(value, max);                                \
     }                                                                                                                  \
                                                                                                                        \
-    static BSON_INLINE bool BSON_CONCAT3(mlib_in_range, _##Type, _unsigned)(uint64_t value) {                          \
-        return mlib_cmp_greater_equal_us(value, min) && mlib_cmp_less_equal_us(value, max);                            \
+    static BSON_INLINE bool BSON_CONCAT3(mc_in_range, _##Type, _unsigned)(uint64_t value) {                            \
+        return mc_cmp_greater_equal_us(value, min) && mc_cmp_less_equal_us(value, max);                                \
     }
 
 /* Return true if the given value is within the range of the corresponding
  * unsigned type. The suffix must match the signedness of the given value. */
-#define MLIB_IN_RANGE_SET_UNSIGNED(Type, max)                                                                          \
-    static BSON_INLINE bool BSON_CONCAT3(mlib_in_range, _##Type, _signed)(int64_t value) {                             \
-        return mlib_cmp_greater_equal_su(value, 0u) && mlib_cmp_less_equal_su(value, max);                             \
+#define MC_IN_RANGE_SET_UNSIGNED(Type, max)                                                                            \
+    static BSON_INLINE bool BSON_CONCAT3(mc_in_range, _##Type, _signed)(int64_t value) {                               \
+        return mc_cmp_greater_equal_su(value, 0u) && mc_cmp_less_equal_su(value, max);                                 \
     }                                                                                                                  \
                                                                                                                        \
-    static BSON_INLINE bool BSON_CONCAT3(mlib_in_range, _##Type, _unsigned)(uint64_t value) {                          \
-        return mlib_cmp_less_equal_uu(value, max);                                                                     \
+    static BSON_INLINE bool BSON_CONCAT3(mc_in_range, _##Type, _unsigned)(uint64_t value) {                            \
+        return mc_cmp_less_equal_uu(value, max);                                                                       \
     }
 
-MLIB_IN_RANGE_SET_SIGNED(signed_char, SCHAR_MIN, SCHAR_MAX)
-MLIB_IN_RANGE_SET_SIGNED(short, SHRT_MIN, SHRT_MAX)
-MLIB_IN_RANGE_SET_SIGNED(int, INT_MIN, INT_MAX)
-MLIB_IN_RANGE_SET_SIGNED(long, LONG_MIN, LONG_MAX)
-MLIB_IN_RANGE_SET_SIGNED(long_long, LLONG_MIN, LLONG_MAX)
+MC_IN_RANGE_SET_SIGNED(signed_char, SCHAR_MIN, SCHAR_MAX)
+MC_IN_RANGE_SET_SIGNED(short, SHRT_MIN, SHRT_MAX)
+MC_IN_RANGE_SET_SIGNED(int, INT_MIN, INT_MAX)
+MC_IN_RANGE_SET_SIGNED(long, LONG_MIN, LONG_MAX)
+MC_IN_RANGE_SET_SIGNED(long_long, LLONG_MIN, LLONG_MAX)
 
-MLIB_IN_RANGE_SET_UNSIGNED(unsigned_char, UCHAR_MAX)
-MLIB_IN_RANGE_SET_UNSIGNED(unsigned_short, USHRT_MAX)
-MLIB_IN_RANGE_SET_UNSIGNED(unsigned_int, UINT_MAX)
-MLIB_IN_RANGE_SET_UNSIGNED(unsigned_long, ULONG_MAX)
-MLIB_IN_RANGE_SET_UNSIGNED(unsigned_long_long, ULLONG_MAX)
+MC_IN_RANGE_SET_UNSIGNED(unsigned_char, UCHAR_MAX)
+MC_IN_RANGE_SET_UNSIGNED(unsigned_short, USHRT_MAX)
+MC_IN_RANGE_SET_UNSIGNED(unsigned_int, UINT_MAX)
+MC_IN_RANGE_SET_UNSIGNED(unsigned_long, ULONG_MAX)
+MC_IN_RANGE_SET_UNSIGNED(unsigned_long_long, ULLONG_MAX)
 
-MLIB_IN_RANGE_SET_SIGNED(int8_t, INT8_MIN, INT8_MAX)
-MLIB_IN_RANGE_SET_SIGNED(int16_t, INT16_MIN, INT16_MAX)
-MLIB_IN_RANGE_SET_SIGNED(int32_t, INT32_MIN, INT32_MAX)
-MLIB_IN_RANGE_SET_SIGNED(int64_t, INT64_MIN, INT64_MAX)
+MC_IN_RANGE_SET_SIGNED(int8_t, INT8_MIN, INT8_MAX)
+MC_IN_RANGE_SET_SIGNED(int16_t, INT16_MIN, INT16_MAX)
+MC_IN_RANGE_SET_SIGNED(int32_t, INT32_MIN, INT32_MAX)
+MC_IN_RANGE_SET_SIGNED(int64_t, INT64_MIN, INT64_MAX)
 
-MLIB_IN_RANGE_SET_UNSIGNED(uint8_t, UINT8_MAX)
-MLIB_IN_RANGE_SET_UNSIGNED(uint16_t, UINT16_MAX)
-MLIB_IN_RANGE_SET_UNSIGNED(uint32_t, UINT32_MAX)
-MLIB_IN_RANGE_SET_UNSIGNED(uint64_t, UINT64_MAX)
+MC_IN_RANGE_SET_UNSIGNED(uint8_t, UINT8_MAX)
+MC_IN_RANGE_SET_UNSIGNED(uint16_t, UINT16_MAX)
+MC_IN_RANGE_SET_UNSIGNED(uint32_t, UINT32_MAX)
+MC_IN_RANGE_SET_UNSIGNED(uint64_t, UINT64_MAX)
 
-MLIB_IN_RANGE_SET_SIGNED(ssize_t, SSIZE_MIN, SSIZE_MAX)
-MLIB_IN_RANGE_SET_UNSIGNED(size_t, SIZE_MAX)
+MC_IN_RANGE_SET_SIGNED(ssize_t, SSIZE_MIN, SSIZE_MAX)
+MC_IN_RANGE_SET_UNSIGNED(size_t, SIZE_MAX)
 
-#undef MLIB_IN_RANGE_SET_SIGNED
-#undef MLIB_IN_RANGE_SET_UNSIGNED
+#undef MC_IN_RANGE_SET_SIGNED
+#undef MC_IN_RANGE_SET_UNSIGNED
 
 /* Return true if the value with *signed* type is in the representable range of
  * Type and false otherwise. */
-#define mlib_in_range_signed(Type, value) BSON_CONCAT3(mlib_in_range, _##Type, _signed)(value)
+#define mc_in_range_signed(Type, value) BSON_CONCAT3(mc_in_range, _##Type, _signed)(value)
 
 /* Return true if the value with *unsigned* type is in the representable range
  * of Type and false otherwise. */
-#define mlib_in_range_unsigned(Type, value) BSON_CONCAT3(mlib_in_range, _##Type, _unsigned)(value)
+#define mc_in_range_unsigned(Type, value) BSON_CONCAT3(mc_in_range, _##Type, _unsigned)(value)
 
-#endif /* MLIB_CMP_H */
+#endif /* MC_CMP_H */
