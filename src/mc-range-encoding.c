@@ -15,8 +15,8 @@
  */
 
 #include "mc-check-conversions-private.h"
+#include "mc-cmp-private.h"
 #include "mc-range-encoding-private.h"
-#include "mlib/cmp.h"
 #include "mongocrypt-private.h"
 #include "mongocrypt-util-private.h" // mc_isinf
 

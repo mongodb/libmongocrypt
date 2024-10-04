@@ -17,9 +17,9 @@
 #include "mc-rangeopts-private.h"
 
 #include "mc-check-conversions-private.h"
+#include "mc-cmp-private.h"
 #include "mc-range-edge-generation-private.h" // mc_count_leading_zeros_XX
 #include "mc-range-encoding-private.h"        // mc_getTypeInfoXX
-#include "mlib/cmp.h"
 #include "mongocrypt-private.h"
 #include "mongocrypt-util-private.h" // mc_bson_type_to_string
 

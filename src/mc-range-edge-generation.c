@@ -19,8 +19,8 @@
 
 #include "mc-array-private.h"
 #include "mc-check-conversions-private.h"
+#include "mc-cmp-private.h"
 #include "mc-range-encoding-private.h"
-#include "mlib/cmp.h"
 #include "mongocrypt-private.h"
 
 struct _mc_edges_t {
