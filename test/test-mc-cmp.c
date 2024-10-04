@@ -21,7 +21,7 @@
 #include "mc-cmp-private.h"
 
 static void test_mc_cmp_equal(_mongocrypt_tester_t *tester) {
-    BSON_UNUSED(tester);
+    (void)tester;
 
     ASSERT(mc_cmp_equal_ss(0, 0));
     ASSERT(!mc_cmp_equal_ss(0, -1));
@@ -54,7 +54,7 @@ static void test_mc_cmp_equal(_mongocrypt_tester_t *tester) {
 }
 
 static void test_mc_cmp_not_equal(_mongocrypt_tester_t *tester) {
-    BSON_UNUSED(tester);
+    (void)tester;
 
     ASSERT(!mc_cmp_not_equal_ss(0, 0));
     ASSERT(mc_cmp_not_equal_ss(0, -1));
@@ -87,7 +87,7 @@ static void test_mc_cmp_not_equal(_mongocrypt_tester_t *tester) {
 }
 
 static void test_mc_cmp_less(_mongocrypt_tester_t *tester) {
-    BSON_UNUSED(tester);
+    (void)tester;
 
     ASSERT(!mc_cmp_less_ss(0, 0));
     ASSERT(!mc_cmp_less_ss(0, -1));
@@ -120,7 +120,7 @@ static void test_mc_cmp_less(_mongocrypt_tester_t *tester) {
 }
 
 static void test_mc_cmp_greater(_mongocrypt_tester_t *tester) {
-    BSON_UNUSED(tester);
+    (void)tester;
 
     ASSERT(!mc_cmp_greater_ss(0, 0));
     ASSERT(mc_cmp_greater_ss(0, -1));
@@ -153,7 +153,7 @@ static void test_mc_cmp_greater(_mongocrypt_tester_t *tester) {
 }
 
 static void test_mc_cmp_less_equal(_mongocrypt_tester_t *tester) {
-    BSON_UNUSED(tester);
+    (void)tester;
 
     ASSERT(mc_cmp_less_equal_ss(0, 0));
     ASSERT(!mc_cmp_less_equal_ss(0, -1));
@@ -186,7 +186,7 @@ static void test_mc_cmp_less_equal(_mongocrypt_tester_t *tester) {
 }
 
 static void test_mc_cmp_greater_equal(_mongocrypt_tester_t *tester) {
-    BSON_UNUSED(tester);
+    (void)tester;
 
     ASSERT(mc_cmp_greater_equal_ss(0, 0));
     ASSERT(mc_cmp_greater_equal_ss(0, -1));
@@ -219,7 +219,7 @@ static void test_mc_cmp_greater_equal(_mongocrypt_tester_t *tester) {
 }
 
 static void test_mc_in_range(_mongocrypt_tester_t *tester) {
-    BSON_UNUSED(tester);
+    (void)tester;
 
     const int64_t int8_min = INT8_MIN;
     const int64_t int8_max = INT8_MAX;
