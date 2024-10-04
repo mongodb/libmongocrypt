@@ -23,199 +23,199 @@
 static void test_mc_cmp_equal(_mongocrypt_tester_t *tester) {
     BSON_UNUSED(tester);
 
-    BSON_ASSERT(mc_cmp_equal_ss(0, 0));
-    BSON_ASSERT(!mc_cmp_equal_ss(0, -1));
-    BSON_ASSERT(!mc_cmp_equal_ss(0, 1));
-    BSON_ASSERT(!mc_cmp_equal_ss(-1, 0));
-    BSON_ASSERT(mc_cmp_equal_ss(-1, -1));
-    BSON_ASSERT(!mc_cmp_equal_ss(-1, 1));
-    BSON_ASSERT(!mc_cmp_equal_ss(1, 0));
-    BSON_ASSERT(!mc_cmp_equal_ss(1, -1));
-    BSON_ASSERT(mc_cmp_equal_ss(1, 1));
+    ASSERT(mc_cmp_equal_ss(0, 0));
+    ASSERT(!mc_cmp_equal_ss(0, -1));
+    ASSERT(!mc_cmp_equal_ss(0, 1));
+    ASSERT(!mc_cmp_equal_ss(-1, 0));
+    ASSERT(mc_cmp_equal_ss(-1, -1));
+    ASSERT(!mc_cmp_equal_ss(-1, 1));
+    ASSERT(!mc_cmp_equal_ss(1, 0));
+    ASSERT(!mc_cmp_equal_ss(1, -1));
+    ASSERT(mc_cmp_equal_ss(1, 1));
 
-    BSON_ASSERT(mc_cmp_equal_uu(0u, 0u));
-    BSON_ASSERT(!mc_cmp_equal_uu(0u, 1u));
-    BSON_ASSERT(!mc_cmp_equal_uu(1u, 0u));
-    BSON_ASSERT(mc_cmp_equal_uu(1u, 1u));
+    ASSERT(mc_cmp_equal_uu(0u, 0u));
+    ASSERT(!mc_cmp_equal_uu(0u, 1u));
+    ASSERT(!mc_cmp_equal_uu(1u, 0u));
+    ASSERT(mc_cmp_equal_uu(1u, 1u));
 
-    BSON_ASSERT(mc_cmp_equal_su(0, 0u));
-    BSON_ASSERT(!mc_cmp_equal_su(0, 1u));
-    BSON_ASSERT(!mc_cmp_equal_su(-1, 0u));
-    BSON_ASSERT(!mc_cmp_equal_su(-1, 1u));
-    BSON_ASSERT(!mc_cmp_equal_su(1, 0u));
-    BSON_ASSERT(mc_cmp_equal_su(1, 1u));
+    ASSERT(mc_cmp_equal_su(0, 0u));
+    ASSERT(!mc_cmp_equal_su(0, 1u));
+    ASSERT(!mc_cmp_equal_su(-1, 0u));
+    ASSERT(!mc_cmp_equal_su(-1, 1u));
+    ASSERT(!mc_cmp_equal_su(1, 0u));
+    ASSERT(mc_cmp_equal_su(1, 1u));
 
-    BSON_ASSERT(mc_cmp_equal_us(0u, 0));
-    BSON_ASSERT(!mc_cmp_equal_us(0u, -1));
-    BSON_ASSERT(!mc_cmp_equal_us(0u, 1));
-    BSON_ASSERT(!mc_cmp_equal_us(1u, 0));
-    BSON_ASSERT(!mc_cmp_equal_us(1u, -1));
-    BSON_ASSERT(mc_cmp_equal_us(1u, 1));
+    ASSERT(mc_cmp_equal_us(0u, 0));
+    ASSERT(!mc_cmp_equal_us(0u, -1));
+    ASSERT(!mc_cmp_equal_us(0u, 1));
+    ASSERT(!mc_cmp_equal_us(1u, 0));
+    ASSERT(!mc_cmp_equal_us(1u, -1));
+    ASSERT(mc_cmp_equal_us(1u, 1));
 }
 
 static void test_mc_cmp_not_equal(_mongocrypt_tester_t *tester) {
     BSON_UNUSED(tester);
 
-    BSON_ASSERT(!mc_cmp_not_equal_ss(0, 0));
-    BSON_ASSERT(mc_cmp_not_equal_ss(0, -1));
-    BSON_ASSERT(mc_cmp_not_equal_ss(0, 1));
-    BSON_ASSERT(mc_cmp_not_equal_ss(-1, 0));
-    BSON_ASSERT(!mc_cmp_not_equal_ss(-1, -1));
-    BSON_ASSERT(mc_cmp_not_equal_ss(-1, 1));
-    BSON_ASSERT(mc_cmp_not_equal_ss(1, 0));
-    BSON_ASSERT(mc_cmp_not_equal_ss(1, -1));
-    BSON_ASSERT(!mc_cmp_not_equal_ss(1, 1));
+    ASSERT(!mc_cmp_not_equal_ss(0, 0));
+    ASSERT(mc_cmp_not_equal_ss(0, -1));
+    ASSERT(mc_cmp_not_equal_ss(0, 1));
+    ASSERT(mc_cmp_not_equal_ss(-1, 0));
+    ASSERT(!mc_cmp_not_equal_ss(-1, -1));
+    ASSERT(mc_cmp_not_equal_ss(-1, 1));
+    ASSERT(mc_cmp_not_equal_ss(1, 0));
+    ASSERT(mc_cmp_not_equal_ss(1, -1));
+    ASSERT(!mc_cmp_not_equal_ss(1, 1));
 
-    BSON_ASSERT(!mc_cmp_not_equal_uu(0u, 0u));
-    BSON_ASSERT(mc_cmp_not_equal_uu(0u, 1u));
-    BSON_ASSERT(mc_cmp_not_equal_uu(1u, 0u));
-    BSON_ASSERT(!mc_cmp_not_equal_uu(1u, 1u));
+    ASSERT(!mc_cmp_not_equal_uu(0u, 0u));
+    ASSERT(mc_cmp_not_equal_uu(0u, 1u));
+    ASSERT(mc_cmp_not_equal_uu(1u, 0u));
+    ASSERT(!mc_cmp_not_equal_uu(1u, 1u));
 
-    BSON_ASSERT(!mc_cmp_not_equal_su(0, 0u));
-    BSON_ASSERT(mc_cmp_not_equal_su(0, 1u));
-    BSON_ASSERT(mc_cmp_not_equal_su(-1, 0u));
-    BSON_ASSERT(mc_cmp_not_equal_su(-1, 1u));
-    BSON_ASSERT(mc_cmp_not_equal_su(1, 0u));
-    BSON_ASSERT(!mc_cmp_not_equal_su(1, 1u));
+    ASSERT(!mc_cmp_not_equal_su(0, 0u));
+    ASSERT(mc_cmp_not_equal_su(0, 1u));
+    ASSERT(mc_cmp_not_equal_su(-1, 0u));
+    ASSERT(mc_cmp_not_equal_su(-1, 1u));
+    ASSERT(mc_cmp_not_equal_su(1, 0u));
+    ASSERT(!mc_cmp_not_equal_su(1, 1u));
 
-    BSON_ASSERT(!mc_cmp_not_equal_us(0u, 0));
-    BSON_ASSERT(mc_cmp_not_equal_us(0u, -1));
-    BSON_ASSERT(mc_cmp_not_equal_us(0u, 1));
-    BSON_ASSERT(mc_cmp_not_equal_us(1u, 0));
-    BSON_ASSERT(mc_cmp_not_equal_us(1u, -1));
-    BSON_ASSERT(!mc_cmp_not_equal_us(1u, 1));
+    ASSERT(!mc_cmp_not_equal_us(0u, 0));
+    ASSERT(mc_cmp_not_equal_us(0u, -1));
+    ASSERT(mc_cmp_not_equal_us(0u, 1));
+    ASSERT(mc_cmp_not_equal_us(1u, 0));
+    ASSERT(mc_cmp_not_equal_us(1u, -1));
+    ASSERT(!mc_cmp_not_equal_us(1u, 1));
 }
 
 static void test_mc_cmp_less(_mongocrypt_tester_t *tester) {
     BSON_UNUSED(tester);
 
-    BSON_ASSERT(!mc_cmp_less_ss(0, 0));
-    BSON_ASSERT(!mc_cmp_less_ss(0, -1));
-    BSON_ASSERT(mc_cmp_less_ss(0, 1));
-    BSON_ASSERT(mc_cmp_less_ss(-1, 0));
-    BSON_ASSERT(!mc_cmp_less_ss(-1, -1));
-    BSON_ASSERT(mc_cmp_less_ss(-1, 1));
-    BSON_ASSERT(!mc_cmp_less_ss(1, 0));
-    BSON_ASSERT(!mc_cmp_less_ss(1, -1));
-    BSON_ASSERT(!mc_cmp_less_ss(1, 1));
+    ASSERT(!mc_cmp_less_ss(0, 0));
+    ASSERT(!mc_cmp_less_ss(0, -1));
+    ASSERT(mc_cmp_less_ss(0, 1));
+    ASSERT(mc_cmp_less_ss(-1, 0));
+    ASSERT(!mc_cmp_less_ss(-1, -1));
+    ASSERT(mc_cmp_less_ss(-1, 1));
+    ASSERT(!mc_cmp_less_ss(1, 0));
+    ASSERT(!mc_cmp_less_ss(1, -1));
+    ASSERT(!mc_cmp_less_ss(1, 1));
 
-    BSON_ASSERT(!mc_cmp_less_uu(0u, 0u));
-    BSON_ASSERT(mc_cmp_less_uu(0u, 1u));
-    BSON_ASSERT(!mc_cmp_less_uu(1u, 0u));
-    BSON_ASSERT(!mc_cmp_less_uu(1u, 1u));
+    ASSERT(!mc_cmp_less_uu(0u, 0u));
+    ASSERT(mc_cmp_less_uu(0u, 1u));
+    ASSERT(!mc_cmp_less_uu(1u, 0u));
+    ASSERT(!mc_cmp_less_uu(1u, 1u));
 
-    BSON_ASSERT(!mc_cmp_less_su(0, 0u));
-    BSON_ASSERT(mc_cmp_less_su(0, 1u));
-    BSON_ASSERT(mc_cmp_less_su(-1, 0u));
-    BSON_ASSERT(mc_cmp_less_su(-1, 1u));
-    BSON_ASSERT(!mc_cmp_less_su(1, 0u));
-    BSON_ASSERT(!mc_cmp_less_su(1, 1u));
+    ASSERT(!mc_cmp_less_su(0, 0u));
+    ASSERT(mc_cmp_less_su(0, 1u));
+    ASSERT(mc_cmp_less_su(-1, 0u));
+    ASSERT(mc_cmp_less_su(-1, 1u));
+    ASSERT(!mc_cmp_less_su(1, 0u));
+    ASSERT(!mc_cmp_less_su(1, 1u));
 
-    BSON_ASSERT(!mc_cmp_less_us(0u, 0));
-    BSON_ASSERT(!mc_cmp_less_us(0u, -1));
-    BSON_ASSERT(mc_cmp_less_us(0u, 1));
-    BSON_ASSERT(!mc_cmp_less_us(1u, 0));
-    BSON_ASSERT(!mc_cmp_less_us(1u, -1));
-    BSON_ASSERT(!mc_cmp_less_us(1u, 1));
+    ASSERT(!mc_cmp_less_us(0u, 0));
+    ASSERT(!mc_cmp_less_us(0u, -1));
+    ASSERT(mc_cmp_less_us(0u, 1));
+    ASSERT(!mc_cmp_less_us(1u, 0));
+    ASSERT(!mc_cmp_less_us(1u, -1));
+    ASSERT(!mc_cmp_less_us(1u, 1));
 }
 
 static void test_mc_cmp_greater(_mongocrypt_tester_t *tester) {
     BSON_UNUSED(tester);
 
-    BSON_ASSERT(!mc_cmp_greater_ss(0, 0));
-    BSON_ASSERT(mc_cmp_greater_ss(0, -1));
-    BSON_ASSERT(!mc_cmp_greater_ss(0, 1));
-    BSON_ASSERT(!mc_cmp_greater_ss(-1, 0));
-    BSON_ASSERT(!mc_cmp_greater_ss(-1, -1));
-    BSON_ASSERT(!mc_cmp_greater_ss(-1, 1));
-    BSON_ASSERT(mc_cmp_greater_ss(1, 0));
-    BSON_ASSERT(mc_cmp_greater_ss(1, -1));
-    BSON_ASSERT(!mc_cmp_greater_ss(1, 1));
+    ASSERT(!mc_cmp_greater_ss(0, 0));
+    ASSERT(mc_cmp_greater_ss(0, -1));
+    ASSERT(!mc_cmp_greater_ss(0, 1));
+    ASSERT(!mc_cmp_greater_ss(-1, 0));
+    ASSERT(!mc_cmp_greater_ss(-1, -1));
+    ASSERT(!mc_cmp_greater_ss(-1, 1));
+    ASSERT(mc_cmp_greater_ss(1, 0));
+    ASSERT(mc_cmp_greater_ss(1, -1));
+    ASSERT(!mc_cmp_greater_ss(1, 1));
 
-    BSON_ASSERT(!mc_cmp_greater_uu(0u, 0u));
-    BSON_ASSERT(!mc_cmp_greater_uu(0u, 1u));
-    BSON_ASSERT(mc_cmp_greater_uu(1u, 0u));
-    BSON_ASSERT(!mc_cmp_greater_uu(1u, 1u));
+    ASSERT(!mc_cmp_greater_uu(0u, 0u));
+    ASSERT(!mc_cmp_greater_uu(0u, 1u));
+    ASSERT(mc_cmp_greater_uu(1u, 0u));
+    ASSERT(!mc_cmp_greater_uu(1u, 1u));
 
-    BSON_ASSERT(!mc_cmp_greater_su(0, 0u));
-    BSON_ASSERT(!mc_cmp_greater_su(0, 1u));
-    BSON_ASSERT(!mc_cmp_greater_su(-1, 0u));
-    BSON_ASSERT(!mc_cmp_greater_su(-1, 1u));
-    BSON_ASSERT(mc_cmp_greater_su(1, 0u));
-    BSON_ASSERT(!mc_cmp_greater_su(1, 1u));
+    ASSERT(!mc_cmp_greater_su(0, 0u));
+    ASSERT(!mc_cmp_greater_su(0, 1u));
+    ASSERT(!mc_cmp_greater_su(-1, 0u));
+    ASSERT(!mc_cmp_greater_su(-1, 1u));
+    ASSERT(mc_cmp_greater_su(1, 0u));
+    ASSERT(!mc_cmp_greater_su(1, 1u));
 
-    BSON_ASSERT(!mc_cmp_greater_us(0u, 0));
-    BSON_ASSERT(mc_cmp_greater_us(0u, -1));
-    BSON_ASSERT(!mc_cmp_greater_us(0u, 1));
-    BSON_ASSERT(mc_cmp_greater_us(1u, 0));
-    BSON_ASSERT(mc_cmp_greater_us(1u, -1));
-    BSON_ASSERT(!mc_cmp_greater_us(1u, 1));
+    ASSERT(!mc_cmp_greater_us(0u, 0));
+    ASSERT(mc_cmp_greater_us(0u, -1));
+    ASSERT(!mc_cmp_greater_us(0u, 1));
+    ASSERT(mc_cmp_greater_us(1u, 0));
+    ASSERT(mc_cmp_greater_us(1u, -1));
+    ASSERT(!mc_cmp_greater_us(1u, 1));
 }
 
 static void test_mc_cmp_less_equal(_mongocrypt_tester_t *tester) {
     BSON_UNUSED(tester);
 
-    BSON_ASSERT(mc_cmp_less_equal_ss(0, 0));
-    BSON_ASSERT(!mc_cmp_less_equal_ss(0, -1));
-    BSON_ASSERT(mc_cmp_less_equal_ss(0, 1));
-    BSON_ASSERT(mc_cmp_less_equal_ss(-1, 0));
-    BSON_ASSERT(mc_cmp_less_equal_ss(-1, -1));
-    BSON_ASSERT(mc_cmp_less_equal_ss(-1, 1));
-    BSON_ASSERT(!mc_cmp_less_equal_ss(1, 0));
-    BSON_ASSERT(!mc_cmp_less_equal_ss(1, -1));
-    BSON_ASSERT(mc_cmp_less_equal_ss(1, 1));
+    ASSERT(mc_cmp_less_equal_ss(0, 0));
+    ASSERT(!mc_cmp_less_equal_ss(0, -1));
+    ASSERT(mc_cmp_less_equal_ss(0, 1));
+    ASSERT(mc_cmp_less_equal_ss(-1, 0));
+    ASSERT(mc_cmp_less_equal_ss(-1, -1));
+    ASSERT(mc_cmp_less_equal_ss(-1, 1));
+    ASSERT(!mc_cmp_less_equal_ss(1, 0));
+    ASSERT(!mc_cmp_less_equal_ss(1, -1));
+    ASSERT(mc_cmp_less_equal_ss(1, 1));
 
-    BSON_ASSERT(mc_cmp_less_equal_uu(0u, 0u));
-    BSON_ASSERT(mc_cmp_less_equal_uu(0u, 1u));
-    BSON_ASSERT(!mc_cmp_less_equal_uu(1u, 0u));
-    BSON_ASSERT(mc_cmp_less_equal_uu(1u, 1u));
+    ASSERT(mc_cmp_less_equal_uu(0u, 0u));
+    ASSERT(mc_cmp_less_equal_uu(0u, 1u));
+    ASSERT(!mc_cmp_less_equal_uu(1u, 0u));
+    ASSERT(mc_cmp_less_equal_uu(1u, 1u));
 
-    BSON_ASSERT(mc_cmp_less_equal_su(0, 0u));
-    BSON_ASSERT(mc_cmp_less_equal_su(0, 1u));
-    BSON_ASSERT(mc_cmp_less_equal_su(-1, 0u));
-    BSON_ASSERT(mc_cmp_less_equal_su(-1, 1u));
-    BSON_ASSERT(!mc_cmp_less_equal_su(1, 0u));
-    BSON_ASSERT(mc_cmp_less_equal_su(1, 1u));
+    ASSERT(mc_cmp_less_equal_su(0, 0u));
+    ASSERT(mc_cmp_less_equal_su(0, 1u));
+    ASSERT(mc_cmp_less_equal_su(-1, 0u));
+    ASSERT(mc_cmp_less_equal_su(-1, 1u));
+    ASSERT(!mc_cmp_less_equal_su(1, 0u));
+    ASSERT(mc_cmp_less_equal_su(1, 1u));
 
-    BSON_ASSERT(mc_cmp_less_equal_us(0u, 0));
-    BSON_ASSERT(!mc_cmp_less_equal_us(0u, -1));
-    BSON_ASSERT(mc_cmp_less_equal_us(0u, 1));
-    BSON_ASSERT(!mc_cmp_less_equal_us(1u, 0));
-    BSON_ASSERT(!mc_cmp_less_equal_us(1u, -1));
-    BSON_ASSERT(mc_cmp_less_equal_us(1u, 1));
+    ASSERT(mc_cmp_less_equal_us(0u, 0));
+    ASSERT(!mc_cmp_less_equal_us(0u, -1));
+    ASSERT(mc_cmp_less_equal_us(0u, 1));
+    ASSERT(!mc_cmp_less_equal_us(1u, 0));
+    ASSERT(!mc_cmp_less_equal_us(1u, -1));
+    ASSERT(mc_cmp_less_equal_us(1u, 1));
 }
 
 static void test_mc_cmp_greater_equal(_mongocrypt_tester_t *tester) {
     BSON_UNUSED(tester);
 
-    BSON_ASSERT(mc_cmp_greater_equal_ss(0, 0));
-    BSON_ASSERT(mc_cmp_greater_equal_ss(0, -1));
-    BSON_ASSERT(!mc_cmp_greater_equal_ss(0, 1));
-    BSON_ASSERT(!mc_cmp_greater_equal_ss(-1, 0));
-    BSON_ASSERT(mc_cmp_greater_equal_ss(-1, -1));
-    BSON_ASSERT(!mc_cmp_greater_equal_ss(-1, 1));
-    BSON_ASSERT(mc_cmp_greater_equal_ss(1, 0));
-    BSON_ASSERT(mc_cmp_greater_equal_ss(1, -1));
-    BSON_ASSERT(mc_cmp_greater_equal_ss(1, 1));
+    ASSERT(mc_cmp_greater_equal_ss(0, 0));
+    ASSERT(mc_cmp_greater_equal_ss(0, -1));
+    ASSERT(!mc_cmp_greater_equal_ss(0, 1));
+    ASSERT(!mc_cmp_greater_equal_ss(-1, 0));
+    ASSERT(mc_cmp_greater_equal_ss(-1, -1));
+    ASSERT(!mc_cmp_greater_equal_ss(-1, 1));
+    ASSERT(mc_cmp_greater_equal_ss(1, 0));
+    ASSERT(mc_cmp_greater_equal_ss(1, -1));
+    ASSERT(mc_cmp_greater_equal_ss(1, 1));
 
-    BSON_ASSERT(mc_cmp_greater_equal_uu(0u, 0u));
-    BSON_ASSERT(!mc_cmp_greater_equal_uu(0u, 1u));
-    BSON_ASSERT(mc_cmp_greater_equal_uu(1u, 0u));
-    BSON_ASSERT(mc_cmp_greater_equal_uu(1u, 1u));
+    ASSERT(mc_cmp_greater_equal_uu(0u, 0u));
+    ASSERT(!mc_cmp_greater_equal_uu(0u, 1u));
+    ASSERT(mc_cmp_greater_equal_uu(1u, 0u));
+    ASSERT(mc_cmp_greater_equal_uu(1u, 1u));
 
-    BSON_ASSERT(mc_cmp_greater_equal_su(0, 0u));
-    BSON_ASSERT(!mc_cmp_greater_equal_su(0, 1u));
-    BSON_ASSERT(!mc_cmp_greater_equal_su(-1, 0u));
-    BSON_ASSERT(!mc_cmp_greater_equal_su(-1, 1u));
-    BSON_ASSERT(mc_cmp_greater_equal_su(1, 0u));
-    BSON_ASSERT(mc_cmp_greater_equal_su(1, 1u));
+    ASSERT(mc_cmp_greater_equal_su(0, 0u));
+    ASSERT(!mc_cmp_greater_equal_su(0, 1u));
+    ASSERT(!mc_cmp_greater_equal_su(-1, 0u));
+    ASSERT(!mc_cmp_greater_equal_su(-1, 1u));
+    ASSERT(mc_cmp_greater_equal_su(1, 0u));
+    ASSERT(mc_cmp_greater_equal_su(1, 1u));
 
-    BSON_ASSERT(mc_cmp_greater_equal_us(0u, 0));
-    BSON_ASSERT(mc_cmp_greater_equal_us(0u, -1));
-    BSON_ASSERT(!mc_cmp_greater_equal_us(0u, 1));
-    BSON_ASSERT(mc_cmp_greater_equal_us(1u, 0));
-    BSON_ASSERT(mc_cmp_greater_equal_us(1u, -1));
-    BSON_ASSERT(mc_cmp_greater_equal_us(1u, 1));
+    ASSERT(mc_cmp_greater_equal_us(0u, 0));
+    ASSERT(mc_cmp_greater_equal_us(0u, -1));
+    ASSERT(!mc_cmp_greater_equal_us(0u, 1));
+    ASSERT(mc_cmp_greater_equal_us(1u, 0));
+    ASSERT(mc_cmp_greater_equal_us(1u, -1));
+    ASSERT(mc_cmp_greater_equal_us(1u, 1));
 }
 
 static void test_mc_in_range(_mongocrypt_tester_t *tester) {
@@ -232,65 +232,65 @@ static void test_mc_in_range(_mongocrypt_tester_t *tester) {
     const ssize_t ssize_min = SSIZE_MIN;
     const ssize_t ssize_max = SSIZE_MAX;
 
-    BSON_ASSERT(!mc_in_range_signed(int8_t, int8_min - 1));
-    BSON_ASSERT(mc_in_range_signed(int8_t, int8_min));
-    BSON_ASSERT(mc_in_range_signed(int8_t, 0));
-    BSON_ASSERT(mc_in_range_signed(int8_t, int8_max));
-    BSON_ASSERT(!mc_in_range_signed(int8_t, int8_max + 1));
+    ASSERT(!mc_in_range_signed(int8_t, int8_min - 1));
+    ASSERT(mc_in_range_signed(int8_t, int8_min));
+    ASSERT(mc_in_range_signed(int8_t, 0));
+    ASSERT(mc_in_range_signed(int8_t, int8_max));
+    ASSERT(!mc_in_range_signed(int8_t, int8_max + 1));
 
-    BSON_ASSERT(mc_in_range_unsigned(int8_t, 0u));
-    BSON_ASSERT(mc_in_range_unsigned(int8_t, (uint64_t)int8_max));
-    BSON_ASSERT(!mc_in_range_unsigned(int8_t, (uint64_t)(int8_max + 1)));
+    ASSERT(mc_in_range_unsigned(int8_t, 0u));
+    ASSERT(mc_in_range_unsigned(int8_t, (uint64_t)int8_max));
+    ASSERT(!mc_in_range_unsigned(int8_t, (uint64_t)(int8_max + 1)));
 
-    BSON_ASSERT(!mc_in_range_signed(uint8_t, int8_min - 1));
-    BSON_ASSERT(!mc_in_range_signed(uint8_t, int8_min));
-    BSON_ASSERT(mc_in_range_signed(uint8_t, 0));
-    BSON_ASSERT(mc_in_range_signed(uint8_t, int8_max));
-    BSON_ASSERT(mc_in_range_signed(uint8_t, int8_max + 1));
-    BSON_ASSERT(mc_in_range_signed(uint8_t, (int64_t)uint8_max));
-    BSON_ASSERT(!mc_in_range_signed(uint8_t, (int64_t)uint8_max + 1));
+    ASSERT(!mc_in_range_signed(uint8_t, int8_min - 1));
+    ASSERT(!mc_in_range_signed(uint8_t, int8_min));
+    ASSERT(mc_in_range_signed(uint8_t, 0));
+    ASSERT(mc_in_range_signed(uint8_t, int8_max));
+    ASSERT(mc_in_range_signed(uint8_t, int8_max + 1));
+    ASSERT(mc_in_range_signed(uint8_t, (int64_t)uint8_max));
+    ASSERT(!mc_in_range_signed(uint8_t, (int64_t)uint8_max + 1));
 
-    BSON_ASSERT(mc_in_range_unsigned(uint8_t, 0u));
-    BSON_ASSERT(mc_in_range_unsigned(uint8_t, uint8_max));
-    BSON_ASSERT(!mc_in_range_unsigned(uint8_t, uint8_max + 1u));
+    ASSERT(mc_in_range_unsigned(uint8_t, 0u));
+    ASSERT(mc_in_range_unsigned(uint8_t, uint8_max));
+    ASSERT(!mc_in_range_unsigned(uint8_t, uint8_max + 1u));
 
-    BSON_ASSERT(!mc_in_range_signed(int32_t, int32_min - 1));
-    BSON_ASSERT(mc_in_range_signed(int32_t, int32_min));
-    BSON_ASSERT(mc_in_range_signed(int32_t, 0));
-    BSON_ASSERT(mc_in_range_signed(int32_t, int32_max));
-    BSON_ASSERT(!mc_in_range_signed(int32_t, int32_max + 1));
+    ASSERT(!mc_in_range_signed(int32_t, int32_min - 1));
+    ASSERT(mc_in_range_signed(int32_t, int32_min));
+    ASSERT(mc_in_range_signed(int32_t, 0));
+    ASSERT(mc_in_range_signed(int32_t, int32_max));
+    ASSERT(!mc_in_range_signed(int32_t, int32_max + 1));
 
-    BSON_ASSERT(mc_in_range_unsigned(int32_t, 0u));
-    BSON_ASSERT(mc_in_range_unsigned(int32_t, (uint64_t)int32_max));
-    BSON_ASSERT(!mc_in_range_unsigned(int32_t, (uint64_t)(int32_max + 1)));
+    ASSERT(mc_in_range_unsigned(int32_t, 0u));
+    ASSERT(mc_in_range_unsigned(int32_t, (uint64_t)int32_max));
+    ASSERT(!mc_in_range_unsigned(int32_t, (uint64_t)(int32_max + 1)));
 
-    BSON_ASSERT(!mc_in_range_signed(uint32_t, int32_min - 1));
-    BSON_ASSERT(!mc_in_range_signed(uint32_t, int32_min));
-    BSON_ASSERT(mc_in_range_signed(uint32_t, 0));
-    BSON_ASSERT(mc_in_range_signed(uint32_t, int32_max));
-    BSON_ASSERT(mc_in_range_signed(uint32_t, int32_max + 1));
-    BSON_ASSERT(mc_in_range_signed(uint32_t, (int64_t)uint32_max));
-    BSON_ASSERT(!mc_in_range_signed(uint32_t, (int64_t)uint32_max + 1));
+    ASSERT(!mc_in_range_signed(uint32_t, int32_min - 1));
+    ASSERT(!mc_in_range_signed(uint32_t, int32_min));
+    ASSERT(mc_in_range_signed(uint32_t, 0));
+    ASSERT(mc_in_range_signed(uint32_t, int32_max));
+    ASSERT(mc_in_range_signed(uint32_t, int32_max + 1));
+    ASSERT(mc_in_range_signed(uint32_t, (int64_t)uint32_max));
+    ASSERT(!mc_in_range_signed(uint32_t, (int64_t)uint32_max + 1));
 
-    BSON_ASSERT(mc_in_range_unsigned(uint32_t, 0u));
-    BSON_ASSERT(mc_in_range_unsigned(uint32_t, uint32_max));
-    BSON_ASSERT(!mc_in_range_unsigned(uint32_t, uint32_max + 1u));
+    ASSERT(mc_in_range_unsigned(uint32_t, 0u));
+    ASSERT(mc_in_range_unsigned(uint32_t, uint32_max));
+    ASSERT(!mc_in_range_unsigned(uint32_t, uint32_max + 1u));
 
-    BSON_ASSERT(mc_in_range_signed(ssize_t, ssize_min));
-    BSON_ASSERT(mc_in_range_signed(ssize_t, 0));
-    BSON_ASSERT(mc_in_range_signed(ssize_t, ssize_max));
+    ASSERT(mc_in_range_signed(ssize_t, ssize_min));
+    ASSERT(mc_in_range_signed(ssize_t, 0));
+    ASSERT(mc_in_range_signed(ssize_t, ssize_max));
 
-    BSON_ASSERT(mc_in_range_unsigned(ssize_t, 0u));
-    BSON_ASSERT(mc_in_range_unsigned(ssize_t, (size_t)ssize_max));
-    BSON_ASSERT(!mc_in_range_unsigned(ssize_t, (size_t)ssize_max + 1u));
+    ASSERT(mc_in_range_unsigned(ssize_t, 0u));
+    ASSERT(mc_in_range_unsigned(ssize_t, (size_t)ssize_max));
+    ASSERT(!mc_in_range_unsigned(ssize_t, (size_t)ssize_max + 1u));
 
-    BSON_ASSERT(!mc_in_range_signed(size_t, ssize_min));
-    BSON_ASSERT(mc_in_range_signed(size_t, 0));
-    BSON_ASSERT(mc_in_range_signed(size_t, ssize_max));
+    ASSERT(!mc_in_range_signed(size_t, ssize_min));
+    ASSERT(mc_in_range_signed(size_t, 0));
+    ASSERT(mc_in_range_signed(size_t, ssize_max));
 
-    BSON_ASSERT(mc_in_range_unsigned(size_t, 0u));
-    BSON_ASSERT(mc_in_range_unsigned(size_t, (size_t)ssize_max));
-    BSON_ASSERT(mc_in_range_unsigned(size_t, (size_t)ssize_max + 1u));
+    ASSERT(mc_in_range_unsigned(size_t, 0u));
+    ASSERT(mc_in_range_unsigned(size_t, (size_t)ssize_max));
+    ASSERT(mc_in_range_unsigned(size_t, (size_t)ssize_max + 1u));
 }
 
 void _mongocrypt_tester_install_mc_cmp(_mongocrypt_tester_t *tester) {
