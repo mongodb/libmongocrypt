@@ -505,7 +505,7 @@ bool mc_RangeOpts_appendTrimFactor(const mc_RangeOpts_t *ro,
     }
     // if nbits = 0, we want to allow trim factor = 0.
     uint32_t test = nbits ? nbits : 1;
-    if (mlib_cmp_greater_equal_su(ro->trimFactor.value, test)) {
+    if (mc_cmp_greater_equal_su(ro->trimFactor.value, test)) {
         CLIENT_ERR_PREFIXED("Trim factor (%d) must be less than the total number of bits (%d) used to represent "
                             "any element in the domain.",
                             ro->trimFactor.value,
