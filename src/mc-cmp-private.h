@@ -24,6 +24,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+/* Sanity check: ensure ssize_t limits are as expected relative to size_t. */
+BSON_STATIC_ASSERT2(ssize_t_size_min_check, SSIZE_MIN + 1 == -SSIZE_MAX);
+BSON_STATIC_ASSERT2(ssize_t_size_max_check, (size_t)SSIZE_MAX <= SIZE_MAX);
+
 /* Based on the "Safe Integral Comparisons" proposal merged in C++20:
  * http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p0586r2.html
  *
