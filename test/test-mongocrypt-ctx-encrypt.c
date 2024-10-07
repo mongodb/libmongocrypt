@@ -5508,6 +5508,12 @@ static void _test_encrypt_retry_provider(_responses r, _mongocrypt_tester_t *tes
         ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_KMS);
         mongocrypt_kms_ctx_t *kctx = mongocrypt_ctx_next_kms_ctx(ctx);
         ASSERT(kctx);
+        // Feed a retryable HTTP error.
+        ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/rmd/kms-decrypt-reply-429.txt")), kctx);
+        // Expect KMS request is returned again for a retry.
+        kctx = mongocrypt_ctx_next_kms_ctx(ctx);
+        ASSERT_OK(kctx, ctx);
+        ASSERT_CMPINT64(mongocrypt_kms_ctx_usleep(kctx), >, 0);
         ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE(r.oauth_response)), kctx);
         ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
     }
@@ -5557,6 +5563,7 @@ static void _test_encrypt_retry(_mongocrypt_tester_t *tester) {
         ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
         _mongocrypt_tester_run_ctx_to(tester, ctx, MONGOCRYPT_CTX_DONE);
         mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
     }
     // Azure
     {
