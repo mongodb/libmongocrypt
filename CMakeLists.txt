@@ -459,6 +459,7 @@ endif ()
 
 set (TEST_MONGOCRYPT_SOURCES
    test/test-gcp-auth.c
+   test/test-mc-cmp.c
    test/test-mc-efc.c
    test/test-mc-fle2-find-equality-payload-v2.c
    test/test-mc-fle2-find-range-payload-v2.c

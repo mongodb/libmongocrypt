@@ -19,6 +19,7 @@
 #include "mc-check-conversions-private.h"
 
 #include "mc-array-private.h"
+#include "mc-cmp-private.h"
 #include "mc-range-edge-generation-private.h" // mc_count_leading_zeros_u32
 #include "mc-range-encoding-private.h"        // mc_getTypeInfo32, trimFactorDefault
 #include "mc-range-mincover-private.h"

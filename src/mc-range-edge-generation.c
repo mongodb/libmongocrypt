@@ -19,6 +19,7 @@
 
 #include "mc-array-private.h"
 #include "mc-check-conversions-private.h"
+#include "mc-cmp-private.h"
 #include "mc-range-encoding-private.h"
 #include "mongocrypt-private.h"
 
@@ -47,7 +48,7 @@ static mc_edges_t *mc_edges_new(const char *leaf,
 
     const size_t leaf_len = strlen(leaf);
     const int32_t trimFactor = trimFactorDefault(leaf_len, opt_trimFactor, use_range_v2);
-    if (trimFactor != 0 && bson_cmp_greater_equal_su(trimFactor, leaf_len)) {
+    if (trimFactor != 0 && mc_cmp_greater_equal_su(trimFactor, leaf_len)) {
         // We append a total of leaf_len + 1 (for the root) - trimFactor edges. When this number is equal to 1, we
         // degenerate into equality, which is not desired, so trimFactor must be less than leaf_len.
         CLIENT_ERR("trimFactor must be less than the number of bits (%ld) used to represent an element of the domain, "
@@ -76,7 +77,7 @@ static mc_edges_t *mc_edges_new(const char *leaf,
     _mc_array_append_val(&edges->edges, leaf_copy);
 
     // Start loop at max(trimFactor, 1). The full leaf is unconditionally appended after loop.
-    BSON_ASSERT(bson_in_range_size_t_signed(trimFactor));
+    BSON_ASSERT(mc_in_range_size_t_signed(trimFactor));
     size_t trimFactor_sz = (size_t)trimFactor;
     size_t startLevel = trimFactor > 0 ? trimFactor_sz : 1;
     for (size_t i = startLevel; i < leaf_len; i++) {
