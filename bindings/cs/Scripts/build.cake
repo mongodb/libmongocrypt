@@ -64,13 +64,21 @@ Task("Prepare")
         Information("Done git clone..");
 
         EnsureDirectoryExists(libmongocryptRelWithDebInfoDirectory);
-        EnsureDirectoryExists(downloadedMongocryptDirectory);
+        EnsureDirectoryExists(downloadedMongocryptDirectory.Combine("linux").Combine("x64"));
+        EnsureDirectoryExists(downloadedMongocryptDirectory.Combine("linux").Combine("arm64"));
+        EnsureDirectoryExists(downloadedMongocryptDirectory.Combine("linux").Combine("alpine").Combine("arm64"));
         CopyFile(
             libmongocryptAllDirectory.Combine("windows-test").Combine("bin").CombineWithFilePath("mongocrypt.dll"),
             downloadedMongocryptDirectory.CombineWithFilePath("mongocrypt.dll"));
         CopyFile(
             libmongocryptAllDirectory.Combine("ubuntu1804-64").Combine("nocrypto").Combine("lib").CombineWithFilePath("libmongocrypt.so"),
-            downloadedMongocryptDirectory.CombineWithFilePath("libmongocrypt.so"));
+            downloadedMongocryptDirectory.Combine("linux").Combine("x64").CombineWithFilePath("libmongocrypt.so"));
+        CopyFile(
+            libmongocryptAllDirectory.Combine("ubuntu1804-arm64").Combine("nocrypto").Combine("lib").CombineWithFilePath("libmongocrypt.so"),
+            downloadedMongocryptDirectory.Combine("linux").Combine("arm64").CombineWithFilePath("libmongocrypt.so")); 
+        CopyFile(
+            libmongocryptAllDirectory.Combine("alpine-arm64-earthly").Combine("nocrypto").Combine("lib").CombineWithFilePath("libmongocrypt.so"),
+            downloadedMongocryptDirectory.Combine("linux").Combine("alpine").Combine("arm64").CombineWithFilePath("libmongocrypt.so"));          
         CopyFile(
             libmongocryptAllDirectory.Combine("macos").Combine("lib").CombineWithFilePath("libmongocrypt.dylib"),
             downloadedMongocryptDirectory.CombineWithFilePath("libmongocrypt.dylib"));
