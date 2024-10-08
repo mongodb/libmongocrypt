@@ -1162,6 +1162,7 @@ void _mongocrypt_key_broker_add_test_key(_mongocrypt_key_broker_t *kb, const _mo
     key_returned->decrypted = true;
     _mongocrypt_buffer_init(&key_returned->decrypted_key_material);
     _mongocrypt_buffer_resize(&key_returned->decrypted_key_material, MONGOCRYPT_KEY_LEN);
+    // Initialize test key material with all zeros.
     memset(key_returned->decrypted_key_material.data, 0, MONGOCRYPT_KEY_LEN);
     _mongocrypt_key_destroy(key_doc);
     /* Hijack state and move directly to DONE. */
