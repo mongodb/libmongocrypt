@@ -63,6 +63,7 @@ typedef struct __mongocrypt_ctx_opts_t {
     _mongocrypt_buffer_t key_material;
     mongocrypt_encryption_algorithm_t algorithm;
     _mongocrypt_kek_t kek;
+    bool retry_enabled;
 
     struct {
         mongocrypt_index_type_t value;

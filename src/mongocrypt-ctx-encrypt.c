@@ -1214,13 +1214,11 @@ fail:
 
 static bool
 _replace_marking_with_ciphertext(void *ctx, _mongocrypt_buffer_t *in, bson_value_t *out, mongocrypt_status_t *status) {
-    _mongocrypt_marking_t marking;
+    _mongocrypt_marking_t marking = {0};
     bool ret;
 
     BSON_ASSERT_PARAM(ctx);
     BSON_ASSERT_PARAM(in);
-
-    memset(&marking, 0, sizeof(marking));
 
     if (!_mongocrypt_marking_parse_unowned(in, &marking, status)) {
         _mongocrypt_marking_cleanup(&marking);
@@ -2425,7 +2423,7 @@ static bool explicit_encrypt_init(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *ms
     _mongocrypt_ctx_encrypt_t *ectx;
     bson_t as_bson;
     bson_iter_t iter;
-    _mongocrypt_ctx_opts_spec_t opts_spec;
+    _mongocrypt_ctx_opts_spec_t opts_spec = {0};
 
     if (!ctx) {
         return false;

@@ -162,6 +162,7 @@ functions:
     - command: subprocess.exec
       params:
         binary: bash
+        working_dir: "${DRIVERS_TOOLS}"
         env:
           TOPOLOGY: replica_set
           MONGODB_VERSION: "8.0"
@@ -570,6 +571,7 @@ tasks:
     - variant: macos
       name: build-and-test-and-upload
   commands:
+    - func: "fetch source" # To set `tag_upload_location` expansion.
     - command: shell.exec
       params:
         script: mkdir all
