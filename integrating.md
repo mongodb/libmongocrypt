@@ -30,7 +30,7 @@ in the main public header
 [mongocrypt.h](https://github.com/10gen/libmongocrypt/blob/master/src/mongocrypt.h).
 
 There are many types and functions in mongocrypt.h to bind. Consider as
-a first step binding to only `mongocrypt_version` ([JNA example](https://github.com/10gen/libmongocrypt/blob/fbb9f59bf32019373232dc1a1fd85a00d6ab95de/bindings/java/mongocrypt/src/main/java/com/mongodb/crypt/capi/CAPI.java#L106-L113)).
+a first step binding to only `mongocrypt_version`.
 Once you have that working, proceed to write bindings for the remaining
 API. Here are a few things to keep in mind:
 
