@@ -54,6 +54,9 @@ struct _mc_FLE2IndexedEncryptedValueV2_t {
     // Populated during _add_K_Key
     // ClientValue := DecryptCBCAEAD(K_Key, ClientEncryptedValue, AD=K_KeyId)
     _mongocrypt_buffer_t ClientValue;
+
+    // Only used for range IEVs
+    _mongocrypt_buffer_t metadata;
 };
 
 #define kMetadataLen 96U                // encCount(32) + tag(32) + encZeros(32)
@@ -322,6 +325,7 @@ void mc_FLE2IndexedEncryptedValueV2_destroy(mc_FLE2IndexedEncryptedValueV2_t *ie
     _mongocrypt_buffer_cleanup(&iev->DecryptedServerEncryptedValue);
     _mongocrypt_buffer_cleanup(&iev->ServerEncryptedValue);
     _mongocrypt_buffer_cleanup(&iev->S_KeyId);
+    _mongocrypt_buffer_cleanup(&iev->metadata);
     bson_free(iev);
 }
 
@@ -429,9 +433,44 @@ bool mc_FLE2IndexedRangeEncryptedValueV2_parse(mc_FLE2IndexedEncryptedValueV2_t 
     const uint64_t SEV_len = SEV_and_edges_len - edges_len;
     CHECK_AND_RETURN(mc_reader_read_buffer(&reader, &iev->ServerEncryptedValue, SEV_len, status));
 
-    // Ignore Metadata block.
-    BSON_ASSERT(mc_reader_get_remaining_length(&reader) == edges_len);
-
+    // Read edges
+    CHECK_AND_RETURN(mc_reader_read_buffer(&reader, &iev->metadata, edges_len, status));
     iev->type = kTypeRange;
+    return true;
+}
+
+bool mc_FLE2IndexedRangeEncryptedValueV2_serialize(const mc_FLE2IndexedEncryptedValueV2_t *iev,
+                                                   _mongocrypt_buffer_t *buf,
+                                                   mongocrypt_status_t *status) {
+    BSON_ASSERT_PARAM(iev);
+    BSON_ASSERT_PARAM(buf);
+
+    if (iev->type != kTypeRange) {
+        CLIENT_ERR("mc_FLE2IndexedRangeEncryptedValueV2_serialize must be called with type range");
+        return false;
+    }
+
+    mc_writer_t writer;
+    mc_writer_init_from_buffer(&writer, buf, __FUNCTION__);
+
+    // Serialize fle_blob_subtype
+    CHECK_AND_RETURN(mc_writer_write_u8(&writer, iev->fle_blob_subtype, status));
+
+    // Serialize S_KeyId
+    CHECK_AND_RETURN(mc_writer_write_uuid_buffer(&writer, &iev->S_KeyId, status));
+
+    // Serialize bson_value_type
+    CHECK_AND_RETURN(mc_writer_write_u8(&writer, iev->bson_value_type, status));
+
+    // Serialize edge_count
+    CHECK_AND_RETURN(mc_writer_write_u8(&writer, iev->edge_count, status));
+
+    // Serialize encrypted value
+    CHECK_AND_RETURN(
+        mc_writer_write_buffer(&writer, &iev->ServerEncryptedValue, iev->ServerEncryptedValue.len, status));
+
+    // Serialize edges (stored in metadata)
+    CHECK_AND_RETURN(mc_writer_write_buffer(&writer, &iev->metadata, iev->metadata.len, status));
+
     return true;
 }
