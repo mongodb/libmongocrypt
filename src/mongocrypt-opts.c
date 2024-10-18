@@ -990,7 +990,7 @@ bool _mongocrypt_parse_kms_providers(mongocrypt_binary_t *kms_providers_definiti
     }
 
     if (log && log->trace_enabled) {
-        char *as_str = bson_as_json(&as_bson, NULL);
+        char *as_str = bson_as_relaxed_extended_json(&as_bson, NULL);
         _mongocrypt_log(log, MONGOCRYPT_LOG_LEVEL_TRACE, "%s (%s=\"%s\")", BSON_FUNC, "kms_providers", as_str);
         bson_free(as_str);
     }

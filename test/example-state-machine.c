@@ -108,7 +108,7 @@ static void _print_binary_as_bson(mongocrypt_binary_t *binary) {
     BSON_ASSERT(binary);
 
     bson_init_static(&as_bson, mongocrypt_binary_data(binary), mongocrypt_binary_len(binary));
-    str = bson_as_json(&as_bson, NULL);
+    str = bson_as_relaxed_extended_json(&as_bson, NULL);
     printf("%s\n", str);
     bson_free(str);
 }
