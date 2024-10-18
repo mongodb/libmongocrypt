@@ -130,4 +130,18 @@ bool mc_FLE2IndexedRangeEncryptedValueV2_parse(mc_FLE2IndexedEncryptedValueV2_t 
                                                const _mongocrypt_buffer_t *buf,
                                                mongocrypt_status_t *status);
 
+/*
+ * Serializes an mc_FLE2IndexedEncryptedValueV2_t into a buffer.
+ *
+ * The serialized output follows the same layout as the input `buf` to
+ * mc_FLE2IndexedRangeEncryptedValueV2_parse, allowing for round-trip
+ * conversions between the serialized and parsed forms.
+ *
+ * Retuns an error if the input structure is not valid, or if the buffer
+ * provided is insufficient to hold the serialized data.
+ */
+bool mc_FLE2IndexedRangeEncryptedValueV2_serialize(const mc_FLE2IndexedEncryptedValueV2_t *iev,
+                                                   _mongocrypt_buffer_t *buf,
+                                                   mongocrypt_status_t *status);
+
 #endif /* MONGOCRYPT_INDEXED_ENCRYPTED_VALUE_PRIVATE_V2_H */
