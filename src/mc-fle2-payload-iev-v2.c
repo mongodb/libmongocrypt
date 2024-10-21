@@ -335,6 +335,31 @@ void mc_FLE2IndexedEncryptedValueV2_destroy(mc_FLE2IndexedEncryptedValueV2_t *ie
     bson_free(iev);
 }
 
+const _mongocrypt_buffer_t *mc_FLE2IndexedEncryptedValueV2_get_edge(const mc_FLE2IndexedEncryptedValueV2_t *iev,
+                                                                    const uint8_t edge_index,
+                                                                    mongocrypt_status_t *status) {
+    assert(iev);
+
+    if (iev->type == kTypeInit) {
+        CLIENT_ERR("mc_FLE2IndexedEncryptedValueV2_get_edge "
+                   "must be called after "
+                   "mc_FLE2IndexedEncryptedValueV2_parse");
+        return NULL;
+    }
+
+    if (iev->type != kTypeRange) {
+        CLIENT_ERR("mc_FLE2IndexedEncryptedValueV2_get_edge must be called with type range");
+        return NULL;
+    }
+
+    if (edge_index >= iev->edge_count) {
+        CLIENT_ERR("mc_FLE2IndexedEncryptedValueV2_get_edge must be called with index edge_index less than edge count");
+        return NULL;
+    }
+
+    return &iev->metadata[edge_index];
+}
+
 // -----------------------------------------------------------------------
 // Equality
 
