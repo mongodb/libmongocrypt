@@ -164,12 +164,11 @@ static void _mc_fle2_iev_v2_test_run(_mongocrypt_tester_t *tester, _mc_fle2_iev_
         ASSERT_OK_STATUS(mc_FLE2IndexedRangeEncryptedValueV2_parse(iev, &test->payload, status), status);
 
         // Reserialize and assert that the result is the same as the initial input
-        // Uncomment with completion of MONGOCRYPT-510
-        // _mongocrypt_buffer_t serialized_buf;
-        // _mongocrypt_buffer_init_size(&serialized_buf, test->payload.len);
-        // ASSERT_OK_STATUS(mc_FLE2IndexedRangeEncryptedValueV2_serialize(iev, &serialized_buf, status), status);
-        // ASSERT_CMPBUF(serialized_buf, test->payload);
-        // _mongocrypt_buffer_cleanup(&serialized_buf);
+        _mongocrypt_buffer_t serialized_buf;
+        _mongocrypt_buffer_init_size(&serialized_buf, test->payload.len);
+        ASSERT_OK_STATUS(mc_FLE2IndexedRangeEncryptedValueV2_serialize(iev, &serialized_buf, status), status);
+        ASSERT_CMPBUF(serialized_buf, test->payload);
+        _mongocrypt_buffer_cleanup(&serialized_buf);
     }
 
     // Validate S_KeyId as parsed.

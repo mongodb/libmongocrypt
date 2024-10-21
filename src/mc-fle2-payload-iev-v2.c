@@ -529,8 +529,9 @@ bool mc_FLE2IndexedRangeEncryptedValueV2_serialize(const mc_FLE2IndexedEncrypted
         mc_writer_write_buffer(&writer, &iev->ServerEncryptedValue, iev->ServerEncryptedValue.len, status));
 
     // Serialize edges (stored in metadata)
-    // TODO: MONGOCRYPT-510
-    // CHECK_AND_RETURN(mc_writer_write_buffer(&writer, &iev->metadata, iev->metadata.len, status));
+    for (int i = 0; i < iev->edge_count; ++i) {
+        CHECK_AND_RETURN(mc_writer_write_buffer(&writer, &iev->metadata[i], kMetadataLen, status));
+    }
 
     return true;
 }
