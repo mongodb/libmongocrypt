@@ -56,7 +56,7 @@ struct _mc_FLE2IndexedEncryptedValueV2_t {
     _mongocrypt_buffer_t ClientValue;
 
     // Only used for range IEVs
-    _mongocrypt_buffer_t metadata;
+    _mongocrypt_buffer_t *metadata;
 };
 
 #define kMetadataLen 96U                // encCount(32) + tag(32) + encZeros(32)
@@ -325,7 +325,13 @@ void mc_FLE2IndexedEncryptedValueV2_destroy(mc_FLE2IndexedEncryptedValueV2_t *ie
     _mongocrypt_buffer_cleanup(&iev->DecryptedServerEncryptedValue);
     _mongocrypt_buffer_cleanup(&iev->ServerEncryptedValue);
     _mongocrypt_buffer_cleanup(&iev->S_KeyId);
-    _mongocrypt_buffer_cleanup(&iev->metadata);
+    for (int i = 0; i < iev->edge_count; i++) {
+        _mongocrypt_buffer_cleanup(&iev->metadata[i]);
+    }
+
+    // Metadata array is dynamically allocated
+    free(iev->metadata);
+
     bson_free(iev);
 }
 
@@ -433,8 +439,17 @@ bool mc_FLE2IndexedRangeEncryptedValueV2_parse(mc_FLE2IndexedEncryptedValueV2_t 
     const uint64_t SEV_len = SEV_and_edges_len - edges_len;
     CHECK_AND_RETURN(mc_reader_read_buffer(&reader, &iev->ServerEncryptedValue, SEV_len, status));
 
-    // Read edges
-    CHECK_AND_RETURN(mc_reader_read_buffer(&reader, &iev->metadata, edges_len, status));
+    iev->metadata = (_mongocrypt_buffer_t *)malloc(iev->edge_count * sizeof(_mongocrypt_buffer_t));
+    if (!iev->metadata) {
+        CLIENT_ERR("Failed to allocate memory for metadata array");
+        return false;
+    }
+
+    // Read each metadata element
+    for (uint8_t i = 0; i < iev->edge_count; i++) {
+        CHECK_AND_RETURN(mc_reader_read_buffer(&reader, &iev->metadata[i], kMetadataLen, status));
+    }
+
     iev->type = kTypeRange;
     return true;
 }
@@ -470,7 +485,8 @@ bool mc_FLE2IndexedRangeEncryptedValueV2_serialize(const mc_FLE2IndexedEncrypted
         mc_writer_write_buffer(&writer, &iev->ServerEncryptedValue, iev->ServerEncryptedValue.len, status));
 
     // Serialize edges (stored in metadata)
-    CHECK_AND_RETURN(mc_writer_write_buffer(&writer, &iev->metadata, iev->metadata.len, status));
+    // TODO: MONGOCRYPT-510
+    // CHECK_AND_RETURN(mc_writer_write_buffer(&writer, &iev->metadata, iev->metadata.len, status));
 
     return true;
 }
