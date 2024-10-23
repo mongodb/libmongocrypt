@@ -298,17 +298,6 @@ functions:
           ./curator version
           ./curator repo submit --config etc/repo_config.yaml --distro ${packager_distro} --edition org --version $pkg_version --arch ${packager_arch} --service https://barque.corp.mongodb.com/ --packages https://mciuploads.s3.amazonaws.com/${project}/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt-distro-packages.tar.gz
 
-  "build csharp and test":
-    - command: "shell.exec"
-      params:
-        shell: bash
-        script: |-
-          . libmongocrypt/.evergreen/init.sh
-          if test "$OS_NAME" != "windows"; then export USE_NINJA=ON; fi
-          env ${compile_env|} DEFAULT_BUILD_ONLY=true \
-            bash ./libmongocrypt/.evergreen/build_all.sh
-          env ${compile_env|} bash ./libmongocrypt/.evergreen/compile_cs.sh
-
   "build python release":
     - command: shell.exec
       params:
@@ -539,13 +528,6 @@ tasks:
       patch_optional: true
   commands:
     - func: "download and merge python releases"
-
-- name: build-and-test-csharp
-  commands:
-  - func: "fetch source"
-  - func: "build csharp and test"
-    vars:
-      test_env: PROJECT_DIRECTORY=${project_directory}
 
 - name: publish-java
   depends_on:
@@ -1093,7 +1075,6 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan-mac
-  # - build-and-test-csharp // temporary removed to make strong named release.
   - test-java
 - name: rhel72-zseries-test
   display_name: "RHEL 7.2 on zSeries"
@@ -1134,7 +1115,6 @@ buildvariants:
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
-  # - build-and-test-csharp // temporary removed to make strong named release.
   - test-java
 - name: windows-test-python
   display_name: "Windows Python"
@@ -1447,7 +1427,6 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  # - build-and-test-csharp // temporary removed to make strong named release.
   - test-java
   - name: publish-packages
     distros:
@@ -1489,7 +1468,6 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  # - build-and-test-csharp // temporary removed to make strong named release.
   - test-java
   - upload-java
   - publish-packages
@@ -1520,8 +1498,6 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  # see https://jira.mongodb.org/browse/MONGOCRYPT-515
-  #- build-and-test-csharp
   - test-java
   - upload-java
   - name: publish-packages

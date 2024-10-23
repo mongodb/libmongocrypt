@@ -83,8 +83,6 @@ if (ENABLE_MORE_WARNINGS_AS_ERRORS)
       )
 endif ()
 
-add_subdirectory (bindings/cs)
-
 include (GenerateExportHeader)
 
 include (CTest)
