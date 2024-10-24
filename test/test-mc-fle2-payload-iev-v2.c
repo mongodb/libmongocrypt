@@ -32,6 +32,8 @@ typedef struct {
     _mongocrypt_buffer_t K_Key;
     uint8_t bson_value_type;
     _mongocrypt_buffer_t bson_value;
+    uint8_t edge_count;
+    mc_FLE2TagAndEncryptedMetadataBlock_t *edges;
 } _mc_fle2_iev_v2_test;
 
 static void _mc_fle2_iev_v2_test_destroy(_mc_fle2_iev_v2_test *test) {
@@ -41,6 +43,11 @@ static void _mc_fle2_iev_v2_test_destroy(_mc_fle2_iev_v2_test *test) {
     _mongocrypt_buffer_cleanup(&test->K_KeyId);
     _mongocrypt_buffer_cleanup(&test->K_Key);
     _mongocrypt_buffer_cleanup(&test->bson_value);
+    for (int i = 0; i < test->edge_count; ++i) {
+        mc_FLE2TagAndEncryptedMetadataBlock_cleanup(&test->edges[i]);
+    }
+
+    bson_free(test->edges);
 }
 
 static bool _mc_fle2_iev_v2_test_parse(_mc_fle2_iev_v2_test *test, bson_iter_t *iter) {
@@ -83,6 +90,37 @@ static bool _mc_fle2_iev_v2_test_parse(_mc_fle2_iev_v2_test *test, bson_iter_t *
                 TEST_ERROR("Unknown type '%s'", value);
             }
             hasType = true;
+        } else if (!strcmp(field, "edge_count")) {
+            ASSERT_OR_PRINT_MSG(!test->edge_count, "Duplicate field 'edge_count'");
+            ASSERT(BSON_ITER_HOLDS_INT32(iter) || BSON_ITER_HOLDS_INT64(iter));
+            int64_t value = bson_iter_as_int64(iter);
+            ASSERT_OR_PRINT_MSG((value > 0) && (value < 128), "Field 'edge_count' must be 1..127");
+            test->edge_count = (uint8_t)value;
+        } else if (!strcmp(field, "edges")) {
+            ASSERT_OR_PRINT_MSG(!test->edges, "Duplicate field 'edges'");
+            ASSERT_OR_PRINT_MSG(test->edge_count, "Field 'edge_count' necessary to parse edges");
+
+            // Allocate array
+            test->edges = (mc_FLE2TagAndEncryptedMetadataBlock_t *)bson_malloc0(
+                test->edge_count * sizeof(mc_FLE2TagAndEncryptedMetadataBlock_t));
+
+            // Read in value to array (requires conversion to reader)
+            ASSERT(BSON_ITER_HOLDS_UTF8(iter));
+            const char *value = bson_iter_utf8(iter, NULL);
+
+            _mongocrypt_buffer_t tmp_buf;
+            mc_reader_t tmp_reader;
+            mongocrypt_status_t *tmp_status = mongocrypt_status_new();
+
+            _mongocrypt_buffer_copy_from_hex(&tmp_buf, value);
+            mc_reader_init_from_buffer(&tmp_reader, &tmp_buf, __FUNCTION__);
+
+            for (int i = 0; i < test->edge_count; ++i) {
+                mc_FLE2TagAndEncryptedMetadataBlock_parse(&test->edges[i], &tmp_reader, tmp_status);
+            }
+
+            _mongocrypt_buffer_cleanup(&tmp_buf);
+            mongocrypt_status_destroy(tmp_status);
         } else {
             TEST_ERROR("Unknown field '%s'", field);
         }
@@ -114,6 +152,13 @@ static void _mc_fle2_iev_v2_test_run(_mongocrypt_tester_t *tester, _mc_fle2_iev_
     } else {
         ASSERT(test->type == kTypeRange);
         ASSERT_OK_STATUS(mc_FLE2IndexedRangeEncryptedValueV2_parse(iev, &test->payload, status), status);
+
+        // Reserialize and assert that the result is the same as the initial input
+        _mongocrypt_buffer_t serialized_buf;
+        _mongocrypt_buffer_init_size(&serialized_buf, test->payload.len);
+        ASSERT_OK_STATUS(mc_FLE2IndexedRangeEncryptedValueV2_serialize(iev, &serialized_buf, status), status);
+        ASSERT_CMPBUF(serialized_buf, test->payload);
+        _mongocrypt_buffer_cleanup(&serialized_buf);
     }
 
     // Validate S_KeyId as parsed.
@@ -141,6 +186,22 @@ static void _mc_fle2_iev_v2_test_run(_mongocrypt_tester_t *tester, _mc_fle2_iev_
     const _mongocrypt_buffer_t *bson_value = mc_FLE2IndexedEncryptedValueV2_get_ClientValue(iev, status);
     ASSERT_OK_STATUS(bson_value, status);
     ASSERT_CMPBUF(*bson_value, test->bson_value);
+
+    if (test->type == kTypeRange) {
+        // Validate edge count
+        uint8_t edge_count = mc_FLE2IndexedEncryptedValueV2_get_edge_count(iev, status);
+        ASSERT_OK_STATUS(edge_count, status);
+        ASSERT_CMPINT(edge_count, ==, test->edge_count);
+
+        // Validate edges array
+        mc_FLE2TagAndEncryptedMetadataBlock_t metadata;
+        for (int i = 0; i < edge_count; ++i) {
+            ASSERT(mc_FLE2IndexedEncryptedValueV2_get_edge(iev, &metadata, i, status));
+            ASSERT_CMPBUF(metadata.encryptedCount, test->edges[i].encryptedCount);
+            ASSERT_CMPBUF(metadata.tag, test->edges[i].tag);
+            ASSERT_CMPBUF(metadata.encryptedZeros, test->edges[i].encryptedZeros);
+        }
+    }
 
     // All done!
     mc_FLE2IndexedEncryptedValueV2_destroy(iev);

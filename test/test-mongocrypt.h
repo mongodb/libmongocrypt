@@ -186,6 +186,8 @@ void _mongocrypt_tester_install_fle2_payload_find_equality_v2(_mongocrypt_tester
 
 void _mongocrypt_tester_install_fle2_payload_find_range_v2(_mongocrypt_tester_t *tester);
 
+void _mongocrypt_tester_install_fle2_tag_and_encrypted_metadata_block(_mongocrypt_tester_t *tester);
+
 void _mongocrypt_tester_install_gcp_auth(_mongocrypt_tester_t *tester);
 
 void _mongocrypt_tester_install_range_encoding(_mongocrypt_tester_t *tester);
