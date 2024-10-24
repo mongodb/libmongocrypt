@@ -116,6 +116,7 @@ set (MONGOCRYPT_SOURCES
    src/mc-fle2-payload-uev-common.c
    src/mc-fle2-payload-uev-v2.c
    src/mc-fle2-rfds.c
+   src/mc-fle2-tag-and-encrypted-metadata-block.c
    src/mc-range-edge-generation.c
    src/mc-range-mincover.c
    src/mc-range-encoding.c
