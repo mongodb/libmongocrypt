@@ -471,6 +471,7 @@ set (TEST_MONGOCRYPT_SOURCES
    test/test-mc-fle2-payload-uev.c
    test/test-mc-fle2-payload-uev-v2.c
    test/test-mc-fle2-rfds.c
+   test/test-mc-fle2-tag-and-encrypted-metadata-block.c
    test/test-mc-range-edge-generation.c
    test/test-mc-range-mincover.c
    test/test-mc-rangeopts.c
