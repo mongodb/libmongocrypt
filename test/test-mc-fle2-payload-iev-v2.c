@@ -47,7 +47,7 @@ static void _mc_fle2_iev_v2_test_destroy(_mc_fle2_iev_v2_test *test) {
         _mongocrypt_buffer_cleanup(&test->edges[i]);
     }
 
-    free(test->edges);
+    bson_free(test->edges);
 }
 
 static bool _mc_fle2_iev_v2_test_parse(_mc_fle2_iev_v2_test *test, bson_iter_t *iter) {
@@ -101,7 +101,7 @@ static bool _mc_fle2_iev_v2_test_parse(_mc_fle2_iev_v2_test *test, bson_iter_t *
             ASSERT_OR_PRINT_MSG(test->edge_count, "Field 'edge_count' necessary to parse edges");
 
             // Allocate array
-            test->edges = (_mongocrypt_buffer_t *)malloc(test->edge_count * sizeof(_mongocrypt_buffer_t));
+            test->edges = (_mongocrypt_buffer_t *)bson_malloc0(test->edge_count * sizeof(_mongocrypt_buffer_t));
 
             // Use bson functions to loop through array
             ASSERT(BSON_ITER_HOLDS_ARRAY(iter));

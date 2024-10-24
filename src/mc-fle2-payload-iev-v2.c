@@ -330,7 +330,7 @@ void mc_FLE2IndexedEncryptedValueV2_destroy(mc_FLE2IndexedEncryptedValueV2_t *ie
     }
 
     // Metadata array is dynamically allocated
-    free(iev->metadata);
+    bson_free(iev->metadata);
 
     bson_free(iev);
 }
@@ -483,7 +483,7 @@ bool mc_FLE2IndexedRangeEncryptedValueV2_parse(mc_FLE2IndexedEncryptedValueV2_t 
     const uint64_t SEV_len = SEV_and_edges_len - edges_len;
     CHECK_AND_RETURN(mc_reader_read_buffer(&reader, &iev->ServerEncryptedValue, SEV_len, status));
 
-    iev->metadata = (_mongocrypt_buffer_t *)malloc(iev->edge_count * sizeof(_mongocrypt_buffer_t));
+    iev->metadata = (_mongocrypt_buffer_t *)bson_malloc0(iev->edge_count * sizeof(_mongocrypt_buffer_t));
     if (!iev->metadata) {
         CLIENT_ERR("Failed to allocate memory for metadata array");
         return false;
