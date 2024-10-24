@@ -756,6 +756,30 @@ static void _test_encrypt_caches_keys(_mongocrypt_tester_t *tester) {
     mongocrypt_destroy(crypt);
 }
 
+static void _test_encrypt_cache_expiration(_mongocrypt_tester_t *tester) {
+    mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_WITH_SHORT_CACHE);
+    mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+    ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "test", -1, TEST_FILE("./test/example/cmd.json")), ctx);
+    _mongocrypt_tester_run_ctx_to(tester, ctx, MONGOCRYPT_CTX_DONE);
+    mongocrypt_ctx_destroy(ctx);
+
+    _usleep(2000);
+    /* The next context requests keys again
+     */
+    ctx = mongocrypt_ctx_new(crypt);
+    ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "test", -1, TEST_FILE("./test/example/cmd.json")), ctx);
+    _mongocrypt_tester_run_ctx_to(tester, ctx, MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+    ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TEST_FILE("./test/example/mongocryptd-reply.json")), ctx);
+    ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+    BSON_ASSERT(mongocrypt_ctx_state(ctx) == MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+    ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TEST_FILE("./test/example/key-document.json")), ctx);
+    ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+    _mongocrypt_tester_run_ctx_to(tester, ctx, MONGOCRYPT_CTX_DONE);
+
+    mongocrypt_ctx_destroy(ctx);
+    mongocrypt_destroy(crypt);
+}
+
 static void _test_encrypt_caches_keys_by_alt_name(_mongocrypt_tester_t *tester) {
     mongocrypt_t *crypt;
     mongocrypt_ctx_t *ctx;
@@ -5665,6 +5689,7 @@ void _mongocrypt_tester_install_ctx_encrypt(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_local_schema);
     INSTALL_TEST(_test_encrypt_caches_collinfo);
     INSTALL_TEST(_test_encrypt_caches_keys);
+    INSTALL_TEST(_test_encrypt_cache_expiration);
     INSTALL_TEST(_test_encrypt_caches_keys_by_alt_name);
     INSTALL_TEST(_test_encrypt_random);
     INSTALL_TEST(_test_encrypt_is_remote_schema);

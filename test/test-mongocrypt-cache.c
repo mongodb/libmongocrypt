@@ -68,24 +68,6 @@ void _test_cache(_mongocrypt_tester_t *tester) {
     bson_destroy(entry2);
 }
 
-static void _usleep(int64_t usec) {
-#ifdef _WIN32
-    LARGE_INTEGER ft;
-    HANDLE timer;
-
-    BSON_ASSERT(usec >= 0);
-
-    ft.QuadPart = -(10 * usec);
-    timer = CreateWaitableTimer(NULL, true, NULL);
-    SetWaitableTimer(timer, &ft, 0, NULL, NULL, 0);
-    WaitForSingleObject(timer, INFINITE);
-    CloseHandle(timer);
-#else
-    BSON_ASSERT(usec >= 0);
-    usleep((useconds_t)usec);
-#endif
-}
-
 static void _test_cache_expiration(_mongocrypt_tester_t *tester) {
     _mongocrypt_cache_t cache;
     mongocrypt_status_t *status;

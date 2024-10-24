@@ -44,6 +44,8 @@ typedef enum tester_mongocrypt_flags {
     TESTER_MONGOCRYPT_WITH_CRYPT_V1 = 1 << 1,
     /// Enable range V2
     TESTER_MONGOCRYPT_WITH_RANGE_V2 = 1 << 2,
+    /// Short cache expiration
+    TESTER_MONGOCRYPT_WITH_SHORT_CACHE = 1 << 3,
 } tester_mongocrypt_flags;
 
 /* Arbitrary max of 2048 instances of temporary test data. Increase as needed.
@@ -238,5 +240,8 @@ void _test_ctx_wrap_and_feed_key(mongocrypt_ctx_t *ctx,
                                  const _mongocrypt_buffer_t *id,
                                  _mongocrypt_buffer_t *key,
                                  mongocrypt_status_t *status);
+
+
+void _usleep(int64_t usec);
 
 #endif
