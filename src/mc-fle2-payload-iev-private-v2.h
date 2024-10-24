@@ -17,6 +17,7 @@
 #ifndef MONGOCRYPT_INDEXED_ENCRYPTED_VALUE_PRIVATE_V2_H
 #define MONGOCRYPT_INDEXED_ENCRYPTED_VALUE_PRIVATE_V2_H
 
+#include "mc-fle2-tag-and-encrypted-metadata-block-private.h"
 #include "mc-tokens-private.h"
 #include "mongocrypt-buffer-private.h"
 #include "mongocrypt-crypto-private.h"
@@ -76,9 +77,10 @@ const _mongocrypt_buffer_t *mc_FLE2IndexedEncryptedValueV2_get_ClientValue(const
 uint8_t mc_FLE2IndexedEncryptedValueV2_get_edge_count(const mc_FLE2IndexedEncryptedValueV2_t *iev,
                                                       mongocrypt_status_t *status);
 
-const _mongocrypt_buffer_t *mc_FLE2IndexedEncryptedValueV2_get_edge(const mc_FLE2IndexedEncryptedValueV2_t *iev,
-                                                                    const uint8_t edge_index,
-                                                                    mongocrypt_status_t *status);
+bool mc_FLE2IndexedEncryptedValueV2_get_edge(const mc_FLE2IndexedEncryptedValueV2_t *iev,
+                                             mc_FLE2TagAndEncryptedMetadataBlock_t *out,
+                                             const uint8_t edge_index,
+                                             mongocrypt_status_t *status);
 
 void mc_FLE2IndexedEncryptedValueV2_destroy(mc_FLE2IndexedEncryptedValueV2_t *iev);
 

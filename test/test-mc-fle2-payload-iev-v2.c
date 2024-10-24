@@ -33,7 +33,7 @@ typedef struct {
     uint8_t bson_value_type;
     _mongocrypt_buffer_t bson_value;
     uint8_t edge_count;
-    _mongocrypt_buffer_t *edges;
+    mc_FLE2TagAndEncryptedMetadataBlock_t *edges;
 } _mc_fle2_iev_v2_test;
 
 static void _mc_fle2_iev_v2_test_destroy(_mc_fle2_iev_v2_test *test) {
@@ -44,7 +44,7 @@ static void _mc_fle2_iev_v2_test_destroy(_mc_fle2_iev_v2_test *test) {
     _mongocrypt_buffer_cleanup(&test->K_Key);
     _mongocrypt_buffer_cleanup(&test->bson_value);
     for (int i = 0; i < test->edge_count; ++i) {
-        _mongocrypt_buffer_cleanup(&test->edges[i]);
+        mc_FLE2TagAndEncryptedMetadataBlock_cleanup(&test->edges[i]);
     }
 
     bson_free(test->edges);
@@ -101,36 +101,26 @@ static bool _mc_fle2_iev_v2_test_parse(_mc_fle2_iev_v2_test *test, bson_iter_t *
             ASSERT_OR_PRINT_MSG(test->edge_count, "Field 'edge_count' necessary to parse edges");
 
             // Allocate array
-            test->edges = (_mongocrypt_buffer_t *)bson_malloc0(test->edge_count * sizeof(_mongocrypt_buffer_t));
+            test->edges = (mc_FLE2TagAndEncryptedMetadataBlock_t *)bson_malloc0(
+                test->edge_count * sizeof(mc_FLE2TagAndEncryptedMetadataBlock_t));
 
-            // Use bson functions to loop through array
-            ASSERT(BSON_ITER_HOLDS_ARRAY(iter));
-            const uint8_t *edges_array_data = NULL;
-            uint32_t edges_array_len = 0;
-            bson_iter_array(iter, &edges_array_len, &edges_array_data);
-            bson_t edges_array;
-            bson_iter_t edges_array_iter;
+            // Read in value to array (requires conversion to reader)
+            ASSERT(BSON_ITER_HOLDS_UTF8(iter));
+            const char *value = bson_iter_utf8(iter, NULL);
 
-            if (!bson_init_static(&edges_array, edges_array_data, edges_array_len)
-                || !bson_iter_init(&edges_array_iter, &edges_array)) {
-                TEST_ERROR("Failed to initialize array iterator");
-                return false;
+            _mongocrypt_buffer_t tmp_buf;
+            mc_reader_t tmp_reader;
+            mongocrypt_status_t *tmp_status = mongocrypt_status_new();
+
+            _mongocrypt_buffer_copy_from_hex(&tmp_buf, value);
+            mc_reader_init_from_buffer(&tmp_reader, &tmp_buf, __FUNCTION__);
+
+            for (int i = 0; i < test->edge_count; ++i) {
+                mc_FLE2TagAndEncryptedMetadataBlock_parse(&test->edges[i], &tmp_reader, tmp_status);
             }
 
-            int i = 0;
-            while (bson_iter_next(&edges_array_iter) && i < test->edge_count) {
-                ASSERT(BSON_ITER_HOLDS_UTF8(&edges_array_iter));
-                const char *value = bson_iter_utf8(&edges_array_iter, NULL);
-                _mongocrypt_buffer_copy_from_hex(&test->edges[i], value);
-                ASSERT(strlen(value) == (test->edges[i].len * 2));
-
-                i++;
-            }
-
-            if (i != test->edge_count) {
-                TEST_ERROR("More edges specified in edge_count than in the edges array");
-                return false;
-            }
+            _mongocrypt_buffer_cleanup(&tmp_buf);
+            mongocrypt_status_destroy(tmp_status);
         } else {
             TEST_ERROR("Unknown field '%s'", field);
         }
@@ -204,10 +194,12 @@ static void _mc_fle2_iev_v2_test_run(_mongocrypt_tester_t *tester, _mc_fle2_iev_
         ASSERT_CMPINT(edge_count, ==, test->edge_count);
 
         // Validate edges array
+        mc_FLE2TagAndEncryptedMetadataBlock_t metadata;
         for (int i = 0; i < edge_count; ++i) {
-            const _mongocrypt_buffer_t *edge = mc_FLE2IndexedEncryptedValueV2_get_edge(iev, i, status);
-            ASSERT_OK_STATUS(edge, status);
-            ASSERT_CMPBUF(*edge, test->edges[i]);
+            ASSERT(mc_FLE2IndexedEncryptedValueV2_get_edge(iev, &metadata, i, status));
+            ASSERT_CMPBUF(metadata.encryptedCount, test->edges[i].encryptedCount);
+            ASSERT_CMPBUF(metadata.tag, test->edges[i].tag);
+            ASSERT_CMPBUF(metadata.encryptedZeros, test->edges[i].encryptedZeros);
         }
     }
 

@@ -19,6 +19,7 @@
 
 #include "mc-fle-blob-subtype-private.h"
 #include "mc-fle2-payload-iev-private-v2.h"
+#include "mc-fle2-tag-and-encrypted-metadata-block-private.h"
 #include "mc-reader-private.h"
 #include "mc-tokens-private.h"
 #include "mc-writer-private.h"
@@ -55,8 +56,7 @@ struct _mc_FLE2IndexedEncryptedValueV2_t {
     // ClientValue := DecryptCBCAEAD(K_Key, ClientEncryptedValue, AD=K_KeyId)
     _mongocrypt_buffer_t ClientValue;
 
-    // Only used for range IEVs
-    _mongocrypt_buffer_t *metadata;
+    mc_FLE2TagAndEncryptedMetadataBlock_t *metadata;
 };
 
 #define kMetadataLen 96U                // encCount(32) + tag(32) + encZeros(32)
@@ -325,8 +325,14 @@ void mc_FLE2IndexedEncryptedValueV2_destroy(mc_FLE2IndexedEncryptedValueV2_t *ie
     _mongocrypt_buffer_cleanup(&iev->DecryptedServerEncryptedValue);
     _mongocrypt_buffer_cleanup(&iev->ServerEncryptedValue);
     _mongocrypt_buffer_cleanup(&iev->S_KeyId);
-    for (int i = 0; i < iev->edge_count; i++) {
-        _mongocrypt_buffer_cleanup(&iev->metadata[i]);
+
+    if (iev->type != kTypeRange) {
+        for (int i = 0; i < iev->edge_count; i++) {
+            mc_FLE2TagAndEncryptedMetadataBlock_cleanup(&iev->metadata[i]);
+        }
+    } else {
+        // kTypeEquality only has one metadata block
+        mc_FLE2TagAndEncryptedMetadataBlock_cleanup(iev->metadata);
     }
 
     // Metadata array is dynamically allocated
@@ -354,29 +360,32 @@ uint8_t mc_FLE2IndexedEncryptedValueV2_get_edge_count(const mc_FLE2IndexedEncryp
     return iev->edge_count;
 }
 
-const _mongocrypt_buffer_t *mc_FLE2IndexedEncryptedValueV2_get_edge(const mc_FLE2IndexedEncryptedValueV2_t *iev,
-                                                                    const uint8_t edge_index,
-                                                                    mongocrypt_status_t *status) {
+bool mc_FLE2IndexedEncryptedValueV2_get_edge(const mc_FLE2IndexedEncryptedValueV2_t *iev,
+                                             mc_FLE2TagAndEncryptedMetadataBlock_t *out,
+                                             const uint8_t edge_index,
+                                             mongocrypt_status_t *status) {
     assert(iev);
 
     if (iev->type == kTypeInit) {
         CLIENT_ERR("mc_FLE2IndexedEncryptedValueV2_get_edge "
                    "must be called after "
                    "mc_FLE2IndexedEncryptedValueV2_parse");
-        return NULL;
+        return false;
     }
 
     if (iev->type != kTypeRange) {
         CLIENT_ERR("mc_FLE2IndexedEncryptedValueV2_get_edge must be called with type range");
-        return NULL;
+        return false;
     }
 
     if (edge_index >= iev->edge_count) {
         CLIENT_ERR("mc_FLE2IndexedEncryptedValueV2_get_edge must be called with index edge_index less than edge count");
-        return NULL;
+        return false;
     }
 
-    return &iev->metadata[edge_index];
+    // Write edge into out struct
+    *out = iev->metadata[edge_index];
+    return true;
 }
 
 // -----------------------------------------------------------------------
@@ -424,8 +433,15 @@ bool mc_FLE2IndexedEqualityEncryptedValueV2_parse(mc_FLE2IndexedEncryptedValueV2
     const uint64_t SEV_len = SEV_and_metadata_len - kMetadataLen;
     CHECK_AND_RETURN(mc_reader_read_buffer(&reader, &iev->ServerEncryptedValue, SEV_len, status));
 
-    // Ignore Metadata block.
-    BSON_ASSERT(mc_reader_get_remaining_length(&reader) == kMetadataLen);
+    // Parse single metadata block
+    iev->metadata =
+        (mc_FLE2TagAndEncryptedMetadataBlock_t *)bson_malloc0(sizeof(mc_FLE2TagAndEncryptedMetadataBlock_t));
+    if (!iev->metadata) {
+        CLIENT_ERR("Failed to allocate memory for metadata array");
+        return false;
+    }
+
+    CHECK_AND_RETURN(mc_FLE2TagAndEncryptedMetadataBlock_parse(iev->metadata, &reader, status));
 
     iev->type = kTypeEquality;
     return true;
@@ -483,7 +499,8 @@ bool mc_FLE2IndexedRangeEncryptedValueV2_parse(mc_FLE2IndexedEncryptedValueV2_t 
     const uint64_t SEV_len = SEV_and_edges_len - edges_len;
     CHECK_AND_RETURN(mc_reader_read_buffer(&reader, &iev->ServerEncryptedValue, SEV_len, status));
 
-    iev->metadata = (_mongocrypt_buffer_t *)bson_malloc0(iev->edge_count * sizeof(_mongocrypt_buffer_t));
+    iev->metadata = (mc_FLE2TagAndEncryptedMetadataBlock_t *)bson_malloc0(
+        iev->edge_count * sizeof(mc_FLE2TagAndEncryptedMetadataBlock_t));
     if (!iev->metadata) {
         CLIENT_ERR("Failed to allocate memory for metadata array");
         return false;
@@ -491,7 +508,7 @@ bool mc_FLE2IndexedRangeEncryptedValueV2_parse(mc_FLE2IndexedEncryptedValueV2_t 
 
     // Read each metadata element
     for (uint8_t i = 0; i < iev->edge_count; i++) {
-        CHECK_AND_RETURN(mc_reader_read_buffer(&reader, &iev->metadata[i], kMetadataLen, status));
+        CHECK_AND_RETURN(mc_FLE2TagAndEncryptedMetadataBlock_parse(&iev->metadata[i], &reader, status));
     }
 
     iev->type = kTypeRange;
@@ -530,7 +547,7 @@ bool mc_FLE2IndexedRangeEncryptedValueV2_serialize(const mc_FLE2IndexedEncrypted
 
     // Serialize edges (stored in metadata)
     for (int i = 0; i < iev->edge_count; ++i) {
-        CHECK_AND_RETURN(mc_writer_write_buffer(&writer, &iev->metadata[i], kMetadataLen, status));
+        CHECK_AND_RETURN(mc_FLE2TagAndEncryptedMetadataBlock_serialize(&iev->metadata[i], &writer, status));
     }
 
     return true;
