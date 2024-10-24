@@ -365,6 +365,7 @@ bool mc_FLE2IndexedEncryptedValueV2_get_edge(const mc_FLE2IndexedEncryptedValueV
                                              const uint8_t edge_index,
                                              mongocrypt_status_t *status) {
     assert(iev);
+    assert(out);
 
     if (iev->type == kTypeInit) {
         CLIENT_ERR("mc_FLE2IndexedEncryptedValueV2_get_edge "
@@ -385,6 +386,29 @@ bool mc_FLE2IndexedEncryptedValueV2_get_edge(const mc_FLE2IndexedEncryptedValueV
 
     // Write edge into out struct
     *out = iev->metadata[edge_index];
+    return true;
+}
+
+bool mc_FLE2IndexedEncryptedValueV2_get_metadata(const mc_FLE2IndexedEncryptedValueV2_t *iev,
+                                                 mc_FLE2TagAndEncryptedMetadataBlock_t *out,
+                                                 mongocrypt_status_t *status) {
+    assert(iev);
+    assert(out);
+
+    if (iev->type == kTypeInit) {
+        CLIENT_ERR("mc_FLE2IndexedEncryptedValueV2_get_metadata "
+                   "must be called after "
+                   "mc_FLE2IndexedEncryptedValueV2_parse");
+        return false;
+    }
+
+    if (iev->type != kTypeEquality) {
+        CLIENT_ERR("mc_FLE2IndexedEncryptedValueV2_get_metadata must be called with type equality");
+        return false;
+    }
+
+    // Write edge into out struct
+    *out = *iev->metadata;
     return true;
 }
 

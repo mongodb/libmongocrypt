@@ -82,6 +82,10 @@ bool mc_FLE2IndexedEncryptedValueV2_get_edge(const mc_FLE2IndexedEncryptedValueV
                                              const uint8_t edge_index,
                                              mongocrypt_status_t *status);
 
+bool mc_FLE2IndexedEncryptedValueV2_get_metadata(const mc_FLE2IndexedEncryptedValueV2_t *iev,
+                                                 mc_FLE2TagAndEncryptedMetadataBlock_t *out,
+                                                 mongocrypt_status_t *status);
+
 void mc_FLE2IndexedEncryptedValueV2_destroy(mc_FLE2IndexedEncryptedValueV2_t *iev);
 
 /*
