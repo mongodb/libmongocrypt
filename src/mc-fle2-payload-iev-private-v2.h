@@ -103,8 +103,6 @@ void mc_FLE2IndexedEncryptedValueV2_destroy(mc_FLE2IndexedEncryptedValueV2_t *ie
  *   EncryptCTR(ServerEncryptionToken, K_KeyId || ClientEncryptedValue)
  * ClientEncryptedValue := EncryptCBCAEAD(K_Key, clientValue, AD=K_KeyId)
  *
- * The MetadataBlock is ignored by libmongocrypt,
- *   but has the following structure and a fixed size of 96 octets:
  *
  * struct FLE2TagAndEncryptedMetadataBlock {
  *   uint8_t encryptedCount[32]; // EncryptCTR(countEncryptionToken,
@@ -135,8 +133,6 @@ bool mc_FLE2IndexedEqualityEncryptedValueV2_parse(mc_FLE2IndexedEncryptedValueV2
  * 1/ `edge_count` is introduced as an octet following `original_bson_type`.
  * 2/ Rather than a single metadata block, we have {edge_count} blocks.
  *
- * Since libmongocrypt ignores metadata blocks, we can ignore most all
- * differences between Equality and Range types for IndexedEncrypted data.
  */
 
 bool mc_FLE2IndexedRangeEncryptedValueV2_parse(mc_FLE2IndexedEncryptedValueV2_t *iev,
