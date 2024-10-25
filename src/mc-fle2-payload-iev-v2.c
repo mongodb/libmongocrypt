@@ -404,18 +404,15 @@ bool mc_FLE2IndexedEncryptedValueV2_parse(mc_FLE2IndexedEncryptedValueV2_t *iev,
 
     CHECK_AND_RETURN(mc_reader_read_u8(&reader, &iev->fle_blob_subtype, status));
 
-    if (iev->fle_blob_subtype != MC_SUBTYPE_FLE2IndexedEqualityEncryptedValueV2
-        && iev->fle_blob_subtype != MC_SUBTYPE_FLE2IndexedRangeEncryptedValueV2) {
+    if (iev->fle_blob_subtype == MC_SUBTYPE_FLE2IndexedEqualityEncryptedValueV2) {
+        iev->type = kTypeEquality;
+    } else if (iev->fle_blob_subtype == MC_SUBTYPE_FLE2IndexedRangeEncryptedValueV2) {
+        iev->type = kTypeRange;
+    } else {
         CLIENT_ERR("mc_FLE2IndexedEncryptedValueV2_parse expected "
                    "fle_blob_subtype MC_SUBTYPE_FLE2Indexed(Equality|Range)EncryptedValueV2 got: %" PRIu8,
                    iev->fle_blob_subtype);
         return false;
-    }
-
-    if (iev->fle_blob_subtype == MC_SUBTYPE_FLE2IndexedEqualityEncryptedValueV2) {
-        iev->type = kTypeEquality;
-    } else {
-        iev->type = kTypeRange;
     }
 
     /* Read S_KeyId. */
