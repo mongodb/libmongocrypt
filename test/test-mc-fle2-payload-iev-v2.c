@@ -147,19 +147,14 @@ static void _mc_fle2_iev_v2_test_run(_mongocrypt_tester_t *tester, _mc_fle2_iev_
     mc_FLE2IndexedEncryptedValueV2_t *iev = mc_FLE2IndexedEncryptedValueV2_new();
 
     // Parse payload.
-    if (test->type == kTypeEquality) {
-        ASSERT_OK_STATUS(mc_FLE2IndexedEqualityEncryptedValueV2_parse(iev, &test->payload, status), status);
-    } else {
-        ASSERT(test->type == kTypeRange);
-        ASSERT_OK_STATUS(mc_FLE2IndexedRangeEncryptedValueV2_parse(iev, &test->payload, status), status);
+    ASSERT_OK_STATUS(mc_FLE2IndexedEncryptedValueV2_parse(iev, &test->payload, status), status);
 
-        // Reserialize and assert that the result is the same as the initial input
-        _mongocrypt_buffer_t serialized_buf;
-        _mongocrypt_buffer_init_size(&serialized_buf, test->payload.len);
-        ASSERT_OK_STATUS(mc_FLE2IndexedRangeEncryptedValueV2_serialize(iev, &serialized_buf, status), status);
-        ASSERT_CMPBUF(serialized_buf, test->payload);
-        _mongocrypt_buffer_cleanup(&serialized_buf);
-    }
+    // Reserialize and assert that the result is the same as the initial input
+    _mongocrypt_buffer_t serialized_buf;
+    _mongocrypt_buffer_init_size(&serialized_buf, test->payload.len);
+    ASSERT_OK_STATUS(mc_FLE2IndexedEncryptedValueV2_serialize(iev, &serialized_buf, status), status);
+    ASSERT_CMPBUF(serialized_buf, test->payload);
+    _mongocrypt_buffer_cleanup(&serialized_buf);
 
     // Validate S_KeyId as parsed.
     const _mongocrypt_buffer_t *S_KeyId = mc_FLE2IndexedEncryptedValueV2_get_S_KeyId(iev, status);
