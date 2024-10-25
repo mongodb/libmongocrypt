@@ -36,6 +36,8 @@ typedef struct {
     mc_FLE2TagAndEncryptedMetadataBlock_t *metadata;
 } _mc_fle2_iev_v2_test;
 
+#define kMetadataLen 96U
+
 static void _mc_fle2_iev_v2_test_destroy(_mc_fle2_iev_v2_test *test) {
     _mongocrypt_buffer_cleanup(&test->payload);
     _mongocrypt_buffer_cleanup(&test->S_KeyId);
@@ -93,31 +95,57 @@ static bool _mc_fle2_iev_v2_test_parse(_mc_fle2_iev_v2_test *test, bson_iter_t *
         } else if (!strcmp(field, "metadata")) {
             ASSERT_OR_PRINT_MSG(!test->metadata, "Duplicate field 'metadata'");
 
-            // Read in value to array (requires conversion to reader)
-            ASSERT(BSON_ITER_HOLDS_UTF8(iter));
-            const char *value = bson_iter_utf8(iter, NULL);
+            // Use bson functions to loop through array
+            ASSERT(BSON_ITER_HOLDS_ARRAY(iter));
+            const uint8_t *metadata_array_data = NULL;
+            uint32_t metadata_array_len = 0;
+            bson_iter_array(iter, &metadata_array_len, &metadata_array_data);
 
-            _mongocrypt_buffer_t tmp_buf;
-            mc_reader_t tmp_reader;
-            mongocrypt_status_t *tmp_status = mongocrypt_status_new();
-
-            _mongocrypt_buffer_copy_from_hex(&tmp_buf, value);
-            mc_reader_init_from_buffer(&tmp_reader, &tmp_buf, __FUNCTION__);
-
-            // Calculate edge count based off of buffer size.
-            assert((tmp_buf.len % 96) == 0);
-            test->edge_count = tmp_buf.len / 96;
-
-            // Allocate array
-            test->metadata = (mc_FLE2TagAndEncryptedMetadataBlock_t *)bson_malloc0(
-                test->edge_count * sizeof(mc_FLE2TagAndEncryptedMetadataBlock_t));
-
-            for (int i = 0; i < test->edge_count; ++i) {
-                mc_FLE2TagAndEncryptedMetadataBlock_parse(&test->metadata[i], &tmp_reader, tmp_status);
+            bson_t metadata_array;
+            bson_iter_t metadata_array_iter;
+            if (!bson_init_static(&metadata_array, metadata_array_data, metadata_array_len)
+                || !bson_iter_init(&metadata_array_iter, &metadata_array)) {
+                TEST_ERROR("Failed to initialize array iterator");
+                return false;
             }
 
-            _mongocrypt_buffer_cleanup(&tmp_buf);
-            mongocrypt_status_destroy(tmp_status);
+            // Count metadata blocks
+            size_t metadata_count = 0;
+            while (bson_iter_next(&metadata_array_iter)) {
+                ASSERT(BSON_ITER_HOLDS_UTF8(&metadata_array_iter));
+                metadata_count++;
+            }
+
+            // Allocate memory for the metadata array
+            test->metadata = (mc_FLE2TagAndEncryptedMetadataBlock_t *)bson_malloc0(
+                metadata_count * sizeof(mc_FLE2TagAndEncryptedMetadataBlock_t));
+            if (!test->metadata) {
+                TEST_ERROR("Failed to allocate memory for metadata array");
+                return false;
+            }
+
+            // Reinitialize iter and parse each metadata block
+            bson_iter_init(&metadata_array_iter, &metadata_array);
+            int i = 0;
+            while (bson_iter_next(&metadata_array_iter)) {
+                ASSERT(BSON_ITER_HOLDS_UTF8(&metadata_array_iter));
+
+                mongocrypt_status_t *tmp_status = mongocrypt_status_new();
+                const char *value = bson_iter_utf8(&metadata_array_iter, NULL);
+
+                _mongocrypt_buffer_t tmp_buf;
+                _mongocrypt_buffer_copy_from_hex(&tmp_buf, value);
+
+                ASSERT_OK_STATUS(mc_FLE2TagAndEncryptedMetadataBlock_parse(&test->metadata[i], &tmp_buf, tmp_status),
+                                 tmp_status);
+
+                _mongocrypt_buffer_cleanup(&tmp_buf);
+                mongocrypt_status_destroy(tmp_status);
+                i++;
+            }
+
+            test->edge_count = i;
+
         } else {
             TEST_ERROR("Unknown field '%s'", field);
         }

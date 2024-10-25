@@ -458,7 +458,12 @@ bool mc_FLE2IndexedEncryptedValueV2_parse(mc_FLE2IndexedEncryptedValueV2_t *iev,
 
     // Read each metadata element
     for (uint8_t i = 0; i < iev->edge_count; i++) {
-        CHECK_AND_RETURN(mc_FLE2TagAndEncryptedMetadataBlock_parse(&iev->metadata[i], &reader, status));
+        _mongocrypt_buffer_t tmp_buf;
+
+        CHECK_AND_RETURN(mc_reader_read_buffer(&reader, &tmp_buf, kMetadataLen, status));
+        CHECK_AND_RETURN(mc_FLE2TagAndEncryptedMetadataBlock_parse(&iev->metadata[i], &tmp_buf, status));
+
+        _mongocrypt_buffer_cleanup(&tmp_buf);
     }
 
     return true;
@@ -498,7 +503,13 @@ bool mc_FLE2IndexedEncryptedValueV2_serialize(const mc_FLE2IndexedEncryptedValue
 
     // Serialize metadata
     for (int i = 0; i < iev->edge_count; ++i) {
-        CHECK_AND_RETURN(mc_FLE2TagAndEncryptedMetadataBlock_serialize(&iev->metadata[i], &writer, status));
+        _mongocrypt_buffer_t tmp_buf;
+        _mongocrypt_buffer_init_size(&tmp_buf, kMetadataLen);
+
+        CHECK_AND_RETURN(mc_FLE2TagAndEncryptedMetadataBlock_serialize(&iev->metadata[i], &tmp_buf, status));
+        CHECK_AND_RETURN(mc_writer_write_buffer(&writer, &tmp_buf, kMetadataLen, status));
+
+        _mongocrypt_buffer_cleanup(&tmp_buf);
     }
 
     return true;

@@ -37,32 +37,43 @@ void mc_FLE2TagAndEncryptedMetadataBlock_cleanup(mc_FLE2TagAndEncryptedMetadataB
 }
 
 bool mc_FLE2TagAndEncryptedMetadataBlock_parse(mc_FLE2TagAndEncryptedMetadataBlock_t *metadata,
-                                               mc_reader_t *reader,
+                                               const _mongocrypt_buffer_t *buf,
                                                mongocrypt_status_t *status) {
-    BSON_ASSERT_PARAM(reader);
+    BSON_ASSERT_PARAM(buf);
+
+    if ((buf->data == NULL) || (buf->len == 0)) {
+        CLIENT_ERR("Empty buffer passed to mc_FLE2IndexedEncryptedValueV2_parse");
+        return false;
+    }
+
+    mc_reader_t reader;
+    mc_reader_init_from_buffer(&reader, buf, __FUNCTION__);
 
     mc_FLE2TagAndEncryptedMetadataBlock_init(metadata);
 
-    CHECK_AND_RETURN(mc_reader_read_buffer(reader, &metadata->encryptedCount, kFieldLen, status));
+    CHECK_AND_RETURN(mc_reader_read_buffer(&reader, &metadata->encryptedCount, kFieldLen, status));
 
-    CHECK_AND_RETURN(mc_reader_read_buffer(reader, &metadata->tag, kFieldLen, status));
+    CHECK_AND_RETURN(mc_reader_read_buffer(&reader, &metadata->tag, kFieldLen, status));
 
-    CHECK_AND_RETURN(mc_reader_read_buffer(reader, &metadata->encryptedZeros, kFieldLen, status));
+    CHECK_AND_RETURN(mc_reader_read_buffer(&reader, &metadata->encryptedZeros, kFieldLen, status));
 
     return true;
 }
 
 bool mc_FLE2TagAndEncryptedMetadataBlock_serialize(const mc_FLE2TagAndEncryptedMetadataBlock_t *metadata,
-                                                   mc_writer_t *writer,
+                                                   _mongocrypt_buffer_t *buf,
                                                    mongocrypt_status_t *status) {
     BSON_ASSERT_PARAM(metadata);
-    BSON_ASSERT_PARAM(writer);
+    BSON_ASSERT_PARAM(buf);
 
-    CHECK_AND_RETURN(mc_writer_write_buffer(writer, &metadata->encryptedCount, kFieldLen, status));
+    mc_writer_t writer;
+    mc_writer_init_from_buffer(&writer, buf, __FUNCTION__);
 
-    CHECK_AND_RETURN(mc_writer_write_buffer(writer, &metadata->tag, kFieldLen, status));
+    CHECK_AND_RETURN(mc_writer_write_buffer(&writer, &metadata->encryptedCount, kFieldLen, status));
 
-    CHECK_AND_RETURN(mc_writer_write_buffer(writer, &metadata->encryptedZeros, kFieldLen, status));
+    CHECK_AND_RETURN(mc_writer_write_buffer(&writer, &metadata->tag, kFieldLen, status));
+
+    CHECK_AND_RETURN(mc_writer_write_buffer(&writer, &metadata->encryptedZeros, kFieldLen, status));
 
     return true;
 }

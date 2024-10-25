@@ -34,11 +34,11 @@ void mc_FLE2TagAndEncryptedMetadataBlock_init(mc_FLE2TagAndEncryptedMetadataBloc
 void mc_FLE2TagAndEncryptedMetadataBlock_cleanup(mc_FLE2TagAndEncryptedMetadataBlock_t *metadata);
 
 bool mc_FLE2TagAndEncryptedMetadataBlock_parse(mc_FLE2TagAndEncryptedMetadataBlock_t *metadata,
-                                               mc_reader_t *reader,
+                                               const _mongocrypt_buffer_t *buf,
                                                mongocrypt_status_t *status);
 
 bool mc_FLE2TagAndEncryptedMetadataBlock_serialize(const mc_FLE2TagAndEncryptedMetadataBlock_t *metadata,
-                                                   mc_writer_t *writer,
+                                                   _mongocrypt_buffer_t *buf,
                                                    mongocrypt_status_t *status);
 
 #endif /* MC_FLE2_TAG_AND_ENCRYPTED_METADATA_BLOCK_H */

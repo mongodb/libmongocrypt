@@ -12,8 +12,6 @@ static void _test_mc_FLE2TagAndEncryptedMetadataBlock_roundtrip(_mongocrypt_test
     _mongocrypt_buffer_t expect_tag;
     _mongocrypt_buffer_t expect_encryptedZeros;
     _mongocrypt_buffer_t output;
-    mc_reader_t reader;
-    mc_writer_t writer;
     mc_FLE2TagAndEncryptedMetadataBlock_t metadata;
 
     _mongocrypt_buffer_copy_from_hex(&expect_encryptedCount,
@@ -27,17 +25,19 @@ static void _test_mc_FLE2TagAndEncryptedMetadataBlock_roundtrip(_mongocrypt_test
     mongocrypt_status_t *status = mongocrypt_status_new();
     mc_FLE2TagAndEncryptedMetadataBlock_init(&metadata);
 
-    mc_reader_init_from_buffer(&reader, &input, __FUNCTION__);
+    // Parse into metadata struct
+    ASSERT_OK_STATUS(mc_FLE2TagAndEncryptedMetadataBlock_parse(&metadata, &input, status), status);
 
-    ASSERT_OK_STATUS(mc_FLE2TagAndEncryptedMetadataBlock_parse(&metadata, &reader, status), status);
-
+    // Check values
     ASSERT_CMPBUF(expect_encryptedCount, metadata.encryptedCount);
     ASSERT_CMPBUF(expect_tag, metadata.tag);
     ASSERT_CMPBUF(expect_encryptedZeros, metadata.encryptedZeros);
 
+    // Serialize back into buffer
     _mongocrypt_buffer_init_size(&output, input.len);
-    mc_writer_init_from_buffer(&writer, &output, __FUNCTION__);
-    ASSERT_OK_STATUS(mc_FLE2TagAndEncryptedMetadataBlock_serialize(&metadata, &writer, status), status);
+    ASSERT_OK_STATUS(mc_FLE2TagAndEncryptedMetadataBlock_serialize(&metadata, &output, status), status);
+
+    // Check that unparsed input is the same as serialized output
     ASSERT_CMPBUF(input, output);
 
     mongocrypt_status_destroy(status);
