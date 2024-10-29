@@ -313,7 +313,7 @@ void mc_FLE2IndexedEncryptedValueV2_destroy(mc_FLE2IndexedEncryptedValueV2_t *ie
 
 uint8_t mc_FLE2IndexedEncryptedValueV2_get_edge_count(const mc_FLE2IndexedEncryptedValueV2_t *iev,
                                                       mongocrypt_status_t *status) {
-    assert(iev);
+    BSON_ASSERT_PARAM(iev);
 
     if (iev->type == kTypeInit) {
         CLIENT_ERR("mc_FLE2IndexedEncryptedValueV2_get_edge_count "
@@ -334,8 +334,8 @@ bool mc_FLE2IndexedEncryptedValueV2_get_edge(const mc_FLE2IndexedEncryptedValueV
                                              mc_FLE2TagAndEncryptedMetadataBlock_t *out,
                                              const uint8_t edge_index,
                                              mongocrypt_status_t *status) {
-    assert(iev);
-    assert(out);
+    BSON_ASSERT_PARAM(iev);
+    BSON_ASSERT_PARAM(out);
 
     if (iev->type == kTypeInit) {
         CLIENT_ERR("mc_FLE2IndexedEncryptedValueV2_get_edge "
@@ -362,8 +362,8 @@ bool mc_FLE2IndexedEncryptedValueV2_get_edge(const mc_FLE2IndexedEncryptedValueV
 bool mc_FLE2IndexedEncryptedValueV2_get_metadata(const mc_FLE2IndexedEncryptedValueV2_t *iev,
                                                  mc_FLE2TagAndEncryptedMetadataBlock_t *out,
                                                  mongocrypt_status_t *status) {
-    assert(iev);
-    assert(out);
+    BSON_ASSERT_PARAM(iev);
+    BSON_ASSERT_PARAM(out);
 
     if (iev->type == kTypeInit) {
         CLIENT_ERR("mc_FLE2IndexedEncryptedValueV2_get_metadata "
@@ -448,10 +448,6 @@ bool mc_FLE2IndexedEncryptedValueV2_parse(mc_FLE2IndexedEncryptedValueV2_t *iev,
 
     iev->metadata = (mc_FLE2TagAndEncryptedMetadataBlock_t *)bson_malloc0(
         iev->edge_count * sizeof(mc_FLE2TagAndEncryptedMetadataBlock_t));
-    if (!iev->metadata) {
-        CLIENT_ERR("Failed to allocate memory for metadata array");
-        return false;
-    }
 
     // Read each metadata element
     for (uint8_t i = 0; i < iev->edge_count; i++) {

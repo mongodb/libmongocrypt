@@ -98,7 +98,7 @@ bson_type_t mc_FLE2IndexedEncryptedValueV2_get_bson_value_type(const mc_FLE2Inde
  * ServerEncryptedValue (8u * SEV_len)
  * metadata (96u * {range ? edge_count : 1u})
  *
- * Retuns an error if the input buffer is not valid.
+ * Returns an error if the input buffer is not valid.
  */
 bool mc_FLE2IndexedEncryptedValueV2_parse(mc_FLE2IndexedEncryptedValueV2_t *iev,
                                           const _mongocrypt_buffer_t *buf,
@@ -111,7 +111,7 @@ bool mc_FLE2IndexedEncryptedValueV2_parse(mc_FLE2IndexedEncryptedValueV2_t *iev,
  * mc_FLE2IndexedEncryptedValueV2_parse, allowing for round-trip
  * conversions between the serialized and parsed forms.
  *
- * Retuns an error if the input structure is not valid, or if the buffer
+ * Returns an error if the input structure is not valid, or if the buffer
  * provided is insufficient to hold the serialized data.
  */
 bool mc_FLE2IndexedEncryptedValueV2_serialize(const mc_FLE2IndexedEncryptedValueV2_t *iev,
