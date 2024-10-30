@@ -271,7 +271,7 @@ bool _mongocrypt_key_parse_owned(const bson_t *bson, _mongocrypt_key_doc_t *out,
 _mongocrypt_key_doc_t *_mongocrypt_key_new(void) {
     _mongocrypt_key_doc_t *key_doc;
 
-    key_doc = (_mongocrypt_key_doc_t *)bson_malloc0(sizeof *key_doc);
+    key_doc = BSON_ALIGNED_ALLOC0(_mongocrypt_key_doc_t);
     bson_init(&key_doc->bson);
 
     return key_doc;
