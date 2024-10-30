@@ -282,7 +282,6 @@ bool mongocrypt_ctx_setopt_algorithm(mongocrypt_ctx_t *ctx, const char *algorith
 
 mongocrypt_ctx_t *mongocrypt_ctx_new(mongocrypt_t *crypt) {
     mongocrypt_ctx_t *ctx;
-    size_t ctx_size;
 
     if (!crypt) {
         return NULL;
@@ -294,13 +293,13 @@ mongocrypt_ctx_t *mongocrypt_ctx_new(mongocrypt_t *crypt) {
         CLIENT_ERR("cannot create context from uninitialized crypt");
         return NULL;
     }
-    ctx_size = sizeof(_mongocrypt_ctx_encrypt_t);
-    if (sizeof(_mongocrypt_ctx_decrypt_t) > ctx_size) {
-        ctx_size = sizeof(_mongocrypt_ctx_decrypt_t);
-    }
-    if (sizeof(_mongocrypt_ctx_datakey_t) > ctx_size) {
-        ctx_size = sizeof(_mongocrypt_ctx_datakey_t);
-    }
+    // Allocate with maximum size of any of the possible context types.
+    size_t ctx_size = 0;
+    ctx_size = BSON_MAX(ctx_size, sizeof(_mongocrypt_ctx_encrypt_t));
+    ctx_size = BSON_MAX(ctx_size, sizeof(_mongocrypt_ctx_decrypt_t));
+    ctx_size = BSON_MAX(ctx_size, sizeof(_mongocrypt_ctx_datakey_t));
+    ctx_size = BSON_MAX(ctx_size, sizeof(_mongocrypt_ctx_rewrap_many_datakey_t));
+    ctx_size = BSON_MAX(ctx_size, sizeof(_mongocrypt_ctx_compact_t));
     ctx = bson_malloc0(ctx_size);
     BSON_ASSERT(ctx);
 
