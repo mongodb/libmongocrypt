@@ -294,22 +294,8 @@ mongocrypt_ctx_t *mongocrypt_ctx_new(mongocrypt_t *crypt) {
         return NULL;
     }
 
-    // Allocate enough memory for any possible context type.
-    static const size_t ctx_size = BSON_MAX(
-        sizeof(_mongocrypt_ctx_encrypt_t),
-        BSON_MAX(sizeof(_mongocrypt_ctx_decrypt_t),
-                 BSON_MAX(sizeof(_mongocrypt_ctx_datakey_t),
-                          BSON_MAX(sizeof(_mongocrypt_ctx_rewrap_many_datakey_t), sizeof(_mongocrypt_ctx_compact_t)))));
-
-    // Use an alignment that is enough for any possible context type.
-    static const size_t ctx_alignment =
-        BSON_MAX(BSON_ALIGNOF(_mongocrypt_ctx_encrypt_t),
-                 BSON_MAX(BSON_ALIGNOF(_mongocrypt_ctx_decrypt_t),
-                          BSON_MAX(BSON_ALIGNOF(_mongocrypt_ctx_datakey_t),
-                                   BSON_MAX(BSON_ALIGNOF(_mongocrypt_ctx_rewrap_many_datakey_t),
-                                            BSON_ALIGNOF(_mongocrypt_ctx_compact_t)))));
-
-    ctx = bson_aligned_alloc0(ctx_alignment, ctx_size);
+    // Allocate with memory and alignment large enough for any possible context type.
+    ctx = bson_aligned_alloc0(MONGOCRYPT_CTX_ALLOC_ALIGNMENT, MONGOCRYPT_CTX_ALLOC_SIZE);
     BSON_ASSERT(ctx);
 
     ctx->crypt = crypt;
