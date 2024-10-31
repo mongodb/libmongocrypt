@@ -293,19 +293,22 @@ mongocrypt_ctx_t *mongocrypt_ctx_new(mongocrypt_t *crypt) {
         CLIENT_ERR("cannot create context from uninitialized crypt");
         return NULL;
     }
-    // Allocate with maximum size and alignment of any of the possible context types.
-    size_t ctx_size = 0;
-    ctx_size = BSON_MAX(ctx_size, sizeof(_mongocrypt_ctx_encrypt_t));
-    ctx_size = BSON_MAX(ctx_size, sizeof(_mongocrypt_ctx_decrypt_t));
-    ctx_size = BSON_MAX(ctx_size, sizeof(_mongocrypt_ctx_datakey_t));
-    ctx_size = BSON_MAX(ctx_size, sizeof(_mongocrypt_ctx_rewrap_many_datakey_t));
-    ctx_size = BSON_MAX(ctx_size, sizeof(_mongocrypt_ctx_compact_t));
-    size_t ctx_alignment = 0;
-    ctx_alignment = BSON_MAX(ctx_alignment, BSON_ALIGNOF(_mongocrypt_ctx_encrypt_t));
-    ctx_alignment = BSON_MAX(ctx_alignment, BSON_ALIGNOF(_mongocrypt_ctx_decrypt_t));
-    ctx_alignment = BSON_MAX(ctx_alignment, BSON_ALIGNOF(_mongocrypt_ctx_datakey_t));
-    ctx_alignment = BSON_MAX(ctx_alignment, BSON_ALIGNOF(_mongocrypt_ctx_rewrap_many_datakey_t));
-    ctx_alignment = BSON_MAX(ctx_alignment, BSON_ALIGNOF(_mongocrypt_ctx_compact_t));
+
+    // Allocate enough memory for any possible context type.
+    static const size_t ctx_size = BSON_MAX(
+        sizeof(_mongocrypt_ctx_encrypt_t),
+        BSON_MAX(sizeof(_mongocrypt_ctx_decrypt_t),
+                 BSON_MAX(sizeof(_mongocrypt_ctx_datakey_t),
+                          BSON_MAX(sizeof(_mongocrypt_ctx_rewrap_many_datakey_t), sizeof(_mongocrypt_ctx_compact_t)))));
+
+    // Use an alignment that is enough for any possible context type.
+    static const size_t ctx_alignment =
+        BSON_MAX(BSON_ALIGNOF(_mongocrypt_ctx_encrypt_t),
+                 BSON_MAX(BSON_ALIGNOF(_mongocrypt_ctx_decrypt_t),
+                          BSON_MAX(BSON_ALIGNOF(_mongocrypt_ctx_datakey_t),
+                                   BSON_MAX(BSON_ALIGNOF(_mongocrypt_ctx_rewrap_many_datakey_t),
+                                            BSON_ALIGNOF(_mongocrypt_ctx_compact_t)))));
+
     ctx = bson_aligned_alloc0(ctx_alignment, ctx_size);
     BSON_ASSERT(ctx);
 
