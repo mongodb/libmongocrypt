@@ -78,6 +78,11 @@ typedef struct {
     bson_value_t indexMax;          // mx
 } mc_FLE2FindRangePayloadV2_t;
 
+// `mc_FLE2FindRangePayloadV2_t` inherits extended alignment from libbson. To dynamically allocate, use aligned
+// allocation (e.g. BSON_ALIGNED_ALLOC)
+BSON_STATIC_ASSERT2(alignof_mc_FLE2FindRangePayloadV2_t,
+                    BSON_ALIGNOF(mc_FLE2FindRangePayloadV2_t) >= BSON_ALIGNOF(bson_value_t));
+
 /**
  * EdgeFindTokenSetV2 is the following BSON document:
  * d: <binary> // EDCDerivedFromDataTokenAndContentionFactor
