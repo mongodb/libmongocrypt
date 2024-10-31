@@ -83,7 +83,8 @@ typedef struct {
 
 // `mc_FLE2RangeFindSpec_t` inherits extended alignment from libbson. To dynamically allocate, use
 // aligned allocation (e.g. BSON_ALIGNED_ALLOC)
-BSON_STATIC_ASSERT2(alignof_mc_FLE2RangeFindSpec_t, BSON_ALIGNOF(mc_FLE2RangeFindSpec_t) >= BSON_ALIGNOF(bson_iter_t));
+BSON_STATIC_ASSERT2(alignof_mc_FLE2RangeFindSpec_t,
+                    BSON_ALIGNOF(mc_FLE2RangeFindSpec_t) >= BSON_ALIGNOF(mc_FLE2RangeFindSpecEdgesInfo_t));
 
 bool mc_FLE2RangeFindSpec_parse(mc_FLE2RangeFindSpec_t *out,
                                 const bson_iter_t *in,
