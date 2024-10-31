@@ -1,4 +1,8 @@
 # ChangeLog
+## 1.12.0
+### Removed
+- libmongocrypt is no longer published in the PPA for RHEL 6. libmongocrypt may instead be built from source on RHEL 6, but support for RHEL 6 will be dropped in a future release.
+
 ## 1.11.0
 ### New features
 - Support `range` algorithm as stable.

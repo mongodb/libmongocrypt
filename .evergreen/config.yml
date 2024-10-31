@@ -1255,17 +1255,10 @@ buildvariants:
 - name: rhel-62-64-bit
   display_name: "RHEL 6.2 64-bit"
   run_on: rhel62-small
-  expansions:
-    has_packages: true
-    packager_distro: rhel62
-    packager_arch: x86_64
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - test-java
-  - name: publish-packages
-    distros:
-    - rhel70-small
 - name: rhel-70-64-bit
   display_name: "RHEL 7.0 64-bit"
   run_on: rhel70-small
