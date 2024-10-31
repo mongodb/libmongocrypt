@@ -272,7 +272,9 @@ _mongocrypt_key_doc_t *_mongocrypt_key_new(void) {
     _mongocrypt_key_doc_t *key_doc;
 
     key_doc = BSON_ALIGNED_ALLOC(_mongocrypt_key_doc_t);
-    *key_doc = (_mongocrypt_key_doc_t){0};
+    // Use two sets of braces to avoid erroneous missing-braces warning in GCC. Refer:
+    // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=53119
+    *key_doc = (_mongocrypt_key_doc_t){{0}};
     bson_init(&key_doc->bson);
 
     return key_doc;
