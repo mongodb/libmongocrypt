@@ -389,7 +389,8 @@ _mongocrypt_key_alt_name_t *_mongocrypt_key_alt_name_create(const char *name, ..
 _mongocrypt_key_alt_name_t *_mongocrypt_key_alt_name_new(const bson_value_t *value) {
     BSON_ASSERT_PARAM(value);
 
-    _mongocrypt_key_alt_name_t *name = bson_malloc0(sizeof(*name));
+    _mongocrypt_key_alt_name_t *name = BSON_ALIGNED_ALLOC(_mongocrypt_key_alt_name_t);
+    *name = (_mongocrypt_key_alt_name_t){0};
     BSON_ASSERT(name);
 
     bson_value_copy(value, &name->value);
