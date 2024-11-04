@@ -1,4 +1,8 @@
 # ChangeLog
+## 1.12.0
+### Removed
+- libmongocrypt is no longer published in the MongoDB package repository for RHEL 6. libmongocrypt may instead be built from source on RHEL 6, but support for RHEL 6 will be dropped in a future release.
+
 ## 1.11.0
 ### New features
 - Support `range` algorithm as stable.
@@ -75,7 +79,7 @@ This release makes backwards breaking changes to Queryable Encryption (QE) behav
 - Set context error state during KMS provider validation.
 ## 1.6.1
 ## Fixed
-- Fix libbson dependency in pkg-config for PPA.
+- Fix libbson dependency in pkg-config for MongoDB repository package.
 ## 1.6.0
 ## New Features
 - Support accessToken to authenticate with Azure.
