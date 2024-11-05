@@ -81,6 +81,10 @@ typedef struct __mongocrypt_tester_t {
     _mongocrypt_buffer_t encrypted_doc;
 } _mongocrypt_tester_t;
 
+// `_mongocrypt_tester_t` inherits extended alignment from libbson. To dynamically allocate, use aligned allocation
+// (e.g. BSON_ALIGNED_ALLOC)
+BSON_STATIC_ASSERT2(alignof__mongocrypt_tester_t, BSON_ALIGNOF(_mongocrypt_tester_t) >= BSON_ALIGNOF(bson_t));
+
 /* Load a .json file as bson */
 void _load_json_as_bson(const char *path, bson_t *out);
 
@@ -187,6 +191,8 @@ void _mongocrypt_tester_install_fle2_payload_iup_v2(_mongocrypt_tester_t *tester
 void _mongocrypt_tester_install_fle2_payload_find_equality_v2(_mongocrypt_tester_t *tester);
 
 void _mongocrypt_tester_install_fle2_payload_find_range_v2(_mongocrypt_tester_t *tester);
+
+void _mongocrypt_tester_install_fle2_tag_and_encrypted_metadata_block(_mongocrypt_tester_t *tester);
 
 void _mongocrypt_tester_install_gcp_auth(_mongocrypt_tester_t *tester);
 
