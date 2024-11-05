@@ -1520,7 +1520,7 @@ MONGOCRYPT_EXPORT
 bool mongocrypt_ctx_setopt_algorithm_range(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *opts);
 
 /**
- * Set the expiration time for the key encryption key cache. Defaults to 60 seconds if not set.
+ * Set the expiration time for the data encryption key cache. Defaults to 60 seconds if not set.
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
  * @param[in] cache_expiration_ms The cache expiration time in milliseconds. If zero, the cache
