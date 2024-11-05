@@ -62,6 +62,24 @@ void _load_json_as_bson(const char *path, bson_t *out) {
     bson_json_reader_destroy(reader);
 }
 
+void _usleep(int64_t usec) {
+#ifdef _WIN32
+    LARGE_INTEGER ft;
+    HANDLE timer;
+
+    BSON_ASSERT(usec >= 0);
+
+    ft.QuadPart = -(10 * usec);
+    timer = CreateWaitableTimer(NULL, true, NULL);
+    SetWaitableTimer(timer, &ft, 0, NULL, NULL, 0);
+    WaitForSingleObject(timer, INFINITE);
+    CloseHandle(timer);
+#else
+    BSON_ASSERT(usec >= 0);
+    usleep((useconds_t)usec);
+#endif
+}
+
 #define TEST_DATA_COUNT_INC(var)                                                                                       \
     (var)++;                                                                                                           \
     if ((var) >= TEST_DATA_COUNT) {                                                                                    \
@@ -500,6 +518,9 @@ mongocrypt_t *_mongocrypt_tester_mongocrypt(tester_mongocrypt_flags flags) {
         ASSERT(mongocrypt_setopt_use_range_v2(crypt));
     } else {
         crypt->opts.use_range_v2 = false;
+    }
+    if (flags & TESTER_MONGOCRYPT_WITH_SHORT_CACHE) {
+        ASSERT(mongocrypt_setopt_key_expiration(crypt, 1));
     }
     ASSERT_OK(mongocrypt_init(crypt), crypt);
     if (flags & TESTER_MONGOCRYPT_WITH_CRYPT_SHARED_LIB) {
