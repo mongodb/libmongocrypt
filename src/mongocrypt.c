@@ -224,6 +224,11 @@ bool mongocrypt_setopt_kms_provider_aws(mongocrypt_t *crypt,
 
 bool mongocrypt_setopt_key_expiration(mongocrypt_t *crypt, uint64_t cache_expiration_ms) {
     ASSERT_MONGOCRYPT_PARAM_UNINIT(crypt);
+    if (cache_expiration_ms > INT64_MAX) {
+        mongocrypt_status_t *status = crypt->status;
+        CLIENT_ERR("expiration time must be less than %" PRId64 ", but got %" PRIu64, INT64_MAX, cache_expiration_ms);
+        return false;
+    }
     crypt->cache_key.expiration = cache_expiration_ms;
     return true;
 }
