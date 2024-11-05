@@ -241,7 +241,6 @@ void _test_ctx_wrap_and_feed_key(mongocrypt_ctx_t *ctx,
                                  _mongocrypt_buffer_t *key,
                                  mongocrypt_status_t *status);
 
-
 void _usleep(int64_t usec);
 
 #endif
