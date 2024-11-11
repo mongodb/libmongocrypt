@@ -133,6 +133,8 @@ DECL_TOKEN_TYPE(mc_ServerCountAndContentionFactorEncryptionToken,
 DECL_TOKEN_TYPE(mc_ServerZerosEncryptionToken, const mc_ServerDerivedFromDataToken_t *serverDerivedFromDataToken);
 
 DECL_TOKEN_TYPE(mc_AnchorPaddingTokenRoot, const mc_ESCToken_t *ESCToken);
+DECL_TOKEN_TYPE(mc_AnchorPaddingKeyToken, const mc_AnchorPaddingTokenRoot_t *anchorPaddingToken);
+DECL_TOKEN_TYPE(mc_AnchorPaddingValueToken, const mc_AnchorPaddingTokenRoot_t *anchorPaddingToken);
 
 #undef DECL_TOKEN_TYPE
 #undef DECL_TOKEN_TYPE_1
