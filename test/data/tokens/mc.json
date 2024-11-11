@@ -21,5 +21,7 @@
    "ESCTwiceDerivedValueToken": "34150c6f5ab56dc39ddb935accb7f53e5276322fa937650b76a4dda9723d6fba",
    "serverCountAndContentionFactorEncryptionToken": "a8c4a477e5518a527f718a5a1530919f2dad13b1f3559833e17b479711cbdbb9",
    "serverZerosEncryptionToken": "95fda1e139ef1dc84260d4d3ebaab7627a9676f4af7aeb1b596c7c14a0b3a2ea",
-   "AnchorPaddingTokenRoot": "d5072cc56d9241470b9771292c3f75d950cba1cf842ca6707d1adfec5ec6f3e7"
+   "AnchorPaddingTokenRoot": "d5072cc56d9241470b9771292c3f75d950cba1cf842ca6707d1adfec5ec6f3e7",
+   "AnchorPaddingKeyToken": "4665ff3ea2d8268d3e6c5d85ddbe6a79d74c45898012afdd4f5d2afb4472957e",
+   "AnchorPaddingValueToken": "38cba0ac9914890d646387c9796edbba771b039ce9615457d7cc169df502f78f"
 }
