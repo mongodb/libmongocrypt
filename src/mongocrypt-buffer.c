@@ -317,33 +317,34 @@ fail:
     return ret;
 }
 
-void _mongocrypt_buffer_from_iter(_mongocrypt_buffer_t *plaintext, bson_iter_t *iter) {
-    bson_t wrapper = BSON_INITIALIZER;
-    int32_t offset = INT32_LEN      /* skips document size */
-                   + TYPE_LEN       /* element type */
-                   + NULL_BYTE_LEN; /* and the key's null byte terminator */
+#define IMPLEMENT_BUFFER_FROM_ITER_OR_VALUE(param)                                                                     \
+    void _mongocrypt_buffer_from_##param(_mongocrypt_buffer_t *plaintext, bson_##param##_t *arg) {                     \
+        bson_t wrapper = BSON_INITIALIZER;                                                                             \
+        int32_t offset = INT32_LEN      /* skips document size */                                                      \
+                       + TYPE_LEN       /* element type */                                                             \
+                       + NULL_BYTE_LEN; /* and the key's null byte terminator */                                       \
+        uint8_t *wrapper_data;                                                                                         \
+        BSON_ASSERT_PARAM(plaintext);                                                                                  \
+        BSON_ASSERT_PARAM(arg);                                                                                        \
+        /* It is not straightforward to transform a bson_value_t to a string of                                        \
+         * bytes. As a workaround, we wrap the value in a bson document with an empty                                  \
+         * key, then use the raw buffer from inside the new bson_t, skipping the                                       \
+         * length and type header information and the key name. */                                                     \
+        bson_append_##param(&wrapper, "", 0, arg);                                                                     \
+        wrapper_data = ((uint8_t *)bson_get_data(&wrapper));                                                           \
+        BSON_ASSERT(wrapper.len >= (uint32_t)offset + NULL_BYTE_LEN);                                                  \
+        plaintext->len = wrapper.len - (uint32_t)offset - NULL_BYTE_LEN; /* the final null byte */                     \
+        plaintext->data = bson_malloc(plaintext->len);                                                                 \
+        BSON_ASSERT(plaintext->data);                                                                                  \
+        plaintext->owned = true;                                                                                       \
+        memcpy(plaintext->data, wrapper_data + offset, plaintext->len);                                                \
+        bson_destroy(&wrapper);                                                                                        \
+    }
 
-    uint8_t *wrapper_data;
+IMPLEMENT_BUFFER_FROM_ITER_OR_VALUE(iter);
+IMPLEMENT_BUFFER_FROM_ITER_OR_VALUE(value);
 
-    BSON_ASSERT_PARAM(plaintext);
-    BSON_ASSERT_PARAM(iter);
-
-    /* It is not straightforward to transform a bson_value_t to a string of
-     * bytes. As a workaround, we wrap the value in a bson document with an empty
-     * key, then use the raw buffer from inside the new bson_t, skipping the
-     * length and type header information and the key name. */
-    bson_append_iter(&wrapper, "", 0, iter);
-    wrapper_data = ((uint8_t *)bson_get_data(&wrapper));
-    BSON_ASSERT(wrapper.len >= (uint32_t)offset + NULL_BYTE_LEN);
-    plaintext->len = wrapper.len - (uint32_t)offset - NULL_BYTE_LEN; /* the final null byte */
-    plaintext->data = bson_malloc(plaintext->len);
-    BSON_ASSERT(plaintext->data);
-
-    plaintext->owned = true;
-    memcpy(plaintext->data, wrapper_data + offset, plaintext->len);
-
-    bson_destroy(&wrapper);
-}
+#undef IMPLEMENT_BUFFER_FROM_ITER_OR_VALUE
 
 bool _mongocrypt_buffer_from_uuid_iter(_mongocrypt_buffer_t *buf, bson_iter_t *iter) {
     const uint8_t *data;

@@ -92,6 +92,8 @@ bool _mongocrypt_buffer_to_bson_value(_mongocrypt_buffer_t *plaintext,
 
 void _mongocrypt_buffer_from_iter(_mongocrypt_buffer_t *plaintext, bson_iter_t *iter);
 
+void _mongocrypt_buffer_from_value(_mongocrypt_buffer_t *plaintext, bson_value_t *value);
+
 bool _mongocrypt_buffer_from_uuid_iter(_mongocrypt_buffer_t *buf, bson_iter_t *iter) MONGOCRYPT_WARN_UNUSED_RESULT;
 
 bool _mongocrypt_buffer_copy_from_uuid_iter(_mongocrypt_buffer_t *buf, bson_iter_t *iter) MONGOCRYPT_WARN_UNUSED_RESULT;
