@@ -29,7 +29,9 @@
         _mongocrypt_buffer_t data;                                                                                     \
     };                                                                                                                 \
     /* Data-getter */                                                                                                  \
-    const _mongocrypt_buffer_t *BSON_CONCAT(Prefix, _get)(const T *self) { return &self->data; }                       \
+    const _mongocrypt_buffer_t *BSON_CONCAT(Prefix, _get)(const T *self) {                                             \
+        return &self->data;                                                                                            \
+    }                                                                                                                  \
     /* Destructor */                                                                                                   \
     void BSON_CONCAT(Prefix, _destroy)(T * self) {                                                                     \
         if (!self) {                                                                                                   \
@@ -177,3 +179,9 @@ DEF_TOKEN_TYPE(mc_AnchorPaddingTokenRoot, const mc_ESCToken_t *ESCToken) {
 }
 
 #undef ANCHOR_PADDING_TOKEN_D_LENGTH
+
+DEF_TOKEN_TYPE(mc_AnchorPaddingKeyToken, const mc_AnchorPaddingTokenRoot_t *anchorPaddingToken)
+IMPL_TOKEN_NEW_CONST(mc_AnchorPaddingKeyToken, mc_AnchorPaddingTokenRoot_get(anchorPaddingToken), 1)
+
+DEF_TOKEN_TYPE(mc_AnchorPaddingValueToken, const mc_AnchorPaddingTokenRoot_t *anchorPaddingToken)
+IMPL_TOKEN_NEW_CONST(mc_AnchorPaddingValueToken, mc_AnchorPaddingTokenRoot_get(anchorPaddingToken), 2)
