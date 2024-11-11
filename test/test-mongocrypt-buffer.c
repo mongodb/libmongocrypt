@@ -232,6 +232,32 @@ static void _test_mongocrypt_buffer_from_subrange(_mongocrypt_tester_t *tester) 
     _mongocrypt_buffer_cleanup(&input);
 }
 
+static void _test_mongocrypt_buffer_copy_from_value(_mongocrypt_tester_t *tester) {
+    // See comment in _test_mongocrypt_buffer_from_iter for explaination on how the buffer output should look.
+    _mongocrypt_buffer_t buf;
+    bson_value_t val;
+    char actual[100] = {0};
+
+    // UTF-8
+    val.value_type = BSON_TYPE_UTF8;
+    val.value.v_utf8.str = TEST_STRING;
+    val.value.v_utf8.len = strlen(TEST_STRING);
+
+    _mongocrypt_buffer_from_value(&buf, &val);
+    _get_bytes(buf.data, actual, buf.len);
+    BSON_ASSERT(0 == strcmp("06 00 00 00 3F 3F 3F 3F 3F 00", actual));
+    _mongocrypt_buffer_cleanup(&buf);
+
+    // int
+    val.value_type = BSON_TYPE_INT32;
+    val.value.v_int32 = TEST_INT;
+
+    _mongocrypt_buffer_from_value(&buf, &val);
+    _get_bytes(buf.data, actual, buf.len);
+    BSON_ASSERT(0 == strcmp("63 C5 54 00", actual));
+    _mongocrypt_buffer_cleanup(&buf);
+}
+
 void _mongocrypt_tester_install_buffer(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_mongocrypt_buffer_from_iter);
     INSTALL_TEST(_test_mongocrypt_buffer_copy_from_data_and_size);
@@ -239,4 +265,5 @@ void _mongocrypt_tester_install_buffer(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_mongocrypt_buffer_steal_from_string);
     INSTALL_TEST(_test_mongocrypt_buffer_copy_from_uint64_le);
     INSTALL_TEST(_test_mongocrypt_buffer_from_subrange);
+    INSTALL_TEST(_test_mongocrypt_buffer_copy_from_value);
 }
