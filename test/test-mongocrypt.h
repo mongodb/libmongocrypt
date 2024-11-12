@@ -44,6 +44,8 @@ typedef enum tester_mongocrypt_flags {
     TESTER_MONGOCRYPT_WITH_CRYPT_V1 = 1 << 1,
     /// Enable range V2
     TESTER_MONGOCRYPT_WITH_RANGE_V2 = 1 << 2,
+    /// Short cache expiration
+    TESTER_MONGOCRYPT_WITH_SHORT_CACHE = 1 << 3,
 } tester_mongocrypt_flags;
 
 /* Arbitrary max of 2048 instances of temporary test data. Increase as needed.
@@ -78,6 +80,10 @@ typedef struct __mongocrypt_tester_t {
     /* Example encrypted doc. */
     _mongocrypt_buffer_t encrypted_doc;
 } _mongocrypt_tester_t;
+
+// `_mongocrypt_tester_t` inherits extended alignment from libbson. To dynamically allocate, use aligned allocation
+// (e.g. BSON_ALIGNED_ALLOC)
+BSON_STATIC_ASSERT2(alignof__mongocrypt_tester_t, BSON_ALIGNOF(_mongocrypt_tester_t) >= BSON_ALIGNOF(bson_t));
 
 /* Load a .json file as bson */
 void _load_json_as_bson(const char *path, bson_t *out);
@@ -186,6 +192,8 @@ void _mongocrypt_tester_install_fle2_payload_find_equality_v2(_mongocrypt_tester
 
 void _mongocrypt_tester_install_fle2_payload_find_range_v2(_mongocrypt_tester_t *tester);
 
+void _mongocrypt_tester_install_fle2_tag_and_encrypted_metadata_block(_mongocrypt_tester_t *tester);
+
 void _mongocrypt_tester_install_gcp_auth(_mongocrypt_tester_t *tester);
 
 void _mongocrypt_tester_install_range_encoding(_mongocrypt_tester_t *tester);
@@ -205,6 +213,8 @@ void _mongocrypt_tester_install_mc_writer(_mongocrypt_tester_t *tester);
 void _mongocrypt_tester_install_opts(_mongocrypt_tester_t *tester);
 
 void _mongocrypt_tester_install_named_kms_providers(_mongocrypt_tester_t *tester);
+
+void _mongocrypt_tester_install_mc_cmp(_mongocrypt_tester_t *tester);
 
 /* Conveniences for getting test data. */
 
@@ -236,5 +246,7 @@ void _test_ctx_wrap_and_feed_key(mongocrypt_ctx_t *ctx,
                                  const _mongocrypt_buffer_t *id,
                                  _mongocrypt_buffer_t *key,
                                  mongocrypt_status_t *status);
+
+void _usleep(int64_t usec);
 
 #endif

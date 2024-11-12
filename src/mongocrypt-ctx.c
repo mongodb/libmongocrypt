@@ -282,7 +282,6 @@ bool mongocrypt_ctx_setopt_algorithm(mongocrypt_ctx_t *ctx, const char *algorith
 
 mongocrypt_ctx_t *mongocrypt_ctx_new(mongocrypt_t *crypt) {
     mongocrypt_ctx_t *ctx;
-    size_t ctx_size;
 
     if (!crypt) {
         return NULL;
@@ -294,19 +293,17 @@ mongocrypt_ctx_t *mongocrypt_ctx_new(mongocrypt_t *crypt) {
         CLIENT_ERR("cannot create context from uninitialized crypt");
         return NULL;
     }
-    ctx_size = sizeof(_mongocrypt_ctx_encrypt_t);
-    if (sizeof(_mongocrypt_ctx_decrypt_t) > ctx_size) {
-        ctx_size = sizeof(_mongocrypt_ctx_decrypt_t);
-    }
-    if (sizeof(_mongocrypt_ctx_datakey_t) > ctx_size) {
-        ctx_size = sizeof(_mongocrypt_ctx_datakey_t);
-    }
-    ctx = bson_malloc0(ctx_size);
+
+    // Allocate with memory and alignment large enough for any possible context type.
+    static const size_t ctx_alignment = MONGOCRYPT_CTX_ALLOC_ALIGNMENT;
+    static const size_t ctx_size = MONGOCRYPT_CTX_ALLOC_SIZE;
+    ctx = bson_aligned_alloc0(ctx_alignment, ctx_size);
     BSON_ASSERT(ctx);
 
     ctx->crypt = crypt;
     ctx->status = mongocrypt_status_new();
     ctx->opts.algorithm = MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE;
+    ctx->opts.retry_enabled = crypt->retry_enabled;
     ctx->state = MONGOCRYPT_CTX_DONE;
     return ctx;
 }
@@ -513,8 +510,9 @@ mongocrypt_kms_ctx_t *mongocrypt_ctx_next_kms_ctx(mongocrypt_ctx_t *ctx) {
         return NULL;
     }
 
+    mongocrypt_kms_ctx_t *ret;
     switch (ctx->state) {
-    case MONGOCRYPT_CTX_NEED_KMS: return ctx->vtable.next_kms_ctx(ctx);
+    case MONGOCRYPT_CTX_NEED_KMS: ret = ctx->vtable.next_kms_ctx(ctx); break;
     case MONGOCRYPT_CTX_ERROR: return NULL;
     case MONGOCRYPT_CTX_DONE:
     case MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS:
@@ -525,6 +523,11 @@ mongocrypt_kms_ctx_t *mongocrypt_ctx_next_kms_ctx(mongocrypt_ctx_t *ctx) {
     case MONGOCRYPT_CTX_READY:
     default: _mongocrypt_ctx_fail_w_msg(ctx, "wrong state"); return NULL;
     }
+
+    if (ret) {
+        ret->retry_enabled = ctx->opts.retry_enabled;
+    }
+    return ret;
 }
 
 bool mongocrypt_ctx_provide_kms_providers(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *kms_providers_definition) {

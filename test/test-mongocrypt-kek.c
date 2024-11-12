@@ -45,7 +45,7 @@ static void _run_one_test(_mongocrypt_tester_t *tester, bson_t *test) {
         expect_append = expect;
     }
 
-    input_str = bson_as_json(&input, NULL);
+    input_str = bson_as_relaxed_extended_json(&input, NULL);
     printf("- testcase: %s\n", input_str);
     bson_free(input_str);
 

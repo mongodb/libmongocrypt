@@ -807,6 +807,13 @@ mongocrypt_kms_ctx_t *_mongocrypt_key_broker_next_kms(_mongocrypt_key_broker_t *
         // Return the first not-yet-returned auth request.
         for (size_t i = 0; i < mc_mapof_kmsid_to_authrequest_len(kb->auth_requests); i++) {
             auth_request_t *ar = mc_mapof_kmsid_to_authrequest_at(kb->auth_requests, i);
+
+            if (ar->kms.should_retry) {
+                ar->kms.should_retry = false;
+                ar->returned = true;
+                return &ar->kms;
+            }
+
             if (ar->returned) {
                 continue;
             }
@@ -817,6 +824,13 @@ mongocrypt_kms_ctx_t *_mongocrypt_key_broker_next_kms(_mongocrypt_key_broker_t *
         return NULL;
     }
 
+    // Check if any requests need retry
+    for (key_returned_t *ptr = kb->keys_returned; ptr != NULL; ptr = ptr->next) {
+        if (ptr->kms.should_retry) {
+            ptr->kms.should_retry = false;
+            return &ptr->kms;
+        }
+    }
     while (kb->decryptor_iter) {
         if (!kb->decryptor_iter->decrypted) {
             key_returned_t *key_returned;
@@ -1148,6 +1162,7 @@ void _mongocrypt_key_broker_add_test_key(_mongocrypt_key_broker_t *kb, const _mo
     key_returned->decrypted = true;
     _mongocrypt_buffer_init(&key_returned->decrypted_key_material);
     _mongocrypt_buffer_resize(&key_returned->decrypted_key_material, MONGOCRYPT_KEY_LEN);
+    // Initialize test key material with all zeros.
     memset(key_returned->decrypted_key_material.data, 0, MONGOCRYPT_KEY_LEN);
     _mongocrypt_key_destroy(key_doc);
     /* Hijack state and move directly to DONE. */

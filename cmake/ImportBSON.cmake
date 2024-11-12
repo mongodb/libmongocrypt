@@ -140,8 +140,10 @@ function (_import_bson)
       set (ENABLE_SNAPPY OFF CACHE BOOL "Toggle snappy for the mongoc subproject (not required by libmongocrypt)")
       # Disable deprecated automatic init and cleanup. (May be overridden by the user)
       set (ENABLE_AUTOMATIC_INIT_AND_CLEANUP OFF CACHE BOOL "Enable automatic init and cleanup (GCC only)")
-      # Disable over-alignment of bson types. (May be overridden by the user)
-      set (ENABLE_EXTRA_ALIGNMENT ${_extra_alignment_default} CACHE BOOL "Toggle extra alignment of bson_t")
+      if (DEFINED _extra_alignment_default)
+         # Disable over-alignment of bson types. (May be overridden by the user)
+         set (ENABLE_EXTRA_ALIGNMENT ${_extra_alignment_default} CACHE BOOL "Toggle extra alignment of bson_t")
+      endif ()
       # We don't want the subproject to find libmongocrypt
       set (ENABLE_CLIENT_SIDE_ENCRYPTION OFF CACHE BOOL "Disable client-side encryption for the libmongoc subproject")
       # Clear `BUILD_VERSION` so C driver does not use a `BUILD_VERSION` meant for libmongocrypt.

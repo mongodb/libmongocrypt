@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include "mongocrypt.h"
 #include "mlib/error.h"
 #include "mlib/path.h"
 #include "mlib/thread.h"
@@ -24,6 +25,7 @@
 #include "mongocrypt-binary-private.h"
 #include "mongocrypt-cache-collinfo-private.h"
 #include "mongocrypt-cache-key-private.h"
+#include "mongocrypt-cache-private.h"
 #include "mongocrypt-config.h"
 #include "mongocrypt-crypto-private.h"
 #include "mongocrypt-log-private.h"
@@ -167,6 +169,12 @@ bool mongocrypt_setopt_log_handler(mongocrypt_t *crypt, mongocrypt_log_fn_t log_
     return true;
 }
 
+bool mongocrypt_setopt_retry_kms(mongocrypt_t *crypt, bool enable) {
+    ASSERT_MONGOCRYPT_PARAM_UNINIT(crypt);
+    crypt->retry_enabled = enable;
+    return true;
+}
+
 bool mongocrypt_setopt_kms_provider_aws(mongocrypt_t *crypt,
                                         const char *aws_access_key_id,
                                         int32_t aws_access_key_id_len,
@@ -211,6 +219,17 @@ bool mongocrypt_setopt_kms_provider_aws(mongocrypt_t *crypt,
                         aws_secret_access_key_len);
     }
     kms_providers->configured_providers |= MONGOCRYPT_KMS_PROVIDER_AWS;
+    return true;
+}
+
+bool mongocrypt_setopt_key_expiration(mongocrypt_t *crypt, uint64_t cache_expiration_ms) {
+    ASSERT_MONGOCRYPT_PARAM_UNINIT(crypt);
+    if (cache_expiration_ms > INT64_MAX) {
+        mongocrypt_status_t *status = crypt->status;
+        CLIENT_ERR("expiration time must be less than %" PRId64 ", but got %" PRIu64, INT64_MAX, cache_expiration_ms);
+        return false;
+    }
+    crypt->cache_key.expiration = cache_expiration_ms;
     return true;
 }
 

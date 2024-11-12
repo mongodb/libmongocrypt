@@ -54,6 +54,11 @@ typedef struct {
     mc_optional_int32_t trimFactor;
 } mc_FLE2RangeFindSpecEdgesInfo_t;
 
+// `mc_FLE2RangeFindSpecEdgesInfo_t` inherits extended alignment from libbson. To dynamically allocate, use
+// aligned allocation (e.g. BSON_ALIGNED_ALLOC)
+BSON_STATIC_ASSERT2(alignof_mc_FLE2RangeFindSpecEdgesInfo_t,
+                    BSON_ALIGNOF(mc_FLE2RangeFindSpecEdgesInfo_t) >= BSON_ALIGNOF(bson_iter_t));
+
 /** FLE2RangeFindSpec represents the range find specification that is encoded
  * inside of a FLE2EncryptionPlaceholder. See
  * https://github.com/mongodb/mongo/blob/master/src/mongo/crypto/fle_field_schema.idl
@@ -75,6 +80,11 @@ typedef struct {
     // was generated. Only populated for two-sided ranges. It is 0 if unset.
     mc_FLE2RangeOperator_t secondOperator;
 } mc_FLE2RangeFindSpec_t;
+
+// `mc_FLE2RangeFindSpec_t` inherits extended alignment from libbson. To dynamically allocate, use
+// aligned allocation (e.g. BSON_ALIGNED_ALLOC)
+BSON_STATIC_ASSERT2(alignof_mc_FLE2RangeFindSpec_t,
+                    BSON_ALIGNOF(mc_FLE2RangeFindSpec_t) >= BSON_ALIGNOF(mc_FLE2RangeFindSpecEdgesInfo_t));
 
 bool mc_FLE2RangeFindSpec_parse(mc_FLE2RangeFindSpec_t *out,
                                 const bson_iter_t *in,
@@ -98,6 +108,11 @@ typedef struct {
     // trimFactor determines how many root levels of the hypergraph to trim.
     mc_optional_int32_t trimFactor;
 } mc_FLE2RangeInsertSpec_t;
+
+// `mc_FLE2RangeInsertSpec_t` inherits extended alignment from libbson. To dynamically allocate, use
+// aligned allocation (e.g. BSON_ALIGNED_ALLOC)
+BSON_STATIC_ASSERT2(alignof_mc_FLE2RangeInsertSpec_t,
+                    BSON_ALIGNOF(mc_FLE2RangeInsertSpec_t) >= BSON_ALIGNOF(bson_iter_t));
 
 bool mc_FLE2RangeInsertSpec_parse(mc_FLE2RangeInsertSpec_t *out,
                                   const bson_iter_t *in,
@@ -130,6 +145,11 @@ typedef struct {
     // sparsity is the Queryable Encryption range hypergraph sparsity factor
     int64_t sparsity;
 } mc_FLE2EncryptionPlaceholder_t;
+
+// `mc_FLE2EncryptionPlaceholder_t` inherits extended alignment from libbson. To dynamically allocate, use
+// aligned allocation (e.g. BSON_ALIGNED_ALLOC)
+BSON_STATIC_ASSERT2(alignof_mc_FLE2EncryptionPlaceholder_t,
+                    BSON_ALIGNOF(mc_FLE2EncryptionPlaceholder_t) >= BSON_ALIGNOF(bson_iter_t));
 
 void mc_FLE2EncryptionPlaceholder_init(mc_FLE2EncryptionPlaceholder_t *placeholder);
 

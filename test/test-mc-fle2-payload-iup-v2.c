@@ -238,6 +238,8 @@ static void _test_mc_FLE2InsertUpdatePayloadV2_parses_crypto_params(_mongocrypt_
 
     ASSERT(got.indexMax.value_type == BSON_TYPE_INT32);
     ASSERT_CMPINT32(got.indexMax.value.v_int32, ==, 1234567);
+
+    mc_FLE2InsertUpdatePayloadV2_cleanup(&got);
 }
 
 void _mongocrypt_tester_install_fle2_payload_iup_v2(_mongocrypt_tester_t *tester) {

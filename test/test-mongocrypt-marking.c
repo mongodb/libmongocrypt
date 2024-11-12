@@ -173,12 +173,14 @@ static void test_mongocrypt_marking_parse(_mongocrypt_tester_t *tester) {
 
 #define ASSERT_MINCOVER_EQ(got, expectString)                                                                          \
     if (1) {                                                                                                           \
-        bson_string_t *gotStr = bson_string_new("");                                                                   \
+        char *gotStr = bson_strdup("");                                                                                \
         for (size_t i = 0; i < mc_mincover_len(got); i++) {                                                            \
-            bson_string_append_printf(gotStr, "%s\n", mc_mincover_get(got, i));                                        \
+            char *previous = gotStr;                                                                                   \
+            gotStr = bson_strdup_printf("%s%s\n", gotStr, mc_mincover_get(got, i));                                    \
+            bson_free(previous);                                                                                       \
         }                                                                                                              \
-        ASSERT_STREQUAL(gotStr->str, expectString);                                                                    \
-        bson_string_free(gotStr, true);                                                                                \
+        ASSERT_STREQUAL(gotStr, expectString);                                                                         \
+        bson_free(gotStr);                                                                                             \
     } else                                                                                                             \
         ((void)0)
 

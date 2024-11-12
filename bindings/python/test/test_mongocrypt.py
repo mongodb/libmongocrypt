@@ -478,7 +478,8 @@ class MockAsyncCallback(AsyncMongoCryptCallback):
         return self.mongocryptd_reply
 
     async def fetch_keys(self, filter):
-        return self.key_docs
+        for doc in self.key_docs:
+            yield doc
 
     async def insert_data_key(self, data_key):
         raise NotImplementedError

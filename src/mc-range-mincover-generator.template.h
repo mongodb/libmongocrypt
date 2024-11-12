@@ -124,7 +124,7 @@ static inline DECORATE_NAME(MinCoverGenerator)
     }
     size_t maxlen = (size_t)BITS - DECORATE_NAME(mc_count_leading_zeros)(max);
     int32_t trimFactor = trimFactorDefault(maxlen, opt_trimFactor, use_range_v2);
-    if (trimFactor != 0 && bson_cmp_greater_equal_su(trimFactor, maxlen)) {
+    if (trimFactor != 0 && mc_cmp_greater_equal_su(trimFactor, maxlen)) {
         CLIENT_ERR("Trim factor must be less than the number of bits (%ld) used to represent an element of the domain, "
                    "but got %" PRId32,
                    maxlen,
@@ -169,7 +169,7 @@ static inline bool DECORATE_NAME(MinCoverGenerator_isLevelStored)(DECORATE_NAME(
                                                                   size_t maskedBits) {
     BSON_ASSERT_PARAM(mcg);
     size_t level = mcg->_maxlen - maskedBits;
-    BSON_ASSERT(bson_in_range_size_t_signed(mcg->_trimFactor));
+    BSON_ASSERT(mc_in_range_size_t_signed(mcg->_trimFactor));
     size_t trimFactor_sz = (size_t)mcg->_trimFactor;
     return 0 == maskedBits || (level >= trimFactor_sz && 0 == (level % mcg->_sparsity));
 }

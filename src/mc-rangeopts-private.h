@@ -40,12 +40,17 @@ typedef struct {
     mc_optional_int32_t trimFactor;
 } mc_RangeOpts_t;
 
+// `mc_RangeOpts_t` inherits extended alignment from libbson. To dynamically allocate, use
+// aligned allocation (e.g. BSON_ALIGNED_ALLOC)
+BSON_STATIC_ASSERT2(alignof_mc_RangeOpts_t,
+                    BSON_ALIGNOF(mc_RangeOpts_t) >= BSON_MAX(BSON_ALIGNOF(bson_t), BSON_ALIGNOF(bson_iter_t)));
+
 /* mc_RangeOpts_parse parses a BSON document into mc_RangeOpts_t.
  * The document is expected to have the form:
  * {
  *    "min": BSON value,
  *    "max": BSON value,
- *    "sparsity": Int64,
+ *    "sparsity": Optional<Int64>,
  *    "precision": Optional<Int32>,
  *    "trimFactor": Optional<Int32>,
  * }

@@ -62,6 +62,24 @@ void _load_json_as_bson(const char *path, bson_t *out) {
     bson_json_reader_destroy(reader);
 }
 
+void _usleep(int64_t usec) {
+#ifdef _WIN32
+    LARGE_INTEGER ft;
+    HANDLE timer;
+
+    BSON_ASSERT(usec >= 0);
+
+    ft.QuadPart = -(10 * usec);
+    timer = CreateWaitableTimer(NULL, true, NULL);
+    SetWaitableTimer(timer, &ft, 0, NULL, NULL, 0);
+    WaitForSingleObject(timer, INFINITE);
+    CloseHandle(timer);
+#else
+    BSON_ASSERT(usec >= 0);
+    usleep((useconds_t)usec);
+#endif
+}
+
 #define TEST_DATA_COUNT_INC(var)                                                                                       \
     (var)++;                                                                                                           \
     if ((var) >= TEST_DATA_COUNT) {                                                                                    \
@@ -461,6 +479,7 @@ mongocrypt_t *_mongocrypt_tester_mongocrypt(tester_mongocrypt_flags flags) {
     crypt = mongocrypt_new();
     mongocrypt_setopt_log_handler(crypt, _mongocrypt_stdout_log_fn, NULL);
     mongocrypt_setopt_kms_provider_aws(crypt, "example", -1, "example", -1);
+    mongocrypt_setopt_retry_kms(crypt, true);
     localkey = mongocrypt_binary_new_from_data((uint8_t *)localkey_data, sizeof localkey_data);
     mongocrypt_setopt_kms_provider_local(crypt, localkey);
     mongocrypt_binary_destroy(localkey);
@@ -499,6 +518,9 @@ mongocrypt_t *_mongocrypt_tester_mongocrypt(tester_mongocrypt_flags flags) {
         ASSERT(mongocrypt_setopt_use_range_v2(crypt));
     } else {
         crypt->opts.use_range_v2 = false;
+    }
+    if (flags & TESTER_MONGOCRYPT_WITH_SHORT_CACHE) {
+        ASSERT(mongocrypt_setopt_key_expiration(crypt, 1));
     }
     ASSERT_OK(mongocrypt_init(crypt), crypt);
     if (flags & TESTER_MONGOCRYPT_WITH_CRYPT_SHARED_LIB) {
@@ -892,6 +914,7 @@ int main(int argc, char **argv) {
     _mongocrypt_tester_install_fle2_payload_iup_v2(&tester);
     _mongocrypt_tester_install_fle2_payload_find_equality_v2(&tester);
     _mongocrypt_tester_install_fle2_payload_find_range_v2(&tester);
+    _mongocrypt_tester_install_fle2_tag_and_encrypted_metadata_block(&tester);
     _mongocrypt_tester_install_range_encoding(&tester);
     _mongocrypt_tester_install_range_edge_generation(&tester);
     _mongocrypt_tester_install_range_mincover(&tester);
@@ -902,6 +925,7 @@ int main(int argc, char **argv) {
     _mongocrypt_tester_install_mc_writer(&tester);
     _mongocrypt_tester_install_opts(&tester);
     _mongocrypt_tester_install_named_kms_providers(&tester);
+    _mongocrypt_tester_install_mc_cmp(&tester);
 
 #ifdef MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO
     char osversion[32];

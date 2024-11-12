@@ -32,7 +32,11 @@ typedef struct {
     _mongocrypt_buffer_t K_Key;
     uint8_t bson_value_type;
     _mongocrypt_buffer_t bson_value;
+    uint8_t edge_count;
+    mc_FLE2TagAndEncryptedMetadataBlock_t *metadata;
 } _mc_fle2_iev_v2_test;
+
+#define kMetadataLen 96U
 
 static void _mc_fle2_iev_v2_test_destroy(_mc_fle2_iev_v2_test *test) {
     _mongocrypt_buffer_cleanup(&test->payload);
@@ -41,6 +45,11 @@ static void _mc_fle2_iev_v2_test_destroy(_mc_fle2_iev_v2_test *test) {
     _mongocrypt_buffer_cleanup(&test->K_KeyId);
     _mongocrypt_buffer_cleanup(&test->K_Key);
     _mongocrypt_buffer_cleanup(&test->bson_value);
+    for (int i = 0; i < test->edge_count; ++i) {
+        mc_FLE2TagAndEncryptedMetadataBlock_cleanup(&test->metadata[i]);
+    }
+
+    bson_free(test->metadata);
 }
 
 static bool _mc_fle2_iev_v2_test_parse(_mc_fle2_iev_v2_test *test, bson_iter_t *iter) {
@@ -83,6 +92,60 @@ static bool _mc_fle2_iev_v2_test_parse(_mc_fle2_iev_v2_test *test, bson_iter_t *
                 TEST_ERROR("Unknown type '%s'", value);
             }
             hasType = true;
+        } else if (!strcmp(field, "metadata")) {
+            ASSERT_OR_PRINT_MSG(!test->metadata, "Duplicate field 'metadata'");
+
+            // Use bson functions to loop through array
+            ASSERT(BSON_ITER_HOLDS_ARRAY(iter));
+            const uint8_t *metadata_array_data = NULL;
+            uint32_t metadata_array_len = 0;
+            bson_iter_array(iter, &metadata_array_len, &metadata_array_data);
+
+            bson_t metadata_array;
+            bson_iter_t metadata_array_iter;
+            if (!bson_init_static(&metadata_array, metadata_array_data, metadata_array_len)
+                || !bson_iter_init(&metadata_array_iter, &metadata_array)) {
+                TEST_ERROR("Failed to initialize array iterator");
+                return false;
+            }
+
+            // Count metadata blocks
+            size_t metadata_count = 0;
+            while (bson_iter_next(&metadata_array_iter)) {
+                ASSERT(BSON_ITER_HOLDS_UTF8(&metadata_array_iter));
+                metadata_count++;
+            }
+
+            // Allocate memory for the metadata array
+            test->metadata = (mc_FLE2TagAndEncryptedMetadataBlock_t *)bson_malloc0(
+                metadata_count * sizeof(mc_FLE2TagAndEncryptedMetadataBlock_t));
+            if (!test->metadata) {
+                TEST_ERROR("Failed to allocate memory for metadata array");
+                return false;
+            }
+
+            // Reinitialize iter and parse each metadata block
+            bson_iter_init(&metadata_array_iter, &metadata_array);
+            int i = 0;
+            while (bson_iter_next(&metadata_array_iter)) {
+                ASSERT(BSON_ITER_HOLDS_UTF8(&metadata_array_iter));
+
+                mongocrypt_status_t *tmp_status = mongocrypt_status_new();
+                const char *value = bson_iter_utf8(&metadata_array_iter, NULL);
+
+                _mongocrypt_buffer_t tmp_buf;
+                _mongocrypt_buffer_copy_from_hex(&tmp_buf, value);
+
+                ASSERT_OK_STATUS(mc_FLE2TagAndEncryptedMetadataBlock_parse(&test->metadata[i], &tmp_buf, tmp_status),
+                                 tmp_status);
+
+                _mongocrypt_buffer_cleanup(&tmp_buf);
+                mongocrypt_status_destroy(tmp_status);
+                i++;
+            }
+
+            test->edge_count = i;
+
         } else {
             TEST_ERROR("Unknown field '%s'", field);
         }
@@ -109,12 +172,14 @@ static void _mc_fle2_iev_v2_test_run(_mongocrypt_tester_t *tester, _mc_fle2_iev_
     mc_FLE2IndexedEncryptedValueV2_t *iev = mc_FLE2IndexedEncryptedValueV2_new();
 
     // Parse payload.
-    if (test->type == kTypeEquality) {
-        ASSERT_OK_STATUS(mc_FLE2IndexedEqualityEncryptedValueV2_parse(iev, &test->payload, status), status);
-    } else {
-        ASSERT(test->type == kTypeRange);
-        ASSERT_OK_STATUS(mc_FLE2IndexedRangeEncryptedValueV2_parse(iev, &test->payload, status), status);
-    }
+    ASSERT_OK_STATUS(mc_FLE2IndexedEncryptedValueV2_parse(iev, &test->payload, status), status);
+
+    // Reserialize and assert that the result is the same as the initial input
+    _mongocrypt_buffer_t serialized_buf;
+    _mongocrypt_buffer_init_size(&serialized_buf, test->payload.len);
+    ASSERT_OK_STATUS(mc_FLE2IndexedEncryptedValueV2_serialize(iev, &serialized_buf, status), status);
+    ASSERT_CMPBUF(serialized_buf, test->payload);
+    _mongocrypt_buffer_cleanup(&serialized_buf);
 
     // Validate S_KeyId as parsed.
     const _mongocrypt_buffer_t *S_KeyId = mc_FLE2IndexedEncryptedValueV2_get_S_KeyId(iev, status);
@@ -141,6 +206,27 @@ static void _mc_fle2_iev_v2_test_run(_mongocrypt_tester_t *tester, _mc_fle2_iev_
     const _mongocrypt_buffer_t *bson_value = mc_FLE2IndexedEncryptedValueV2_get_ClientValue(iev, status);
     ASSERT_OK_STATUS(bson_value, status);
     ASSERT_CMPBUF(*bson_value, test->bson_value);
+
+    uint8_t edge_count = 1;
+    if (test->type == kTypeRange) {
+        // Validate edge count
+        edge_count = mc_FLE2IndexedEncryptedValueV2_get_edge_count(iev, status);
+        ASSERT_OK_STATUS(edge_count, status);
+        ASSERT_CMPINT(edge_count, ==, test->edge_count);
+    }
+
+    // Validate edges/metadata
+    mc_FLE2TagAndEncryptedMetadataBlock_t metadata;
+    for (int i = 0; i < edge_count; ++i) {
+        if (test->type == kTypeRange) {
+            ASSERT(mc_FLE2IndexedEncryptedValueV2_get_edge(iev, &metadata, i, status));
+        } else {
+            ASSERT(mc_FLE2IndexedEncryptedValueV2_get_metadata(iev, &metadata, status));
+        }
+        ASSERT_CMPBUF(metadata.encryptedCount, test->metadata[i].encryptedCount);
+        ASSERT_CMPBUF(metadata.tag, test->metadata[i].tag);
+        ASSERT_CMPBUF(metadata.encryptedZeros, test->metadata[i].encryptedZeros);
+    }
 
     // All done!
     mc_FLE2IndexedEncryptedValueV2_destroy(iev);

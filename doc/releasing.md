@@ -17,8 +17,6 @@ Go to [Snyk](https://app.snyk.io/) and select the `dev-prod` organization. If ac
 
 ![Reference Targets](img/reference-targets.png)
 
-Copy the organization ID from [Snyk settings](https://app.snyk.io/org/dev-prod/manage/settings).
-
 ##### Update Snyk
 
 Update the Snyk reference target tracking the to-be-released branch. For a patch release (e.g. x.y.z), check-out the `rx.y` branch and update the `rx.y` reference target. For a minor release (e.g. x.y.0), check out the `master` branch update the `master` reference target.
@@ -40,15 +38,6 @@ snyk auth
 snyk monitor \
 --org=$ORGANIZATION_ID \
 --target-reference="<rx.y or master>" \
---unmanaged \
---remote-repo-url=https://github.com/mongodb/libmongocrypt.git
-```
-
-```bash
-snyk auth
-snyk monitor \
---org=$ORGANIZATION_ID \
---target-reference=<rx.y or master> \
 --unmanaged \
 --remote-repo-url=https://github.com/mongodb/libmongocrypt.git
 ```
@@ -80,7 +69,7 @@ Do the following when releasing:
 - Ensure `etc/purls.txt` is up-to-date.
 - Update `etc/third_party_vulnerabilities.md` with any updates to new or known vulnerabilities for third party dependencies that must be reported.
 - If this is a new minor release (e.g. `x.y.0`):
-   - Update the Linux distribution package installation instructions in the below sections to refer to the new version `x.y`.
+   - Update the Linux distribution package installation instructions in [README.md](../README.md) to refer to the new version `x.y`.
    - Update the [libmongocrypt-release](https://spruce.mongodb.com/project/libmongocrypt-release/settings/general) Evergreen project (requires auth) to set `Branch Name` to `rx.y`.
 - Commit the changes on the `rx.y` branch with a message like "Update CHANGELOG.md for x.y.z".
 - Tag the commit with `git tag -a <tag>`.
@@ -106,7 +95,7 @@ Do the following when releasing:
      For a new minor release, use `master` for `--branch`. For a patch release, use the release branch (e.g. `rx.y`).
      Secrets can be obtained from [AWS Secrets Manager](https://wiki.corp.mongodb.com/display/DRIVERS/Using+AWS+Secrets+Manager+to+Store+Testing+Secrets) under `drivers/libmongocrypt`.
    - Attach `etc/third_party_vulnerabilities.md` to the release.
-   - Attach `ssdlc_compliance_report.md` to the release.
+   - Attach `etc/ssdlc_compliance_report.md` to the release.
 
 - If this is a new minor release (e.g. `x.y.0`):
    - File a DOCSP ticket to update the installation instructions on [Install libmongocrypt](https://www.mongodb.com/docs/manual/core/csfle/reference/libmongocrypt/). ([Example](https://jira.mongodb.org/browse/DOCSP-36863))
@@ -150,4 +139,25 @@ Do the following when releasing:
 Submit a PR to update the Homebrew package https://github.com/mongodb/homebrew-brew/blob/master/Formula/libmongocrypt.rb. ([Example](https://github.com/mongodb/homebrew-brew/pull/208)). If not on macOS, request a team member to do this step.
 
 ## Debian steps ##
-Refer to the [Debian](https://github.com/mongodb/mongo-c-driver/blob/master/docs/dev/debian.rst) steps. If you are not a Debian maintainer on the team, request a team member to do this step.
+If you are not a Debian maintainer on the team, request a team member to do the steps in this section.
+
+Refer to the [Debian](https://github.com/mongodb/mongo-c-driver/blob/master/docs/dev/debian.rst) steps.
+
+For a minor release (e.g. x.y.0), submit a merge request to the [extrepo-data](https://salsa.debian.org/extrepo-team/extrepo-data) project in Debian to update the PPA. The change would look something like this:
+
+```
+diff --git a/repos/debian/libmongocrypt.yaml b/repos/debian/libmongocrypt.yaml
+index 609dc0b..f7530a9 100644
+--- a/repos/debian/libmongocrypt.yaml
++++ b/repos/debian/libmongocrypt.yaml
+@@ -4,7 +4,7 @@ libmongocrypt:
+   source:
+     Types: deb
+     URIs: https://libmongocrypt.s3.amazonaws.com/apt/debian
+-    Suites: <SUITE>/libmongocrypt/1.11
++    Suites: <SUITE>/libmongocrypt/1.12
+     Components: main
+     Architectures: amd64 arm64
+   suites:
+```
+
