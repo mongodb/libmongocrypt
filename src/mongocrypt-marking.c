@@ -460,7 +460,8 @@ static void _FLE2EncryptedPayloadCommon_cleanup(_FLE2EncryptedPayloadCommon_t *c
     _mongocrypt_buffer_cleanup(&common->escDerivedToken);
     _mongocrypt_buffer_cleanup(&common->eccDerivedToken);
     _mongocrypt_buffer_cleanup(&common->serverDerivedFromDataToken);
-    memset(common, 0, sizeof(*common));
+    // Zero out memory so `_FLE2EncryptedPayloadCommon_cleanup` is safe to call twice.
+    *common = (_FLE2EncryptedPayloadCommon_t){{0}};
 }
 
 // _get_tokenKey returns the tokenKey identified by indexKeyId.

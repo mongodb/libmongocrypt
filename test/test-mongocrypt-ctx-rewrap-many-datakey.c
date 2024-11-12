@@ -571,6 +571,7 @@ static void _test_rewrap_many_datakey_need_kms_retry(_mongocrypt_tester_t *teste
     ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
     ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_KMS); // To encrypt.
     mongocrypt_ctx_destroy(ctx);
+    mongocrypt_destroy(crypt);
 }
 
 static void _test_rewrap_many_datakey_need_kms_encrypt(_mongocrypt_tester_t *tester) {

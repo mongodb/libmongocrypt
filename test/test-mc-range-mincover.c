@@ -85,7 +85,7 @@ typedef struct {
 
 typedef struct _test_getMincover_args {
     mc_mincover_t *(*getMincover)(void *tests, size_t idx, mongocrypt_status_t *status);
-    const char *(*expectError)(void *tests, size_t idx);
+    const char *(*expectError)(void *tests, size_t idx, mongocrypt_status_t *status);
     const char *const *(*expectMincoverStrings)(void *tests, size_t idx);
     void (*dump)(void *tests, size_t idx, mc_mincover_t *got);
 } _test_getMincover_args;
@@ -171,23 +171,25 @@ static mc_mincover_t *_test_getMincoverDecimal128_helper(void *tests, size_t idx
 }
 #endif // MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
 
-static const char *_test_expectError32(void *tests, size_t idx) {
+static const char *_test_expectError32(void *tests, size_t idx, mongocrypt_status_t *status) {
     BSON_ASSERT_PARAM(tests);
+    BSON_ASSERT_PARAM(status);
     return ((Int32Test *)tests + idx)->expectError;
 }
 
-static const char *_test_expectError64(void *tests, size_t idx) {
+static const char *_test_expectError64(void *tests, size_t idx, mongocrypt_status_t *status) {
     BSON_ASSERT_PARAM(tests);
+    BSON_ASSERT_PARAM(status);
     return ((Int64Test *)tests + idx)->expectError;
 }
 
-static const char *_test_expectErrorDouble(void *tests, size_t idx) {
+static const char *_test_expectErrorDouble(void *tests, size_t idx, mongocrypt_status_t *status) {
     BSON_ASSERT_PARAM(tests);
+    BSON_ASSERT_PARAM(status);
     DoubleTest *test = ((DoubleTest *)tests + idx);
     if (test->min.set && test->max.set && test->precision.set) {
         // Expect an error for tests including an invalid min/max/precision.
         uint32_t ignored;
-        mongocrypt_status_t *const status = mongocrypt_status_new();
         if (!mc_canUsePrecisionModeDouble(test->min.value, test->max.value, test->precision.value, &ignored, status)) {
             if (!mongocrypt_status_ok(status)) {
                 return mongocrypt_status_message(status, NULL);
@@ -196,19 +198,18 @@ static const char *_test_expectErrorDouble(void *tests, size_t idx) {
             return "The domain of double values specified by the min, max, and precision cannot be represented in "
                    "fewer than 64 bits";
         }
-        mongocrypt_status_destroy(status);
     }
     return test->expectError;
 }
 
 #if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
-static const char *_test_expectErrorDecimal128(void *tests, size_t idx) {
+static const char *_test_expectErrorDecimal128(void *tests, size_t idx, mongocrypt_status_t *status) {
     BSON_ASSERT_PARAM(tests);
+    BSON_ASSERT_PARAM(status);
     Decimal128Test *test = ((Decimal128Test *)tests + idx);
     if (test->min.set && test->max.set && test->precision.set) {
         // Expect an error for tests including an invalid min/max/precision.
         uint32_t ignored;
-        mongocrypt_status_t *const status = mongocrypt_status_new();
         if (!mc_canUsePrecisionModeDecimal(test->min.value, test->max.value, test->precision.value, &ignored, status)) {
             if (!mongocrypt_status_ok(status)) {
                 return mongocrypt_status_message(status, NULL);
@@ -374,7 +375,7 @@ static void _test_getMincover_impl(void *tests, size_t num_tests, _test_getMinco
     for (size_t i = 0; i < num_tests; i++) {
         mongocrypt_status_t *const status = mongocrypt_status_new();
         mc_mincover_t *got = args.getMincover(tests, i, status);
-        const char *expectError = args.expectError(tests, i);
+        const char *expectError = args.expectError(tests, i, status);
         if (expectError) {
             ASSERT_OR_PRINT_MSG(NULL == got, "expected error, got success");
             ASSERT_STATUS_CONTAINS(status, expectError);

@@ -88,6 +88,12 @@ typedef struct __mongocrypt_ctx_opts_t {
     } rangeopts;
 } _mongocrypt_ctx_opts_t;
 
+// `_mongocrypt_ctx_opts_t` inherits extended alignment from libbson. To dynamically allocate, use
+// aligned allocation (e.g. BSON_ALIGNED_ALLOC)
+BSON_STATIC_ASSERT2(alignof__mongocrypt_ctx_opts_t,
+                    BSON_ALIGNOF(_mongocrypt_ctx_opts_t)
+                        >= BSON_MAX(BSON_ALIGNOF(_mongocrypt_key_alt_name_t), BSON_ALIGNOF(mc_RangeOpts_t)));
+
 /* All derived contexts may override these methods. */
 typedef struct {
     const char *(*mongo_db_collinfo)(mongocrypt_ctx_t *ctx);
@@ -203,6 +209,11 @@ typedef struct {
     const char *cmd_name;
 } _mongocrypt_ctx_encrypt_t;
 
+// `_mongocrypt_ctx_encrypt_t` inherits extended alignment from libbson. To dynamically allocate, use
+// aligned allocation (e.g. BSON_ALIGNED_ALLOC)
+BSON_STATIC_ASSERT2(alignof__mongocrypt_ctx_encrypt_t,
+                    BSON_ALIGNOF(_mongocrypt_ctx_encrypt_t) >= BSON_ALIGNOF(mongocrypt_ctx_t));
+
 typedef struct {
     mongocrypt_ctx_t parent;
     /* TODO CDRIVER-3150: audit + rename these buffers.
@@ -212,6 +223,11 @@ typedef struct {
     _mongocrypt_buffer_t original_doc;
     _mongocrypt_buffer_t decrypted_doc;
 } _mongocrypt_ctx_decrypt_t;
+
+// `_mongocrypt_ctx_datakey_t` inherits extended alignment from libbson. To dynamically allocate, use
+// aligned allocation (e.g. BSON_ALIGNED_ALLOC)
+BSON_STATIC_ASSERT2(alignof__mongocrypt_ctx_decrypt_t,
+                    BSON_ALIGNOF(_mongocrypt_ctx_decrypt_t) >= BSON_ALIGNOF(mongocrypt_ctx_t));
 
 typedef struct {
     mongocrypt_ctx_t parent;
@@ -225,6 +241,11 @@ typedef struct {
     bool kmip_activated;
     _mongocrypt_buffer_t kmip_secretdata;
 } _mongocrypt_ctx_datakey_t;
+
+// `_mongocrypt_ctx_datakey_t` inherits extended alignment from libbson. To dynamically allocate, use
+// aligned allocation (e.g. BSON_ALIGNED_ALLOC)
+BSON_STATIC_ASSERT2(alignof__mongocrypt_ctx_datakey_t,
+                    BSON_ALIGNOF(_mongocrypt_ctx_datakey_t) >= BSON_ALIGNOF(mongocrypt_ctx_t));
 
 typedef struct _mongocrypt_ctx_rmd_datakey_t _mongocrypt_ctx_rmd_datakey_t;
 
@@ -243,11 +264,39 @@ typedef struct {
     _mongocrypt_buffer_t results;
 } _mongocrypt_ctx_rewrap_many_datakey_t;
 
+// `_mongocrypt_ctx_rewrap_many_datakey_t` inherits extended alignment from libbson. To dynamically allocate, use
+// aligned allocation (e.g. BSON_ALIGNED_ALLOC)
+BSON_STATIC_ASSERT2(alignof__mongocrypt_ctx_rewrap_many_datakey_t,
+                    BSON_ALIGNOF(_mongocrypt_ctx_rewrap_many_datakey_t) >= BSON_ALIGNOF(mongocrypt_ctx_t));
+
 typedef struct {
     mongocrypt_ctx_t parent;
     _mongocrypt_buffer_t result;
     mc_EncryptedFieldConfig_t efc;
 } _mongocrypt_ctx_compact_t;
+
+// `_mongocrypt_ctx_compact_t` inherits extended alignment from libbson. To dynamically allocate, use aligned
+// allocation (e.g. BSON_ALIGNED_ALLOC)
+BSON_STATIC_ASSERT2(alignof__mongocrypt_ctx_compact_t,
+                    BSON_ALIGNOF(_mongocrypt_ctx_compact_t) >= BSON_ALIGNOF(mongocrypt_ctx_t));
+
+#define MONGOCRYPT_CTX_ALLOC_SIZE                                                                                      \
+    BSON_MAX(sizeof(_mongocrypt_ctx_encrypt_t),                                                                        \
+             BSON_MAX(sizeof(_mongocrypt_ctx_decrypt_t),                                                               \
+                      BSON_MAX(sizeof(_mongocrypt_ctx_datakey_t),                                                      \
+                               BSON_MAX(sizeof(_mongocrypt_ctx_rewrap_many_datakey_t),                                 \
+                                        sizeof(_mongocrypt_ctx_compact_t)))))
+
+#define MONGOCRYPT_CTX_ALLOC_ALIGNMENT                                                                                 \
+    BSON_MAX(BSON_ALIGNOF(_mongocrypt_ctx_encrypt_t),                                                                  \
+             BSON_MAX(BSON_ALIGNOF(_mongocrypt_ctx_decrypt_t),                                                         \
+                      BSON_MAX(BSON_ALIGNOF(_mongocrypt_ctx_datakey_t),                                                \
+                               BSON_MAX(BSON_ALIGNOF(_mongocrypt_ctx_rewrap_many_datakey_t),                           \
+                                        BSON_ALIGNOF(_mongocrypt_ctx_compact_t)))))
+
+// `_mongocrypt_ctx_t` inherits extended alignment from libbson. To dynamically allocate, use
+// aligned allocation (e.g. BSON_ALIGNED_ALLOC)
+BSON_STATIC_ASSERT2(alignof_mongocrypt_ctx_t, BSON_ALIGNOF(mongocrypt_ctx_t) >= MONGOCRYPT_CTX_ALLOC_ALIGNMENT);
 
 /* Used for option validation. True means required. False means prohibited. */
 typedef enum { OPT_PROHIBITED = 0, OPT_REQUIRED, OPT_OPTIONAL } _mongocrypt_ctx_opt_spec_t;

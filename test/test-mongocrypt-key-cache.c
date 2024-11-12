@@ -268,7 +268,7 @@ static void _match_cache_entry(_mongocrypt_tester_t *tester, mongocrypt_ctx_t *c
     while (pair) {
         if (_match_one_cache_entry(pair, expected_entry)) {
             if (matched) {
-                printf("double matched entry: %s\n", bson_as_json(expected_entry, NULL));
+                printf("double matched entry: %s\n", bson_as_relaxed_extended_json(expected_entry, NULL));
                 BSON_ASSERT(false);
             }
             matched = true;
@@ -278,7 +278,7 @@ static void _match_cache_entry(_mongocrypt_tester_t *tester, mongocrypt_ctx_t *c
     }
 
     if (!matched) {
-        printf("could not match entry: %s\n", bson_as_json(expected_entry, NULL));
+        printf("could not match entry: %s\n", bson_as_relaxed_extended_json(expected_entry, NULL));
         BSON_ASSERT(false);
     }
 }

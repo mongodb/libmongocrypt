@@ -756,6 +756,30 @@ static void _test_encrypt_caches_keys(_mongocrypt_tester_t *tester) {
     mongocrypt_destroy(crypt);
 }
 
+static void _test_encrypt_cache_expiration(_mongocrypt_tester_t *tester) {
+    mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_WITH_SHORT_CACHE);
+    mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+    ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "test", -1, TEST_FILE("./test/example/cmd.json")), ctx);
+    _mongocrypt_tester_run_ctx_to(tester, ctx, MONGOCRYPT_CTX_DONE);
+    mongocrypt_ctx_destroy(ctx);
+
+    _usleep(2000);
+    /* The next context requests keys again
+     */
+    ctx = mongocrypt_ctx_new(crypt);
+    ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "test", -1, TEST_FILE("./test/example/cmd.json")), ctx);
+    _mongocrypt_tester_run_ctx_to(tester, ctx, MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+    ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TEST_FILE("./test/example/mongocryptd-reply.json")), ctx);
+    ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+    BSON_ASSERT(mongocrypt_ctx_state(ctx) == MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+    ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TEST_FILE("./test/example/key-document.json")), ctx);
+    ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+    _mongocrypt_tester_run_ctx_to(tester, ctx, MONGOCRYPT_CTX_DONE);
+
+    mongocrypt_ctx_destroy(ctx);
+    mongocrypt_destroy(crypt);
+}
+
 static void _test_encrypt_caches_keys_by_alt_name(_mongocrypt_tester_t *tester) {
     mongocrypt_t *crypt;
     mongocrypt_ctx_t *ctx;
@@ -5508,6 +5532,12 @@ static void _test_encrypt_retry_provider(_responses r, _mongocrypt_tester_t *tes
         ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_KMS);
         mongocrypt_kms_ctx_t *kctx = mongocrypt_ctx_next_kms_ctx(ctx);
         ASSERT(kctx);
+        // Feed a retryable HTTP error.
+        ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE("./test/data/rmd/kms-decrypt-reply-429.txt")), kctx);
+        // Expect KMS request is returned again for a retry.
+        kctx = mongocrypt_ctx_next_kms_ctx(ctx);
+        ASSERT_OK(kctx, ctx);
+        ASSERT_CMPINT64(mongocrypt_kms_ctx_usleep(kctx), >, 0);
         ASSERT_OK(mongocrypt_kms_ctx_feed(kctx, TEST_FILE(r.oauth_response)), kctx);
         ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
     }
@@ -5557,6 +5587,7 @@ static void _test_encrypt_retry(_mongocrypt_tester_t *tester) {
         ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
         _mongocrypt_tester_run_ctx_to(tester, ctx, MONGOCRYPT_CTX_DONE);
         mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
     }
     // Azure
     {
@@ -5658,6 +5689,7 @@ void _mongocrypt_tester_install_ctx_encrypt(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_local_schema);
     INSTALL_TEST(_test_encrypt_caches_collinfo);
     INSTALL_TEST(_test_encrypt_caches_keys);
+    INSTALL_TEST(_test_encrypt_cache_expiration);
     INSTALL_TEST(_test_encrypt_caches_keys_by_alt_name);
     INSTALL_TEST(_test_encrypt_random);
     INSTALL_TEST(_test_encrypt_is_remote_schema);

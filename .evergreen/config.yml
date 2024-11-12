@@ -265,17 +265,6 @@ functions:
           ./curator version
           ./curator repo submit --config etc/repo_config.yaml --distro ${packager_distro} --edition org --version $pkg_version --arch ${packager_arch} --service https://barque.corp.mongodb.com/ --packages https://mciuploads.s3.amazonaws.com/${project}/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt-distro-packages.tar.gz
 
-  "build csharp and test":
-    - command: "shell.exec"
-      params:
-        shell: bash
-        script: |-
-          . libmongocrypt/.evergreen/init.sh
-          if test "$OS_NAME" != "windows"; then export USE_NINJA=ON; fi
-          env ${compile_env|} DEFAULT_BUILD_ONLY=true \
-            bash ./libmongocrypt/.evergreen/build_all.sh
-          env ${compile_env|} bash ./libmongocrypt/.evergreen/compile_cs.sh
-
   "build python release":
     - command: shell.exec
       params:
@@ -414,6 +403,17 @@ tasks:
         # Add detect_odr_violation=0 to ASAN_OPTIONS to ignore odr-violation in IntelDFP symbol: __dpml_bid_globals_table
         ASAN_OPTIONS="detect_leaks=1 detect_odr_violation=0"
 
+- name: build-and-test-ubsan
+  commands:
+  - func: "fetch source"
+  - func: "build and test"
+    vars:
+      compile_env: >-
+        ${compile_env|}
+        LIBMONGOCRYPT_EXTRA_CFLAGS="-fsanitize=undefined -fno-omit-frame-pointer"
+        UBSAN_OPTIONS="halt_on_error=1,print_stacktrace=1"
+        
+
 - name: build-and-test-asan-mac
   commands:
   - func: "fetch source"
@@ -497,13 +497,6 @@ tasks:
       patch_optional: true
   commands:
     - func: "download and merge python releases"
-
-- name: build-and-test-csharp
-  commands:
-  - func: "fetch source"
-  - func: "build csharp and test"
-    vars:
-      test_env: PROJECT_DIRECTORY=${project_directory}
 
 - name: upload-java
   depends_on:
@@ -1030,7 +1023,6 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan-mac
-  # - build-and-test-csharp // temporary removed to make strong named release.
 - name: rhel72-zseries-test
   display_name: "RHEL 7.2 on zSeries"
   run_on: rhel72-zseries-test
@@ -1069,7 +1061,6 @@ buildvariants:
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
-  # - build-and-test-csharp // temporary removed to make strong named release.
 - name: windows-test-python
   display_name: "Windows Python"
   run_on: windows-64-vsMulti-small
@@ -1204,16 +1195,9 @@ buildvariants:
 - name: rhel-62-64-bit
   display_name: "RHEL 6.2 64-bit"
   run_on: rhel62-small
-  expansions:
-    has_packages: true
-    packager_distro: rhel62
-    packager_arch: x86_64
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
-  - name: publish-packages
-    distros:
-    - rhel70-small
 - name: rhel-70-64-bit
   display_name: "RHEL 7.0 64-bit"
   run_on: rhel70-small
@@ -1370,7 +1354,6 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  # - build-and-test-csharp // temporary removed to make strong named release.
   - name: publish-packages
     distros:
     - ubuntu2004-small
@@ -1410,7 +1393,6 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  # - build-and-test-csharp // temporary removed to make strong named release.
   - upload-java
   - publish-packages
 - name: ubuntu2004-arm64
@@ -1440,8 +1422,7 @@ buildvariants:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
-  # see https://jira.mongodb.org/browse/MONGOCRYPT-515
-  #- build-and-test-csharp
+  - build-and-test-ubsan
   - upload-java
   - name: publish-packages
     distros:

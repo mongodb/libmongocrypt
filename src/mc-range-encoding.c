@@ -15,6 +15,7 @@
  */
 
 #include "mc-check-conversions-private.h"
+#include "mc-cmp-private.h"
 #include "mc-range-encoding-private.h"
 #include "mongocrypt-private.h"
 #include "mongocrypt-util-private.h" // mc_isinf
@@ -863,7 +864,7 @@ int32_t trimFactorDefault(size_t maxlen, mc_optional_int32_t trimFactor, bool us
         return 0;
     }
 
-    if (bson_cmp_greater_su(mc_FLERangeTrimFactorDefault, maxlen - 1)) {
+    if (mc_cmp_greater_su(mc_FLERangeTrimFactorDefault, maxlen - 1)) {
         return (int32_t)(maxlen - 1);
     } else {
         return mc_FLERangeTrimFactorDefault;

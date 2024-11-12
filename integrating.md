@@ -63,7 +63,7 @@ Seek help in the slack channel \#drivers-fle.
 After you have a binding, integrate libmongocrypt in your driver to
 support client side encryption.
 
-See the [driver spec](https://github.com/mongodb/specifications/blob/master/source/client-side-encryption/client-side-encryption.rst)
+See the [driver spec](https://github.com/mongodb/specifications/blob/master/source/client-side-encryption/client-side-encryption.md)
 for a reference of the user-facing API. libmongocrypt is needed for:
 
 -   Automatic encryption/decryption
@@ -243,7 +243,7 @@ Credentials for one or more KMS providers.
 
 **Driver needs to...**
 
-Fetch credentials for supported KMS providers. See the [Client Side Encryption specification](https://github.com/mongodb/specifications/blob/master/source/client-side-encryption/client-side-encryption.rst#automatic-credentials) for details.
+Fetch credentials for supported KMS providers. See the [Client Side Encryption specification](https://github.com/mongodb/specifications/blob/master/source/client-side-encryption/client-side-encryption.md#automatic-credentials) for details.
 
 Pass credentials to libmongocrypt using `mongocrypt_ctx_provide_kms_providers`.
 

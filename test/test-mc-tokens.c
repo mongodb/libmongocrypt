@@ -39,7 +39,9 @@
     F(ESCTwiceDerivedValueToken)                                                                                       \
     F(serverCountAndContentionFactorEncryptionToken)                                                                   \
     F(serverZerosEncryptionToken)                                                                                      \
-    F(AnchorPaddingTokenRoot)
+    F(AnchorPaddingTokenRoot)                                                                                          \
+    F(AnchorPaddingKeyToken)                                                                                           \
+    F(AnchorPaddingValueToken)
 
 typedef struct {
 #define DECLARE_FIELD(f) _mongocrypt_buffer_t f;
@@ -193,7 +195,17 @@ static void _mc_token_test_run(_mongocrypt_tester_t *tester, const char *path) {
     ASSERT_OR_PRINT(padding, status);
     ASSERT_CMPBUF(*mc_AnchorPaddingTokenRoot_get(padding), test.AnchorPaddingTokenRoot);
 
+    mc_AnchorPaddingKeyToken_t *paddingKey = mc_AnchorPaddingKeyToken_new(crypt->crypto, padding, status);
+    ASSERT_OR_PRINT(paddingKey, status);
+    ASSERT_CMPBUF(*mc_AnchorPaddingKeyToken_get(paddingKey), test.AnchorPaddingKeyToken);
+
+    mc_AnchorPaddingValueToken_t *paddingValue = mc_AnchorPaddingValueToken_new(crypt->crypto, padding, status);
+    ASSERT_OR_PRINT(paddingValue, status);
+    ASSERT_CMPBUF(*mc_AnchorPaddingValueToken_get(paddingValue), test.AnchorPaddingValueToken);
+
     // Done.
+    mc_AnchorPaddingValueToken_destroy(paddingValue);
+    mc_AnchorPaddingKeyToken_destroy(paddingKey);
     mc_AnchorPaddingTokenRoot_destroy(padding);
     mc_ServerZerosEncryptionToken_destroy(serverZeros);
     mc_ServerCountAndContentionFactorEncryptionToken_destroy(serverCACFET);
