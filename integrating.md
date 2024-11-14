@@ -197,6 +197,8 @@ All contexts except for create data key.
 
 The responses from one or more messages to KMS.
 
+Ensure `mongocrypt_setopt_retry_kms` is called on the `mongocrypt_t` to enable retry.
+
 **Driver needs to...**
 
 1.  For each context returned by `mongocrypt_ctx_next_kms_ctx`:
@@ -223,7 +225,7 @@ The responses from one or more messages to KMS.
 
 2.  When done feeding all replies, call `mongocrypt_ctx_kms_done`.
 
-Note, the driver MAY fan out KMS requests in parallel.
+Note, the driver MAY fan out KMS requests in parallel. More KMS requests may be added when processing responses to retry.
 
 **Applies to...**
 
