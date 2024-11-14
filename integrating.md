@@ -195,12 +195,12 @@ All contexts except for create data key.
 
 **libmongocrypt needs**...
 
-The responses from one or more HTTP messages to KMS.
+The responses from one or more messages to KMS.
 
 **Driver needs to...**
 
 1.  Iterate all KMS requests using `mongocrypt_ctx_next_kms_ctx`.
-    (Note, the driver MAY fan out all HTTP requests at the same time).
+    (Note, the driver MAY fan out all requests at the same time).
 2.  For each context:
 
     a.  Delay the message by the time in microseconds indicated by
