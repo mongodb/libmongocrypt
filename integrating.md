@@ -199,9 +199,7 @@ The responses from one or more messages to KMS.
 
 **Driver needs to...**
 
-1.  Iterate all KMS requests using `mongocrypt_ctx_next_kms_ctx`.
-    (Note, the driver MAY fan out all requests at the same time).
-2.  For each context:
+1.  For each context returned by `mongocrypt_ctx_next_kms_ctx`:
 
     a.  Delay the message by the time in microseconds indicated by
         `mongocrypt_kms_ctx_usleep` if returned value is greater than 0.
@@ -223,7 +221,9 @@ The responses from one or more messages to KMS.
     `mongocrypt_kms_ctx_fail` returns true. Otherwise, abort and report an
     error.
 
-3.  When done feeding all replies, call `mongocrypt_ctx_kms_done`.
+2.  When done feeding all replies, call `mongocrypt_ctx_kms_done`.
+
+Note, the driver MAY fan out KMS requests in parallel.
 
 **Applies to...**
 
