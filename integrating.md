@@ -195,13 +195,13 @@ All contexts except for create data key.
 
 **libmongocrypt needs**...
 
-The responses from one or more HTTP messages to KMS.
+The responses from one or more messages to KMS.
+
+Ensure `mongocrypt_setopt_retry_kms` is called on the `mongocrypt_t` to enable retry.
 
 **Driver needs to...**
 
-1.  Iterate all KMS requests using `mongocrypt_ctx_next_kms_ctx`.
-    (Note, the driver MAY fan out all HTTP requests at the same time).
-2.  For each context:
+1.  For each context returned by `mongocrypt_ctx_next_kms_ctx`:
 
     a.  Delay the message by the time in microseconds indicated by
         `mongocrypt_kms_ctx_usleep` if returned value is greater than 0.
@@ -219,11 +219,13 @@ The responses from one or more HTTP messages to KMS.
     d.  Feed the reply back with `mongocrypt_kms_ctx_feed`. Repeat
         > until `mongocrypt_kms_ctx_bytes_needed` returns 0.
 
-    If any step encounters a network error, continue to the next KMS context if
-    `mongocrypt_kms_ctx_fail` returns true. Otherwise, abort and report an
-    error.
+    If any step encounters a network error, call `mongocrypt_kms_ctx_fail`.
+    If `mongocrypt_kms_ctx_fail` returns true, continue to the next KMS context.
+    If `mongocrypt_kms_ctx_fail` returns false, abort and report an error.
 
-3.  When done feeding all replies, call `mongocrypt_ctx_kms_done`.
+2.  When done feeding all replies, call `mongocrypt_ctx_kms_done`.
+
+Note, the driver MAY fan out KMS requests in parallel. More KMS requests may be added when processing responses to retry.
 
 **Applies to...**
 
