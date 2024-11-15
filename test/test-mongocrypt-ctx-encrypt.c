@@ -5674,6 +5674,24 @@ static void _test_encrypt_retry(_mongocrypt_tester_t *tester) {
         mongocrypt_ctx_destroy(ctx);
         mongocrypt_destroy(crypt);
     }
+
+    // Test network retry does not occur if not enabled.
+    {
+        mongocrypt_t *crypt = mongocrypt_new();
+        ASSERT_OK(mongocrypt_setopt_kms_providers(
+                      crypt,
+                      TEST_BSON(BSON_STR({"aws" : {"accessKeyId" : "foo", "secretAccessKey" : "bar"}}))),
+                  crypt);
+        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "test", -1, TEST_FILE("./test/example/cmd.json")), ctx);
+        _mongocrypt_tester_run_ctx_to(tester, ctx, MONGOCRYPT_CTX_NEED_KMS);
+        mongocrypt_kms_ctx_t *kms_ctx = mongocrypt_ctx_next_kms_ctx(ctx);
+        ASSERT_OK(kms_ctx, ctx); // Give a retryable network error. Expect error due to retry disabled.
+        ASSERT_FAILS(mongocrypt_kms_ctx_fail(kms_ctx), kms_ctx, "KMS request failed due to network error");
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
 }
 
 void _mongocrypt_tester_install_ctx_encrypt(_mongocrypt_tester_t *tester) {
