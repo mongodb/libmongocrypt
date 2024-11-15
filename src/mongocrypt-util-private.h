@@ -29,7 +29,7 @@
 
 /* A utility for safely casting from size_t to uint32_t.
  * Returns false if @in exceeds the maximum value of a uint32_t. */
-bool size_to_uint32(size_t in, uint32_t* out);
+bool size_to_uint32(size_t in, uint32_t *out);
 
 /**
  * @brief The result type of mpath_current_exe_path()
@@ -57,14 +57,14 @@ typedef struct current_module_result {
 current_module_result current_module_path(void);
 
 /* mc_bson_type_to_string returns the string representation of a BSON type. */
-const char* mc_bson_type_to_string(bson_type_t bson_type);
+const char *mc_bson_type_to_string(bson_type_t bson_type);
 
 /* Returns whether bson_type can be converted to a valid BSON type. */
 bool mc_is_valid_bson_type(int bson_type);
 
 /* mc_iter_document_as_bson attempts to read the document from @iter into
  * @bson. */
-bool mc_iter_document_as_bson(const bson_iter_t* iter, bson_t* bson, mongocrypt_status_t* status);
+bool mc_iter_document_as_bson(const bson_iter_t *iter, bson_t *bson, mongocrypt_status_t *status);
 
 // mc_isnan is a wrapper around isnan. It avoids a conversion warning on glibc.
 bool mc_isnan(double d);

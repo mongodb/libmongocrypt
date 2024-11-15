@@ -20,4 +20,4 @@
 #include <windows.h>
 #pragma pop_macro("WIN32_LEAN_AND_MEAN")
 
-#endif  // MLIB_WINDOWS_LEAN_H
+#endif // MLIB_WINDOWS_LEAN_H

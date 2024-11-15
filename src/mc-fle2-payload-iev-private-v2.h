@@ -104,19 +104,19 @@ typedef struct _mc_FLE2IndexedEncryptedValueV2_t {
     _mongocrypt_buffer_t DecryptedServerEncryptedValue;
 
     // Views on DecryptedServerEncryptedValue (DSEV)
-    _mongocrypt_buffer_t K_KeyId;               // First 16 octets, UUID
-    _mongocrypt_buffer_t ClientEncryptedValue;  // Remainder of DSEV
+    _mongocrypt_buffer_t K_KeyId;              // First 16 octets, UUID
+    _mongocrypt_buffer_t ClientEncryptedValue; // Remainder of DSEV
 
     // Populated during _add_K_Key
     // ClientValue := DecryptCBCAEAD(K_Key, ClientEncryptedValue, AD=K_KeyId)
     _mongocrypt_buffer_t ClientValue;
 
-    mc_FLE2TagAndEncryptedMetadataBlock_t* metadata;
+    mc_FLE2TagAndEncryptedMetadataBlock_t *metadata;
 } mc_FLE2IndexedEncryptedValueV2_t;
 
-mc_FLE2IndexedEncryptedValueV2_t* mc_FLE2IndexedEncryptedValueV2_new(void);
-bson_type_t mc_FLE2IndexedEncryptedValueV2_get_bson_value_type(
-    const mc_FLE2IndexedEncryptedValueV2_t* iev, mongocrypt_status_t* status);
+mc_FLE2IndexedEncryptedValueV2_t *mc_FLE2IndexedEncryptedValueV2_new(void);
+bson_type_t mc_FLE2IndexedEncryptedValueV2_get_bson_value_type(const mc_FLE2IndexedEncryptedValueV2_t *iev,
+                                                               mongocrypt_status_t *status);
 
 /*
  * Populates an mc_FLE2IndexedEncryptedValueV2_t from a buffer.
@@ -132,9 +132,9 @@ bson_type_t mc_FLE2IndexedEncryptedValueV2_get_bson_value_type(
  *
  * Returns an error if the input buffer is not valid.
  */
-bool mc_FLE2IndexedEncryptedValueV2_parse(mc_FLE2IndexedEncryptedValueV2_t* iev,
-                                          const _mongocrypt_buffer_t* buf,
-                                          mongocrypt_status_t* status);
+bool mc_FLE2IndexedEncryptedValueV2_parse(mc_FLE2IndexedEncryptedValueV2_t *iev,
+                                          const _mongocrypt_buffer_t *buf,
+                                          mongocrypt_status_t *status);
 
 /*
  * Serializes an mc_FLE2IndexedEncryptedValueV2_t into a buffer.
@@ -146,51 +146,51 @@ bool mc_FLE2IndexedEncryptedValueV2_parse(mc_FLE2IndexedEncryptedValueV2_t* iev,
  * Returns an error if the input structure is not valid, or if the buffer
  * provided is insufficient to hold the serialized data.
  */
-bool mc_FLE2IndexedEncryptedValueV2_serialize(const mc_FLE2IndexedEncryptedValueV2_t* iev,
-                                              _mongocrypt_buffer_t* buf,
-                                              mongocrypt_status_t* status);
+bool mc_FLE2IndexedEncryptedValueV2_serialize(const mc_FLE2IndexedEncryptedValueV2_t *iev,
+                                              _mongocrypt_buffer_t *buf,
+                                              mongocrypt_status_t *status);
 
 /**
  * Validates that a mc_FLE2IndexedEncryptedValueV2_t is well-formed, i.e. values are in their valid
  * ranges and buffers are correctly sized. Returns an error if the input structure is invalid.
  */
-bool mc_FLE2IndexedEncryptedValueV2_validate(const mc_FLE2IndexedEncryptedValueV2_t* iev,
-                                             mongocrypt_status_t* status);
+bool mc_FLE2IndexedEncryptedValueV2_validate(const mc_FLE2IndexedEncryptedValueV2_t *iev, mongocrypt_status_t *status);
 
-const _mongocrypt_buffer_t* mc_FLE2IndexedEncryptedValueV2_get_S_KeyId(
-    const mc_FLE2IndexedEncryptedValueV2_t* iev, mongocrypt_status_t* status);
+const _mongocrypt_buffer_t *mc_FLE2IndexedEncryptedValueV2_get_S_KeyId(const mc_FLE2IndexedEncryptedValueV2_t *iev,
+                                                                       mongocrypt_status_t *status);
 
-bool mc_FLE2IndexedEncryptedValueV2_add_S_Key(_mongocrypt_crypto_t* crypto,
-                                              mc_FLE2IndexedEncryptedValueV2_t* iev,
-                                              const _mongocrypt_buffer_t* S_Key,
-                                              mongocrypt_status_t* status);
+bool mc_FLE2IndexedEncryptedValueV2_add_S_Key(_mongocrypt_crypto_t *crypto,
+                                              mc_FLE2IndexedEncryptedValueV2_t *iev,
+                                              const _mongocrypt_buffer_t *S_Key,
+                                              mongocrypt_status_t *status);
 
-const _mongocrypt_buffer_t* mc_FLE2IndexedEncryptedValueV2_get_ClientEncryptedValue(
-    const mc_FLE2IndexedEncryptedValueV2_t* iev, mongocrypt_status_t* status);
+const _mongocrypt_buffer_t *
+mc_FLE2IndexedEncryptedValueV2_get_ClientEncryptedValue(const mc_FLE2IndexedEncryptedValueV2_t *iev,
+                                                        mongocrypt_status_t *status);
 
-const _mongocrypt_buffer_t* mc_FLE2IndexedEncryptedValueV2_get_K_KeyId(
-    const mc_FLE2IndexedEncryptedValueV2_t* iev, mongocrypt_status_t* status);
+const _mongocrypt_buffer_t *mc_FLE2IndexedEncryptedValueV2_get_K_KeyId(const mc_FLE2IndexedEncryptedValueV2_t *iev,
+                                                                       mongocrypt_status_t *status);
 
-bool mc_FLE2IndexedEncryptedValueV2_add_K_Key(_mongocrypt_crypto_t* crypto,
-                                              mc_FLE2IndexedEncryptedValueV2_t* iev,
-                                              const _mongocrypt_buffer_t* K_Key,
-                                              mongocrypt_status_t* status);
+bool mc_FLE2IndexedEncryptedValueV2_add_K_Key(_mongocrypt_crypto_t *crypto,
+                                              mc_FLE2IndexedEncryptedValueV2_t *iev,
+                                              const _mongocrypt_buffer_t *K_Key,
+                                              mongocrypt_status_t *status);
 
-const _mongocrypt_buffer_t* mc_FLE2IndexedEncryptedValueV2_get_ClientValue(
-    const mc_FLE2IndexedEncryptedValueV2_t* iev, mongocrypt_status_t* status);
+const _mongocrypt_buffer_t *mc_FLE2IndexedEncryptedValueV2_get_ClientValue(const mc_FLE2IndexedEncryptedValueV2_t *iev,
+                                                                           mongocrypt_status_t *status);
 
-uint8_t mc_FLE2IndexedEncryptedValueV2_get_edge_count(const mc_FLE2IndexedEncryptedValueV2_t* iev,
-                                                      mongocrypt_status_t* status);
+uint8_t mc_FLE2IndexedEncryptedValueV2_get_edge_count(const mc_FLE2IndexedEncryptedValueV2_t *iev,
+                                                      mongocrypt_status_t *status);
 
-bool mc_FLE2IndexedEncryptedValueV2_get_edge(const mc_FLE2IndexedEncryptedValueV2_t* iev,
-                                             mc_FLE2TagAndEncryptedMetadataBlock_t* out,
+bool mc_FLE2IndexedEncryptedValueV2_get_edge(const mc_FLE2IndexedEncryptedValueV2_t *iev,
+                                             mc_FLE2TagAndEncryptedMetadataBlock_t *out,
                                              const uint8_t edge_index,
-                                             mongocrypt_status_t* status);
+                                             mongocrypt_status_t *status);
 
-bool mc_FLE2IndexedEncryptedValueV2_get_metadata(const mc_FLE2IndexedEncryptedValueV2_t* iev,
-                                                 mc_FLE2TagAndEncryptedMetadataBlock_t* out,
-                                                 mongocrypt_status_t* status);
+bool mc_FLE2IndexedEncryptedValueV2_get_metadata(const mc_FLE2IndexedEncryptedValueV2_t *iev,
+                                                 mc_FLE2TagAndEncryptedMetadataBlock_t *out,
+                                                 mongocrypt_status_t *status);
 
-void mc_FLE2IndexedEncryptedValueV2_destroy(mc_FLE2IndexedEncryptedValueV2_t* iev);
+void mc_FLE2IndexedEncryptedValueV2_destroy(mc_FLE2IndexedEncryptedValueV2_t *iev);
 
 #endif /* MONGOCRYPT_INDEXED_ENCRYPTED_VALUE_PRIVATE_V2_H */
