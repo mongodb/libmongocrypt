@@ -81,9 +81,9 @@
  */
 
 typedef enum {
-    kTypeInit,
-    kTypeEquality,
-    kTypeRange,
+    kTypeInitV2,
+    kTypeEqualityV2,
+    kTypeRangeV2,
 } _mc_fle2_iev_v2_type;
 
 typedef struct _mc_FLE2IndexedEncryptedValueV2_t {
