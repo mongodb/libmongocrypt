@@ -12,8 +12,12 @@
 #endif
 
 #pragma push_macro("WIN32_LEAN_AND_MEAN")
+// Disable macro redefinition warning
+#pragma warning(push)
+#pragma warning(disable : 4005)
 #define WIN32_LEAN_AND_MEAN 1
+#pragma warning(pop)
 #include <windows.h>
 #pragma pop_macro("WIN32_LEAN_AND_MEAN")
 
-#endif // MLIB_WINDOWS_LEAN_H
+#endif  // MLIB_WINDOWS_LEAN_H
