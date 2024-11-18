@@ -349,7 +349,10 @@ functions:
         script: |
           # Authenticate to artifactory.
           echo "${artifactory_password}" | docker login --password-stdin --username "${artifactory_username}" artifactory.corp.mongodb.com
-          bash ${workdir}/libmongocrypt/.evergreen/earthly.sh ${args}
+          # TODO(MONGOCRYPT-747): remove `--persist-build=false`. 
+          # Pass `--persist-build=false` to avoid using Docker Hub.
+          # Earthly hardcodes use of docker/dockerfile-copy:v0.1.9 for the CACHE command.
+          bash ${workdir}/libmongocrypt/.evergreen/earthly.sh ${args} --persist-build=false
 
 tasks:
 - name: build-and-test-and-upload
