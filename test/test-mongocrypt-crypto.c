@@ -311,10 +311,6 @@ void _test_native_crypto_hmac_sha_256(_mongocrypt_tester_t *tester) {
 #include "./data/NIST-CAVP.cstructs"
                                    {0}};
     hmac_sha_256_test_t *test;
-    mongocrypt_t *crypt;
-
-    /* Create a mongocrypt_t to call _native_crypto_init(). */
-    crypt = mongocrypt_new();
 
     for (test = tests; test->testname != NULL; test++) {
         bool ret;
@@ -341,6 +337,13 @@ void _test_native_crypto_hmac_sha_256(_mongocrypt_tester_t *tester) {
         }
         ASSERT_CMPBYTES(expect.data, expect.len, got.data, got.len);
 
+        // _mongocrypt_hmac_sha_256 requires keys to be an exact size
+        if (key.len == MONGOCRYPT_MAC_KEY_LEN) {
+            ret = _mongocrypt_hmac_sha_256(NULL, &key, &input, &got, status);
+            ASSERT_OR_PRINT(ret, status);
+            ASSERT_CMPBYTES(expect.data, expect.len, got.data, got.len);
+        }
+
         mongocrypt_status_destroy(status);
         _mongocrypt_buffer_cleanup(&got);
         _mongocrypt_buffer_cleanup(&expect);
@@ -349,8 +352,6 @@ void _test_native_crypto_hmac_sha_256(_mongocrypt_tester_t *tester) {
 
         printf("End test '%s'.\n", test->testname);
     }
-
-    mongocrypt_destroy(crypt);
 }
 
 static bool _hook_hmac_sha_256(void *ctx,
