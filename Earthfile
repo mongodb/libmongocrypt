@@ -354,7 +354,8 @@ packaging-full-test:
     BUILD +rpm-runtime-test
 
 check-format:
-    FROM artifactory.corp.mongodb.com/dockerhub/python:3.11.2-slim-buster
+    FROM +init --base=artifactory.corp.mongodb.com/dockerhub/python:3.11.2-slim-buster
+    RUN __install build-essential # To install `make` to install clang-format.
     RUN pip install pipx
     COPY etc/format* /X/etc/
     COPY .evergreen/init.sh /X/.evergreen/
