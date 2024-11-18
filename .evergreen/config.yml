@@ -930,8 +930,7 @@ tasks:
   run_on: &docker-distros
     # * The RHEL76-docker distro runs an old and unsupported version of Docker.
     # * (We require the --mount parameter)
-    - ubuntu1804
-    - ubuntu1804-medium
+    - ubuntu2204-large
     - debian10
     - debian11
     - amazon2
