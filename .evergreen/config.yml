@@ -346,7 +346,13 @@ functions:
       params:
         shell: bash
         working_dir: ${working_dir|libmongocrypt}
-        script: bash ${workdir}/libmongocrypt/.evergreen/earthly.sh ${args}
+        script: |
+          # Authenticate to artifactory.
+          echo "${artifactory_password}" | docker login --password-stdin --username "${artifactory_username}" artifactory.corp.mongodb.com
+          # TODO(MONGOCRYPT-747): remove `--persist-build=false`. 
+          # Pass `--persist-build=false` to avoid using Docker Hub.
+          # Earthly hardcodes use of docker/dockerfile-copy:v0.1.9 for the CACHE command.
+          bash ${workdir}/libmongocrypt/.evergreen/earthly.sh ${args} --persist-build=false
 
 tasks:
 - name: build-and-test-and-upload
@@ -926,11 +932,8 @@ tasks:
   tags: [packaging]
   run_on: &docker-distros
     # * The RHEL76-docker distro runs an old and unsupported version of Docker.
-    # * (We requires the --mount parameter)
-    - ubuntu2004-small
-    - ubuntu2004
-    - ubuntu1804
-    - ubuntu1804-medium
+    # * (We require the --mount parameter)
+    - ubuntu2204-large
     - debian10
     - debian11
     - amazon2
