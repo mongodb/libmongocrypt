@@ -299,7 +299,6 @@ bool _mongocrypt_hmac_sha_256(_mongocrypt_crypto_t *crypto,
                               const _mongocrypt_buffer_t *in,
                               _mongocrypt_buffer_t *out,
                               mongocrypt_status_t *status) {
-    BSON_ASSERT_PARAM(crypto);
     BSON_ASSERT_PARAM(key);
     BSON_ASSERT_PARAM(in);
     BSON_ASSERT_PARAM(out);
@@ -311,7 +310,7 @@ bool _mongocrypt_hmac_sha_256(_mongocrypt_crypto_t *crypto,
         return false;
     }
 
-    if (crypto->hooks_enabled) {
+    if (crypto && crypto->hooks_enabled) {
         mongocrypt_binary_t key_bin, out_bin, in_bin;
         _mongocrypt_buffer_to_binary(key, &key_bin);
         _mongocrypt_buffer_to_binary(out, &out_bin);
