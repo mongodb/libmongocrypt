@@ -346,9 +346,7 @@ functions:
       params:
         shell: bash
         working_dir: ${working_dir|libmongocrypt}
-        script: |
-          echo "${docker_password}" | docker login --username "${docker_username}" --password-stdin
-          bash ${workdir}/libmongocrypt/.evergreen/earthly.sh ${args}
+        script: bash ${workdir}/libmongocrypt/.evergreen/earthly.sh ${args}
 
 tasks:
 - name: build-and-test-and-upload
