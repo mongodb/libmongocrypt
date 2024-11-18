@@ -51,6 +51,7 @@
     T *BSON_CONCAT(Prefix, _new_from_buffer_copy)(_mongocrypt_buffer_t * buf) {                                        \
         BSON_ASSERT(buf->len == MONGOCRYPT_HMAC_SHA256_LEN);                                                           \
         T *t = bson_malloc(sizeof(T));                                                                                 \
+        _mongocrypt_buffer_init(&t->data);                                                                             \
         _mongocrypt_buffer_copy_to(buf, &t->data);                                                                     \
         return t;                                                                                                      \
     }                                                                                                                  \
