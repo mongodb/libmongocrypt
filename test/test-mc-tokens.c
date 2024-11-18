@@ -281,6 +281,7 @@ static void _test_mc_tokens_raw_buffer(_mongocrypt_tester_t *tester) {
     ASSERT_CMPBUF(*mc_ServerDataEncryptionLevel1Token_get(token2), expected);
 
     /* Assert new_from_buffer references original buffer instead of a copy. */
+    _mongocrypt_buffer_init(&original_test_input);
     _mongocrypt_buffer_copy_to(&test_input, &original_test_input);
     test_input.data[0] = '0';
     expected.data[0] = '0';
