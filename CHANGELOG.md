@@ -1,4 +1,8 @@
 # ChangeLog
+## 1.13.0 (Not yet released)
+### Removed
+- Support for macOS versions older than 11. libmongocrypt is supported and tested with macOS 11+.
+
 ## 1.12.0
 ### New features
 - Add option to configure Data Encryption Key cache lifetime (`mongocrypt_setopt_key_expiration`)
