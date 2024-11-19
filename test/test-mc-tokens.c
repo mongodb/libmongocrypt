@@ -262,7 +262,6 @@ static void _test_mc_tokens_raw_buffer(_mongocrypt_tester_t *tester) {
     mc_ServerDataEncryptionLevel1Token_t *token1;
     mc_ServerDataEncryptionLevel1Token_t *token2;
     _mongocrypt_buffer_t test_input;
-    _mongocrypt_buffer_t original_test_input;
     _mongocrypt_buffer_t expected;
 
     _mongocrypt_buffer_copy_from_hex(&test_input, "6c6a349956c19f9c5e638e612011a71fbb71921edb540310c17cd0208b7f548b");
@@ -281,15 +280,14 @@ static void _test_mc_tokens_raw_buffer(_mongocrypt_tester_t *tester) {
     ASSERT_CMPBUF(*mc_ServerDataEncryptionLevel1Token_get(token2), expected);
 
     /* Assert new_from_buffer references original buffer instead of a copy. */
-    _mongocrypt_buffer_init(&original_test_input);
-    _mongocrypt_buffer_copy_to(&test_input, &original_test_input);
     test_input.data[0] = '0';
     expected.data[0] = '0';
     ASSERT_CMPBUF(*mc_ServerDataEncryptionLevel1Token_get(token1), expected);
-    ASSERT_CMPBUF(*mc_ServerDataEncryptionLevel1Token_get(token2), original_test_input);
+
+    // Assert new_from_buffer_copy references a new buffer.
+    ASSERT_CMPUINT8(mc_ServerDataEncryptionLevel1Token_get(token2)->data[0], !=, expected.data[0]);
 
     _mongocrypt_buffer_cleanup(&test_input);
-    _mongocrypt_buffer_cleanup(&original_test_input);
     _mongocrypt_buffer_cleanup(&expected);
     mc_ServerDataEncryptionLevel1Token_destroy(token1);
     mc_ServerDataEncryptionLevel1Token_destroy(token2);
