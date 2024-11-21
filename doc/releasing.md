@@ -130,6 +130,10 @@ Do the following when releasing:
       --remote-repo-url=https://github.com/mongodb/libmongocrypt.git
      ```
      Snyk reference targets for older release branches may be removed if no further releases are expected on the branch.
+   - Update the [Github Webhook](https://wiki.corp.mongodb.com/display/INTX/Githook) to include the new branch.
+     - Navigate to the [Webhook Settings](https://github.com/mongodb/libmongocrypt/settings/hooks).
+     - Click `Edit` on the hook for `https://githook.mongodb.com/`.
+     - Add the new release branch to the `Payload URL`. Remove unmaintained release branches.
 - Make a PR to apply the "Update CHANGELOG.md for x.y.z" commit to the `master` branch.
 - Update the release on the [Jira releases page](https://jira.mongodb.org/projects/MONGOCRYPT/versions).
 - Record the release on [C/C++ Release Info](https://docs.google.com/spreadsheets/d/1yHfGmDnbA5-Qt8FX4tKWC5xk9AhzYZx1SKF4AD36ecY/edit?usp=sharing). This is done to meet SSDLC reporting requirements.
