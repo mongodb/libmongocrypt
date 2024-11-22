@@ -95,15 +95,6 @@ If there are errors with cmake configuration, send the set of steps you performe
 
 If there are compilation or linker errors, run `make` again, setting `VERBOSE=1` in the environment or on the command line (which shows exact compile and link commands), and send the output to the maintainers of this project.
 
-### Design Principles ###
-The design of libmongocrypt adheres to these principles.
-
-#### Easy to integrate ####
-The main reason behind creating a C library is to make it easier for drivers to support FLE. Some consequences of this principle: the API is minimal, structs are opaque, and global initialization is lazy.
-
-#### Lightweight ####
-We decided against the "have libmongocrypt do everything" approach because it complicated integration, especially with async drivers. Because of this we decided no I/O occurs in libmongocrypt.
-
 ### Releasing ###
 
 See [releasing](./doc/releasing.md).
