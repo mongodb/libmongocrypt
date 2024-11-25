@@ -125,31 +125,7 @@ const char *mc_bson_type_to_string(bson_type_t t) {
 }
 
 bool mc_is_valid_bson_type(int bson_type) {
-    switch (bson_type) {
-    case BSON_TYPE_EOD:
-    case BSON_TYPE_DOUBLE:
-    case BSON_TYPE_UTF8:
-    case BSON_TYPE_DOCUMENT:
-    case BSON_TYPE_ARRAY:
-    case BSON_TYPE_BINARY:
-    case BSON_TYPE_UNDEFINED:
-    case BSON_TYPE_OID:
-    case BSON_TYPE_BOOL:
-    case BSON_TYPE_DATE_TIME:
-    case BSON_TYPE_NULL:
-    case BSON_TYPE_REGEX:
-    case BSON_TYPE_DBPOINTER:
-    case BSON_TYPE_CODE:
-    case BSON_TYPE_SYMBOL:
-    case BSON_TYPE_CODEWSCOPE:
-    case BSON_TYPE_INT32:
-    case BSON_TYPE_TIMESTAMP:
-    case BSON_TYPE_INT64:
-    case BSON_TYPE_MAXKEY:
-    case BSON_TYPE_MINKEY:
-    case BSON_TYPE_DECIMAL128: return true;
-    default: return false;
-    }
+    return bson_type != BSON_TYPE_EOD;
 }
 
 bool mc_iter_document_as_bson(const bson_iter_t *iter, bson_t *bson, mongocrypt_status_t *status) {
