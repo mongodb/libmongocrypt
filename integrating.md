@@ -9,6 +9,24 @@ There are two major parts to integrating libmongocrypt into your driver:
 -   Writing a language-specific binding to libmongocrypt
 -   Using the binding in your driver to support client side encryption
 
+## Design Rationale
+
+### Simple interface
+
+The library interface is intended to be used with multiple languages.
+
+The API tries to be minimal. Most structs are opaque. Global initialization
+is lazy.
+
+Much of the API passes and returns BSON since all drivers can produce and parse
+BSON.
+
+### No I/O
+
+libmongocrypt deliberately does not do I/O to avoid poor behavior with some
+language runtimes. Example: in Go a blocking C call may block an OS thread,
+rather than a goroutine.
+
 ## Part 1: Writing a Language-Specific Binding ##
 
 The binding is the glue between your driver\'s native language and
