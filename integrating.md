@@ -13,7 +13,7 @@ There are two major parts to integrating libmongocrypt into your driver:
 
 ### Simple interface
 
-The library interface is intended to be used with multiple language.
+The library interface is intended to be used with multiple languages.
 
 The API tries to be minimal. Most structs are opaque. Global initialization
 is lazy.
