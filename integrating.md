@@ -239,7 +239,7 @@ Ensure `mongocrypt_setopt_retry_kms` is called on the `mongocrypt_t` to enable r
 
     If any step encounters a network error, call `mongocrypt_kms_ctx_fail`.
     If `mongocrypt_kms_ctx_fail` returns true, continue to the next KMS context.
-    If `mongocrypt_kms_ctx_fail` returns false, abort and report an error.
+    If `mongocrypt_kms_ctx_fail` returns false, abort and report an error. Consider wrapping the error reported in `mongocrypt_kms_ctx_status` to include the last network error.
 
 2.  When done feeding all replies, call `mongocrypt_ctx_kms_done`.
 
