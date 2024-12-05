@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include "mc-fle-blob-subtype-private.h"
 #include "mc-fle2-payload-iev-private-v2.h"
 #include "test-mongocrypt-assert-match-bson.h"
 #include "test-mongocrypt.h"
@@ -37,6 +38,7 @@ typedef struct {
 } _mc_fle2_iev_v2_test;
 
 #define kMetadataLen 96U
+#define kMinServerEncryptedValueLen 17U // IV(16) + EncryptCTR(1byte)
 
 static void _mc_fle2_iev_v2_test_destroy(_mc_fle2_iev_v2_test *test) {
     _mongocrypt_buffer_cleanup(&test->payload);
@@ -293,6 +295,89 @@ static void _mc_fle2_iev_v2_test_explicit_ctx(_mongocrypt_tester_t *tester, _mc_
     mongocrypt_status_destroy(status);
 }
 
+static void _mc_fle2_iev_v2_validate(_mongocrypt_tester_t *tester, _mc_fle2_iev_v2_test *test) {
+    mongocrypt_status_t *status = mongocrypt_status_new();
+    mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+
+    mc_FLE2IndexedEncryptedValueV2_t *iev = mc_FLE2IndexedEncryptedValueV2_new();
+
+    // Parse payload.
+    ASSERT_OK_STATUS(mc_FLE2IndexedEncryptedValueV2_parse(iev, &test->payload, status), status);
+
+    // Assert valid IEV.
+    if (test->type == kTypeRange) {
+        ASSERT(!mc_FLE2IndexedEncryptedValueV2_validate(iev, status));
+        // Validate function only supports equality type.
+        goto cleanup;
+    } else {
+        ASSERT_OK_STATUS(mc_FLE2IndexedEncryptedValueV2_validate(iev, status), status);
+    }
+
+    // Modify each value on the IEV to be invalid and assert failure, then change back to valid value.
+    mc_fle_blob_subtype_t temp_fle_blob_subtype = iev->fle_blob_subtype;
+    iev->fle_blob_subtype = MC_SUBTYPE_FLE2IndexedRangeEncryptedValueV2;
+    ASSERT(!mc_FLE2IndexedEncryptedValueV2_validate(iev, status));
+    iev->fle_blob_subtype = temp_fle_blob_subtype;
+
+    uint8_t temp_bson_value_type = iev->bson_value_type;
+    iev->bson_value_type = BSON_TYPE_EOD;
+    ASSERT(!mc_FLE2IndexedEncryptedValueV2_validate(iev, status));
+    iev->bson_value_type = temp_bson_value_type;
+
+    iev->edge_count = 5;
+    ASSERT(!mc_FLE2IndexedEncryptedValueV2_validate(iev, status));
+    iev->edge_count = 1;
+
+    _mongocrypt_buffer_resize(&iev->ServerEncryptedValue, kMinServerEncryptedValueLen - 1);
+    ASSERT(!mc_FLE2IndexedEncryptedValueV2_validate(iev, status));
+    _mongocrypt_buffer_resize(&iev->ServerEncryptedValue, kMinServerEncryptedValueLen);
+
+    _mongocrypt_buffer_resize(&iev->S_KeyId, UUID_LEN - 1);
+    ASSERT(!mc_FLE2IndexedEncryptedValueV2_validate(iev, status));
+    _mongocrypt_buffer_resize(&iev->S_KeyId, UUID_LEN);
+
+    bool temp_CVD = iev->ClientValueDecoded;
+    bool temp_CEVD = iev->ClientEncryptedValueDecoded;
+    iev->ClientValueDecoded = true;
+    iev->ClientEncryptedValueDecoded = false;
+    ASSERT(!mc_FLE2IndexedEncryptedValueV2_validate(iev, status));
+    iev->ClientValueDecoded = false;
+    ASSERT(mc_FLE2IndexedEncryptedValueV2_validate(iev, status));
+    iev->ClientValueDecoded = temp_CVD;
+    iev->ClientEncryptedValueDecoded = temp_CEVD;
+
+    if (iev->ClientEncryptedValueDecoded) {
+        uint32_t temp_DSEV_len = iev->DecryptedServerEncryptedValue.len;
+        _mongocrypt_buffer_resize(&iev->DecryptedServerEncryptedValue, temp_DSEV_len - 1);
+        ASSERT(!mc_FLE2IndexedEncryptedValueV2_validate(iev, status));
+        _mongocrypt_buffer_resize(&iev->DecryptedServerEncryptedValue, temp_DSEV_len);
+
+        uint32_t temp_CEV_len = iev->ClientEncryptedValue.len;
+        _mongocrypt_buffer_resize(&iev->ClientEncryptedValue, temp_CEV_len - 1);
+        ASSERT(!mc_FLE2IndexedEncryptedValueV2_validate(iev, status));
+        _mongocrypt_buffer_resize(&iev->ClientEncryptedValue, temp_CEV_len);
+
+        _mongocrypt_buffer_resize(&iev->K_KeyId, UUID_LEN - 1);
+        ASSERT(!mc_FLE2IndexedEncryptedValueV2_validate(iev, status));
+        _mongocrypt_buffer_resize(&iev->K_KeyId, UUID_LEN);
+    }
+
+    if (iev->ClientValueDecoded) {
+        uint32_t temp_CV_len = iev->ClientValue.len;
+        _mongocrypt_buffer_resize(&iev->ClientValue, temp_CV_len - 1);
+        ASSERT(!mc_FLE2IndexedEncryptedValueV2_validate(iev, status));
+        _mongocrypt_buffer_resize(&iev->ClientValue, temp_CV_len);
+    }
+
+    // IEV should still be valid.
+    ASSERT(mc_FLE2IndexedEncryptedValueV2_validate(iev, status));
+
+cleanup:
+    mc_FLE2IndexedEncryptedValueV2_destroy(iev);
+    mongocrypt_destroy(crypt);
+    mongocrypt_status_destroy(status);
+}
+
 static void test_fle2_iev_v2_test(_mongocrypt_tester_t *tester, const char *path) {
     printf("Loading test from %s...\n", path);
 
@@ -314,6 +399,7 @@ static void test_fle2_iev_v2_test(_mongocrypt_tester_t *tester, const char *path
     ASSERT(_mc_fle2_iev_v2_test_parse(&test, &iter));
     _mc_fle2_iev_v2_test_run(tester, &test);
     _mc_fle2_iev_v2_test_explicit_ctx(tester, &test);
+    _mc_fle2_iev_v2_validate(tester, &test);
     _mc_fle2_iev_v2_test_destroy(&test);
 }
 
