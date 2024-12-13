@@ -22,7 +22,7 @@
     F(value)                                                                                                           \
     F(collectionsLevel1Token)                                                                                          \
     F(serverDataEncryptionLevel1Token)                                                                                 \
-    F(serverTokenDerivationLevel1Token)                                                                                \
+    F(ServerTokenDerivationLevel1Token)                                                                                \
     F(EDCToken)                                                                                                        \
     F(ESCToken)                                                                                                        \
     F(ECCToken)                                                                                                        \
@@ -41,7 +41,31 @@
     F(serverZerosEncryptionToken)                                                                                      \
     F(AnchorPaddingTokenRoot)                                                                                          \
     F(AnchorPaddingKeyToken)                                                                                           \
-    F(AnchorPaddingValueToken)
+    F(AnchorPaddingValueToken)                                                                                         \
+    F(EDCTextExactToken)                                                                                               \
+    F(EDCTextSubstringToken)                                                                                           \
+    F(EDCTextSuffixToken)                                                                                              \
+    F(EDCTextPrefixToken)                                                                                              \
+    F(ESCTextExactToken)                                                                                               \
+    F(ESCTextSubstringToken)                                                                                           \
+    F(ESCTextSuffixToken)                                                                                              \
+    F(ESCTextPrefixToken)                                                                                              \
+    F(ServerTextExactToken)                                                                                            \
+    F(ServerTextSubstringToken)                                                                                        \
+    F(ServerTextSuffixToken)                                                                                           \
+    F(ServerTextPrefixToken)                                                                                           \
+    F(EDCTextExactDerivedFromDataTokenAndContentionFactorToken)                                                        \
+    F(EDCTextSubstringDerivedFromDataTokenAndContentionFactorToken)                                                    \
+    F(EDCTextSuffixDerivedFromDataTokenAndContentionFactorToken)                                                       \
+    F(EDCTextPrefixDerivedFromDataTokenAndContentionFactorToken)                                                       \
+    F(ESCTextExactDerivedFromDataTokenAndContentionFactorToken)                                                        \
+    F(ESCTextSubstringDerivedFromDataTokenAndContentionFactorToken)                                                    \
+    F(ESCTextSuffixDerivedFromDataTokenAndContentionFactorToken)                                                       \
+    F(ESCTextPrefixDerivedFromDataTokenAndContentionFactorToken)                                                       \
+    F(ServerTextExactDerivedFromDataToken)                                                                             \
+    F(ServerTextSubstringDerivedFromDataToken)                                                                         \
+    F(ServerTextSuffixDerivedFromDataToken)                                                                            \
+    F(ServerTextPrefixDerivedFromDataToken)
 
 typedef struct {
 #define DECLARE_FIELD(f) _mongocrypt_buffer_t f;
@@ -123,11 +147,11 @@ static void _mc_token_test_run(_mongocrypt_tester_t *tester, const char *path) {
                   test.serverDataEncryptionLevel1Token);
 
     // ServerTokenDerivationLevel1Token
-    mc_ServerTokenDerivationLevel1Token_t *serverTokenDerivationLevel1Token =
+    mc_ServerTokenDerivationLevel1Token_t *ServerTokenDerivationLevel1Token =
         mc_ServerTokenDerivationLevel1Token_new(crypt->crypto, &test.root, status);
-    ASSERT_OR_PRINT(serverTokenDerivationLevel1Token, status);
-    ASSERT_CMPBUF(*mc_ServerTokenDerivationLevel1Token_get(serverTokenDerivationLevel1Token),
-                  test.serverTokenDerivationLevel1Token);
+    ASSERT_OR_PRINT(ServerTokenDerivationLevel1Token, status);
+    ASSERT_CMPBUF(*mc_ServerTokenDerivationLevel1Token_get(ServerTokenDerivationLevel1Token),
+                  test.ServerTokenDerivationLevel1Token);
 
 // (EDC|ESC|ECC|ECOC)Token
 #define TEST_COLL_TOKEN(Name)                                                                                          \
@@ -140,32 +164,26 @@ static void _mc_token_test_run(_mongocrypt_tester_t *tester, const char *path) {
     TEST_COLL_TOKEN(ECOC)
 #undef TEST_COLL_TOKEN
 
-// (EDC|ESC|ECC)DerivedFromDataToken(AndContentionFactor)?
+#define TEST_HELPER(Base, BaseSuffix, TokenSuffix, ExtraArgsToNew)                                                     \
+    mc_##Base##TokenSuffix##_t *Base##TokenSuffix =                                                                    \
+        mc_##Base##TokenSuffix##_new(crypt->crypto, Base##BaseSuffix, ExtraArgsToNew status);                          \
+    ASSERT_OR_PRINT(Base##TokenSuffix, status);                                                                        \
+    ASSERT_CMPBUF(*mc_##Base##TokenSuffix##_get(Base##TokenSuffix), test.Base##TokenSuffix)
+
+#define COMMA ,
+
 #define TEST_DERIVED(Name)                                                                                             \
-    mc_##Name##DerivedFromDataToken_t *Name##DerivedFromDataToken =                                                    \
-        mc_##Name##DerivedFromDataToken_new(crypt->crypto, Name##Token, &test.value, status);                          \
-    ASSERT_OR_PRINT(Name##DerivedFromDataToken, status);                                                               \
-    ASSERT_CMPBUF(*mc_##Name##DerivedFromDataToken_get(Name##DerivedFromDataToken), test.Name##DerivedFromDataToken);  \
-    mc_##Name##DerivedFromDataTokenAndContentionFactor_t *Name##DerivedFromDataTokenAndContentionFactor =              \
-        mc_##Name##DerivedFromDataTokenAndContentionFactor_new(crypt->crypto,                                          \
-                                                               Name##DerivedFromDataToken,                             \
-                                                               test.contentionFactor,                                  \
-                                                               status);                                                \
-    ASSERT_OR_PRINT(Name##DerivedFromDataTokenAndContentionFactor, status);                                            \
-    ASSERT_CMPBUF(                                                                                                     \
-        *mc_##Name##DerivedFromDataTokenAndContentionFactor_get(Name##DerivedFromDataTokenAndContentionFactor),        \
-        test.Name##DerivedFromDataTokenAndContentionFactor);
-    TEST_DERIVED(EDC)
-    TEST_DERIVED(ESC)
-    TEST_DERIVED(ECC)
-#undef TEST_DERIVED_FROM_DATA_TOKEN
+    TEST_HELPER(Name, Token, DerivedFromDataToken, &test.value COMMA);                                                 \
+    TEST_HELPER(Name, DerivedFromDataToken, DerivedFromDataTokenAndContentionFactor, test.contentionFactor COMMA)
+
+    TEST_DERIVED(EDC);
+    TEST_DERIVED(ESC);
+    TEST_DERIVED(ECC);
+#undef TEST_DERIVED
 
 // (EDC|ESC)TwiceDerivedToken(Tag|Value)?
-#define TEST_TWICE(Name, Suffix)                                                                                       \
-    mc_##Name##TwiceDerived##Suffix##_t *Name##TwiceDerived##Suffix =                                                  \
-        mc_##Name##TwiceDerived##Suffix##_new(crypt->crypto, Name##DerivedFromDataTokenAndContentionFactor, status);   \
-    ASSERT_OR_PRINT(Name##TwiceDerived##Suffix, status);                                                               \
-    ASSERT_CMPBUF(*mc_##Name##TwiceDerived##Suffix##_get(Name##TwiceDerived##Suffix), test.Name##TwiceDerived##Suffix);
+#define TEST_TWICE(Name, Suffix) TEST_HELPER(Name, DerivedFromDataTokenAndContentionFactor, TwiceDerived##Suffix, )
+
     TEST_TWICE(EDC, Token);
     TEST_TWICE(ESC, TagToken);
     TEST_TWICE(ESC, ValueToken);
@@ -173,7 +191,7 @@ static void _mc_token_test_run(_mongocrypt_tester_t *tester, const char *path) {
 
     // ServerDerivedFromDataToken
     mc_ServerDerivedFromDataToken_t *serverDerivedFromDataToken =
-        mc_ServerDerivedFromDataToken_new(crypt->crypto, serverTokenDerivationLevel1Token, &test.value, status);
+        mc_ServerDerivedFromDataToken_new(crypt->crypto, ServerTokenDerivationLevel1Token, &test.value, status);
     ASSERT_OR_PRINT(serverDerivedFromDataToken, status);
     ASSERT_CMPBUF(*mc_ServerDerivedFromDataToken_get(serverDerivedFromDataToken), test.serverDerivedFromDataToken);
 
@@ -203,7 +221,84 @@ static void _mc_token_test_run(_mongocrypt_tester_t *tester, const char *path) {
     ASSERT_OR_PRINT(paddingValue, status);
     ASSERT_CMPBUF(*mc_AnchorPaddingValueToken_get(paddingValue), test.AnchorPaddingValueToken);
 
+#define TEST_TEXT(Name, Suffix) TEST_HELPER(Name, Token, Text##Suffix##Token, )
+#define TEST_TEXT_EXTRA(Name, Suffix, BaseSuffix) TEST_HELPER(Name, BaseSuffix##Token, Text##Suffix##Token, )
+#define TEST_TEXT_DERIVED_FROM_BOTH(Name)                                                                              \
+    TEST_HELPER(Name,                                                                                                  \
+                Token,                                                                                                 \
+                DerivedFromDataTokenAndContentionFactorToken,                                                          \
+                &test.value COMMA test.contentionFactor COMMA)
+#define TEST_TEXT_DERIVED_FROM_DATA(Name) TEST_HELPER(Name, Token, DerivedFromDataToken, &test.value COMMA)
+
+    TEST_TEXT(EDC, Exact);
+    TEST_TEXT(EDC, Substring);
+    TEST_TEXT(EDC, Suffix);
+    TEST_TEXT(EDC, Prefix);
+
+    TEST_TEXT(ESC, Exact);
+    TEST_TEXT(ESC, Substring);
+    TEST_TEXT(ESC, Suffix);
+    TEST_TEXT(ESC, Prefix);
+
+    TEST_TEXT_EXTRA(Server, Exact, TokenDerivationLevel1);
+    TEST_TEXT_EXTRA(Server, Substring, TokenDerivationLevel1);
+    TEST_TEXT_EXTRA(Server, Suffix, TokenDerivationLevel1);
+    TEST_TEXT_EXTRA(Server, Prefix, TokenDerivationLevel1);
+
+    TEST_TEXT_DERIVED_FROM_BOTH(EDCTextExact);
+    TEST_TEXT_DERIVED_FROM_BOTH(EDCTextSubstring);
+    TEST_TEXT_DERIVED_FROM_BOTH(EDCTextPrefix);
+    TEST_TEXT_DERIVED_FROM_BOTH(EDCTextSuffix);
+
+    TEST_TEXT_DERIVED_FROM_BOTH(ESCTextExact);
+    TEST_TEXT_DERIVED_FROM_BOTH(ESCTextSubstring);
+    TEST_TEXT_DERIVED_FROM_BOTH(ESCTextPrefix);
+    TEST_TEXT_DERIVED_FROM_BOTH(ESCTextSuffix);
+
+    TEST_TEXT_DERIVED_FROM_DATA(ServerTextExact);
+    TEST_TEXT_DERIVED_FROM_DATA(ServerTextSubstring);
+    TEST_TEXT_DERIVED_FROM_DATA(ServerTextPrefix);
+    TEST_TEXT_DERIVED_FROM_DATA(ServerTextSuffix);
+
+#undef TEST_HELPER
+#undef TEST_TEXT
+#undef TEST_TEXT_EXTRA
+#undef TEST_TEXT_DERIVED_FROM_BOTH
+#undef TEST_TEXT_DERIVED_FROM_DATA
+
     // Done.
+    mc_ServerTextPrefixDerivedFromDataToken_destroy(ServerTextPrefixDerivedFromDataToken);
+    mc_ServerTextSuffixDerivedFromDataToken_destroy(ServerTextSuffixDerivedFromDataToken);
+    mc_ServerTextSubstringDerivedFromDataToken_destroy(ServerTextSubstringDerivedFromDataToken);
+    mc_ServerTextExactDerivedFromDataToken_destroy(ServerTextExactDerivedFromDataToken);
+    mc_ESCTextPrefixDerivedFromDataTokenAndContentionFactorToken_destroy(
+        ESCTextPrefixDerivedFromDataTokenAndContentionFactorToken);
+    mc_ESCTextSuffixDerivedFromDataTokenAndContentionFactorToken_destroy(
+        ESCTextSuffixDerivedFromDataTokenAndContentionFactorToken);
+    mc_ESCTextSubstringDerivedFromDataTokenAndContentionFactorToken_destroy(
+        ESCTextSubstringDerivedFromDataTokenAndContentionFactorToken);
+    mc_ESCTextExactDerivedFromDataTokenAndContentionFactorToken_destroy(
+        ESCTextExactDerivedFromDataTokenAndContentionFactorToken);
+    mc_EDCTextPrefixDerivedFromDataTokenAndContentionFactorToken_destroy(
+        EDCTextPrefixDerivedFromDataTokenAndContentionFactorToken);
+    mc_EDCTextSuffixDerivedFromDataTokenAndContentionFactorToken_destroy(
+        EDCTextSuffixDerivedFromDataTokenAndContentionFactorToken);
+    mc_EDCTextSubstringDerivedFromDataTokenAndContentionFactorToken_destroy(
+        EDCTextSubstringDerivedFromDataTokenAndContentionFactorToken);
+    mc_EDCTextExactDerivedFromDataTokenAndContentionFactorToken_destroy(
+        EDCTextExactDerivedFromDataTokenAndContentionFactorToken);
+    mc_ServerTextPrefixToken_destroy(ServerTextPrefixToken);
+    mc_ServerTextSuffixToken_destroy(ServerTextSuffixToken);
+    mc_ServerTextSubstringToken_destroy(ServerTextSubstringToken);
+    mc_ServerTextExactToken_destroy(ServerTextExactToken);
+    mc_ESCTextPrefixToken_destroy(ESCTextPrefixToken);
+    mc_ESCTextSuffixToken_destroy(ESCTextSuffixToken);
+    mc_ESCTextSubstringToken_destroy(ESCTextSubstringToken);
+    mc_ESCTextExactToken_destroy(ESCTextExactToken);
+    mc_EDCTextPrefixToken_destroy(EDCTextPrefixToken);
+    mc_EDCTextSuffixToken_destroy(EDCTextSuffixToken);
+    mc_EDCTextSubstringToken_destroy(EDCTextSubstringToken);
+    mc_EDCTextExactToken_destroy(EDCTextExactToken);
     mc_AnchorPaddingValueToken_destroy(paddingValue);
     mc_AnchorPaddingKeyToken_destroy(paddingKey);
     mc_AnchorPaddingTokenRoot_destroy(padding);
@@ -223,7 +318,7 @@ static void _mc_token_test_run(_mongocrypt_tester_t *tester, const char *path) {
     mc_ECCToken_destroy(ECCToken);
     mc_ESCToken_destroy(ESCToken);
     mc_EDCToken_destroy(EDCToken);
-    mc_ServerTokenDerivationLevel1Token_destroy(serverTokenDerivationLevel1Token);
+    mc_ServerTokenDerivationLevel1Token_destroy(ServerTokenDerivationLevel1Token);
     mc_ServerDataEncryptionLevel1Token_destroy(serverDataEncryptionLevel1Token);
     mc_CollectionsLevel1Token_destroy(collectionsLevel1Token);
     _mc_token_test_cleanup(&test);
@@ -235,7 +330,8 @@ static void _mc_token_test_run(_mongocrypt_tester_t *tester, const char *path) {
 
 static void _test_mc_tokens(_mongocrypt_tester_t *tester) {
     _mc_token_test_run(tester, "test/data/tokens/mc.json");
-    _mc_token_test_run(tester, "test/data/tokens/server.json");
+    // TODO SERVER-97836 Add values generated by the server for text-search tokens.
+    // _mc_token_test_run(tester, "test/data/tokens/server.json");
 }
 
 static void _test_mc_tokens_error(_mongocrypt_tester_t *tester) {
