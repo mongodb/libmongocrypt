@@ -172,10 +172,10 @@ static void _mc_token_test_run(_mongocrypt_tester_t *tester, const char *path) {
 
 #define COMMA ,
 
+// (EDC|ESC|ECC)DerivedFromDataToken(AndContentionFactor)?
 #define TEST_DERIVED(Name)                                                                                             \
     TEST_HELPER(Name, Token, DerivedFromDataToken, &test.value COMMA);                                                 \
     TEST_HELPER(Name, DerivedFromDataToken, DerivedFromDataTokenAndContentionFactor, test.contentionFactor COMMA)
-
     TEST_DERIVED(EDC);
     TEST_DERIVED(ESC);
     TEST_DERIVED(ECC);
@@ -183,7 +183,6 @@ static void _mc_token_test_run(_mongocrypt_tester_t *tester, const char *path) {
 
 // (EDC|ESC)TwiceDerivedToken(Tag|Value)?
 #define TEST_TWICE(Name, Suffix) TEST_HELPER(Name, DerivedFromDataTokenAndContentionFactor, TwiceDerived##Suffix, )
-
     TEST_TWICE(EDC, Token);
     TEST_TWICE(ESC, TagToken);
     TEST_TWICE(ESC, ValueToken);
@@ -259,12 +258,6 @@ static void _mc_token_test_run(_mongocrypt_tester_t *tester, const char *path) {
     TEST_TEXT_DERIVED_FROM_DATA(ServerTextSubstring);
     TEST_TEXT_DERIVED_FROM_DATA(ServerTextPrefix);
     TEST_TEXT_DERIVED_FROM_DATA(ServerTextSuffix);
-
-#undef TEST_HELPER
-#undef TEST_TEXT
-#undef TEST_TEXT_EXTRA
-#undef TEST_TEXT_DERIVED_FROM_BOTH
-#undef TEST_TEXT_DERIVED_FROM_DATA
 
     // Done.
     mc_ServerTextPrefixDerivedFromDataToken_destroy(ServerTextPrefixDerivedFromDataToken);
