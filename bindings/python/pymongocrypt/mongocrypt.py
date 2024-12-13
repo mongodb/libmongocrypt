@@ -149,6 +149,14 @@ class MongoCrypt:
         if any([on_demand_aws, on_demand_gcp, on_demand_azure]):
             lib.mongocrypt_setopt_use_need_kms_credentials_state(self.__crypt)
 
+        # Enable KMS retry when available, libmongocrypt >= 1.12.0,
+        try:
+            if not lib.mongocrypt_setopt_retry_kms(self.__crypt, True):
+                self.__raise_from_status()
+        except AttributeError:
+            # libmongocrypt < 1.12
+            pass
+
         if not lib.mongocrypt_init(self.__crypt):
             self.__raise_from_status()
 
@@ -669,6 +677,30 @@ class MongoCryptKmsContext:
         with MongoCryptBinaryIn(data) as binary:
             if not lib.mongocrypt_kms_ctx_feed(self.__ctx, binary.bin):
                 self.__raise_from_status()
+
+    @property
+    def usleep(self):
+        """Indicates how long to sleep in microseconds before sending this request.
+
+        .. versionadded:: 1.12
+        """
+        try:
+            return lib.mongocrypt_kms_ctx_usleep(self.__ctx)
+        except AttributeError:
+            # libmongocrypt < 1.12
+            return 0
+
+    def fail(self):
+        """Indicate a network-level failure.
+
+        .. versionadded:: 1.12
+        """
+        try:
+            if not lib.mongocrypt_kms_ctx_fail(self.__ctx):
+                self.__raise_from_status()
+        except AttributeError:
+            # libmongocrypt < 1.12
+            pass
 
     def __raise_from_status(self):
         status = lib.mongocrypt_status_new()

@@ -89,8 +89,10 @@
     extern const _mongocrypt_buffer_t *BSON_CONCAT(Prefix, _get)(const T *t);                                          \
     /* Destructor */                                                                                                   \
     extern void BSON_CONCAT(Prefix, _destroy)(T * t);                                                                  \
-    /* Constructor for server to create tokens from raw buffer */                                                      \
-    extern T *BSON_CONCAT(Prefix, _new_from_buffer)(_mongocrypt_buffer_t * buf);                                       \
+    /* Constructor for server to shallow copy tokens from raw buffer */                                                \
+    extern T *BSON_CONCAT(Prefix, _new_from_buffer)(const _mongocrypt_buffer_t *buf);                                  \
+    /* Constructor for server to deep copy tokens from raw buffer */                                                   \
+    extern T *BSON_CONCAT(Prefix, _new_from_buffer_copy)(const _mongocrypt_buffer_t *buf);                             \
     /* Constructor. Parameter list given as variadic args */                                                           \
     extern T *BSON_CONCAT(Prefix, _new)(_mongocrypt_crypto_t * crypto, __VA_ARGS__, mongocrypt_status_t * status)
 
