@@ -320,7 +320,7 @@ static void _mc_fle2_iev_v2_validate(_mongocrypt_tester_t *tester, _mc_fle2_iev_
     iev->fle_blob_subtype = temp_fle_blob_subtype;
 
     uint8_t temp_bson_value_type = iev->bson_value_type;
-    iev->bson_value_type = BSON_TYPE_EOD;
+    iev->bson_value_type = BSON_TYPE_ARRAY;
     ASSERT(!mc_FLE2IndexedEncryptedValueV2_validate(iev, status));
     iev->bson_value_type = temp_bson_value_type;
 

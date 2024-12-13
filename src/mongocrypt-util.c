@@ -124,10 +124,6 @@ const char *mc_bson_type_to_string(bson_type_t t) {
     }
 }
 
-bool mc_is_valid_bson_type(int bson_type) {
-    return bson_type != BSON_TYPE_EOD;
-}
-
 bool mc_iter_document_as_bson(const bson_iter_t *iter, bson_t *bson, mongocrypt_status_t *status) {
     BSON_ASSERT_PARAM(iter);
     BSON_ASSERT_PARAM(bson);

@@ -488,6 +488,27 @@ bool mc_FLE2IndexedEncryptedValueV2_serialize(const mc_FLE2IndexedEncryptedValue
     return true;
 }
 
+bool is_fle2_equality_indexed_supported_type(int bson_type) {
+    switch (bson_type) {
+    case BSON_TYPE_BINARY:
+    case BSON_TYPE_CODE:
+    case BSON_TYPE_REGEX:
+    case BSON_TYPE_UTF8:
+
+    case BSON_TYPE_INT32:
+    case BSON_TYPE_INT64:
+    case BSON_TYPE_BOOL:
+    case BSON_TYPE_TIMESTAMP:
+    case BSON_TYPE_DATE_TIME:
+    case BSON_TYPE_OID:
+
+    case BSON_TYPE_SYMBOL:
+    case BSON_TYPE_DBPOINTER: return true;
+    default: // All other defined types are non-deterministic or singletons.
+        return false;
+    }
+}
+
 #define CHECK(condition, msg)                                                                                          \
     do {                                                                                                               \
         if (!(condition)) {                                                                                            \
@@ -501,7 +522,7 @@ bool mc_FLE2IndexedEncryptedValueV2_validate(const mc_FLE2IndexedEncryptedValueV
     CHECK(iev->type == kTypeEqualityV2, "validate only supports type equality");
     CHECK(iev->fle_blob_subtype == MC_SUBTYPE_FLE2IndexedEqualityEncryptedValueV2,
           "fle_blob_subtype does not match type");
-    CHECK(mc_is_valid_bson_type(iev->bson_value_type), "bson_value_type is invalid");
+    CHECK(is_fle2_equality_indexed_supported_type(iev->bson_value_type), "bson_value_type is invalid");
     CHECK(iev->edge_count == 1, "edge_count must be 1 for equality");
 
     CHECK(iev->ServerEncryptedValue.len >= kMinServerEncryptedValueLen, "SEV.len is less than minimum");
