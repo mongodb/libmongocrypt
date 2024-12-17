@@ -13,10 +13,8 @@
 
 #pragma push_macro("WIN32_LEAN_AND_MEAN")
 // Disable macro redefinition warning
-#pragma warning(push)
-#pragma warning(disable : 4005)
+#undef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN 1
-#pragma warning(pop)
 #include <windows.h>
 #pragma pop_macro("WIN32_LEAN_AND_MEAN")
 

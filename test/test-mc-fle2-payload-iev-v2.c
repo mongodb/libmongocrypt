@@ -297,7 +297,6 @@ static void _mc_fle2_iev_v2_test_explicit_ctx(_mongocrypt_tester_t *tester, _mc_
 
 static void _mc_fle2_iev_v2_validate(_mongocrypt_tester_t *tester, _mc_fle2_iev_v2_test *test) {
     mongocrypt_status_t *status = mongocrypt_status_new();
-    mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
 
     mc_FLE2IndexedEncryptedValueV2_t *iev = mc_FLE2IndexedEncryptedValueV2_new();
 
@@ -342,7 +341,8 @@ static void _mc_fle2_iev_v2_validate(_mongocrypt_tester_t *tester, _mc_fle2_iev_
     iev->ClientEncryptedValueDecoded = false;
     ASSERT(!mc_FLE2IndexedEncryptedValueV2_validate(iev, status));
     iev->ClientValueDecoded = false;
-    ASSERT(mc_FLE2IndexedEncryptedValueV2_validate(iev, status));
+    _mongocrypt_status_reset(status);
+    ASSERT_OK_STATUS(mc_FLE2IndexedEncryptedValueV2_validate(iev, status), status);
     iev->ClientValueDecoded = temp_CVD;
     iev->ClientEncryptedValueDecoded = temp_CEVD;
 
@@ -370,11 +370,11 @@ static void _mc_fle2_iev_v2_validate(_mongocrypt_tester_t *tester, _mc_fle2_iev_
     }
 
     // IEV should still be valid.
-    ASSERT(mc_FLE2IndexedEncryptedValueV2_validate(iev, status));
+    _mongocrypt_status_reset(status);
+    ASSERT_OK_STATUS(mc_FLE2IndexedEncryptedValueV2_validate(iev, status), status);
 
 cleanup:
     mc_FLE2IndexedEncryptedValueV2_destroy(iev);
-    mongocrypt_destroy(crypt);
     mongocrypt_status_destroy(status);
 }
 
