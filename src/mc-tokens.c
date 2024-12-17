@@ -192,41 +192,46 @@ IMPL_TOKEN_NEW_CONST(mc_AnchorPaddingKeyToken, mc_AnchorPaddingTokenRoot_get(anc
 DEF_TOKEN_TYPE(mc_AnchorPaddingValueToken, const mc_AnchorPaddingTokenRoot_t *anchorPaddingToken)
 IMPL_TOKEN_NEW_CONST(mc_AnchorPaddingValueToken, mc_AnchorPaddingTokenRoot_get(anchorPaddingToken), 2)
 
+#define TEXT_EXACT_ID 1
+#define TEXT_SUBSTRING_ID 2
+#define TEXT_SUFFIX_ID 3
+#define TEXT_PREFIX_ID 4
+
 DEF_TOKEN_TYPE(mc_EDCTextExactToken, const mc_EDCToken_t *edcToken)
-IMPL_TOKEN_NEW_CONST(mc_EDCTextExactToken, mc_EDCToken_get(edcToken), 1)
+IMPL_TOKEN_NEW_CONST(mc_EDCTextExactToken, mc_EDCToken_get(edcToken), TEXT_EXACT_ID)
 DEF_TOKEN_TYPE(mc_EDCTextSubstringToken, const mc_EDCToken_t *edcToken)
-IMPL_TOKEN_NEW_CONST(mc_EDCTextSubstringToken, mc_EDCToken_get(edcToken), 2)
+IMPL_TOKEN_NEW_CONST(mc_EDCTextSubstringToken, mc_EDCToken_get(edcToken), TEXT_SUBSTRING_ID)
 DEF_TOKEN_TYPE(mc_EDCTextSuffixToken, const mc_EDCToken_t *edcToken)
-IMPL_TOKEN_NEW_CONST(mc_EDCTextSuffixToken, mc_EDCToken_get(edcToken), 3)
+IMPL_TOKEN_NEW_CONST(mc_EDCTextSuffixToken, mc_EDCToken_get(edcToken), TEXT_SUFFIX_ID)
 DEF_TOKEN_TYPE(mc_EDCTextPrefixToken, const mc_EDCToken_t *edcToken)
-IMPL_TOKEN_NEW_CONST(mc_EDCTextPrefixToken, mc_EDCToken_get(edcToken), 4)
+IMPL_TOKEN_NEW_CONST(mc_EDCTextPrefixToken, mc_EDCToken_get(edcToken), TEXT_PREFIX_ID)
 
 DEF_TOKEN_TYPE(mc_ESCTextExactToken, const mc_ESCToken_t *escToken)
-IMPL_TOKEN_NEW_CONST(mc_ESCTextExactToken, mc_ESCToken_get(escToken), 1)
+IMPL_TOKEN_NEW_CONST(mc_ESCTextExactToken, mc_ESCToken_get(escToken), TEXT_EXACT_ID)
 DEF_TOKEN_TYPE(mc_ESCTextSubstringToken, const mc_ESCToken_t *escToken)
-IMPL_TOKEN_NEW_CONST(mc_ESCTextSubstringToken, mc_ESCToken_get(escToken), 2)
+IMPL_TOKEN_NEW_CONST(mc_ESCTextSubstringToken, mc_ESCToken_get(escToken), TEXT_SUBSTRING_ID)
 DEF_TOKEN_TYPE(mc_ESCTextSuffixToken, const mc_ESCToken_t *escToken)
-IMPL_TOKEN_NEW_CONST(mc_ESCTextSuffixToken, mc_ESCToken_get(escToken), 3)
+IMPL_TOKEN_NEW_CONST(mc_ESCTextSuffixToken, mc_ESCToken_get(escToken), TEXT_SUFFIX_ID)
 DEF_TOKEN_TYPE(mc_ESCTextPrefixToken, const mc_ESCToken_t *escToken)
-IMPL_TOKEN_NEW_CONST(mc_ESCTextPrefixToken, mc_ESCToken_get(escToken), 4)
+IMPL_TOKEN_NEW_CONST(mc_ESCTextPrefixToken, mc_ESCToken_get(escToken), TEXT_PREFIX_ID)
 
 DEF_TOKEN_TYPE(mc_ServerTextExactToken, const mc_ServerTokenDerivationLevel1Token_t *serverTokenDerivationLevel1Token)
 IMPL_TOKEN_NEW_CONST(mc_ServerTextExactToken,
                      mc_ServerTokenDerivationLevel1Token_get(serverTokenDerivationLevel1Token),
-                     1)
+                     TEXT_EXACT_ID)
 DEF_TOKEN_TYPE(mc_ServerTextSubstringToken,
                const mc_ServerTokenDerivationLevel1Token_t *serverTokenDerivationLevel1Token)
 IMPL_TOKEN_NEW_CONST(mc_ServerTextSubstringToken,
                      mc_ServerTokenDerivationLevel1Token_get(serverTokenDerivationLevel1Token),
-                     2)
+                     TEXT_SUBSTRING_ID)
 DEF_TOKEN_TYPE(mc_ServerTextSuffixToken, const mc_ServerTokenDerivationLevel1Token_t *serverTokenDerivationLevel1Token)
 IMPL_TOKEN_NEW_CONST(mc_ServerTextSuffixToken,
                      mc_ServerTokenDerivationLevel1Token_get(serverTokenDerivationLevel1Token),
-                     3)
+                     TEXT_SUFFIX_ID)
 DEF_TOKEN_TYPE(mc_ServerTextPrefixToken, const mc_ServerTokenDerivationLevel1Token_t *serverTokenDerivationLevel1Token)
 IMPL_TOKEN_NEW_CONST(mc_ServerTextPrefixToken,
                      mc_ServerTokenDerivationLevel1Token_get(serverTokenDerivationLevel1Token),
-                     4)
+                     TEXT_PREFIX_ID)
 
 #define IMPL_TOKEN_NEW_FROM_DATA_AND_CONTENTION(Name, Key, BufferArg, UintArg)                                         \
     {                                                                                                                  \
