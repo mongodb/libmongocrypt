@@ -427,13 +427,6 @@ tasks:
     vars:
       compile_env: ${compile_env|} LIBMONGOCRYPT_EXTRA_CFLAGS="-fsanitize=address"
 
-- name: build-and-test-asan-s390x
-  commands:
-  - func: "fetch source"
-  - func: "build and test"
-    vars:
-      compile_env: ${compile_env|} LIBMONGOCRYPT_EXTRA_CFLAGS="-fsanitize=address"
-
 - name: test-python
   depends_on:
   - build-and-test-and-upload
