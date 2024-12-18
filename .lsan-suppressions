@@ -3,3 +3,4 @@ leak:ccrng_cryptographic_generate
 leak:CRYPTO_zalloc
 # Ignore leak reported in dlopen error.
 leak:_dlerror_run
+leak:_dlerror
