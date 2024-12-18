@@ -424,6 +424,7 @@ tasks:
   commands:
   - func: "fetch source"
   - func: "build and test"
+    # Exclude leak detection. clang on macos-11-amd64 reports: "detect_leaks is not supported on this platform"
     vars:
       compile_env: ${compile_env|} LIBMONGOCRYPT_EXTRA_CFLAGS="-fsanitize=address"
 
