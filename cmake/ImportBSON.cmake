@@ -56,9 +56,9 @@ cmake_push_check_state ()
    # extra-alignment enabled. We want to match that setting as our default, for convenience
    # purposes only.
    find_path (SYSTEM_BSON_INCLUDE_DIR bson/bson.h PATH_SUFFIXES libbson-1.0)
+   set (_extra_alignment_default OFF)
    if (SYSTEM_BSON_INCLUDE_DIR AND NOT DEFINED ENABLE_EXTRA_ALIGNMENT)
       set (CMAKE_REQUIRED_INCLUDES "${SYSTEM_BSON_INCLUDE_DIR}")
-      set (_extra_alignment_default OFF)
       check_c_source_compiles ([[
          #include <bson/bson.h>
 
@@ -140,10 +140,8 @@ function (_import_bson)
       set (ENABLE_SNAPPY OFF CACHE BOOL "Toggle snappy for the mongoc subproject (not required by libmongocrypt)")
       # Disable deprecated automatic init and cleanup. (May be overridden by the user)
       set (ENABLE_AUTOMATIC_INIT_AND_CLEANUP OFF CACHE BOOL "Enable automatic init and cleanup (GCC only)")
-      if (DEFINED _extra_alignment_default)
-         # Disable over-alignment of bson types. (May be overridden by the user)
-         set (ENABLE_EXTRA_ALIGNMENT ${_extra_alignment_default} CACHE BOOL "Toggle extra alignment of bson_t")
-      endif ()
+      # Disable over-alignment of bson types. (May be overridden by the user)
+      set (ENABLE_EXTRA_ALIGNMENT ${_extra_alignment_default} CACHE BOOL "Toggle extra alignment of bson_t")
       # We don't want the subproject to find libmongocrypt
       set (ENABLE_CLIENT_SIDE_ENCRYPTION OFF CACHE BOOL "Disable client-side encryption for the libmongoc subproject")
       # Clear `BUILD_VERSION` so C driver does not use a `BUILD_VERSION` meant for libmongocrypt.
