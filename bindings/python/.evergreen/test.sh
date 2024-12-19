@@ -51,12 +51,10 @@ else
     export CRYPT_SHARED_PATH="../crypt_shared/lib/mongo_crypt_v1.so"
     MACHINE=$(uname -m)
     if [ $MACHINE == "aarch64" ]; then
-        TARGET=rhel82
         PYTHONS=("/opt/mongodbtoolchain/v3/bin/python3"
           "/opt/mongodbtoolchain/v4/bin/python3"
         )
     else
-        TARGET=rhel80
         PYTHONS=("/opt/python/3.8/bin/python3"
           "/opt/python/3.9/bin/python3"
           "/opt/python/3.10/bin/python3"
@@ -66,7 +64,7 @@ else
         )
     fi
     /opt/mongodbtoolchain/v3/bin/python3 drivers-evergreen-tools/.evergreen/mongodl.py --component \
-      crypt_shared --version latest --out ../crypt_shared/ --target $TARGET
+      crypt_shared --version latest --out ../crypt_shared/
 fi
 
 for PYTHON_BINARY in "${PYTHONS[@]}"; do
