@@ -106,8 +106,10 @@ env LD_LIBRARY_PATH="$mongocrypt_install_dir/lib:$mongocrypt_install_dir/lib64" 
 rm -r "$mongocrypt_install_dir"
 
 # Build libmongocrypt, dynamic linking against libbson
+# Enable extra alignment on imported libbson to match installed libbson.
 run_cmake -DUSE_SHARED_LIBBSON=ON \
        -DENABLE_BUILD_FOR_PPA=OFF \
+       -DENABLE_EXTRA_ALIGNMENT=ON \
        "${common_cmake_args[@]}" \
        -DCMAKE_INSTALL_PREFIX="$mongocrypt_install_dir" \
        -H"$LIBMONGOCRYPT_DIR" \
