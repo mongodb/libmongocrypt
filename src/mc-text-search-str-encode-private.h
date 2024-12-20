@@ -24,7 +24,7 @@ typedef struct _mc_substring_set_t mc_substring_set_t;
 
 typedef struct {
     mc_substring_set_t *set;
-    uint32_t curIdx;
+    uint32_t cur_idx;
 } mc_substring_set_iter_t;
 
 void mc_substring_set_iter_init(mc_substring_set_iter_t *it, mc_substring_set_t *set);

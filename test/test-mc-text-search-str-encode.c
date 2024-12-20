@@ -42,9 +42,9 @@ static void test_nofold_suffix_prefix_case(_mongocrypt_tester_t *tester,
     uint32_t max_padded_len = 16 * (uint32_t)((unfolded_len + 15) / 16);
     uint32_t max_affix_len = MIN(ub, len);
     uint32_t n_real_affixes = max_affix_len >= lb ? max_affix_len - lb + 1 : 0;
-
     uint32_t n_affixes = MIN(ub, max_padded_len) - lb + 1;
     uint32_t n_padding = n_affixes - n_real_affixes;
+
     mc_str_encode_sets_t sets;
     for (int suffix = 0; suffix <= 1; suffix++) {
         if (suffix) {
@@ -63,7 +63,7 @@ static void test_nofold_suffix_prefix_case(_mongocrypt_tester_t *tester,
 
         if (lb > max_padded_len) {
             ASSERT(sets.suffix_set == NULL);
-            ASSERT(sets.prefix_set == NULL)
+            ASSERT(sets.prefix_set == NULL);
             goto CONTINUE;
         }
 
@@ -87,21 +87,27 @@ static void test_nofold_suffix_prefix_case(_mongocrypt_tester_t *tester,
         const char *affix;
 
         uint32_t lastlen = lb - 1;
-        uint32_t affix_len;
-        uint32_t affix_count;
+        uint32_t affix_len = 0;
+        uint32_t affix_count = 0;
         uint32_t total_real_affix_count = 0;
         while (mc_substring_set_iter_next(&it, &affix, &affix_len, &affix_count)) {
+            // Since all substrings are just views on the base string, we can use pointer math to find our start and
+            // indices.
             fprintf(stderr,
                     "Affix starting %lu, ending %lu, count %u\n",
                     affix - sets.base_string,
                     affix - sets.base_string + affix_len,
                     affix_count);
             if (affix_len == len + 1) {
+                // This is padding, so there should be no more entries due to how we ordered them
+                ASSERT(!mc_substring_set_iter_next(&it, NULL, NULL, NULL));
                 break;
             }
 
             ASSERT(affix_len <= MIN(len, ub));
             ASSERT(lb <= affix_len);
+            // We happen to always order from smallest to largest in the suffix/prefix algorithm, which makes our life
+            // slightly easier when testing.
             ASSERT(affix_len == lastlen + 1);
             lastlen = affix_len;
             if (suffix) {
@@ -109,10 +115,10 @@ static void test_nofold_suffix_prefix_case(_mongocrypt_tester_t *tester,
             } else {
                 ASSERT(0 == memcmp(affix, str, affix_len));
             }
+            // The count should always be 1, except for padding.
             ASSERT(1 == affix_count);
             total_real_affix_count++;
         }
-        // UB - LB + 1
         ASSERT(total_real_affix_count == n_real_affixes);
         if (affix_len == len + 1) {
             // Padding
@@ -129,6 +135,7 @@ static void test_nofold_suffix_prefix_case(_mongocrypt_tester_t *tester,
 
 static uint32_t calc_number_of_substrings(uint32_t len, uint32_t lb, uint32_t ub) {
     uint32_t ret = 0;
+    // Calculate the long way to make sure our math in calc_number_of_substrings is correct
     for (uint32_t i = 0; i < len; i++) {
         uint32_t max_sublen = MIN(ub, len - i);
         uint32_t n_substrings = max_sublen < lb ? 0 : max_sublen - lb + 1;
@@ -152,13 +159,11 @@ static void test_nofold_substring_case(_mongocrypt_tester_t *tester,
             unfolded_len);
     uint32_t len = strlen(str);
     uint32_t max_padded_len = 16 * (uint32_t)((unfolded_len + 15) / 16);
-
-    // Calculate the long way to make sure our math in calc_number_of_substrings is correct
     uint32_t n_real_substrings = calc_number_of_substrings(len, lb, ub);
     uint32_t n_substrings = calc_number_of_substrings(MIN(max_padded_len, mlen), lb, ub);
     uint32_t n_padding = n_substrings - n_real_substrings;
-    mc_str_encode_sets_t sets;
 
+    mc_str_encode_sets_t sets;
     mc_FLE2TextSearchInsertSpec_t spec = {str, len, {{mlen, lb, ub}, true}, {{}, false}, {{}, false}, false, false};
     sets = mc_text_search_str_encode(&spec);
 
@@ -176,7 +181,7 @@ static void test_nofold_substring_case(_mongocrypt_tester_t *tester,
     }
 
     fprintf(stderr,
-            "Expecting: vals: n_real_substrings: %u, n_substrings: %u, n_padding: %u\n",
+            "Expecting: n_real_substrings: %u, n_substrings: %u, n_padding: %u\n",
             n_real_substrings,
             n_substrings,
             n_padding);
@@ -185,6 +190,8 @@ static void test_nofold_substring_case(_mongocrypt_tester_t *tester,
     mc_substring_set_iter_t it;
     mc_substring_set_iter_init(&it, set);
     const char *substring;
+    // 2D array: counts[i + j*len] is the number of substrings returned which started at index i
+    // of the base string and were of length (j + lb).
     uint32_t *counts = calloc(len * (ub - lb + 1), sizeof(uint32_t));
 
     uint32_t substring_len = 0;
@@ -197,6 +204,8 @@ static void test_nofold_substring_case(_mongocrypt_tester_t *tester,
                 substring - sets.base_string + substring_len,
                 substring_count);
         if (substring_len == len + 1) {
+            // This is padding, so there should be no more entries due to how we ordered them
+            ASSERT(!mc_substring_set_iter_next(&it, NULL, NULL, NULL));
             break;
         }
 
@@ -208,9 +217,7 @@ static void test_nofold_substring_case(_mongocrypt_tester_t *tester,
 
         counts[substring - sets.base_string + (substring_len - lb) * len]++;
     }
-    // UB - LB + 1
     ASSERT(total_real_substring_count == n_real_substrings);
-
     if (substring_len == len + 1) {
         // Padding
         ASSERT(substring == sets.base_string);
@@ -221,6 +228,8 @@ static void test_nofold_substring_case(_mongocrypt_tester_t *tester,
     }
     for (uint32_t i = 0; i < len; i++) {
         for (uint32_t j = 0; j < ub - lb + 1; j++) {
+            // We expect to find one substring if the end index, i + (j + lb),
+            // would be within range of the folded string, otherwise 0.
             uint32_t expected_count = i + j + lb <= len ? 1 : 0;
             ASSERT(counts[i + j * len] == expected_count);
         }
@@ -446,7 +455,45 @@ static void _test_text_search_str_encode_substring(_mongocrypt_tester_t *tester)
     }
 }
 
+void _test_text_search_str_encode_multiple(_mongocrypt_tester_t *tester) {
+    mc_FLE2TextSearchInsertSpec_t spec =
+        {"123456789", 9, {{20, 4, 7}, true}, {{1, 5}, true}, {{6, 8}, true}, false, false};
+    mc_str_encode_sets_t sets = mc_text_search_str_encode(&spec);
+    // Ensure that we ran tree generation for suffix, prefix, and substring successfully by checking the first entry of
+    // each.
+    const char *str;
+    uint32_t len, count;
+
+    ASSERT(sets.suffix_set != NULL);
+    mc_substring_set_iter_t it;
+    mc_substring_set_iter_init(&it, sets.suffix_set);
+    ASSERT(mc_substring_set_iter_next(&it, &str, &len, &count));
+    ASSERT(len == 1);
+    ASSERT(*str == '9');
+    ASSERT(count == 1);
+
+    ASSERT(sets.prefix_set != NULL);
+    mc_substring_set_iter_init(&it, sets.prefix_set);
+    ASSERT(mc_substring_set_iter_next(&it, &str, &len, &count));
+    ASSERT(len == 6);
+    ASSERT(0 == memcmp("123456", str, 6));
+    ASSERT(count == 1);
+
+    ASSERT(sets.substring_set != NULL);
+    mc_substring_set_iter_init(&it, sets.substring_set);
+    ASSERT(mc_substring_set_iter_next(&it, &str, &len, &count));
+    ASSERT(len == 4);
+    ASSERT(0 == memcmp("1234", str, 4));
+    ASSERT(count == 1);
+
+    ASSERT(sets.exact_len == 9);
+    ASSERT(0 == memcmp(sets.exact, str, 9));
+
+    mc_str_encode_sets_destroy(&sets);
+}
+
 void _mongocrypt_tester_install_text_search_str_encode(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_text_search_str_encode_suffix_prefix);
     INSTALL_TEST(_test_text_search_str_encode_substring);
+    INSTALL_TEST(_test_text_search_str_encode_multiple);
 }
