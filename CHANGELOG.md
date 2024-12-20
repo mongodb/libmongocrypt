@@ -1,5 +1,7 @@
 # ChangeLog
 ## 1.13.0 (Not yet released)
+### Fixed
+- Restore default behavior to disable extra alignment when importing libbson. This was the default behavior in 1.11. This can be overriden by setting the CMake option `ENABLE_EXTRA_ALIGNMENT`.
 ### Removed
 - Support for macOS versions older than 11. libmongocrypt is supported and tested with macOS 11+.
 
