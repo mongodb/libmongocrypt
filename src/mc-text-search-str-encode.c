@@ -17,7 +17,6 @@
 #include "mc-text-search-str-encode-private.h"
 #include <bson/bson.h>
 
-// Representation of a set of substrings on the same base string.
 struct _mc_substring_set_t {
     // base_string is not owned
     const char *base_string;
@@ -74,12 +73,16 @@ bool mc_substring_set_iter_next(mc_substring_set_iter_t *it, const char **str, u
     if (it->cur_idx >= it->set->n_indices) {
         return false;
     }
-    uint32_t start_idx = it->set->start_indices[it->cur_idx];
-    uint32_t end_idx = it->set->end_indices[it->cur_idx];
+    uint32_t idx = it->cur_idx++;
+    if (str == NULL) {
+        // If out parameters are NULL, just increment cur_idx.
+        return true;
+    }
+    uint32_t start_idx = it->set->start_indices[idx];
+    uint32_t end_idx = it->set->end_indices[idx];
     *str = &it->set->base_string[start_idx];
     *len = end_idx - start_idx;
-    *count = it->set->substring_counts[it->cur_idx];
-    it->cur_idx++;
+    *count = it->set->substring_counts[idx];
     return true;
 }
 
