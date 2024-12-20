@@ -282,7 +282,7 @@ static void _test_text_search_str_encode_suffix_prefix(_mongocrypt_tester_t *tes
         test_nofold_suffix_prefix_case(tester, TEST_STRING_SHORT, 2, 16, short_unfolded_len);
         // UB > 16
         test_nofold_suffix_prefix_case(tester, TEST_STRING_SHORT, 2, 19, short_unfolded_len);
-        // UBss > 32
+        // UB > 32
         test_nofold_suffix_prefix_case(tester, TEST_STRING_SHORT, 2, 35, short_unfolded_len);
         // 16 >= LB > len
         test_nofold_suffix_prefix_case(tester, TEST_STRING_SHORT, 12, 19, short_unfolded_len);
@@ -379,7 +379,7 @@ static void _test_text_search_str_encode_substring(_mongocrypt_tester_t *tester)
         test_nofold_substring_case_multiple_mlen(tester, TEST_STRING_SHORT, 2, 16, short_unfolded_len);
         // UB > 16
         test_nofold_substring_case_multiple_mlen(tester, TEST_STRING_SHORT, 2, 19, short_unfolded_len);
-        // UBss > 32
+        // UB > 32
         test_nofold_substring_case_multiple_mlen(tester, TEST_STRING_SHORT, 2, 35, short_unfolded_len);
         // 16 >= LB > len
         test_nofold_substring_case_multiple_mlen(tester, TEST_STRING_SHORT, 12, 19, short_unfolded_len);
