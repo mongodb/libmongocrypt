@@ -1,0 +1,49 @@
+/*
+ * Copyright 2024-present MongoDB, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#ifndef MONGOCRYPT_TEXT_SEARCH_STR_ENCODE_PRIVATE_H
+#define MONGOCRYPT_TEXT_SEARCH_STR_ENCODE_PRIVATE_H
+
+#include "mc-fle2-encryption-placeholder-private.h"
+#include "mongocrypt-status-private.h"
+
+typedef struct _mc_substring_set_t mc_substring_set_t;
+
+typedef struct {
+    mc_substring_set_t *set;
+    uint32_t curIdx;
+} mc_substring_set_iter_t;
+
+void mc_substring_set_iter_init(mc_substring_set_iter_t *it, mc_substring_set_t *set);
+
+bool mc_substring_set_iter_next(mc_substring_set_iter_t *it, const char **str, uint32_t *len, uint32_t *count);
+
+typedef struct {
+    // Owned
+    char *base_string;
+    size_t base_len;
+    mc_substring_set_t *suffix_set;
+    mc_substring_set_t *prefix_set;
+    mc_substring_set_t *substring_set;
+    char *exact;
+    size_t exact_len;
+} mc_str_encode_sets_t;
+
+mc_str_encode_sets_t mc_text_search_str_encode(const mc_FLE2TextSearchInsertSpec_t *spec);
+
+void mc_str_encode_sets_destroy(mc_str_encode_sets_t *sets);
+
+#endif /* MONGOCRYPT_TEXT_SEARCH_STR_ENCODE_PRIVATE_H */
