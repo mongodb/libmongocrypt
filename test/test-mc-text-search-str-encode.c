@@ -49,10 +49,10 @@ static void test_nofold_suffix_prefix_case(_mongocrypt_tester_t *tester,
     for (int suffix = 0; suffix <= 1; suffix++) {
         if (suffix) {
             mc_FLE2TextSearchInsertSpec_t spec = {str, len, {{}, false}, {{lb, ub}, true}, {{}, false}, false, false};
-            sets = mc_text_search_str_encode(&spec);
+            sets = mc_text_search_str_encode_helper(&spec, unfolded_len);
         } else {
             mc_FLE2TextSearchInsertSpec_t spec = {str, len, {{}, false}, {{}, false}, {{lb, ub}, true}, false, false};
-            sets = mc_text_search_str_encode(&spec);
+            sets = mc_text_search_str_encode_helper(&spec, unfolded_len);
         }
         ASSERT(sets.base_len == len + 1);
         ASSERT(0 == memcmp(sets.base_string, str, len));
@@ -81,6 +81,7 @@ static void test_nofold_suffix_prefix_case(_mongocrypt_tester_t *tester,
             ASSERT(sets.suffix_set == NULL);
             set = sets.prefix_set;
         }
+        ASSERT(set != NULL);
 
         mc_substring_set_iter_t it;
         mc_substring_set_iter_init(&it, set);
@@ -165,7 +166,7 @@ static void test_nofold_substring_case(_mongocrypt_tester_t *tester,
 
     mc_str_encode_sets_t sets;
     mc_FLE2TextSearchInsertSpec_t spec = {str, len, {{mlen, lb, ub}, true}, {{}, false}, {{}, false}, false, false};
-    sets = mc_text_search_str_encode(&spec);
+    sets = mc_text_search_str_encode_helper(&spec, unfolded_len);
 
     ASSERT(sets.base_len == len + 1);
     ASSERT(0 == memcmp(sets.base_string, str, len));
@@ -175,9 +176,11 @@ static void test_nofold_substring_case(_mongocrypt_tester_t *tester,
     ASSERT(sets.exact_len == len);
     ASSERT(0 == memcmp(sets.exact, str, len));
 
-    if (len > mlen || lb > max_padded_len) {
+    if (unfolded_len > mlen || lb > max_padded_len) {
         ASSERT(sets.substring_set == NULL);
         return;
+    } else {
+        ASSERT(sets.substring_set != NULL);
     }
 
     fprintf(stderr,
@@ -262,7 +265,7 @@ const char TEST_STRING_MEDIUM[] = "0123456789abcdef";
 const char TEST_STRING_LONG[] = "123456789123456789123456789";
 
 static void _test_text_search_str_encode_suffix_prefix(_mongocrypt_tester_t *tester) {
-    for (uint32_t i = 0; i < sizeof(UNFOLDED_CASES) / sizeof(UNFOLDED_CASES); i++) {
+    for (uint32_t i = 0; i < sizeof(UNFOLDED_CASES) / sizeof(UNFOLDED_CASES[0]); i++) {
         uint32_t short_unfolded_len = sizeof(TEST_STRING_SHORT) - 1 + UNFOLDED_CASES[i];
         uint32_t medium_unfolded_len = sizeof(TEST_STRING_MEDIUM) - 1 + UNFOLDED_CASES[i];
         uint32_t long_unfolded_len = sizeof(TEST_STRING_LONG) - 1 + UNFOLDED_CASES[i];
@@ -359,7 +362,7 @@ static void _test_text_search_str_encode_suffix_prefix(_mongocrypt_tester_t *tes
 }
 
 static void _test_text_search_str_encode_substring(_mongocrypt_tester_t *tester) {
-    for (uint32_t i = 0; i < sizeof(UNFOLDED_CASES) / sizeof(UNFOLDED_CASES); i++) {
+    for (uint32_t i = 0; i < sizeof(UNFOLDED_CASES) / sizeof(UNFOLDED_CASES[0]); i++) {
         uint32_t short_unfolded_len = sizeof(TEST_STRING_SHORT) - 1 + UNFOLDED_CASES[i];
         uint32_t medium_unfolded_len = sizeof(TEST_STRING_MEDIUM) - 1 + UNFOLDED_CASES[i];
         uint32_t long_unfolded_len = sizeof(TEST_STRING_LONG) - 1 + UNFOLDED_CASES[i];
