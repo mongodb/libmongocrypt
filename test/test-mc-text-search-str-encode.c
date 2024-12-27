@@ -56,7 +56,7 @@ static void test_nofold_suffix_prefix_case(_mongocrypt_tester_t *tester,
         }
         ASSERT(sets.base_len == len + 1);
         ASSERT(0 == memcmp(sets.base_string, str, len));
-        ASSERT(sets.base_string[len] == 0xFF);
+        ASSERT(sets.base_string[len] == (char)0xFF);
         ASSERT(sets.substring_set == NULL);
         ASSERT(sets.exact_len == len);
         ASSERT(0 == memcmp(sets.exact, str, len));
@@ -169,7 +169,7 @@ static void test_nofold_substring_case(_mongocrypt_tester_t *tester,
 
     ASSERT(sets.base_len == len + 1);
     ASSERT(0 == memcmp(sets.base_string, str, len));
-    ASSERT(sets.base_string[len] == 0xFF);
+    ASSERT(sets.base_string[len] == (char)0xFF);
     ASSERT(sets.suffix_set == NULL)
     ASSERT(sets.prefix_set == NULL);
     ASSERT(sets.exact_len == len);
