@@ -48,10 +48,12 @@ static void test_nofold_suffix_prefix_case(_mongocrypt_tester_t *tester,
     mc_str_encode_sets_t sets;
     for (int suffix = 0; suffix <= 1; suffix++) {
         if (suffix) {
-            mc_FLE2TextSearchInsertSpec_t spec = {str, len, {{}, false}, {{lb, ub}, true}, {{}, false}, false, false};
+            mc_FLE2TextSearchInsertSpec_t spec =
+                {str, len, {{0, 0, 0}, false}, {{lb, ub}, true}, {{0, 0}, false}, false, false};
             sets = mc_text_search_str_encode_helper(&spec, unfolded_len);
         } else {
-            mc_FLE2TextSearchInsertSpec_t spec = {str, len, {{}, false}, {{}, false}, {{lb, ub}, true}, false, false};
+            mc_FLE2TextSearchInsertSpec_t spec =
+                {str, len, {{0, 0, 0}, false}, {{0, 0}, false}, {{lb, ub}, true}, false, false};
             sets = mc_text_search_str_encode_helper(&spec, unfolded_len);
         }
         ASSERT(sets.base_len == len + 1);
@@ -165,7 +167,8 @@ static void test_nofold_substring_case(_mongocrypt_tester_t *tester,
     uint32_t n_padding = n_substrings - n_real_substrings;
 
     mc_str_encode_sets_t sets;
-    mc_FLE2TextSearchInsertSpec_t spec = {str, len, {{mlen, lb, ub}, true}, {{}, false}, {{}, false}, false, false};
+    mc_FLE2TextSearchInsertSpec_t spec =
+        {str, len, {{mlen, lb, ub}, true}, {{0, 0}, false}, {{0, 0}, false}, false, false};
     sets = mc_text_search_str_encode_helper(&spec, unfolded_len);
 
     ASSERT(sets.base_len == len + 1);
