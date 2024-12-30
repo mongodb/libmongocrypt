@@ -43,9 +43,11 @@ fi
 echo "Building libbson ..."
 libbson_install_dir="$pkgconfig_tests_root/install/libbson"
 build_dir="$mongoc_src_dir/_build"
+# Disable extra alignment to match default applied in libmongocrypt.
 run_cmake -DENABLE_MONGOC=OFF \
        "${common_cmake_args[@]}" \
        -DCMAKE_INSTALL_PREFIX="$libbson_install_dir" \
+       -DENABLE_EXTRA_ALIGNMENT=OFF \
        -H"$mongoc_src_dir" \
        -B"$build_dir"
 run_cmake --build "$build_dir" --target install --config RelWithDebInfo
@@ -114,10 +116,8 @@ echo "Build example-no-bson, dynamic linking against libmongocrypt ... done"
 rm -r "$mongocrypt_install_dir"
 
 echo "Build libmongocrypt, dynamic linking against libbson ..."
-# Enable extra alignment on imported libbson to match installed libbson.
 run_cmake -DUSE_SHARED_LIBBSON=ON \
        -DENABLE_BUILD_FOR_PPA=OFF \
-       -DENABLE_EXTRA_ALIGNMENT=ON \
        "${common_cmake_args[@]}" \
        -DCMAKE_INSTALL_PREFIX="$mongocrypt_install_dir" \
        -H"$LIBMONGOCRYPT_DIR" \
