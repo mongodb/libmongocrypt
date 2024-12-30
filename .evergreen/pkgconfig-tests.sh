@@ -25,8 +25,11 @@ if [ "$MACOS_UNIVERSAL" = "ON" ]; then
     ADDITIONAL_CMAKE_FLAGS="$ADDITIONAL_CMAKE_FLAGS -DCMAKE_OSX_ARCHITECTURES='arm64;x86_64'"
 fi
 
+# Disable extra alignment in libbson and libmongocrypt to ensure agreement.
+# libmongocrypt disables by default, but may enable if a system install of libbson is detected with extra alignment.
 common_cmake_args=(
     -DCMAKE_BUILD_TYPE=RelWithDebInfo
+    -DENABLE_EXTRA_ALIGNMENT=OFF
     $ADDITIONAL_CMAKE_FLAGS
 )
 
@@ -43,11 +46,9 @@ fi
 echo "Building libbson ..."
 libbson_install_dir="$pkgconfig_tests_root/install/libbson"
 build_dir="$mongoc_src_dir/_build"
-# Disable extra alignment to match default applied in libmongocrypt.
 run_cmake -DENABLE_MONGOC=OFF \
        "${common_cmake_args[@]}" \
        -DCMAKE_INSTALL_PREFIX="$libbson_install_dir" \
-       -DENABLE_EXTRA_ALIGNMENT=OFF \
        -H"$mongoc_src_dir" \
        -B"$build_dir"
 run_cmake --build "$build_dir" --target install --config RelWithDebInfo
