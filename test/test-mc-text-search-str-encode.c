@@ -38,7 +38,7 @@ static void test_nofold_suffix_prefix_case(_mongocrypt_tester_t *tester,
             lb,
             ub,
             unfolded_len);
-    uint32_t len = strlen(str);
+    uint32_t len = (uint32_t)strlen(str);
     uint32_t max_padded_len = 16 * (uint32_t)((unfolded_len + 15) / 16);
     uint32_t max_affix_len = MIN(ub, len);
     uint32_t n_real_affixes = max_affix_len >= lb ? max_affix_len - lb + 1 : 0;
@@ -97,7 +97,7 @@ static void test_nofold_suffix_prefix_case(_mongocrypt_tester_t *tester,
             // Since all substrings are just views on the base string, we can use pointer math to find our start and
             // indices.
             fprintf(stderr,
-                    "Affix starting %lu, ending %lu, count %u\n",
+                    "Affix starting %li, ending %li, count %u\n",
                     affix - sets.base_string,
                     affix - sets.base_string + affix_len,
                     affix_count);
@@ -160,7 +160,7 @@ static void test_nofold_substring_case(_mongocrypt_tester_t *tester,
             ub,
             mlen,
             unfolded_len);
-    uint32_t len = strlen(str);
+    uint32_t len = (uint32_t)strlen(str);
     uint32_t max_padded_len = 16 * (uint32_t)((unfolded_len + 15) / 16);
     uint32_t n_real_substrings = calc_number_of_substrings(len, lb, ub);
     uint32_t n_substrings = calc_number_of_substrings(MIN(max_padded_len, mlen), lb, ub);
@@ -205,7 +205,7 @@ static void test_nofold_substring_case(_mongocrypt_tester_t *tester,
     uint32_t total_real_substring_count = 0;
     while (mc_substring_set_iter_next(&it, &substring, &substring_len, &substring_count)) {
         fprintf(stderr,
-                "Substring starting %lu, ending %lu, count %u\n",
+                "Substring starting %li, ending %li, count %u\n",
                 substring - sets.base_string,
                 substring - sets.base_string + substring_len,
                 substring_count);
