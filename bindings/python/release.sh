@@ -19,7 +19,7 @@ set -o errexit  # Exit the script with error if any of the commands fail
 LIBMONGOCRYPT_VERSION=$(cat ./libmongocrypt-version.txt)
 REVISION=$(git rev-list -n 1 $LIBMONGOCRYPT_VERSION)
 # The libmongocrypt release branch.
-BRANCH="r1.11"
+BRANCH="r1.12"
 # The python executable to use.
 PYTHON=${PYTHON:-python}
 
