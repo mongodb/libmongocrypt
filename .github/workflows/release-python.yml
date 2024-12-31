@@ -68,6 +68,7 @@ jobs:
       ref: ${{ needs.pre-publish.outputs.version }}
 
   publish:
+    needs: [build-dist, static-scan]
     name: Upload release to PyPI
     runs-on: ubuntu-latest
     environment: release
@@ -84,7 +85,7 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
 
   post-publish:
-    needs: [build-dist, static-scan]
+    needs: [publish]
     runs-on: ubuntu-latest
     environment: release-python
     permissions:
