@@ -98,8 +98,8 @@ static void test_nofold_suffix_prefix_case(_mongocrypt_tester_t *tester,
             // indices.
             fprintf(stderr,
                     "Affix starting %lld, ending %lld, count %u\n",
-                    affix - sets.base_string,
-                    affix - sets.base_string + affix_len,
+                    (long long)(affix - sets.base_string),
+                    (long long)(affix - sets.base_string + affix_len),
                     affix_count);
             if (affix_len == len + 1) {
                 // This is padding, so there should be no more entries due to how we ordered them
@@ -206,8 +206,8 @@ static void test_nofold_substring_case(_mongocrypt_tester_t *tester,
     while (mc_substring_set_iter_next(&it, &substring, &substring_len, &substring_count)) {
         fprintf(stderr,
                 "Substring starting %lld, ending %lld, count %u\n",
-                substring - sets.base_string,
-                substring - sets.base_string + substring_len,
+                (long long)(substring - sets.base_string),
+                (long long)(substring - sets.base_string + substring_len),
                 substring_count);
         if (substring_len == len + 1) {
             // This is padding, so there should be no more entries due to how we ordered them
