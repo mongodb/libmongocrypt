@@ -2167,7 +2167,7 @@ static void _test_encrypt_fle2_find_range_payload_decimal128_precision(_mongocry
 }
 #endif // MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
 
-static mongocrypt_t *_crypt_with_rng(_test_rng_data_source *rng_source, bool use_v2, bool use_range_v2) {
+static mongocrypt_t *_crypt_with_rng(_test_rng_data_source *rng_source, bool use_range_v2) {
     mongocrypt_t *crypt;
     mongocrypt_binary_t *localkey;
     /* localkey_data is the KEK used to encrypt the keyMaterial
@@ -2213,7 +2213,6 @@ typedef struct {
     const char *expect_finalize_error;
     const char *expect_init_error;
     bool is_expression;
-    bool use_v2;
     bool use_range_v2;
 } ee_testcase;
 
@@ -2225,7 +2224,7 @@ static void ee_testcase_run(ee_testcase *tc) {
     if (tc->rng_data.buf.len > 0) {
         // Use fixed data for random number generation to produce deterministic
         // results.
-        crypt = _crypt_with_rng(&tc->rng_data, tc->use_v2, tc->use_range_v2);
+        crypt = _crypt_with_rng(&tc->rng_data, tc->use_range_v2);
     } else {
         tester_mongocrypt_flags flags = TESTER_MONGOCRYPT_DEFAULT;
         if (tc->use_range_v2) {
@@ -2337,7 +2336,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.expect = TEST_BSON("{'v' : {'$binary' : {'base64': "
                               "'EKvN76sSNJh2EjQSNFZ4kBICTQaVZPWgXp41I7mPV1rLFVl3jjP90PgD4T+Mtubn/"
                               "mm4CKsKGaV1yxlic9Dty1Adef4Y+bsLGKhBbCa5eojM/A==','subType' : '06'}}}");
-        tc.use_v2 = true;
         ee_testcase_run(&tc);
     }
 
@@ -2358,7 +2356,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.keys_to_feed[0] = keyABC;
         tc.keys_to_feed[1] = key123;
         tc.expect = TEST_FILE("./test/data/fle2-explicit/insert-indexed-v2.json");
-        tc.use_v2 = true;
         ee_testcase_run(&tc);
     }
 
@@ -2384,7 +2381,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.keys_to_feed[0] = keyABC;
         tc.keys_to_feed[1] = key123;
         tc.expect = TEST_FILE("./test/data/fle2-explicit/insert-indexed-v2.json");
-        tc.use_v2 = true;
         ee_testcase_run(&tc);
     }
 
@@ -2411,7 +2407,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.keys_to_feed[1] = key123;
         tc.expect = TEST_FILE("./test/data/fle2-explicit/"
                               "insert-indexed-contentionFactor1-v2.json");
-        tc.use_v2 = true;
         ee_testcase_run(&tc);
     }
 
@@ -2431,7 +2426,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.keys_to_feed[0] = keyABC;
         tc.expect = TEST_FILE("./test/data/fle2-explicit/"
                               "insert-indexed-same-user-and-index-key-v2.json");
-        tc.use_v2 = true;
         ee_testcase_run(&tc);
     }
 
@@ -2447,7 +2441,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.keys_to_feed[0] = keyABC;
         tc.keys_to_feed[1] = key123;
         tc.expect = TEST_FILE("./test/data/fle2-explicit/find-indexed-v2.json");
-        tc.use_v2 = true;
         ee_testcase_run(&tc);
     }
 
@@ -2463,7 +2456,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.keys_to_feed[0] = keyABC;
         tc.keys_to_feed[1] = key123;
         tc.expect = TEST_FILE("./test/data/fle2-explicit/find-indexed-contentionFactor1-v2.json");
-        tc.use_v2 = true;
         ee_testcase_run(&tc);
     }
 
@@ -2475,7 +2467,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.contention_factor = OPT_I64(-1);
         tc.msg = TEST_BSON("{'v': 123456}");
         tc.expect_init_error = "contention must be non-negative";
-        tc.use_v2 = true;
         ee_testcase_run(&tc);
     }
 
@@ -2487,7 +2478,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.contention_factor = OPT_I64(INT64_MAX);
         tc.msg = TEST_BSON("{'v': 123456}");
         tc.expect_init_error = "contention must be < INT64_MAX";
-        tc.use_v2 = true;
         ee_testcase_run(&tc);
     }
 
@@ -2509,7 +2499,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.keys_to_feed[1] = key123;
         tc.expect = TEST_FILE("./test/data/fle2-insert-range-explicit/int32/"
                               "encrypted-payload-v2.json");
-        tc.use_v2 = true;
         ee_testcase_run(&tc);
     }
 
@@ -2531,7 +2520,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.keys_to_feed[1] = key123;
         tc.expect = TEST_FILE("./test/data/fle2-insert-range-explicit/sparsity-2/"
                               "encrypted-payload-v2.json");
-        tc.use_v2 = true;
         ee_testcase_run(&tc);
     }
 
@@ -2551,7 +2539,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.expect = TEST_FILE("./test/data/fle2-find-range-explicit/int32/"
                               "encrypted-payload-v2.json");
         tc.is_expression = true;
-        tc.use_v2 = true;
         ee_testcase_run(&tc);
     }
 
@@ -2565,7 +2552,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.msg = TEST_BSON("{'v': 'abc'}");
         tc.keys_to_feed[0] = keyABC;
         tc.expect_finalize_error = "expected matching 'min' and value type";
-        tc.use_v2 = true;
         ee_testcase_run(&tc);
     }
 
@@ -2587,7 +2573,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.expect = TEST_FILE("./test/data/fle2-find-range-explicit/"
                               "double-precision/encrypted-payload-v2.json");
         tc.is_expression = true;
-        tc.use_v2 = true;
         ee_testcase_run(&tc);
     }
 
@@ -2609,7 +2594,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.keys_to_feed[1] = key123;
         tc.expect = TEST_FILE("./test/data/fle2-insert-range-explicit/double-precision/"
                               "encrypted-payload-v2.json");
-        tc.use_v2 = true;
         ee_testcase_run(&tc);
     }
 
@@ -2629,7 +2613,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.keys_to_feed[1] = key123;
         tc.expect = TEST_FILE("./test/data/fle2-find-range-explicit/double/encrypted-payload-v2.json");
         tc.is_expression = true;
-        tc.use_v2 = true;
         ee_testcase_run(&tc);
     }
 
@@ -2650,7 +2633,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.keys_to_feed[1] = key123;
         tc.expect = TEST_FILE("./test/data/fle2-insert-range-explicit/double/"
                               "encrypted-payload-v2.json");
-        tc.use_v2 = true;
         ee_testcase_run(&tc);
     }
 
@@ -2664,7 +2646,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.msg = TEST_FILE("./test/data/fle2-insert-range-explicit/int32/value-to-encrypt.json");
         tc.keys_to_feed[0] = keyABC;
         tc.expect_finalize_error = "minimum value must be less than the maximum value";
-        tc.use_v2 = true;
         ee_testcase_run(&tc);
     }
 
@@ -2698,7 +2679,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.expect = TEST_FILE("./test/data/fle2-find-range-explicit/"
                               "int32-openinterval/encrypted-payload-v2.json");
         tc.is_expression = true;
-        tc.use_v2 = true;
         ee_testcase_run(&tc);
     }
 
@@ -4640,7 +4620,6 @@ static void _test_range_sends_cryptoParams(_mongocrypt_tester_t *tester) {
         tc.msg = TEST_BSON("{'v': 123456}");
         tc.keys_to_feed[0] = key123;
         tc.expect = TEST_FILE("./test/data/range-sends-cryptoParams/explicit-insert-int32/expected.json");
-        tc.use_v2 = true;       // Use QEv2 protocol.
         tc.use_range_v2 = true; // Use RangeV2 protocol.
         ee_testcase_run(&tc);
         // Check the parameters are present in the final payload.
@@ -4666,7 +4645,6 @@ static void _test_range_sends_cryptoParams(_mongocrypt_tester_t *tester) {
         tc.msg = TEST_BSON("{'v': 123456}");
         tc.keys_to_feed[0] = key123;
         tc.expect = TEST_FILE("./test/data/range-sends-cryptoParams/explicit-insert-int32-defaults/expected.json");
-        tc.use_v2 = true;       // Use QEv2 protocol.
         tc.use_range_v2 = true; // Use RangeV2 protocol.
         ee_testcase_run(&tc);
         // Check the parameters are present in the final payload.
@@ -4693,7 +4671,6 @@ static void _test_range_sends_cryptoParams(_mongocrypt_tester_t *tester) {
         tc.msg = TEST_BSON("{'v': 123456.0}");
         tc.keys_to_feed[0] = key123;
         tc.expect = TEST_FILE("./test/data/range-sends-cryptoParams/explicit-insert-double/expected.json");
-        tc.use_v2 = true;       // Use QEv2 protocol.
         tc.use_range_v2 = true; // Use RangeV2 protocol.
         ee_testcase_run(&tc);
         // Check the parameters are present in the final payload.
@@ -4719,7 +4696,6 @@ static void _test_range_sends_cryptoParams(_mongocrypt_tester_t *tester) {
         tc.msg = TEST_FILE("./test/data/range-sends-cryptoParams/explicit-find-int32-defaults/to-encrypt.json");
         tc.keys_to_feed[0] = key123;
         tc.expect = TEST_FILE("./test/data/range-sends-cryptoParams/explicit-find-int32-defaults/expected.json");
-        tc.use_v2 = true;       // Use QEv2 protocol.
         tc.use_range_v2 = true; // Use RangeV2 protocol.
         ee_testcase_run(&tc);
         // Check the parameters are present in the final payload.
@@ -4745,7 +4721,6 @@ static void _test_range_sends_cryptoParams(_mongocrypt_tester_t *tester) {
         tc.msg = TEST_FILE("./test/data/range-sends-cryptoParams/explicit-find-int32/to-encrypt.json");
         tc.keys_to_feed[0] = key123;
         tc.expect = TEST_FILE("./test/data/range-sends-cryptoParams/explicit-find-int32/expected.json");
-        tc.use_v2 = true;       // Use QEv2 protocol.
         tc.use_range_v2 = true; // Use RangeV2 protocol.
         ee_testcase_run(&tc);
         // Check the parameters are present in the final payload.
