@@ -71,7 +71,7 @@ jobs:
     needs: [build-dist, static-scan]
     name: Upload release to PyPI
     runs-on: ubuntu-latest
-    environment: release
+    environment: release-python
     permissions:
       id-token: write
     steps:
