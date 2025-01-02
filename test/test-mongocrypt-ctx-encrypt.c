@@ -2323,26 +2323,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
 
     {
         ee_testcase tc = {0};
-        tc.desc = "Unindexed";
-#define RNG_DATA "\x4d\x06\x95\x64\xf5\xa0\x5e\x9e\x35\x23\xb9\x8f\x57\x5a\xcb\x15"
-        uint8_t rng_data[] = RNG_DATA;
-        tc.rng_data = (_test_rng_data_source){.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
-#undef RNG_DATA
-        tc.algorithm = MONGOCRYPT_ALGORITHM_UNINDEXED_STR;
-        tc.user_key_id = &keyABC_id;
-        tc.index_key_id = &key123_id;
-        tc.msg = TEST_BSON("{'v': 'value123'}");
-        tc.keys_to_feed[0] = keyABC;
-        tc.keys_to_feed[1] = key123;
-        tc.expect = TEST_BSON("{'v': { '$binary': { 'base64': "
-                              "'EKvN76sSNJh2EjQSNFZ4kBICTQaVZPWgXp41I7mPV1rLFVl3jjP90PgD4T+Mtubn/"
-                              "mm4CKsKGaV1yxlic9Dty1Adef4Y+bsLGKhBbCa5eojM/A=='"
-                              ", 'subType': '06' } }}");
-        ee_testcase_run(&tc);
-    }
-
-    {
-        ee_testcase tc = {0};
         tc.desc = "Unindexed (v2)";
 #define RNG_DATA "\x4d\x06\x95\x64\xf5\xa0\x5e\x9e\x35\x23\xb9\x8f\x57\x5a\xcb\x15"
         uint8_t rng_data[] = RNG_DATA;
@@ -2358,26 +2338,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
                               "'EKvN76sSNJh2EjQSNFZ4kBICTQaVZPWgXp41I7mPV1rLFVl3jjP90PgD4T+Mtubn/"
                               "mm4CKsKGaV1yxlic9Dty1Adef4Y+bsLGKhBbCa5eojM/A==','subType' : '06'}}}");
         tc.use_v2 = true;
-        ee_testcase_run(&tc);
-    }
-
-    {
-        ee_testcase tc = {0};
-        tc.desc = "Indexed";
-#define RNG_DATA                                                                                                       \
-    "\xc7\x43\xd6\x75\x76\x9e\xa7\x88\xd5\xe5\xc4\x40\xdb\x24\x0d\xf9"                                                 \
-    "\x4c\xd9\x64\x10\x43\x81\xe6\x61\xfa\x1f\xa0\x5c\x49\x8e\xad\x21"
-        uint8_t rng_data[] = RNG_DATA;
-        tc.rng_data = (_test_rng_data_source){.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
-#undef RNG_DATA
-        tc.algorithm = MONGOCRYPT_ALGORITHM_INDEXED_STR;
-        tc.user_key_id = &keyABC_id;
-        tc.index_key_id = &key123_id;
-        tc.contention_factor = OPT_I64(0);
-        tc.msg = TEST_BSON("{'v': 'value123'}");
-        tc.keys_to_feed[0] = keyABC;
-        tc.keys_to_feed[1] = key123;
-        tc.expect = TEST_FILE("./test/data/fle2-explicit/insert-indexed-v2.json");
         ee_testcase_run(&tc);
     }
 
@@ -2404,31 +2364,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
 
     {
         ee_testcase tc = {0};
-        tc.desc = "Indexed with non-zero ContentionFactor. Random number chosen is 0";
-/* First 8 bytes are for random ContentionFactor.
- * Second 16 bytes are IV for 'p' field in FLE2InsertUpdatePayload
- * Third 16 bytes are IV for 'v' field in FLE2InsertUpdatePayload
- */
-#define RNG_DATA                                                                                                       \
-    "\x00\x00\x00\x00\x00\x00\x00\x00"                                                                                 \
-    "\xc7\x43\xd6\x75\x76\x9e\xa7\x88\xd5\xe5\xc4\x40\xdb\x24\x0d\xf9"                                                 \
-    "\x4c\xd9\x64\x10\x43\x81\xe6\x61\xfa\x1f\xa0\x5c\x49\x8e\xad\x21"
-        uint8_t rng_data[] = RNG_DATA;
-        tc.rng_data = (_test_rng_data_source){.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
-#undef RNG_DATA
-        tc.algorithm = MONGOCRYPT_ALGORITHM_INDEXED_STR;
-        tc.user_key_id = &keyABC_id;
-        tc.index_key_id = &key123_id;
-        tc.contention_factor = OPT_I64(1);
-        tc.msg = TEST_BSON("{'v': 'value123'}");
-        tc.keys_to_feed[0] = keyABC;
-        tc.keys_to_feed[1] = key123;
-        tc.expect = TEST_FILE("./test/data/fle2-explicit/insert-indexed-v2.json");
-        ee_testcase_run(&tc);
-    }
-
-    {
-        ee_testcase tc = {0};
         tc.desc = "Indexed with non-zero ContentionFactor. Random number chosen is 0 (v2)";
 /* First 8 bytes are for random ContentionFactor.
  * Second 16 bytes are IV for 'p' field in FLE2InsertUpdatePayload
@@ -2450,32 +2385,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.keys_to_feed[1] = key123;
         tc.expect = TEST_FILE("./test/data/fle2-explicit/insert-indexed-v2.json");
         tc.use_v2 = true;
-        ee_testcase_run(&tc);
-    }
-
-    {
-        ee_testcase tc = {0};
-        tc.desc = "Indexed with non-zero ContentionFactor. Random number chosen is 1";
-/* First 8 bytes are for random ContentionFactor.
- * Second 16 bytes are IV for 'p' field in FLE2InsertUpdatePayload
- * Third 16 bytes are IV for 'v' field in FLE2InsertUpdatePayload
- */
-#define RNG_DATA                                                                                                       \
-    "\x01\x00\x00\x00\x00\x00\x00\x00"                                                                                 \
-    "\xc7\x43\xd6\x75\x76\x9e\xa7\x88\xd5\xe5\xc4\x40\xdb\x24\x0d\xf9"                                                 \
-    "\x4c\xd9\x64\x10\x43\x81\xe6\x61\xfa\x1f\xa0\x5c\x49\x8e\xad\x21"
-        uint8_t rng_data[] = RNG_DATA;
-        tc.rng_data = (_test_rng_data_source){.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
-#undef RNG_DATA
-        tc.algorithm = MONGOCRYPT_ALGORITHM_INDEXED_STR;
-        tc.user_key_id = &keyABC_id;
-        tc.index_key_id = &key123_id;
-        tc.contention_factor = OPT_I64(1);
-        tc.msg = TEST_BSON("{'v': 'value123'}");
-        tc.keys_to_feed[0] = keyABC;
-        tc.keys_to_feed[1] = key123;
-        tc.expect = TEST_FILE("./test/data/fle2-explicit/"
-                              "insert-indexed-contentionFactor1-v2.json");
         ee_testcase_run(&tc);
     }
 
@@ -2508,25 +2417,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
 
     {
         ee_testcase tc = {0};
-        tc.desc = "omitted index_key_id defaults to using user_key_id";
-#define RNG_DATA                                                                                                       \
-    "\xc7\x43\xd6\x75\x76\x9e\xa7\x88\xd5\xe5\xc4\x40\xdb\x24\x0d\xf9"                                                 \
-    "\x4c\xd9\x64\x10\x43\x81\xe6\x61\xfa\x1f\xa0\x5c\x49\x8e\xad\x21"
-        uint8_t rng_data[] = RNG_DATA;
-        tc.rng_data = (_test_rng_data_source){.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
-#undef RNG_DATA
-        tc.algorithm = MONGOCRYPT_ALGORITHM_INDEXED_STR;
-        tc.user_key_id = &keyABC_id;
-        tc.contention_factor = OPT_I64(0);
-        tc.msg = TEST_BSON("{'v': 'value123'}");
-        tc.keys_to_feed[0] = keyABC;
-        tc.expect = TEST_FILE("./test/data/fle2-explicit/"
-                              "insert-indexed-same-user-and-index-key-v2.json");
-        ee_testcase_run(&tc);
-    }
-
-    {
-        ee_testcase tc = {0};
         tc.desc = "omitted index_key_id defaults to using user_key_id (v2)";
 #define RNG_DATA                                                                                                       \
     "\xc7\x43\xd6\x75\x76\x9e\xa7\x88\xd5\xe5\xc4\x40\xdb\x24\x0d\xf9"                                                 \
@@ -2542,21 +2432,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.expect = TEST_FILE("./test/data/fle2-explicit/"
                               "insert-indexed-same-user-and-index-key-v2.json");
         tc.use_v2 = true;
-        ee_testcase_run(&tc);
-    }
-
-    {
-        ee_testcase tc = {0};
-        tc.desc = "algorithm='Indexed' with query type";
-        tc.algorithm = MONGOCRYPT_ALGORITHM_INDEXED_STR;
-        tc.query_type = MONGOCRYPT_QUERY_TYPE_EQUALITY_STR;
-        tc.user_key_id = &keyABC_id;
-        tc.index_key_id = &key123_id;
-        tc.contention_factor = OPT_I64(0);
-        tc.msg = TEST_BSON("{'v': 123456}");
-        tc.keys_to_feed[0] = keyABC;
-        tc.keys_to_feed[1] = key123;
-        tc.expect = TEST_FILE("./test/data/fle2-explicit/find-indexed-v2.json");
         ee_testcase_run(&tc);
     }
 
@@ -2578,21 +2453,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
 
     {
         ee_testcase tc = {0};
-        tc.desc = "algorithm='Indexed' with query type and non-zero contention factor";
-        tc.algorithm = MONGOCRYPT_ALGORITHM_INDEXED_STR;
-        tc.query_type = MONGOCRYPT_QUERY_TYPE_EQUALITY_STR;
-        tc.user_key_id = &keyABC_id;
-        tc.index_key_id = &key123_id;
-        tc.contention_factor = OPT_I64(1);
-        tc.msg = TEST_BSON("{'v': 123456}");
-        tc.keys_to_feed[0] = keyABC;
-        tc.keys_to_feed[1] = key123;
-        tc.expect = TEST_FILE("./test/data/fle2-explicit/find-indexed-contentionFactor1-v2.json");
-        ee_testcase_run(&tc);
-    }
-
-    {
-        ee_testcase tc = {0};
         tc.desc = "algorithm='Indexed' with query type and non-zero contention factor (v2)";
         tc.algorithm = MONGOCRYPT_ALGORITHM_INDEXED_STR;
         tc.query_type = MONGOCRYPT_QUERY_TYPE_EQUALITY_STR;
@@ -2604,17 +2464,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.keys_to_feed[1] = key123;
         tc.expect = TEST_FILE("./test/data/fle2-explicit/find-indexed-contentionFactor1-v2.json");
         tc.use_v2 = true;
-        ee_testcase_run(&tc);
-    }
-
-    {
-        ee_testcase tc = {0};
-        tc.desc = "Negative contention factor is an error on insert";
-        tc.algorithm = MONGOCRYPT_ALGORITHM_INDEXED_STR;
-        tc.user_key_id = &keyABC_id;
-        tc.contention_factor = OPT_I64(-1);
-        tc.msg = TEST_BSON("{'v': 123456}");
-        tc.expect_init_error = "contention must be non-negative";
         ee_testcase_run(&tc);
     }
 
@@ -2632,17 +2481,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
 
     {
         ee_testcase tc = {0};
-        tc.desc = "INT64_MAX contention factor is an error on insert";
-        tc.algorithm = MONGOCRYPT_ALGORITHM_INDEXED_STR;
-        tc.user_key_id = &keyABC_id;
-        tc.contention_factor = OPT_I64(INT64_MAX);
-        tc.msg = TEST_BSON("{'v': 123456}");
-        tc.expect_init_error = "contention must be < INT64_MAX";
-        ee_testcase_run(&tc);
-    }
-
-    {
-        ee_testcase tc = {0};
         tc.desc = "INT64_MAX contention factor is an error on insert (v2)";
         tc.algorithm = MONGOCRYPT_ALGORITHM_INDEXED_STR;
         tc.user_key_id = &keyABC_id;
@@ -2650,27 +2488,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.msg = TEST_BSON("{'v': 123456}");
         tc.expect_init_error = "contention must be < INT64_MAX";
         tc.use_v2 = true;
-        ee_testcase_run(&tc);
-    }
-
-    {
-        ee_testcase tc = {0};
-        tc.desc = "algorithm='Range' with int32";
-#include "./data/fle2-insert-range-explicit/int32/RNG_DATA.h"
-        tc.rng_data = (_test_rng_data_source){.buf = {.data = (uint8_t *)RNG_DATA, .len = sizeof(RNG_DATA) - 1}};
-#undef RNG_DATA
-        tc.algorithm = MONGOCRYPT_ALGORITHM_RANGE_STR;
-        tc.user_key_id = &keyABC_id;
-        tc.index_key_id = &key123_id;
-        tc.contention_factor = OPT_I64(0);
-        tc.range_opts = TEST_FILE("./test/data/fle2-insert-range-explicit/"
-                                  "int32/rangeopts.json");
-        tc.msg = TEST_FILE("./test/data/fle2-insert-range-explicit/int32/"
-                           "value-to-encrypt.json");
-        tc.keys_to_feed[0] = keyABC;
-        tc.keys_to_feed[1] = key123;
-        tc.expect = TEST_FILE("./test/data/fle2-insert-range-explicit/int32/"
-                              "encrypted-payload-v2.json");
         ee_testcase_run(&tc);
     }
 
@@ -2698,27 +2515,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
 
     {
         ee_testcase tc = {0};
-        tc.desc = "algorithm='Range' with sparsity=2 with int32";
-#include "./data/fle2-insert-range-explicit/sparsity-2/RNG_DATA.h"
-        tc.rng_data = (_test_rng_data_source){.buf = {.data = (uint8_t *)RNG_DATA, .len = sizeof(RNG_DATA) - 1}};
-#undef RNG_DATA
-        tc.algorithm = MONGOCRYPT_ALGORITHM_RANGE_STR;
-        tc.user_key_id = &keyABC_id;
-        tc.index_key_id = &key123_id;
-        tc.contention_factor = OPT_I64(0);
-        tc.range_opts = TEST_FILE("./test/data/fle2-insert-range-explicit/"
-                                  "sparsity-2/rangeopts.json");
-        tc.msg = TEST_FILE("./test/data/fle2-insert-range-explicit/sparsity-2/"
-                           "value-to-encrypt.json");
-        tc.keys_to_feed[0] = keyABC;
-        tc.keys_to_feed[1] = key123;
-        tc.expect = TEST_FILE("./test/data/fle2-insert-range-explicit/sparsity-2/"
-                              "encrypted-payload-v2.json");
-        ee_testcase_run(&tc);
-    }
-
-    {
-        ee_testcase tc = {0};
         tc.desc = "algorithm='Range' with sparsity=2 with int32 (v2)";
 #include "./data/fle2-insert-range-explicit/sparsity-2/RNG_DATA.h"
         tc.rng_data = (_test_rng_data_source){.buf = {.data = (uint8_t *)RNG_DATA, .len = sizeof(RNG_DATA) - 1}};
@@ -2736,25 +2532,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.expect = TEST_FILE("./test/data/fle2-insert-range-explicit/sparsity-2/"
                               "encrypted-payload-v2.json");
         tc.use_v2 = true;
-        ee_testcase_run(&tc);
-    }
-
-    {
-        ee_testcase tc = {0};
-        tc.desc = "algorithm='Range' with query_type='range' with int32";
-        tc.algorithm = MONGOCRYPT_ALGORITHM_RANGE_STR;
-        tc.user_key_id = &keyABC_id;
-        tc.index_key_id = &keyABC_id;
-        tc.contention_factor = OPT_I64(4);
-        tc.query_type = MONGOCRYPT_QUERY_TYPE_RANGE_STR;
-        tc.range_opts = TEST_FILE("./test/data/fle2-find-range-explicit/"
-                                  "int32/rangeopts.json");
-        tc.msg = TEST_FILE("./test/data/fle2-find-range-explicit/int32/"
-                           "value-to-encrypt.json");
-        tc.keys_to_feed[0] = keyABC;
-        tc.expect = TEST_FILE("./test/data/fle2-find-range-explicit/int32/"
-                              "encrypted-payload-v2.json");
-        tc.is_expression = true;
         ee_testcase_run(&tc);
     }
 
@@ -2780,19 +2557,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
 
     {
         ee_testcase tc = {0};
-        tc.desc = "An unsupported range BSON type is an error";
-        tc.algorithm = MONGOCRYPT_ALGORITHM_RANGE_STR;
-        tc.user_key_id = &keyABC_id;
-        tc.contention_factor = OPT_I64(0);
-        tc.range_opts = TEST_BSON("{'min': 0, 'max': 1, 'sparsity': {'$numberLong': '1'}}");
-        tc.msg = TEST_BSON("{'v': 'abc'}");
-        tc.keys_to_feed[0] = keyABC;
-        tc.expect_finalize_error = "expected matching 'min' and value type";
-        ee_testcase_run(&tc);
-    }
-
-    {
-        ee_testcase tc = {0};
         tc.desc = "An unsupported range BSON type is an error (v2)";
         tc.algorithm = MONGOCRYPT_ALGORITHM_RANGE_STR;
         tc.user_key_id = &keyABC_id;
@@ -2802,27 +2566,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.keys_to_feed[0] = keyABC;
         tc.expect_finalize_error = "expected matching 'min' and value type";
         tc.use_v2 = true;
-        ee_testcase_run(&tc);
-    }
-
-    {
-        ee_testcase tc = {0};
-        tc.desc = "algorithm='Range' with query_type='range' with double with "
-                  "precision";
-        tc.algorithm = MONGOCRYPT_ALGORITHM_RANGE_STR;
-        tc.user_key_id = &keyABC_id;
-        tc.index_key_id = &key123_id;
-        tc.contention_factor = OPT_I64(0);
-        tc.query_type = MONGOCRYPT_QUERY_TYPE_RANGE_STR;
-        tc.range_opts = TEST_FILE("./test/data/fle2-find-range-explicit/double-precision/"
-                                  "rangeopts.json");
-        tc.msg = TEST_FILE("./test/data/fle2-find-range-explicit/"
-                           "double-precision/value-to-encrypt.json");
-        tc.keys_to_feed[0] = keyABC;
-        tc.keys_to_feed[1] = key123;
-        tc.expect = TEST_FILE("./test/data/fle2-find-range-explicit/"
-                              "double-precision/encrypted-payload-v2.json");
-        tc.is_expression = true;
         ee_testcase_run(&tc);
     }
 
@@ -2845,27 +2588,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
                               "double-precision/encrypted-payload-v2.json");
         tc.is_expression = true;
         tc.use_v2 = true;
-        ee_testcase_run(&tc);
-    }
-
-    {
-        ee_testcase tc = {0};
-        tc.desc = "algorithm='Range' with double precision with precision";
-#include "./data/fle2-insert-range-explicit/double-precision/RNG_DATA.h"
-        tc.rng_data = (_test_rng_data_source){.buf = {.data = (uint8_t *)RNG_DATA, .len = sizeof(RNG_DATA) - 1}};
-#undef RNG_DATA
-        tc.algorithm = MONGOCRYPT_ALGORITHM_RANGE_STR;
-        tc.user_key_id = &keyABC_id;
-        tc.index_key_id = &key123_id;
-        tc.contention_factor = OPT_I64(0);
-        tc.range_opts = TEST_FILE("./test/data/fle2-insert-range-explicit/double-precision/"
-                                  "rangeopts.json");
-        tc.msg = TEST_FILE("./test/data/fle2-insert-range-explicit/"
-                           "double-precision/value-to-encrypt.json");
-        tc.keys_to_feed[0] = keyABC;
-        tc.keys_to_feed[1] = key123;
-        tc.expect = TEST_FILE("./test/data/fle2-insert-range-explicit/double-precision/"
-                              "encrypted-payload-v2.json");
         ee_testcase_run(&tc);
     }
 
@@ -2894,25 +2616,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
     {
         ee_testcase tc = {0};
         tc.desc = "algorithm='Range' with query_type='range' with double without "
-                  "precision";
-        tc.algorithm = MONGOCRYPT_ALGORITHM_RANGE_STR;
-        tc.user_key_id = &keyABC_id;
-        tc.index_key_id = &key123_id;
-        tc.contention_factor = OPT_I64(0);
-        tc.query_type = MONGOCRYPT_QUERY_TYPE_RANGE_STR;
-        tc.range_opts = TEST_FILE("./test/data/fle2-find-range-explicit/double/"
-                                  "rangeopts.json");
-        tc.msg = TEST_FILE("./test/data/fle2-find-range-explicit/double/value-to-encrypt.json");
-        tc.keys_to_feed[0] = keyABC;
-        tc.keys_to_feed[1] = key123;
-        tc.expect = TEST_FILE("./test/data/fle2-find-range-explicit/double/encrypted-payload-v2.json");
-        tc.is_expression = true;
-        ee_testcase_run(&tc);
-    }
-
-    {
-        ee_testcase tc = {0};
-        tc.desc = "algorithm='Range' with query_type='range' with double without "
                   "precision (v2)";
         tc.algorithm = MONGOCRYPT_ALGORITHM_RANGE_STR;
         tc.user_key_id = &keyABC_id;
@@ -2927,26 +2630,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.expect = TEST_FILE("./test/data/fle2-find-range-explicit/double/encrypted-payload-v2.json");
         tc.is_expression = true;
         tc.use_v2 = true;
-        ee_testcase_run(&tc);
-    }
-
-    {
-        ee_testcase tc = {0};
-        tc.desc = "algorithm='Range' with double without precision";
-#include "./data/fle2-insert-range-explicit/double/RNG_DATA.h"
-        tc.rng_data = (_test_rng_data_source){.buf = {.data = (uint8_t *)RNG_DATA, .len = sizeof(RNG_DATA) - 1}};
-#undef RNG_DATA
-        tc.algorithm = MONGOCRYPT_ALGORITHM_RANGE_STR;
-        tc.user_key_id = &keyABC_id;
-        tc.index_key_id = &key123_id;
-        tc.contention_factor = OPT_I64(0);
-        tc.range_opts = TEST_FILE("./test/data/fle2-insert-range-explicit/double/"
-                                  "rangeopts.json");
-        tc.msg = TEST_FILE("./test/data/fle2-insert-range-explicit/double/value-to-encrypt.json");
-        tc.keys_to_feed[0] = keyABC;
-        tc.keys_to_feed[1] = key123;
-        tc.expect = TEST_FILE("./test/data/fle2-insert-range-explicit/double/"
-                              "encrypted-payload-v2.json");
         ee_testcase_run(&tc);
     }
 
@@ -2973,19 +2656,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
 
     {
         ee_testcase tc = {0};
-        tc.desc = "min > max for insert";
-        tc.algorithm = MONGOCRYPT_ALGORITHM_RANGE_STR;
-        tc.user_key_id = &keyABC_id;
-        tc.contention_factor = OPT_I64(0);
-        tc.range_opts = TEST_BSON("{'min': 1, 'max': 0, 'sparsity': {'$numberLong': '1'}}");
-        tc.msg = TEST_FILE("./test/data/fle2-insert-range-explicit/int32/value-to-encrypt.json");
-        tc.keys_to_feed[0] = keyABC;
-        tc.expect_finalize_error = "minimum value must be less than the maximum value";
-        ee_testcase_run(&tc);
-    }
-
-    {
-        ee_testcase tc = {0};
         tc.desc = "min > max for insert (v2)";
         tc.algorithm = MONGOCRYPT_ALGORITHM_RANGE_STR;
         tc.user_key_id = &keyABC_id;
@@ -3000,21 +2670,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
 
     {
         ee_testcase tc = {0};
-        tc.desc = "min > max for find";
-        tc.algorithm = MONGOCRYPT_ALGORITHM_RANGE_STR;
-        tc.query_type = MONGOCRYPT_QUERY_TYPE_RANGE_STR;
-        tc.user_key_id = &keyABC_id;
-        tc.contention_factor = OPT_I64(0);
-        tc.range_opts = TEST_BSON("{'min': 25, 'max': 24, 'sparsity': {'$numberLong': '1'}}");
-        tc.msg = TEST_FILE("./test/data/fle2-find-range-explicit/int32/value-to-encrypt.json");
-        tc.keys_to_feed[0] = keyABC;
-        tc.expect_finalize_error = "minimum value must be less than the maximum value";
-        tc.is_expression = true;
-        ee_testcase_run(&tc);
-    }
-
-    {
-        ee_testcase tc = {0};
         tc.desc = "min > max for find (v2)";
         tc.algorithm = MONGOCRYPT_ALGORITHM_RANGE_STR;
         tc.query_type = MONGOCRYPT_QUERY_TYPE_RANGE_STR;
@@ -3024,24 +2679,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.msg = TEST_FILE("./test/data/fle2-find-range-explicit/int32/value-to-encrypt.json");
         tc.keys_to_feed[0] = keyABC;
         tc.expect_finalize_error = "minimum value must be less than the maximum value";
-        tc.is_expression = true;
-        ee_testcase_run(&tc);
-    }
-
-    {
-        ee_testcase tc = {0};
-        tc.desc = "open interval";
-        tc.algorithm = MONGOCRYPT_ALGORITHM_RANGE_STR;
-        tc.query_type = MONGOCRYPT_QUERY_TYPE_RANGE_STR;
-        tc.user_key_id = &keyABC_id;
-        tc.contention_factor = OPT_I64(0);
-        tc.range_opts = TEST_FILE("./test/data/fle2-find-range-explicit/"
-                                  "int32-openinterval/rangeopts.json");
-        tc.msg = TEST_FILE("./test/data/fle2-find-range-explicit/"
-                           "int32-openinterval/value-to-encrypt.json");
-        tc.keys_to_feed[0] = keyABC;
-        tc.expect = TEST_FILE("./test/data/fle2-find-range-explicit/"
-                              "int32-openinterval/encrypted-payload-v2.json");
         tc.is_expression = true;
         ee_testcase_run(&tc);
     }
