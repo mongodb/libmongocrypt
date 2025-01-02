@@ -27,8 +27,7 @@
 #include "mongocrypt.h"
 
 /* _fle2_append_encryptedFieldConfig copies encryptedFieldConfig and applies
- * default state collection names for escCollection, eccCollection, and
- * ecocCollection if required. */
+ * default state collection names for escCollection, and ecocCollection if required. */
 static bool _fle2_append_encryptedFieldConfig(const mongocrypt_ctx_t *ctx,
                                               bson_t *dst,
                                               bson_t *encryptedFieldConfig,
@@ -36,7 +35,6 @@ static bool _fle2_append_encryptedFieldConfig(const mongocrypt_ctx_t *ctx,
                                               mongocrypt_status_t *status) {
     bson_iter_t iter;
     bool has_escCollection = false;
-    bool has_eccCollection = false;
     bool has_ecocCollection = false;
 
     BSON_ASSERT_PARAM(dst);
@@ -51,9 +49,6 @@ static bool _fle2_append_encryptedFieldConfig(const mongocrypt_ctx_t *ctx,
     while (bson_iter_next(&iter)) {
         if (strcmp(bson_iter_key(&iter), "escCollection") == 0) {
             has_escCollection = true;
-        }
-        if (strcmp(bson_iter_key(&iter), "eccCollection") == 0) {
-            has_eccCollection = true;
         }
         if (strcmp(bson_iter_key(&iter), "ecocCollection") == 0) {
             has_ecocCollection = true;
@@ -72,15 +67,6 @@ static bool _fle2_append_encryptedFieldConfig(const mongocrypt_ctx_t *ctx,
             return false;
         }
         bson_free(default_escCollection);
-    }
-    if (!has_eccCollection && !ctx->crypt->opts.use_fle2_v2) {
-        char *default_eccCollection = bson_strdup_printf("enxcol_.%s.ecc", target_coll);
-        if (!BSON_APPEND_UTF8(dst, "eccCollection", default_eccCollection)) {
-            CLIENT_ERR("unable to append eccCollection");
-            bson_free(default_eccCollection);
-            return false;
-        }
-        bson_free(default_eccCollection);
     }
     if (!has_ecocCollection) {
         char *default_ecocCollection = bson_strdup_printf("enxcol_.%s.ecoc", target_coll);
