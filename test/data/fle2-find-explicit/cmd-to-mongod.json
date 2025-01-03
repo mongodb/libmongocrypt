@@ -16,7 +16,6 @@
             "db.coll": {
                 "fields": [],
                 "escCollection": "enxcol_.coll.esc",
-                "eccCollection": "enxcol_.coll.ecc",
                 "ecocCollection": "enxcol_.coll.ecoc"
             }
         }

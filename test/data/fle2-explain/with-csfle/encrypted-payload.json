@@ -5,7 +5,7 @@
          "value": {
             "$eq": {
                "$binary": {
-                  "base64": "BbEAAAAFZAAgAAAAAE8KGPgq7h3n9nH5lfHcia8wtOTLwGkZNLBesb6PULqbBXMAIAAAAACq0558QyD3c3jkR5k0Zc9UpQK8ByhXhtn2d1xVQnuJ3AVjACAAAAAA1003zUWGwD4zVZ0KeihnZOthS3V6CEHUfnJZcIYHefIFZQAgAAAAAOuac/eRLYakKX6B0vZ1r3QodOQFfjqJD+xlGiPu4/PsEmNtAAAAAAAAAAAAAA==",
+                  "base64": "DIkAAAAFZAAgAAAAAE8KGPgq7h3n9nH5lfHcia8wtOTLwGkZNLBesb6PULqbBXMAIAAAAACq0558QyD3c3jkR5k0Zc9UpQK8ByhXhtn2d1xVQnuJ3AVsACAAAAAAlO36MaVLVRDFW6xrI+0UTkyQdFfSCEBPkZg8sFzuTJYSY20AAAAAAAAAAAAA",
                   "subType": "06"
                }
             }
@@ -18,7 +18,6 @@
          "schema": {
             "db.test": {
                "escCollection": "enxcol_.test.esc",
-               "eccCollection": "enxcol_.test.ecc",
                "ecocCollection": "enxcol_.test.ecoc",
                "fields": [
                   {

@@ -5,7 +5,6 @@
         "schema": {
             "db.coll": {
                 "escCollection": "esc",
-                "eccCollection": "ecc",
                 "ecocCollection": "ecoc",
                 "fields": []
             }

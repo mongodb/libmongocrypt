@@ -1,9 +1,0 @@
-{
-    "options": {
-        "validator": {
-            "$jsonSchema": {
-                "bsonType": "object"
-            }
-        }
-    }
-}
