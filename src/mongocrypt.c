@@ -151,7 +151,6 @@ mongocrypt_t *mongocrypt_new(void) {
 bool mongocrypt_setopt_fle2v2(mongocrypt_t *crypt, bool enable) {
     ASSERT_MONGOCRYPT_PARAM_UNINIT(crypt);
 
-    crypt->opts.use_fle2_v2 = enable;
     return true;
 }
 
