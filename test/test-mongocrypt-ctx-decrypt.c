@@ -1056,6 +1056,18 @@ static void _test_explicit_decrypt(_mongocrypt_tester_t *tester) {
         ed_testcase_run(&tc);
     }
 
+    // FLE2InsertUpdatePayload with edges can be decrypted.
+    // Edges are sent on payloads for range algorithm.
+    {
+        ed_testcase tc = {
+            .desc = "FLE2InsertUpdatePayload with edges",
+            .msg = TEST_FILE("./test/data/explicit-decrypt/FLE2InsertUpdatePayload-with-edges.json"),
+            .keys_to_feed = {keyABC},
+            .expect = TEST_BSON(BSON_STR({"v" : 123456})),
+        };
+        ed_testcase_run(&tc);
+    }
+
     // FLE2UnindexedEncryptedValue can be decrypted.
     // Payload is only used in the QE-V1 protocol removed in MongoDB 7.0. Decrypting is currently still supported.
     {
@@ -1108,6 +1120,18 @@ static void _test_explicit_decrypt(_mongocrypt_tester_t *tester) {
             .msg = TEST_FILE("./test/data/explicit-decrypt/FLE2InsertUpdatePayloadV2.json"),
             .keys_to_feed = {keyABC},
             .expect = TEST_BSON(BSON_STR({"v" : "value123"})),
+        };
+        ed_testcase_run(&tc);
+    }
+
+    // FLE2InsertUpdatePayloadV2 with edges can be decrypted.
+    // Edges are sent on payloads for range algorithm.
+    {
+        ed_testcase tc = {
+            .desc = "FLE2InsertUpdatePayloadV2 with edges",
+            .msg = TEST_FILE("./test/data/explicit-decrypt/FLE2InsertUpdatePayload-with-edges-V2.json"),
+            .keys_to_feed = {keyABC},
+            .expect = TEST_BSON(BSON_STR({"v" : 123456})),
         };
         ed_testcase_run(&tc);
     }
