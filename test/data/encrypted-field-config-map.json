@@ -1,7 +1,6 @@
 {
     "test.test": {
         "escCollection": "fle2.basic.esc",
-        "eccCollection": "fle2.basic.ecc",
         "ecocCollection": "fle2.basic.ecoc",
         "fields": [
             {
@@ -24,7 +23,6 @@
     },
     "test.test2": {
         "escCollection": "fle2.basic.esc",
-        "eccCollection": "fle2.basic.ecc",
         "ecocCollection": "fle2.basic.ecoc",
         "fields": [
             {

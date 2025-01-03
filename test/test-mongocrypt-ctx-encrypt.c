@@ -2793,17 +2793,14 @@ static void _test_encrypt_applies_default_state_collections(_mongocrypt_tester_t
             crypt);
         ASSERT_OK(mongocrypt_setopt_encrypted_field_config_map(
                       crypt,
-                      TEST_BSON("{'db.coll': { 'fields': [], 'escCollection': 'esc', "
-                                "'eccCollection': 'ecc', 'ecocCollection': 'ecoc'}}")),
+                      TEST_BSON("{'db.coll': { 'fields': [], 'escCollection': 'esc', 'ecocCollection': 'ecoc'}}")),
                   crypt);
         ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
         ctx = mongocrypt_ctx_new(crypt);
         ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_BSON("{'find': 'coll'}")), ctx);
         ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
         {
-            const char *expect_schema = "{'fields': [], 'escCollection': 'esc', "
-                                        "'eccCollection': 'ecc', "
-                                        "'ecocCollection': 'ecoc' }";
+            const char *expect_schema = "{'fields': [], 'escCollection': 'esc', 'ecocCollection': 'ecoc' }";
             mongocrypt_binary_t *cmd_to_mongocryptd;
 
             cmd_to_mongocryptd = mongocrypt_binary_new();
@@ -2825,19 +2822,17 @@ static void _test_encrypt_applies_default_state_collections(_mongocrypt_tester_t
             mongocrypt_setopt_kms_providers(crypt,
                                             TEST_BSON("{'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'bar'}}")),
             crypt);
-        ASSERT_OK(
-            mongocrypt_setopt_encrypted_field_config_map(crypt,
-                                                         TEST_BSON("{'fields': [], 'db.coll': {'escCollection': "
-                                                                   "'esc', 'eccCollection': 'ecc', 'fields': []}}")),
-            crypt);
+        ASSERT_OK(mongocrypt_setopt_encrypted_field_config_map(crypt,
+                                                               TEST_BSON("{'fields': [], 'db.coll': {'escCollection': "
+                                                                         "'esc', 'fields': []}}")),
+                  crypt);
         ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
         ctx = mongocrypt_ctx_new(crypt);
         ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_BSON("{'find': 'coll'}")), ctx);
         ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
         {
-            const char *expect_schema = "{'escCollection': 'esc', "
-                                        "'eccCollection': 'ecc', 'fields': [], "
-                                        "'ecocCollection': 'enxcol_.coll.ecoc' }";
+            const char *expect_schema =
+                "{'escCollection': 'esc', 'fields': [], 'ecocCollection': 'enxcol_.coll.ecoc' }";
             mongocrypt_binary_t *cmd_to_mongocryptd;
 
             cmd_to_mongocryptd = mongocrypt_binary_new();

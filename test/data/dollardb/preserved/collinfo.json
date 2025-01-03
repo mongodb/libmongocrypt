@@ -2,7 +2,6 @@
     "options": {
         "encryptedFields": {
             "escCollection": "esc",
-            "eccCollection": "ecc",
             "ecocCollection": "ecoc",
             "fields": [
                 {
