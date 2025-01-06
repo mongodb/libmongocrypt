@@ -311,9 +311,9 @@ const char long_string[] = "123456789123456789123456789";
 const char short_unicode_string[] = "1二𓀀4五六❼8𓀯";
 const char medium_unicode_string[] = "⓪1二𓀀4五六❼8𓀯あいうえおf";
 const char long_unicode_string[] = "1二𓀀4五六❼8𓀯1二𓀀4五六❼8𓀯1二𓀀4五六❼8𓀯";
-const uint32_t SHORT_LEN = strlen(short_string);
-const uint32_t MEDIUM_LEN = strlen(medium_string);
-const uint32_t LONG_LEN = strlen(long_string);
+const uint32_t SHORT_LEN = sizeof(short_string) - 1;
+const uint32_t MEDIUM_LEN = sizeof(medium_string) - 1;
+const uint32_t LONG_LEN = sizeof(long_string) - 1;
 
 static void test_text_search_str_encode_suffix_prefix(_mongocrypt_tester_t *tester,
                                                       const char *short_s,
