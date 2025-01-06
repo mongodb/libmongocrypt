@@ -167,13 +167,6 @@ static uint32_t calc_number_of_substrings(uint32_t len, uint32_t lb, uint32_t ub
     return ret;
 }
 
-#define ASSERT_OR_PRINTF(_statement, msg, ...)                                                                         \
-    do {                                                                                                               \
-        if (!(_statement)) {                                                                                           \
-            TEST_ERROR("%s failed with msg: " msg, #_statement, __VA_ARGS__);                                          \
-        }                                                                                                              \
-    } while (0)
-
 static void test_nofold_substring_case(_mongocrypt_tester_t *tester,
                                        const char *str,
                                        uint32_t lb,
@@ -278,29 +271,14 @@ static void test_nofold_substring_case(_mongocrypt_tester_t *tester,
             // and the codepoint length is in range.
             uint32_t start_byte_offset = sets->base_string->codepoint_offsets[start_cp];
             uint32_t end_byte_offset = sets->base_string->codepoint_offsets[end_cp];
-            ASSERT_OR_PRINTF(
-                counts[start_byte_offset + (end_byte_offset - 1) * byte_len] == 1,
-                "counts[%u][%u] was unexpected value %u - start_cp = %u, end_cp = %u, 0: %u, 1: %u, 2: %u, 3: %u",
-                start_byte_offset,
-                end_byte_offset,
-                counts[start_byte_offset + (end_byte_offset - 1) * byte_len],
-                start_cp,
-                end_cp,
-                sets->base_string->codepoint_offsets[0],
-                sets->base_string->codepoint_offsets[1],
-                sets->base_string->codepoint_offsets[2],
-                sets->base_string->codepoint_offsets[3]);
+            ASSERT(counts[start_byte_offset + (end_byte_offset - 1) * byte_len] == 1);
             counts[start_byte_offset + (end_byte_offset - 1) * byte_len] = 0;
         }
     }
     // Now that we have set all counts that should be 1 to 0, whole array should be 0.
     for (uint32_t i = 0; i < byte_len; i++) {
         for (uint32_t j = 0; j < byte_len; j++) {
-            ASSERT_OR_PRINTF(counts[i + j * byte_len] == 0,
-                             "counts[%u][%u] was unexpected value %u",
-                             i,
-                             j,
-                             counts[i + j * byte_len]);
+            ASSERT(counts[i + j * byte_len] == 0);
         }
     }
     free(counts);
