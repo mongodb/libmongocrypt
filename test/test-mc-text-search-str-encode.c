@@ -245,7 +245,7 @@ static void test_nofold_substring_case(_mongocrypt_tester_t *tester,
         ASSERT(0 < substring_len);
         ASSERT(1 == substring_count);
         total_real_substring_count++;
-        uint32_t start_offset = substring - sets->base_string->data;
+        uint32_t start_offset = (uint32_t)(substring - sets->base_string->data);
 
         counts[start_offset + (start_offset + substring_len - 1) * byte_len]++;
     }
