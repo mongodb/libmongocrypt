@@ -23,6 +23,7 @@
 
 // Represents a validate unicode string with the bad character 0xFF appended to the end. This is our base string which
 // we build substring trees on. Stores all the valid code points in the string, plus one code point for 0xFF.
+// Exposed for testing.
 typedef struct {
     char *data;
     uint32_t len;
