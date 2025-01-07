@@ -45,10 +45,9 @@
 
 #define TEST_ERROR(...)                                                                                                \
     do {                                                                                                               \
-        fprintf(stderr, "test error %s:%d %s(): ", __FILE__, __LINE__, __FUNCTION__);                                  \
-        fprintf(stderr, __VA_ARGS__);                                                                                  \
-        fprintf(stderr, "\n");                                                                                         \
-        fflush(stderr);                                                                                                \
+        TEST_STDERR_PRINTF("test error %s:%d %s(): ", __FILE__, __LINE__, __FUNCTION__);                               \
+        TEST_STDERR_PRINTF(__VA_ARGS__);                                                                               \
+        TEST_STDERR_PRINTF("\n");                                                                                      \
         abort();                                                                                                       \
     } while (0)
 

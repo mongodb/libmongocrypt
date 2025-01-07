@@ -52,7 +52,7 @@ void _load_json_as_bson(const char *path, bson_t *out) {
 
     reader = bson_json_reader_new_from_file(path, &error);
     if (!reader) {
-        fprintf(stderr, "error reading: %s\n", path);
+        TEST_STDERR_PRINTF("error reading: %s\n", path);
     }
     ASSERT_OR_PRINT_BSON(reader, error);
     bson_init(out);
@@ -118,7 +118,7 @@ static void _load_http(_mongocrypt_tester_t *tester, const char *path) {
     }
 
     if (n_read < 0) {
-        fprintf(stderr, "failed to read %s\n", path);
+        TEST_STDERR_PRINTF("failed to read %s\n", path);
         abort();
     }
 
@@ -218,7 +218,7 @@ bson_t *_mongocrypt_tester_bson_from_json(_mongocrypt_tester_t *tester, const ch
     bson = &tester->test_bson[tester->bson_count];
     TEST_DATA_COUNT_INC(tester->bson_count);
     if (!bson_init_from_json(bson, full_json, strlen(full_json), &error)) {
-        fprintf(stderr, "%s", error.message);
+        TEST_STDERR_PRINTF("%s", error.message);
         abort();
     }
     bson_free(full_json);
@@ -246,7 +246,7 @@ mongocrypt_binary_t *_mongocrypt_tester_bin_from_json(_mongocrypt_tester_t *test
     bson = &tester->test_bson[tester->bson_count];
     TEST_DATA_COUNT_INC(tester->bson_count);
     if (!bson_init_from_json(bson, full_json, strlen(full_json), &error)) {
-        fprintf(stderr, "failed to parse JSON %s: %s", error.message, json);
+        TEST_STDERR_PRINTF("failed to parse JSON %s: %s", error.message, json);
         abort();
     }
     bin = mongocrypt_binary_new();
@@ -363,7 +363,7 @@ void _mongocrypt_tester_run_ctx_to(_mongocrypt_tester_t *tester,
             break;
         case MONGOCRYPT_CTX_ERROR:
             mongocrypt_ctx_status(ctx, status);
-            fprintf(stderr, "Got error: %s\n", mongocrypt_status_message(status, NULL));
+            TEST_STDERR_PRINTF("Got error: %s\n", mongocrypt_status_message(status, NULL));
             ASSERT_STATE_EQUAL(state, stop_state);
             mongocrypt_status_destroy(status);
             return;

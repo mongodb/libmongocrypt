@@ -94,7 +94,7 @@ static void _test_one_kms_response(_mongocrypt_tester_t *tester, bson_t *test) {
             tester->paths.key_file = "./test/data/key-document-gcp.json";
             ASSERT_OK(mongocrypt_ctx_decrypt_init(ctx, bin), ctx);
         } else {
-            fprintf(stderr, "unsupported ctx type: %s\n", ctx_type);
+            TEST_STDERR_PRINTF("unsupported ctx type: %s\n", ctx_type);
             abort();
         }
 
