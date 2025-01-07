@@ -763,7 +763,9 @@ static void _test_encrypt_cache_expiration(_mongocrypt_tester_t *tester) {
     _mongocrypt_tester_run_ctx_to(tester, ctx, MONGOCRYPT_CTX_DONE);
     mongocrypt_ctx_destroy(ctx);
 
-    _usleep(2000);
+    // Sleep to trigger cache expiration.
+    // Cache entries expire after 1ms, but use 20ms to avoid timing errors observed on Windows distros: CDRIVER-4526
+    _usleep(20 * 1000);
     /* The next context requests keys again
      */
     ctx = mongocrypt_ctx_new(crypt);
