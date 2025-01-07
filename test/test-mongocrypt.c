@@ -158,12 +158,12 @@ void _mongocrypt_tester_install(_mongocrypt_tester_t *tester,
 #endif
 
     if (crypto_spec == CRYPTO_REQUIRED && !crypto_enabled) {
-        printf("Skipping test: %s – requires crypto to be enabled\n", name);
+        TEST_PRINTF("Skipping test: %s – requires crypto to be enabled\n", name);
         return;
     }
 
     if (crypto_spec == CRYPTO_PROHIBITED && crypto_enabled) {
-        printf("Skipping test: %s – requires crypto to be disabled\n", name);
+        TEST_PRINTF("Skipping test: %s – requires crypto to be disabled\n", name);
         return;
     }
 
@@ -862,8 +862,8 @@ int main(int argc, char **argv) {
     _mongocrypt_tester_t tester = {0};
     int i;
 
-    printf("Pass a list of test names to run only specific tests. E.g.:\n");
-    printf("test-mongocrypt _mongocrypt_test_mcgrew\n\n");
+    TEST_PRINTF("Pass a list of test names to run only specific tests. E.g.:\n");
+    TEST_PRINTF("test-mongocrypt _mongocrypt_test_mcgrew\n\n");
 
     /* Install all tests. */
     _mongocrypt_tester_install_crypto(&tester);
@@ -954,7 +954,7 @@ int main(int argc, char **argv) {
 get_os_version_failed:
 #endif
 
-    printf("Running tests...\n");
+    TEST_PRINTF("Running tests...\n");
     for (i = 0; tester.test_names[i]; i++) {
         int j;
         bool found = false;
@@ -970,16 +970,16 @@ get_os_version_failed:
                 continue;
             }
         }
-        printf("  begin %s\n", tester.test_names[i]);
+        TEST_PRINTF("  begin %s\n", tester.test_names[i]);
         tester.test_fns[i](&tester);
         /* Clear state. */
         memset(&tester.paths, 0, sizeof(tester.paths));
-        printf("  end %s\n", tester.test_names[i]);
+        TEST_PRINTF("  end %s\n", tester.test_names[i]);
     }
-    printf("... done running tests\n");
+    TEST_PRINTF("... done running tests\n");
 
     if (i == 0) {
-        printf("WARNING - no tests run.\n");
+        TEST_PRINTF("WARNING - no tests run.\n");
     }
 
     /* Clean up tester. */

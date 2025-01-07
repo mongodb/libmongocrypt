@@ -87,7 +87,7 @@ static void test_mc_RangeOpts_parse(_mongocrypt_tester_t *tester) {
         testcase *test = tests + i;
         mongocrypt_status_t *status = mongocrypt_status_new();
         mc_RangeOpts_t ro;
-        printf("running test_mc_RangeOpts_parse subtest: %s\n", test->desc);
+        TEST_PRINTF("running test_mc_RangeOpts_parse subtest: %s\n", test->desc);
         bool ret = mc_RangeOpts_parse(&ro, TMP_BSON(test->in), test->useRangeV2, status);
         if (!test->expectError) {
             ASSERT_OK_STATUS(ret, status);
@@ -316,7 +316,7 @@ static void test_mc_RangeOpts_to_FLE2RangeInsertSpec(_mongocrypt_tester_t *teste
         testcase *test = tests + i;
         mongocrypt_status_t *status = mongocrypt_status_new();
         mc_RangeOpts_t ro;
-        printf("running test_mc_RangeOpts_to_FLE2RangeInsertSpec subtest: %s\n", test->desc);
+        TEST_PRINTF("running test_mc_RangeOpts_to_FLE2RangeInsertSpec subtest: %s\n", test->desc);
         ASSERT_OK_STATUS(mc_RangeOpts_parse(&ro, TMP_BSON(test->in), !test->disableRangeV2, status), status);
         bson_t out = BSON_INITIALIZER;
         bool ret = mc_RangeOpts_to_FLE2RangeInsertSpec(&ro, TMP_BSON(test->v), &out, !test->disableRangeV2, status);

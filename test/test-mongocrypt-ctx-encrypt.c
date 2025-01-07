@@ -1964,7 +1964,7 @@ static void _test_encrypt_fle2_encryption_placeholder(_mongocrypt_tester_t *test
         ((void)0)
 
     if (!_aes_ctr_is_supported_by_os) {
-        printf("Common Crypto with no CTR support detected. Skipping.");
+        TEST_PRINTF("Common Crypto with no CTR support detected. Skipping.");
         return;
     }
 
@@ -2248,7 +2248,7 @@ typedef struct {
 } ee_testcase;
 
 static void ee_testcase_run(ee_testcase *tc) {
-    printf("  explicit_encryption_finalize test case: %s ... begin\n", tc->desc);
+    TEST_PRINTF("  explicit_encryption_finalize test case: %s ... begin\n", tc->desc);
     extern void mc_reset_payloadId_for_testing(void);
     mc_reset_payloadId_for_testing();
     mongocrypt_t *crypt;
@@ -2330,7 +2330,7 @@ static void ee_testcase_run(ee_testcase *tc) {
     }
 
 cleanup:
-    printf("  explicit_encryption_finalize test case: %s ... end\n", tc->desc);
+    TEST_PRINTF("  explicit_encryption_finalize test case: %s ... end\n", tc->desc);
     mongocrypt_ctx_destroy(ctx);
     mongocrypt_destroy(crypt);
 }
@@ -2341,7 +2341,7 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
     _mongocrypt_buffer_t key123_id;
 
     if (!_aes_ctr_is_supported_by_os) {
-        printf("Common Crypto with no CTR support detected. Skipping.");
+        TEST_PRINTF("Common Crypto with no CTR support detected. Skipping.");
         return;
     }
 
@@ -4601,7 +4601,7 @@ static void _test_encrypt_macos_no_ctr(_mongocrypt_tester_t *tester) {
     _mongocrypt_buffer_t key_id;
 
     if (_aes_ctr_is_supported_by_os) {
-        printf("Common Crypto with CTR support detected. Skipping.");
+        TEST_PRINTF("Common Crypto with CTR support detected. Skipping.");
         return;
     }
 
@@ -4682,7 +4682,7 @@ static void _test_fle1_collmod_without_jsonSchema(_mongocrypt_tester_t *tester) 
 
 static void _test_bulkWrite(_mongocrypt_tester_t *tester) {
     if (!_aes_ctr_is_supported_by_os) {
-        printf("Common Crypto with no CTR support detected. Required by QEv2 encryption. Skipping.");
+        TEST_PRINTF("Common Crypto with no CTR support detected. Required by QEv2 encryption. Skipping.");
         return;
     }
 
@@ -5154,11 +5154,11 @@ typedef struct {
 
 static void autoencryption_test_run(autoencryption_test *aet) {
     if (!_aes_ctr_is_supported_by_os) {
-        printf("Common Crypto with no CTR support detected. Skipping.");
+        TEST_PRINTF("Common Crypto with no CTR support detected. Skipping.");
         return;
     }
 
-    printf("  auto_encryption test: '%s' ... begin\n", aet->desc);
+    TEST_PRINTF("  auto_encryption test: '%s' ... begin\n", aet->desc);
 
     // Reset global counter for the `payloadId` to produce deterministic payloads.
     extern void mc_reset_payloadId_for_testing(void);
@@ -5225,14 +5225,14 @@ static void autoencryption_test_run(autoencryption_test *aet) {
         mongocrypt_binary_destroy(got);
     }
 
-    printf("  auto_encryption test: '%s' ... end\n", aet->desc);
+    TEST_PRINTF("  auto_encryption test: '%s' ... end\n", aet->desc);
     mongocrypt_ctx_destroy(ctx);
     mongocrypt_destroy(crypt);
 }
 
 static void _test_no_trimFactor(_mongocrypt_tester_t *tester) {
     if (!_aes_ctr_is_supported_by_os) {
-        printf("Common Crypto with no CTR support detected. Skipping.");
+        TEST_PRINTF("Common Crypto with no CTR support detected. Skipping.");
         return;
     }
 
@@ -5300,7 +5300,7 @@ static void lookup_payload_bson(mongocrypt_binary_t *result, char *path, bson_t 
 // Test that the crypto params added in SERVER-91889 are sent for "range" payloads.
 static void _test_range_sends_cryptoParams(_mongocrypt_tester_t *tester) {
     if (!_aes_ctr_is_supported_by_os) {
-        printf("Common Crypto with no CTR support detected. Skipping.");
+        TEST_PRINTF("Common Crypto with no CTR support detected. Skipping.");
         return;
     }
 

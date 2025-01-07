@@ -849,9 +849,9 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
         mongocrypt_status_t *status = mongocrypt_status_new();
 
         if (test->description) {
-            printf("  %zu: %s\n", i, test->description);
+            TEST_PRINTF("  %zu: %s\n", i, test->description);
         } else {
-            printf("  %zu\n", i);
+            TEST_PRINTF("  %zu\n", i);
         }
 
         bson_t *findSpecVal = bson_new_from_json((const uint8_t *)test->findSpecJSON, -1, &error);
@@ -1068,7 +1068,7 @@ static mc_ECOCToken_t *getECOCToken(mongocrypt_t *crypt) {
 
 static void test_mc_marking_to_ciphertext(_mongocrypt_tester_t *tester) {
     if (!_aes_ctr_is_supported_by_os) {
-        printf("Common Crypto with no CTR support detected. Skipping.");
+        TEST_PRINTF("Common Crypto with no CTR support detected. Skipping.");
         return;
     }
 
