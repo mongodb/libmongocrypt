@@ -508,9 +508,7 @@ static void _test_encrypt_need_markings(_mongocrypt_tester_t *tester) {
 
 static void _test_encrypt_csfle_no_needs_markings(_mongocrypt_tester_t *tester) {
     if (!TEST_MONGOCRYPT_HAVE_REAL_CRYPT_SHARED_LIB) {
-        fputs("No 'real' csfle library is available. The "
-              "_test_encrypt_csfle_no_needs_markings test is a no-op.",
-              stderr);
+        fprintf(stderr, "No 'real' csfle library is available. The %s test is a no-op.\n", BSON_FUNC);
         return;
     }
 
@@ -3941,9 +3939,7 @@ static void _test_encrypt_fle2_explain_with_mongocryptd(_mongocrypt_tester_t *te
 
 static void _test_encrypt_fle2_explain_with_csfle(_mongocrypt_tester_t *tester) {
     if (!TEST_MONGOCRYPT_HAVE_REAL_CRYPT_SHARED_LIB) {
-        fputs("No 'real' csfle library is available. The "
-              "_test_encrypt_fle2_explain_with_csfle test is a no-op.",
-              stderr);
+        fprintf(stderr, "No 'real' csfle library is available. The %s test is a no-op.\n", BSON_FUNC);
         return;
     }
 
@@ -4039,9 +4035,7 @@ static void _test_encrypt_fle1_explain_with_mongocryptd(_mongocrypt_tester_t *te
 
 static void _test_encrypt_fle1_explain_with_csfle(_mongocrypt_tester_t *tester) {
     if (!TEST_MONGOCRYPT_HAVE_REAL_CRYPT_SHARED_LIB) {
-        fputs("No 'real' csfle library is available. The "
-              "_test_encrypt_fle1_explain_with_csfle test is a no-op.",
-              stderr);
+        fprintf(stderr, "No 'real' csfle library is available. The %s test is a no-op.\n", BSON_FUNC);
         return;
     }
 
@@ -4496,9 +4490,7 @@ static void _test_fle1_create_old_mongocryptd(_mongocrypt_tester_t *tester) {
 
 static void _test_fle1_create_with_csfle(_mongocrypt_tester_t *tester) {
     if (!TEST_MONGOCRYPT_HAVE_REAL_CRYPT_SHARED_LIB) {
-        fputs("No 'real' csfle library is available. The "
-              "_test_fle1_create_with_csfle test is a no-op.",
-              stderr);
+        fprintf(stderr, "No 'real' csfle library is available. The %s test is a no-op.\n", BSON_FUNC);
         return;
     }
 
