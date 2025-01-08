@@ -23,6 +23,24 @@
 #include <stdio.h>
 #include <string.h>
 
+// TEST_PRINTF ensures stdout and stderr are flushed.
+#define TEST_PRINTF(...)             \
+   if (1) {                          \
+      fflush (stderr);               \
+      fprintf (stdout, __VA_ARGS__); \
+      fflush (stdout);               \
+   } else                            \
+      ((void) 0)
+
+// TEST_STDERR_PRINTF ensures stdout and stderr are flushed.
+#define TEST_STDERR_PRINTF(...)      \
+   if (1) {                          \
+      fflush (stdout);               \
+      fprintf (stderr, __VA_ARGS__); \
+      fflush (stderr);               \
+   } else                            \
+      ((void) 0)
+
 #define TEST_ERROR(...)                                                        \
    do {                                                                        \
       fprintf (                                                                \
