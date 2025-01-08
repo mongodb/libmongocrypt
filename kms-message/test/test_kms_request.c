@@ -1232,7 +1232,7 @@ main (int argc, char *argv[])
    help = "Usage: test_kms_request [TEST_NAME]";
 
    if (argc > 2) {
-      fprintf (stderr, "%s\n", help);
+      TEST_STDERR_PRINTF ("%s\n", help);
       abort ();
    } else if (argc == 2) {
       selector = argv[1];
@@ -1292,7 +1292,7 @@ main (int argc, char *argv[])
 
    if (!ran_tests) {
       KMS_ASSERT (argc == 2);
-      fprintf (stderr, "No such test: \"%s\"\n", argv[1]);
+      TEST_STDERR_PRINTF ("No such test: \"%s\"\n", argv[1]);
       abort ();
    }
 
