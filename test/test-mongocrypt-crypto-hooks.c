@@ -813,7 +813,7 @@ static void test_setting_only_ctr_hook(_mongocrypt_tester_t *tester) {
     // macOS <= 10.14 does not support native CTR encryption.
 
     if (!_aes_ctr_is_supported_by_os) {
-        printf("Common Crypto with no CTR support detected. Skipping.");
+        TEST_PRINTF("Common Crypto with no CTR support detected. Skipping.");
         return;
     }
 
