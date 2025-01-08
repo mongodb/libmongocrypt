@@ -56,7 +56,7 @@ test_getenv (const char *key)
 {
    char *value = getenv (key);
    if (!value) {
-      TEST_STDERR_PRINTF ("Environment variable: %s not set (@@ctest-skip@@)",
+      TEST_STDERR_PRINTF ("Environment variable: %s not set (@@ctest-skip@@)\n",
                           key);
       exit (2);
    }
