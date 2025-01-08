@@ -83,14 +83,14 @@ static void _test_RangeTest_Encode_Int32(_mongocrypt_tester_t *tester) {
         mongocrypt_status_t *const status = mongocrypt_status_new();
 
         // Print a description of the test case.
-        printf("_test_RangeTest_Encode_Int32: value=%" PRId32, test->args.value);
+        TEST_PRINTF("_test_RangeTest_Encode_Int32: value=%" PRId32, test->args.value);
         if (test->args.min.set) {
-            printf(" min=%" PRId32, test->args.min.value);
+            TEST_PRINTF(" min=%" PRId32, test->args.min.value);
         }
         if (test->args.max.set) {
-            printf(" max=%" PRId32, test->args.max.value);
+            TEST_PRINTF(" max=%" PRId32, test->args.max.value);
         }
-        printf("\n");
+        TEST_PRINTF("\n");
         mc_OSTType_Int32 got;
         const bool ok = mc_getTypeInfo32(test->args, &got, status);
         if (test->expectError) {
@@ -171,14 +171,14 @@ static void _test_RangeTest_Encode_Int64(_mongocrypt_tester_t *tester) {
         mongocrypt_status_t *const status = mongocrypt_status_new();
 
         // Print a description of the test case.
-        printf("_test_RangeTest_Encode_Int64: value=%" PRId64, test->args.value);
+        TEST_PRINTF("_test_RangeTest_Encode_Int64: value=%" PRId64, test->args.value);
         if (test->args.min.set) {
-            printf(" min=%" PRId64, test->args.min.value);
+            TEST_PRINTF(" min=%" PRId64, test->args.min.value);
         }
         if (test->args.max.set) {
-            printf(" max=%" PRId64, test->args.max.value);
+            TEST_PRINTF(" max=%" PRId64, test->args.max.value);
         }
-        printf("\n");
+        TEST_PRINTF("\n");
         mc_OSTType_Int64 got;
         const bool ok = mc_getTypeInfo64(test->args, &got, status);
         if (test->expectError) {
@@ -201,7 +201,7 @@ static void _test_canUsePrecisionModeDouble(_mongocrypt_tester_t *tester) {
     {                                                                                                                  \
         uint32_t bits_out = 0;                                                                                         \
         mongocrypt_status_t *const status = mongocrypt_status_new();                                                   \
-        printf("_test_canUsePrecisionModeDecimal, min: %f, max: %f, prc: %" PRIu32, lb, ub, prc);                      \
+        TEST_PRINTF("_test_canUsePrecisionModeDecimal, min: %f, max: %f, prc: %" PRIu32, lb, ub, prc);                 \
         bool result = mc_canUsePrecisionModeDouble(lb, ub, prc, &bits_out, status);                                    \
         ASSERT_OK_STATUS(mongocrypt_status_ok(status), status);                                                        \
         ASSERT(result == expected);                                                                                    \
@@ -212,7 +212,7 @@ static void _test_canUsePrecisionModeDouble(_mongocrypt_tester_t *tester) {
 #define CAN_USE_PRECISION_MODE_ERRORS(lb, ub, prc, error)                                                              \
     {                                                                                                                  \
         mongocrypt_status_t *const status = mongocrypt_status_new();                                                   \
-        printf("_test_canUsePrecisionModeDecimal errors, min: %f, max: %f, prc: %" PRIu32, lb, ub, prc);               \
+        TEST_PRINTF("_test_canUsePrecisionModeDecimal errors, min: %f, max: %f, prc: %" PRIu32, lb, ub, prc);          \
         uint32_t bits_out = 0;                                                                                         \
         bool result = mc_canUsePrecisionModeDouble(lb, ub, prc, &bits_out, status);                                    \
         ASSERT_OR_PRINT_MSG(!result, "expected error, but got none");                                                  \
@@ -551,14 +551,14 @@ static void _test_RangeTest_Encode_Double(_mongocrypt_tester_t *tester) {
         mongocrypt_status_t *const status = mongocrypt_status_new();
 
         if (test->min.set && test->max.set && test->precision.set) {
-            printf("_test_RangeTest_Encode_Double: value=%f, min=%f, max=%f, "
-                   "precision=%" PRIu32 "\n",
-                   test->value,
-                   test->min.value,
-                   test->max.value,
-                   test->precision.value);
+            TEST_PRINTF("_test_RangeTest_Encode_Double: value=%f, min=%f, max=%f, "
+                        "precision=%" PRIu32 "\n",
+                        test->value,
+                        test->min.value,
+                        test->max.value,
+                        test->precision.value);
         } else {
-            printf("_test_RangeTest_Encode_Double: value=%f\n", test->value);
+            TEST_PRINTF("_test_RangeTest_Encode_Double: value=%f\n", test->value);
         }
 
         const bool use_range_v2 = !test->use_range_v1;
@@ -599,10 +599,10 @@ static void _test_canUsePrecisionModeDecimal(_mongocrypt_tester_t *tester) {
     {                                                                                                                  \
         uint32_t bits_out = 0;                                                                                         \
         mongocrypt_status_t *const status = mongocrypt_status_new();                                                   \
-        printf("_test_canUsePrecisionModeDecimal, min: %s, max: %s, prc: %" PRIu32,                                    \
-               mc_dec128_to_string(lb).str,                                                                            \
-               mc_dec128_to_string(ub).str,                                                                            \
-               prc);                                                                                                   \
+        TEST_PRINTF("_test_canUsePrecisionModeDecimal, min: %s, max: %s, prc: %" PRIu32,                               \
+                    mc_dec128_to_string(lb).str,                                                                       \
+                    mc_dec128_to_string(ub).str,                                                                       \
+                    prc);                                                                                              \
         bool result = mc_canUsePrecisionModeDecimal(lb, ub, prc, &bits_out, status);                                   \
         ASSERT_OK_STATUS(mongocrypt_status_ok(status), status);                                                        \
         ASSERT(result == expected);                                                                                    \
@@ -613,10 +613,10 @@ static void _test_canUsePrecisionModeDecimal(_mongocrypt_tester_t *tester) {
 #define CAN_USE_PRECISION_MODE_ERRORS(lb, ub, prc, error)                                                              \
     {                                                                                                                  \
         mongocrypt_status_t *const status = mongocrypt_status_new();                                                   \
-        printf("_test_canUsePrecisionModeDecimal errors, min: %s, max: %s, prc: %" PRIu32,                             \
-               mc_dec128_to_string(lb).str,                                                                            \
-               mc_dec128_to_string(ub).str,                                                                            \
-               prc);                                                                                                   \
+        TEST_PRINTF("_test_canUsePrecisionModeDecimal errors, min: %s, max: %s, prc: %" PRIu32,                        \
+                    mc_dec128_to_string(lb).str,                                                                       \
+                    mc_dec128_to_string(ub).str,                                                                       \
+                    prc);                                                                                              \
         uint32_t bits_out = 0;                                                                                         \
         bool result = mc_canUsePrecisionModeDecimal(lb, ub, prc, &bits_out, status);                                   \
         ASSERT_OR_PRINT_MSG(!result, "expected error, but got none");                                                  \
@@ -986,16 +986,15 @@ static void _test_RangeTest_Encode_Decimal128(_mongocrypt_tester_t *tester) {
         mongocrypt_status_t *const status = mongocrypt_status_new();
 
         if (test->min.set && test->max.set && test->precision.set) {
-            printf("_test_RangeTest_Encode_Decimal128: value=%s, min=%s, max=%s, "
-                   "precision=%" PRIu32 "\n",
-                   mc_dec128_to_string(test->value).str,
-                   mc_dec128_to_string(test->min.value).str,
-                   mc_dec128_to_string(test->max.value).str,
-                   test->precision.value);
+            TEST_PRINTF("_test_RangeTest_Encode_Decimal128: value=%s, min=%s, max=%s, "
+                        "precision=%" PRIu32 "\n",
+                        mc_dec128_to_string(test->value).str,
+                        mc_dec128_to_string(test->min.value).str,
+                        mc_dec128_to_string(test->max.value).str,
+                        test->precision.value);
         } else {
-            printf("_test_RangeTest_Encode_Decimal128: value=%s\n", mc_dec128_to_string(test->value).str);
+            TEST_PRINTF("_test_RangeTest_Encode_Decimal128: value=%s\n", mc_dec128_to_string(test->value).str);
         }
-        fflush(stdout);
         mc_OSTType_Decimal128 got;
         const bool use_range_v2 = !test->use_range_v1;
         const bool ok = mc_getTypeInfoDecimal128(

@@ -539,7 +539,7 @@ static void _mc_fle2_iev_v2_validate(_mongocrypt_tester_t *tester, _mc_fle2_iev_
 }
 
 static void test_fle2_iev_v2_test(mongocrypt_t *crypt, _mongocrypt_tester_t *tester, const char *path) {
-    printf("Loading test from %s...\n", path);
+    TEST_PRINTF("Loading test from %s...\n", path);
 
     mongocrypt_binary_t *test_bin = TEST_FILE(path);
     if (!test_bin) {
@@ -565,7 +565,7 @@ static void test_fle2_iev_v2_test(mongocrypt_t *crypt, _mongocrypt_tester_t *tes
 
 static void test_fle2_iev_v2(_mongocrypt_tester_t *tester) {
     if (!_aes_ctr_is_supported_by_os) {
-        printf("Common Crypto with no CTR support detected. Skipping.");
+        TEST_PRINTF("Common Crypto with no CTR support detected. Skipping.");
         return;
     }
     mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);

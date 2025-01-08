@@ -38,20 +38,19 @@ typedef struct {
 #undef MAX_INT32_EDGES
 
 static void print_edges_compared(mc_edges_t *edgesGot, const char *const *edgesExpected) {
-    fflush(stdout); // Avoid incomplete stdout output from prior tests on error
-    fprintf(stderr, "edges got ... begin\n");
+    TEST_STDERR_PRINTF("edges got ... begin\n");
     for (size_t i = 0; i < mc_edges_len(edgesGot); i++) {
-        fprintf(stderr, "  %s\n", mc_edges_get(edgesGot, i));
+        TEST_STDERR_PRINTF("  %s\n", mc_edges_get(edgesGot, i));
     }
-    fprintf(stderr, "edges got ... end\n");
+    TEST_STDERR_PRINTF("edges got ... end\n");
 
-    fprintf(stderr, "edges expected ... begin\n");
+    TEST_STDERR_PRINTF("edges expected ... begin\n");
     const char *const *iter = edgesExpected;
     while (*iter != NULL) {
-        fprintf(stderr, "  %s\n", *iter);
+        TEST_STDERR_PRINTF("  %s\n", *iter);
         iter++;
     }
-    fprintf(stderr, "edges expected ... end\n");
+    TEST_STDERR_PRINTF("edges expected ... end\n");
 }
 
 static void _test_getEdgesInt32(_mongocrypt_tester_t *tester) {

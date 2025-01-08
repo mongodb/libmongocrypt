@@ -125,7 +125,7 @@ static void test_FLE2UnindexedEncryptedValue_decrypt(_mongocrypt_tester_t *teste
     mongocrypt_t *crypt;
 
     if (!_aes_ctr_is_supported_by_os) {
-        printf("Common Crypto with no CTR support detected. Skipping.");
+        TEST_PRINTF("Common Crypto with no CTR support detected. Skipping.");
         return;
     }
 
@@ -201,7 +201,7 @@ static void test_FLE2UnindexedEncryptedValue_decrypt(_mongocrypt_tester_t *teste
 
 static void test_FLE2UnindexedEncryptedValue_encrypt(_mongocrypt_tester_t *tester) {
     if (!_aes_ctr_is_supported_by_os) {
-        printf("Common Crypto with no CTR support detected. Skipping.");
+        TEST_PRINTF("Common Crypto with no CTR support detected. Skipping.");
         return;
     }
 

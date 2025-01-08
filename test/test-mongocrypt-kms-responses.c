@@ -51,7 +51,7 @@ static void _test_one_kms_response(_mongocrypt_tester_t *tester, bson_t *test) {
     bson_iter_t ctx_iter;
 
     BSON_ASSERT(bson_iter_init_find(&iter, test, "description"));
-    printf("- %s\n", bson_iter_utf8(&iter, NULL));
+    TEST_PRINTF("- %s\n", bson_iter_utf8(&iter, NULL));
     BSON_ASSERT(bson_iter_init_find(&ctx_iter, test, "ctx"));
     BSON_ASSERT(bson_iter_recurse(&ctx_iter, &ctx_iter));
     while (bson_iter_next(&ctx_iter)) {
@@ -94,7 +94,7 @@ static void _test_one_kms_response(_mongocrypt_tester_t *tester, bson_t *test) {
             tester->paths.key_file = "./test/data/key-document-gcp.json";
             ASSERT_OK(mongocrypt_ctx_decrypt_init(ctx, bin), ctx);
         } else {
-            fprintf(stderr, "unsupported ctx type: %s\n", ctx_type);
+            TEST_STDERR_PRINTF("unsupported ctx type: %s\n", ctx_type);
             abort();
         }
 
