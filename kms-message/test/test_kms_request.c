@@ -1197,7 +1197,7 @@ test_request_newlines (void)
 #define RUN_TEST(_func)                                          \
    do {                                                          \
       if (!selector || 0 == kms_strcasecmp (#_func, selector)) { \
-         printf ("%s\n", #_func);                                \
+         TEST_PRINTF ("%s\n", #_func);                           \
          _func ();                                               \
          ran_tests = true;                                       \
       }                                                          \
