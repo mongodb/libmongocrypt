@@ -248,7 +248,6 @@ static const char *const *_test_expectMincoverDecimal128(void *tests, size_t idx
 static void _test_dump_32(void *tests, size_t idx, mc_mincover_t *got) {
     BSON_ASSERT_PARAM(tests);
     Int32Test *const test = (Int32Test *)tests + idx;
-    fflush(stdout); // Avoid incomplete stdout output from prior tests on error
     TEST_STDERR_PRINTF("testcase: lowerBound=%" PRId32 " (%s) upperBound=%" PRId32 " (%s)",
                        test->lowerBound,
                        test->includeLowerBound ? "inclusive" : "exclusive",
@@ -276,7 +275,6 @@ static void _test_dump_32(void *tests, size_t idx, mc_mincover_t *got) {
 static void _test_dump_64(void *tests, size_t idx, mc_mincover_t *got) {
     BSON_ASSERT_PARAM(tests);
     Int64Test *const test = (Int64Test *)tests + idx;
-    fflush(stdout); // Avoid incomplete stdout output from prior tests on error
     TEST_STDERR_PRINTF("testcase: lowerBound=%" PRId64 " (%s) upperBound=%" PRId64 " (%s)",
                        test->lowerBound,
                        test->includeLowerBound ? "inclusive" : "exclusive",
@@ -304,7 +302,6 @@ static void _test_dump_64(void *tests, size_t idx, mc_mincover_t *got) {
 static void _test_dump_Double(void *tests, size_t idx, mc_mincover_t *got) {
     BSON_ASSERT_PARAM(tests);
     DoubleTest *const test = (DoubleTest *)tests + idx;
-    fflush(stdout); // Avoid incomplete stdout output from prior tests on error
     TEST_STDERR_PRINTF("testcase: lowerBound=%f (%s) upperBound=%f (%s)",
                        test->lowerBound,
                        test->includeLowerBound ? "inclusive" : "exclusive",
@@ -336,7 +333,6 @@ static void _test_dump_Double(void *tests, size_t idx, mc_mincover_t *got) {
 static void _test_dump_Decimal128(void *tests, size_t idx, mc_mincover_t *got) {
     BSON_ASSERT_PARAM(tests);
     Decimal128Test *const test = (Decimal128Test *)tests + idx;
-    fflush(stdout); // Avoid incomplete stdout output from prior tests on error
     TEST_STDERR_PRINTF("testcase: lowerBound=%s (%s) upperBound=%s (%s)",
                        mc_dec128_to_string(test->lowerBound).str,
                        test->includeLowerBound ? "inclusive" : "exclusive",

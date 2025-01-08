@@ -38,7 +38,6 @@ typedef struct {
 #undef MAX_INT32_EDGES
 
 static void print_edges_compared(mc_edges_t *edgesGot, const char *const *edgesExpected) {
-    fflush(stdout); // Avoid incomplete stdout output from prior tests on error
     TEST_STDERR_PRINTF("edges got ... begin\n");
     for (size_t i = 0; i < mc_edges_len(edgesGot); i++) {
         TEST_STDERR_PRINTF("  %s\n", mc_edges_get(edgesGot, i));

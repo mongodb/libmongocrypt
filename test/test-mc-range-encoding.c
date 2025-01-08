@@ -995,7 +995,6 @@ static void _test_RangeTest_Encode_Decimal128(_mongocrypt_tester_t *tester) {
         } else {
             TEST_PRINTF("_test_RangeTest_Encode_Decimal128: value=%s\n", mc_dec128_to_string(test->value).str);
         }
-        fflush(stdout);
         mc_OSTType_Decimal128 got;
         const bool use_range_v2 = !test->use_range_v1;
         const bool ok = mc_getTypeInfoDecimal128(
