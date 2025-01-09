@@ -78,6 +78,7 @@ _mc_fle2_iev_v2_test_serialize_payload(mongocrypt_t *crypt, _mc_fle2_iev_v2_test
     iev->suffix_tag_count = test->suffix_tag_count;
     iev->S_KeyId = copy_buf(&test->S_KeyId);
     _mongocrypt_buffer_init(&iev->ServerEncryptedValue);
+
     // Encrypt the client value (bson_value) into the SEV
     // First, encrypt with K_Key -> CEV
     mongocrypt_status_t *status = mongocrypt_status_new();
@@ -102,9 +103,8 @@ _mc_fle2_iev_v2_test_serialize_payload(mongocrypt_t *crypt, _mc_fle2_iev_v2_test
                                             &bytes_written,
                                             status),
                      status);
-    // ASSERT(bytes_written > 0);
-    // ASSERT(bytes_written <= ClientEncryptedValueLen);
     ASSERT(bytes_written == ClientEncryptedValueLen);
+
     // Then, add K_Key_Id + CEV -> DSEV
     _mongocrypt_buffer_t decryptedServerEncryptedValue;
     _mongocrypt_buffer_init_size(&decryptedServerEncryptedValue, clientEncryptedValue.len + UUID_LEN);
@@ -271,7 +271,6 @@ static bool _mc_fle2_iev_v2_test_parse(mongocrypt_t *crypt, _mc_fle2_iev_v2_test
     }
 
 #define CHECK_HAS(Name) ASSERT_OR_PRINT_MSG(test->Name.data, "Missing field '" #Name "'")
-    // CHECK_HAS(payload);
     CHECK_HAS(S_KeyId);
     CHECK_HAS(S_Key);
     CHECK_HAS(K_KeyId);
@@ -281,11 +280,6 @@ static bool _mc_fle2_iev_v2_test_parse(mongocrypt_t *crypt, _mc_fle2_iev_v2_test
     ASSERT_OR_PRINT_MSG(hasType, "Missing field 'type'");
     ASSERT_OR_PRINT_MSG(test->bson_value_type, "Missing field 'bson_value_type'");
 
-    if (!test->payload.data) {
-        // This is a self-test; i.e. we serialize the payload from the given fields, parse, and assert sameness.
-        _mc_fle2_iev_v2_test_serialize_payload(crypt, test, &test->payload);
-    }
-
     return true;
 }
 
@@ -293,6 +287,11 @@ static void _mc_fle2_iev_v2_test_run(mongocrypt_t *crypt, _mongocrypt_tester_t *
     mongocrypt_status_t *status = mongocrypt_status_new();
 
     mc_FLE2IndexedEncryptedValueV2_t *iev = mc_FLE2IndexedEncryptedValueV2_new();
+
+    if (!test->payload.data) {
+        // This is a self-test; i.e. we serialize the payload from the given fields, parse, and assert sameness.
+        _mc_fle2_iev_v2_test_serialize_payload(crypt, test, &test->payload);
+    }
 
     // Parse payload.
     ASSERT_OK_STATUS(mc_FLE2IndexedEncryptedValueV2_parse(iev, &test->payload, status), status);
@@ -557,7 +556,17 @@ static void test_fle2_iev_v2_test(mongocrypt_t *crypt, _mongocrypt_tester_t *tes
     bson_iter_t iter;
     ASSERT(bson_iter_init(&iter, &test_bson));
     ASSERT(_mc_fle2_iev_v2_test_parse(crypt, &test, &iter));
-    _mc_fle2_iev_v2_test_run(crypt, tester, &test);
+    if (test.payload.data) {
+        // Run once with given payload, then run with empty payload (self-test).
+        _mc_fle2_iev_v2_test_run(crypt, tester, &test);
+        _mongocrypt_buffer_cleanup(&test.payload);
+        test.payload.data = NULL;
+        _mc_fle2_iev_v2_test_run(crypt, tester, &test);
+    } else {
+        // No payload specified, run once.
+        _mc_fle2_iev_v2_test_run(crypt, tester, &test);
+    }
+
     _mc_fle2_iev_v2_test_explicit_ctx(tester, &test);
     _mc_fle2_iev_v2_validate(tester, &test);
     _mc_fle2_iev_v2_test_destroy(&test);
