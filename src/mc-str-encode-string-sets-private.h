@@ -17,14 +17,14 @@
 #ifndef MONGOCRYPT_STR_ENCODE_STRING_SETS_PRIVATE_H
 #define MONGOCRYPT_STR_ENCODE_STRING_SETS_PRIVATE_H
 
+#include "mongocrypt-buffer-private.h"
 #include "mongocrypt.h"
 
 // Represents a valid unicode string with the bad character 0xFF appended to the end. This is our base string which
 // we build substring trees on. Stores all the valid code points in the string, plus one code point for 0xFF.
 // Exposed for testing.
 typedef struct {
-    char *data;
-    uint32_t len;
+    _mongocrypt_buffer_t buf;
     uint32_t *codepoint_offsets;
     uint32_t codepoint_len;
 } mc_utf8_string_with_bad_char_t;

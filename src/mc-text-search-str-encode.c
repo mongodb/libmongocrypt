@@ -16,6 +16,7 @@
 
 #include "mc-str-encode-string-sets-private.h"
 #include "mc-text-search-str-encode-private.h"
+#include "mongocrypt-buffer-private.h"
 #include "mongocrypt.h"
 #include <bson/bson.h>
 #include <stdint.h>
@@ -94,6 +95,32 @@ static mc_substring_set_t *generate_substring_tree(const mc_utf8_string_with_bad
         // No valid substrings, return empty tree
         return NULL;
     }
+
+    // If you are following along with the OST paper, a slightly different calculation of msize is used. The following
+    // justifies why that calculation and this calculation are equivalent.
+    // At this point, it is established that:
+    //     beta <= mlen
+    //     lb <= cbclen
+    //     lb <= ub <= mlen
+    //
+    // So, the following formula for msize in the OST paper:
+    //     maxkgram_1 = sum_(j=lb, ub, (mlen - j + 1))
+    //     maxkgram_2 = sum_(j=lb, min(ub, cbclen), (cbclen - j + 1))
+    //     msize      = min(maxkgram_1, maxkgram_2)
+    // can be simplified to:
+    //     msize      = sum_(j=lb, min(ub, cbclen), (min(mlen, cbclen) - j + 1))
+    //
+    // because if cbclen <= ub, then it follows that cbclen <= ub <= mlen, and so
+    //     maxkgram_1 = sum_(j=lb, ub, (mlen - j + 1))          # as above
+    //     maxkgram_2 = sum_(j=lb, cbclen, (cbclen - j + 1))    # less or equal to maxkgram_1
+    //     msize      = maxkgram_2
+    // and if cbclen > ub, then it follows that:
+    //     maxkgram_1 = sum_(j=lb, ub, (mlen - j + 1))          # as above
+    //     maxkgram_2 = sum_(j=lb, ub, (cbclen - j + 1))        # same sum bounds as maxkgram_1
+    //     msize      = sum_(j=lb, ub, (min(mlen, cbclen) - j + 1))
+    // in both cases, msize can be rewritten as:
+    //     msize      = sum_(j=lb, min(ub, cbclen), (min(mlen, cbclen) - j + 1))
+
     uint32_t folded_codepoint_len = base_str->codepoint_len - 1;
     // If mlen < cbclen, we only need to pad to mlen
     uint32_t padded_len = BSON_MIN(spec->mlen, cbclen);
@@ -155,11 +182,17 @@ mc_str_encode_sets_t *mc_text_search_str_encode_helper(const mc_FLE2TextSearchIn
         sets->prefix_set = generate_prefix_tree(sets->base_string, unfolded_codepoint_len, &spec->prefix.value);
     }
     if (spec->substr.set) {
+        if (unfolded_codepoint_len > spec->substr.value.mlen) {
+            CLIENT_ERR("StrEncode: String passed in was longer than the maximum length for substring indexing -- "
+                       "String len: %u, max len: %u",
+                       unfolded_codepoint_len,
+                       spec->substr.value.mlen);
+            return NULL;
+        }
         sets->substring_set = generate_substring_tree(sets->base_string, unfolded_codepoint_len, &spec->substr.value);
     }
     // Exact string is always the first len characters of the base string
-    sets->exact = sets->base_string->data;
-    sets->exact_len = folded_str_bytes_len;
+    _mongocrypt_buffer_from_data(&sets->exact, sets->base_string->buf.data, folded_str_bytes_len);
     return sets;
 }
 

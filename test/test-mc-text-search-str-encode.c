@@ -71,13 +71,13 @@ static void test_nofold_suffix_prefix_case(_mongocrypt_tester_t *tester,
             sets = mc_text_search_str_encode_helper(&spec, unfolded_codepoint_len, status);
         }
         ASSERT_OR_PRINT(sets, status);
-        ASSERT(sets->base_string->len == byte_len + 1);
+        ASSERT(sets->base_string->buf.len == byte_len + 1);
         ASSERT(sets->base_string->codepoint_len == codepoint_len + 1);
-        ASSERT(0 == memcmp(sets->base_string->data, str, byte_len));
-        ASSERT(sets->base_string->data[byte_len] == (char)0xFF);
+        ASSERT(0 == memcmp(sets->base_string->buf.data, str, byte_len));
+        ASSERT(sets->base_string->buf.data[byte_len] == (uint8_t)0xFF);
         ASSERT(sets->substring_set == NULL);
-        ASSERT(sets->exact_len == byte_len);
-        ASSERT(0 == memcmp(sets->exact, str, byte_len));
+        ASSERT(sets->exact.len == byte_len);
+        ASSERT(0 == memcmp(sets->exact.data, str, byte_len));
 
         if (lb > max_padded_len) {
             ASSERT(sets->suffix_set == NULL);
@@ -114,8 +114,8 @@ static void test_nofold_suffix_prefix_case(_mongocrypt_tester_t *tester,
             // indices.
             fprintf(stderr,
                     "Affix starting %lld, ending %lld, count %u\n",
-                    (long long)(affix - sets->base_string->data),
-                    (long long)(affix - sets->base_string->data + affix_len),
+                    (long long)((uint8_t *)affix - sets->base_string->buf.data),
+                    (long long)((uint8_t *)affix - sets->base_string->buf.data + affix_len),
                     affix_count);
             if (affix_len == byte_len + 1) {
                 // This is padding, so there should be no more entries due to how we ordered them
@@ -130,11 +130,11 @@ static void test_nofold_suffix_prefix_case(_mongocrypt_tester_t *tester,
             // slightly easier when testing.
             if (suffix) {
                 uint32_t start_offset = sets->base_string->codepoint_offsets[codepoint_len - (lb + idx)];
-                ASSERT(affix == sets->base_string->data + start_offset);
+                ASSERT((uint8_t *)affix == sets->base_string->buf.data + start_offset);
                 ASSERT(affix_len == sets->base_string->codepoint_offsets[codepoint_len] - start_offset)
             } else {
                 uint32_t end_offset = sets->base_string->codepoint_offsets[lb + idx];
-                ASSERT(affix == sets->base_string->data);
+                ASSERT((uint8_t *)affix == sets->base_string->buf.data);
                 ASSERT(affix_len == end_offset);
             }
             // The count should always be 1, except for padding.
@@ -145,7 +145,7 @@ static void test_nofold_suffix_prefix_case(_mongocrypt_tester_t *tester,
         ASSERT(total_real_affix_count == n_real_affixes);
         if (affix_len == byte_len + 1) {
             // Padding
-            ASSERT(affix == sets->base_string->data);
+            ASSERT((uint8_t *)affix == sets->base_string->buf.data);
             ASSERT(affix_count == n_padding);
         } else {
             // No padding found
@@ -192,7 +192,8 @@ static uint32_t calc_unique_substrings(const mc_utf8_string_with_bad_char_t *str
                 uint32_t j_start_byte = str->codepoint_offsets[j];
                 uint32_t j_end_byte = str->codepoint_offsets[j + ss_len];
                 if (i_end_byte - i_start_byte == j_end_byte - j_start_byte
-                    && memcmp(&str->data[i_start_byte], &str->data[j_start_byte], i_end_byte - i_start_byte) == 0) {
+                    && memcmp(&str->buf.data[i_start_byte], &str->buf.data[j_start_byte], i_end_byte - i_start_byte)
+                           == 0) {
                     idx_is_dupe[j] = 1;
                     dupes++;
                 }
@@ -226,17 +227,21 @@ static void test_nofold_substring_case(_mongocrypt_tester_t *tester,
     mc_FLE2TextSearchInsertSpec_t spec =
         {str, byte_len, {{mlen, lb, ub}, true}, {{0, 0}, false}, {{0, 0}, false}, false, false};
     sets = mc_text_search_str_encode_helper(&spec, unfolded_codepoint_len, status);
-
+    if (unfolded_codepoint_len > mlen) {
+        ASSERT_FAILS_STATUS(sets, status, "longer than the maximum length");
+        mongocrypt_status_destroy(status);
+        return;
+    }
     ASSERT_OR_PRINT(sets, status);
     mongocrypt_status_destroy(status);
-    ASSERT(sets->base_string->len == byte_len + 1);
+    ASSERT(sets->base_string->buf.len == byte_len + 1);
     ASSERT(sets->base_string->codepoint_len == codepoint_len + 1);
-    ASSERT(0 == memcmp(sets->base_string->data, str, byte_len));
-    ASSERT(sets->base_string->data[byte_len] == (char)0xFF);
+    ASSERT(0 == memcmp(sets->base_string->buf.data, str, byte_len));
+    ASSERT(sets->base_string->buf.data[byte_len] == (uint8_t)0xFF);
     ASSERT(sets->suffix_set == NULL)
     ASSERT(sets->prefix_set == NULL);
-    ASSERT(sets->exact_len == byte_len);
-    ASSERT(0 == memcmp(sets->exact, str, byte_len));
+    ASSERT(sets->exact.len == byte_len);
+    ASSERT(0 == memcmp(sets->exact.data, str, byte_len));
 
     if (unfolded_codepoint_len > mlen || lb > max_padded_len) {
         ASSERT(sets->substring_set == NULL);
@@ -258,9 +263,6 @@ static void test_nofold_substring_case(_mongocrypt_tester_t *tester,
     mc_substring_set_iter_t it;
     mc_substring_set_iter_init(&it, set);
     const char *substring;
-    // 2D array: counts[i + j*len] is the number of substrings returned which started at byte i
-    // and ended at byte j (inclusive) of the base string.
-    uint32_t *counts = calloc(byte_len * byte_len, sizeof(uint32_t));
 
     uint32_t substring_len = 0;
     uint32_t substring_count = 0;
@@ -268,8 +270,8 @@ static void test_nofold_substring_case(_mongocrypt_tester_t *tester,
     while (mc_substring_set_iter_next(&it, &substring, &substring_len, &substring_count)) {
         fprintf(stderr,
                 "Substring starting %lld, ending %lld, count %u: \"%.*s\"\n",
-                (long long)(substring - sets->base_string->data),
-                (long long)(substring - sets->base_string->data + substring_len),
+                (long long)((uint8_t *)substring - sets->base_string->buf.data),
+                (long long)((uint8_t *)substring - sets->base_string->buf.data + substring_len),
                 substring_count,
                 substring_len,
                 substring);
@@ -279,25 +281,21 @@ static void test_nofold_substring_case(_mongocrypt_tester_t *tester,
             break;
         }
 
-        ASSERT(substring + substring_len <= sets->base_string->data + byte_len);
+        ASSERT((uint8_t *)substring + substring_len <= sets->base_string->buf.data + byte_len);
         ASSERT(substring_len <= byte_len);
         ASSERT(0 < substring_len);
         ASSERT(1 == substring_count);
         total_real_substring_count++;
-        uint32_t start_offset = (uint32_t)(substring - sets->base_string->data);
-
-        counts[start_offset + (start_offset + substring_len - 1) * byte_len]++;
     }
     ASSERT(total_real_substring_count == n_real_substrings);
     if (substring_len == byte_len + 1) {
         // Padding
-        ASSERT(substring == sets->base_string->data);
+        ASSERT((uint8_t *)substring == sets->base_string->buf.data);
         ASSERT(substring_count == n_padding);
     } else {
         // No padding found
         ASSERT(n_padding == 0)
     }
-    free(counts);
     mc_str_encode_sets_destroy(sets);
 }
 
@@ -582,8 +580,8 @@ static void _test_text_search_str_encode_multiple(_mongocrypt_tester_t *tester) 
     ASSERT(0 == memcmp("123456789", str, 9));
     ASSERT(count == 1);
 
-    ASSERT(sets->exact_len == 9);
-    ASSERT(0 == memcmp(sets->exact, str, 9));
+    ASSERT(sets->exact.len == 9);
+    ASSERT(0 == memcmp(sets->exact.data, str, 9));
 
     mc_str_encode_sets_destroy(sets);
 }

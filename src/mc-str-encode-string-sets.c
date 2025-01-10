@@ -15,6 +15,7 @@
  */
 
 #include "mc-str-encode-string-sets-private.h"
+#include "mongocrypt-buffer-private.h"
 #include <bson/bson.h>
 #include <stdint.h>
 
@@ -23,10 +24,9 @@
 // Input must be pre-validated by bson_utf8_validate().
 mc_utf8_string_with_bad_char_t *mc_utf8_string_with_bad_char_from_buffer(const char *buf, uint32_t len) {
     mc_utf8_string_with_bad_char_t *ret = bson_malloc0(sizeof(mc_utf8_string_with_bad_char_t));
-    ret->data = bson_malloc0(len + 1);
-    ret->len = len + 1;
-    memcpy(ret->data, buf, len);
-    ret->data[len] = BAD_CHAR;
+    _mongocrypt_buffer_init_size(&ret->buf, len + 1);
+    memcpy(ret->buf.data, buf, len);
+    ret->buf.data[len] = BAD_CHAR;
     // max # offsets is the total length
     ret->codepoint_offsets = bson_malloc0(sizeof(uint32_t) * (len + 1));
     const char *cur = buf;
@@ -48,7 +48,7 @@ void mc_utf8_string_with_bad_char_destroy(mc_utf8_string_with_bad_char_t *utf8) 
         return;
     }
     bson_free(utf8->codepoint_offsets);
-    bson_free(utf8->data);
+    _mongocrypt_buffer_cleanup(&utf8->buf);
     bson_free(utf8);
 }
 
@@ -121,11 +121,11 @@ bool mc_affix_set_iter_next(mc_affix_set_iter_t *it, const char **str, uint32_t 
     uint32_t end_idx = it->set->end_indices[idx];
     uint32_t start_byte_offset = it->set->base_string->codepoint_offsets[start_idx];
     // Pointing to the end of the codepoints represents the end of the string.
-    uint32_t end_byte_offset = it->set->base_string->len;
+    uint32_t end_byte_offset = it->set->base_string->buf.len;
     if (end_idx != it->set->base_string->codepoint_len) {
         end_byte_offset = it->set->base_string->codepoint_offsets[end_idx];
     }
-    *str = &it->set->base_string->data[start_byte_offset];
+    *str = (const char *)it->set->base_string->buf.data + start_byte_offset;
     *len = end_byte_offset - start_byte_offset;
     *count = it->set->substring_counts[idx];
     return true;
@@ -206,7 +206,7 @@ bool mc_substring_set_insert(mc_substring_set_t *set, uint32_t base_start_idx, u
         return false;
     }
     uint32_t start_byte_offset = set->base_string->codepoint_offsets[base_start_idx];
-    const char *start = set->base_string->data + start_byte_offset;
+    const char *start = (const char *)set->base_string->buf.data + start_byte_offset;
     uint32_t len = set->base_string->codepoint_offsets[base_end_idx] - start_byte_offset;
     uint32_t hash = fnv1a(start, len);
     uint32_t idx = hash % HASHSET_SIZE;
@@ -216,7 +216,7 @@ bool mc_substring_set_insert(mc_substring_set_t *set, uint32_t base_start_idx, u
         mc_substring_set_node_t *prev;
         while (node) {
             prev = node;
-            if (len == node->len && memcmp(start, set->base_string->data + node->start_offset, len) == 0) {
+            if (len == node->len && memcmp(start, set->base_string->buf.data + node->start_offset, len) == 0) {
                 // Match, no insertion
                 return false;
             }
@@ -252,8 +252,8 @@ bool mc_substring_set_iter_next(mc_substring_set_iter_t *it, const char **str, u
             // Almost done with iteration; return base string if count is not 0.
             if (it->set->base_string_count) {
                 *count = it->set->base_string_count;
-                *str = it->set->base_string->data;
-                *len = it->set->base_string->len;
+                *str = (const char *)it->set->base_string->buf.data;
+                *len = it->set->base_string->buf.len;
                 return true;
             }
             return false;
@@ -264,7 +264,7 @@ bool mc_substring_set_iter_next(mc_substring_set_iter_t *it, const char **str, u
     mc_substring_set_node_t *cur = (mc_substring_set_node_t *)(it->cur_node);
     // Count is always 1 for substrings in the hashset
     *count = 1;
-    *str = &it->set->base_string->data[cur->start_offset];
+    *str = (const char *)it->set->base_string->buf.data + cur->start_offset;
     *len = cur->len;
     it->cur_node = (void *)cur->next;
     return true;

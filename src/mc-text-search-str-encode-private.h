@@ -34,8 +34,7 @@ typedef struct {
     // Set of encoded substrings.
     mc_substring_set_t *substring_set;
     // Encoded exact string.
-    char *exact;
-    size_t exact_len;
+    _mongocrypt_buffer_t exact;
 } mc_str_encode_sets_t;
 
 // Run StrEncode with the given spec.
