@@ -119,6 +119,72 @@ bool mc_FLE2RangeInsertSpec_parse(mc_FLE2RangeInsertSpec_t *out,
                                   bool use_range_v2,
                                   mongocrypt_status_t *status);
 
+/* mc_FLE2SubstringInsertSpec_t holds the parameters used to encode for substring search. */
+typedef struct {
+    // max substring code point length to be indexed
+    int32_t mlen;
+    // upper bound code point length of valid substring queries
+    int32_t ub;
+    // lower bound code point length of valid substring queries
+    int32_t lb;
+} mc_FLE2SubstringInsertSpec_t;
+
+/* mc_FLE2SuffixInsertSpec_t holds the parameters used to encode for suffix search. */
+typedef struct {
+    // upper bound code point length of valid suffix queries
+    int32_t ub;
+    // lower bound code point length of valid suffix queries
+    int32_t lb;
+} mc_FLE2SuffixInsertSpec_t;
+
+/* mc_FLE2PrefixInsertSpec_t holds the parameters used to encode for prefix search. */
+typedef struct {
+    // upper bound code point length of valid prefix queries
+    int32_t ub;
+    // lower bound code point length of valid prefix queries
+    int32_t lb;
+} mc_FLE2PrefixInsertSpec_t;
+
+/** mc_FLE2TextSearchInsertSpec_t represents the text search insert specification that is
+ * encoded inside of a FLE2EncryptionPlaceholder. See
+ * https://github.com/mongodb/mongo/blob/master/src/mongo/crypto/fle_field_schema.idl
+ * for the representation in the MongoDB server. */
+typedef struct {
+    // v is the value to encrypt.
+    bson_iter_t v;
+    // casef is whether or not to case fold
+    bool casef;
+    // diacf is whether or not to diacritic fold
+    bool diacf;
+
+    // optional parameters for substring search
+    struct {
+        mc_FLE2SubstringInsertSpec_t value;
+        bool set;
+    } substringSpec;
+
+    // optional parameters for suffix search
+    struct {
+        mc_FLE2SuffixInsertSpec_t value;
+        bool set;
+    } suffixSpec;
+
+    // optional parameters for prefix search
+    struct {
+        mc_FLE2PrefixInsertSpec_t value;
+        bool set;
+    } prefixSpec;
+} mc_FLE2TextSearchInsertSpec_t;
+
+// `mc_FLE2TextSearchInsertSpec_t` inherits extended alignment from libbson. To dynamically allocate, use
+// aligned allocation (e.g. BSON_ALIGNED_ALLOC)
+BSON_STATIC_ASSERT2(alignof_mc_FLE2TextSearchInsertSpec_t,
+                    BSON_ALIGNOF(mc_FLE2TextSearchInsertSpec_t) >= BSON_ALIGNOF(bson_iter_t));
+
+bool mc_FLE2TextSearchInsertSpec_parse(mc_FLE2TextSearchInsertSpec_t *out,
+                                       const bson_iter_t *in,
+                                       mongocrypt_status_t *status);
+
 /** FLE2EncryptionPlaceholder implements Encryption BinData (subtype 6)
  * sub-subtype 0, the intent-to-encrypt mapping. Contains a value to encrypt and
  * a description of how it should be encrypted.

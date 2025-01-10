@@ -1534,5 +1534,8 @@ bool mongocrypt_setopt_key_expiration(mongocrypt_t *crypt, uint64_t cache_expira
 // DEPRECATED: Support "rangePreview" has been removed in favor of "range".
 #define MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_DEPRECATED_STR "rangePreview"
 #define MONGOCRYPT_QUERY_TYPE_RANGE_STR "range"
+#define MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW_STR "substringPreview"
+#define MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW_STR "suffixPreview"
+#define MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW_STR "prefixPreview"
 
 #endif /* MONGOCRYPT_H */
