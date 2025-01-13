@@ -80,7 +80,7 @@
  *
  * FLE2IndexedTextEncryptedValue has the following data layout:
  *
- * struct FLE2IndexedRangeEncryptedValueV2 {
+ * struct FLE2IndexedTextEncryptedValue {
  *   uint8_t fle_blob_subtype = 17;
  *   uint8_t S_KeyId[16];
  *   uint8_t original_bson_type;
