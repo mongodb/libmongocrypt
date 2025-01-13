@@ -1574,7 +1574,6 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForTextSearc
     mc_FLE2InsertUpdatePayloadV2_t payload;
     mc_FLE2InsertUpdatePayloadV2_init(&payload);
 
-    _mongocrypt_crypto_t *crypto = kb->crypt->crypto;
     _mongocrypt_buffer_t value = {0};
     bool res = false;
 
