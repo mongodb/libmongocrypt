@@ -19,7 +19,7 @@
 #include <bson/bson.h>
 #include <stdint.h>
 
-#define BAD_CHAR ((char)0xFF)
+#define BAD_CHAR ((uint8_t)0xFF)
 
 // Input must be pre-validated by bson_utf8_validate().
 mc_utf8_string_with_bad_char_t *mc_utf8_string_with_bad_char_from_buffer(const char *buf, uint32_t len) {
@@ -160,7 +160,7 @@ uint32_t fnv1a(const char *data, uint32_t len) {
     uint32_t hash = FNV1ABASIS;
     const char *ptr = data;
     while (ptr != data + len) {
-        hash = (hash ^ *ptr++) * FNV1APRIME;
+        hash = (hash ^ (uint32_t)(*ptr++)) * FNV1APRIME;
     }
     return hash;
 }
