@@ -226,6 +226,10 @@ void _mongocrypt_tester_install_unicode_fold(_mongocrypt_tester_t *tester);
 bson_t *_mongocrypt_tester_bson_from_json(_mongocrypt_tester_t *tester, const char *json, ...);
 #define TMP_BSON(...) _mongocrypt_tester_bson_from_json(tester, __VA_ARGS__)
 
+/* Get a temporary bson_t from a JSON file. Do not free it. */
+bson_t *_mongocrypt_tester_file_as_bson(_mongocrypt_tester_t *tester, const char *path);
+#define TEST_FILE_AS_BSON(path) _mongocrypt_tester_file_as_bson(tester, path)
+
 /* Get a temporary binary from a JSON string. Do not free it. */
 mongocrypt_binary_t *_mongocrypt_tester_bin_from_json(_mongocrypt_tester_t *tester, const char *json, ...);
 #define TEST_BSON(...) _mongocrypt_tester_bin_from_json(tester, __VA_ARGS__)

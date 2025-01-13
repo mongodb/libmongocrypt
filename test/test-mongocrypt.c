@@ -198,6 +198,14 @@ mongocrypt_binary_t *_mongocrypt_tester_file(_mongocrypt_tester_t *tester, const
     return to_return;
 }
 
+bson_t *_mongocrypt_tester_file_as_bson(_mongocrypt_tester_t *tester, const char *path) {
+    mongocrypt_binary_t *bin = _mongocrypt_tester_file(tester, path);
+    bson_t *bson = &tester->test_bson[tester->bson_count];
+    TEST_DATA_COUNT_INC(tester->bson_count);
+    ASSERT(_mongocrypt_binary_to_bson(bin, bson));
+    return bson;
+}
+
 bson_t *_mongocrypt_tester_bson_from_json(_mongocrypt_tester_t *tester, const char *json, ...) {
     va_list ap;
     char *full_json;
