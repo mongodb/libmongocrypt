@@ -78,6 +78,9 @@ static void _test_mc_FLE2TagAndEncryptedMetadataBlock_validate(_mongocrypt_teste
 
     // Metadata block should be valid.
     ASSERT(mc_FLE2TagAndEncryptedMetadataBlock_validate(&metadata, status));
+    mongocrypt_status_destroy(status);
+    mc_FLE2TagAndEncryptedMetadataBlock_cleanup(&metadata);
+    _mongocrypt_buffer_cleanup(&input);
 }
 
 #undef TEST_TAG_AND_ENCRYPTED_METADATA_BLOCK

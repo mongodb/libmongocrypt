@@ -201,6 +201,7 @@ static uint32_t calc_unique_substrings(const mc_utf8_string_with_bad_char_t *str
         }
         memset(idx_is_dupe, 0, len);
     }
+    bson_free(idx_is_dupe);
     return calc_number_of_substrings(len, lb, ub) - dupes;
 }
 
@@ -245,7 +246,7 @@ static void test_nofold_substring_case(_mongocrypt_tester_t *tester,
 
     if (unfolded_codepoint_len > mlen || lb > max_padded_len) {
         ASSERT(sets->substring_set == NULL);
-        return;
+        goto cleanup;
     } else {
         ASSERT(sets->substring_set != NULL);
     }
@@ -294,8 +295,9 @@ static void test_nofold_substring_case(_mongocrypt_tester_t *tester,
         ASSERT(substring_count == n_padding);
     } else {
         // No padding found
-        ASSERT(n_padding == 0)
+        ASSERT(n_padding == 0);
     }
+cleanup:
     mc_str_encode_sets_destroy(sets);
 }
 

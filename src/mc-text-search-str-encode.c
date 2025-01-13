@@ -187,6 +187,7 @@ mc_str_encode_sets_t *mc_text_search_str_encode_helper(const mc_FLE2TextSearchIn
                        "String len: %u, max len: %u",
                        unfolded_codepoint_len,
                        spec->substr.value.mlen);
+            mc_str_encode_sets_destroy(sets);
             return NULL;
         }
         sets->substring_set = generate_substring_tree(sets->base_string, unfolded_codepoint_len, &spec->substr.value);
