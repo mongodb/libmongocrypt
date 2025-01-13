@@ -760,6 +760,18 @@ bool mc_FLE2IndexedEncryptedValueV2_validate(const mc_FLE2IndexedEncryptedValueV
     CHECK(iev->type == kFLE2IEVTypeEqualityV2 || iev->type == kFLE2IEVTypeRangeV2 || iev->type == kFLE2IEVTypeText,
           "type was init or unknown");
 
+    if (iev->type == kFLE2IEVTypeEqualityV2) {
+        validate_for_equality(iev, status);
+    } else if (iev->type == kFLE2IEVTypeRangeV2) {
+        validate_for_range(iev, status);
+    } else {
+        validate_for_text(iev, status);
+    }
+
+    if (!mongocrypt_status_ok(status)) {
+        return false;
+    }
+
     CHECK(iev->ServerEncryptedValue.len >= kMinServerEncryptedValueLen, "SEV.len is less than minimum");
     CHECK(iev->S_KeyId.len == UUID_LEN, "S_KeyId is not the correct length for a UUID");
 
@@ -790,13 +802,6 @@ bool mc_FLE2IndexedEncryptedValueV2_validate(const mc_FLE2IndexedEncryptedValueV
         if (!mc_FLE2TagAndEncryptedMetadataBlock_validate(&iev->metadata[i], status)) {
             return false;
         }
-    }
-    if (iev->type == kFLE2IEVTypeEqualityV2) {
-        return validate_for_equality(iev, status);
-    } else if (iev->type == kFLE2IEVTypeRangeV2) {
-        return validate_for_range(iev, status);
-    } else {
-        return validate_for_text(iev, status);
     }
     return true;
 }

@@ -151,10 +151,17 @@ _mc_fle2_iev_v2_test_serialize_payload(mongocrypt_t *crypt, _mc_fle2_iev_v2_test
         memcpy(tmp_buf.data + kMetadataFieldLen * 2, test->metadata[i].encryptedZeros.data, kMetadataFieldLen);
 
         ASSERT_OK_STATUS(mc_FLE2TagAndEncryptedMetadataBlock_parse(&iev->metadata[i], &tmp_buf, status), status);
+        _mongocrypt_buffer_cleanup(&tmp_buf);
     }
 
     // Now serialize our IEV to the payload.
     ASSERT_OK_STATUS(mc_FLE2IndexedEncryptedValueV2_serialize(iev, payload, status), status);
+    mongocrypt_status_destroy(status);
+    _mongocrypt_buffer_cleanup(&clientEncryptedValue);
+    _mongocrypt_buffer_cleanup(&iv);
+    _mongocrypt_buffer_cleanup(&decryptedServerEncryptedValue);
+    mc_ServerDataEncryptionLevel1Token_destroy(token);
+    mc_FLE2IndexedEncryptedValueV2_destroy(iev);
 }
 
 static bool _mc_fle2_iev_v2_test_parse(mongocrypt_t *crypt, _mc_fle2_iev_v2_test *test, bson_iter_t *iter) {
