@@ -156,9 +156,9 @@ static void mc_substring_set_node_destroy(mc_substring_set_node_t *node) {
 const uint32_t FNV1APRIME = 16777619;
 const uint32_t FNV1ABASIS = 2166136261;
 
-uint32_t fnv1a(const char *data, uint32_t len) {
+uint32_t fnv1a(const uint8_t *data, uint32_t len) {
     uint32_t hash = FNV1ABASIS;
-    const char *ptr = data;
+    const uint8_t *ptr = data;
     while (ptr != data + len) {
         hash = (hash ^ (uint32_t)(*ptr++)) * FNV1APRIME;
     }
@@ -206,7 +206,7 @@ bool mc_substring_set_insert(mc_substring_set_t *set, uint32_t base_start_idx, u
         return false;
     }
     uint32_t start_byte_offset = set->base_string->codepoint_offsets[base_start_idx];
-    const char *start = (const char *)set->base_string->buf.data + start_byte_offset;
+    const uint8_t *start = set->base_string->buf.data + start_byte_offset;
     uint32_t len = set->base_string->codepoint_offsets[base_end_idx] - start_byte_offset;
     uint32_t hash = fnv1a(start, len);
     uint32_t idx = hash % HASHSET_SIZE;
