@@ -84,8 +84,7 @@ static void _test_efc(_mongocrypt_tester_t *tester) {
 
     {
         _load_test_file(tester, "./test/data/efc/efc-textSearchFields.json", &efc_bson);
-        ASSERT_OK_STATUS(mc_EncryptedFieldConfig_parse(&efc, &efc_bson, status, use_range_v2),
-                            status);
+        ASSERT_OK_STATUS(mc_EncryptedFieldConfig_parse(&efc, &efc_bson, status, use_range_v2), status);
         ptr = efc.fields;
         ASSERT(ptr);
         ASSERT_STREQUAL(ptr->path, "lastName");

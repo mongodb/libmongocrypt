@@ -615,6 +615,7 @@ mc_FLE2PrefixInsertSpec_parse(mc_FLE2PrefixInsertSpec_t *out, const bson_iter_t 
         CLIENT_ERR_PREFIXED("upper bound cannot be less than the lower bound");
         goto fail;
     }
+    return true;
 fail:
     return false;
 }
