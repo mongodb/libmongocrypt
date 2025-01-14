@@ -859,8 +859,11 @@ int main(int argc, char **argv) {
     _mongocrypt_tester_t tester = {0};
     int i;
 
-    TEST_PRINTF("Pass a list of test names to run only specific tests. E.g.:\n");
-    TEST_PRINTF("test-mongocrypt _mongocrypt_test_mcgrew\n\n");
+    TEST_PRINTF("Pass a list of patterns to run a subset of tests.\n");
+    TEST_PRINTF("Patterns may be exact matches or include a trailing wildcard (*). Examples:\n");
+    TEST_PRINTF("$ test-mongocrypt _mongocrypt_test_mcgrew\n");
+    TEST_PRINTF("$ test-mongocrypt test_mc_schema_broker*\n");
+    TEST_PRINTF("$ test-mongocrypt test_mc_named_kms_provider_parse test_mc_named_kms_provider_map\n");
 
     /* Install all tests. */
     _mongocrypt_tester_install_crypto(&tester);
@@ -961,7 +964,17 @@ get_os_version_failed:
 
         if (argc > 1) {
             for (j = 1; j < argc; j++) {
-                found = (0 == strcmp(argv[j], tester.test_names[i]));
+                char *pattern = argv[j];
+                size_t pattern_len = strlen(pattern);
+                // Check for exact match:
+                found = (0 == strcmp(pattern, tester.test_names[i]));
+                // Check for trailing asterisk:
+                if (pattern[strlen(pattern) - 1] == '*') {
+                    if (0 == strncmp(pattern, tester.test_names[i], pattern_len - 1)) {
+                        found = true;
+                        break;
+                    }
+                }
                 if (found) {
                     break;
                 }
