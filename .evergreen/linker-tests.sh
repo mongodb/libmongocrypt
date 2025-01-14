@@ -25,7 +25,7 @@ linker_tests_deps_root="$EVG_DIR/linker_tests_deps"
 rm -rf -- "$linker_tests_root"
 mkdir -p "$linker_tests_root"/{install,libmongocrypt-cmake-build,app-cmake-build}
 
-# Make libbson1
+echo "Make libbson1 ..."
 run_chdir "$linker_tests_root" bash "$EVG_DIR/prep_c_driver_source.sh"
 MONGOC_DIR="$linker_tests_root/mongo-c-driver"
 
@@ -40,8 +40,11 @@ if [ "${MACOS_UNIVERSAL-}" = "ON" ]; then
     ADDITIONAL_CMAKE_FLAGS="$ADDITIONAL_CMAKE_FLAGS -DCMAKE_OSX_ARCHITECTURES='arm64;x86_64'"
 fi
 
+# Disable extra alignment in libbson and libmongocrypt to ensure agreement.
+# libmongocrypt disables by default, but may enable if a system install of libbson is detected with extra alignment.
 common_cmake_args=(
   $ADDITIONAL_CMAKE_FLAGS
+  -DENABLE_EXTRA_ALIGNMENT=OFF
   -DCMAKE_BUILD_TYPE=RelWithDebInfo
 )
 
@@ -69,15 +72,17 @@ run_cmake \
   "-H$SRC_PATH" \
   "-B$BUILD_PATH"
 run_cmake --build "$BUILD_PATH" --target install --config RelWithDebInfo
+echo "Make libbson1 ... done"
 
-# Prepare libbson2
+echo "Prepare libbson2 ..."
 run_chdir "$MONGOC_DIR" git reset --hard
 run_chdir "$MONGOC_DIR" git apply --ignore-whitespace "$linker_tests_deps_root/bson_patches/libbson2.patch"
 # Apply patch to fix compile on RHEL 6.2. TODO: try to remove once RHEL 6.2 is dropped (MONGOCRYPT-688).
 run_chdir "$MONGOC_DIR" git apply "$LIBMONGOCRYPT_DIR/etc/libbson-remove-GCC-diagnostic-pragma.patch"
 LIBBSON2_SRC_DIR="$MONGOC_DIR"
+echo "Prepare libbson2 ... done"
 
-# Build libmongocrypt, static linking against libbson2
+echo "Build libmongocrypt, static linking against libbson2 ..."
 BUILD_DIR="$linker_tests_root/libmongocrypt-cmake-build"
 LMC_INSTALL_PATH="$linker_tests_root/install/libmongocrypt"
 SRC_PATH="$LIBMONGOCRYPT_DIR"
@@ -88,8 +93,9 @@ run_cmake \
   "-H$SRC_PATH" \
   "-B$BUILD_DIR"
 run_cmake --build "$BUILD_DIR" --target install --config RelWithDebInfo
+echo "Build libmongocrypt, static linking against libbson2 ... done"
 
-echo "Test case: Modelling libmongoc's use"
+echo "Test case: Model libmongoc's use ..."
 # app links against libbson1.so
 # app links against libmongocrypt.so
 BUILD_DIR="$linker_tests_root/app-cmake-build"
@@ -118,4 +124,5 @@ check_output () {
     echo "ok"
 }
 check_output ".calling bson_malloc0..from libbson1..calling mongocrypt_binary_new..from libbson2."
+echo "Test case: Model libmongoc's use ... done"
 exit 0

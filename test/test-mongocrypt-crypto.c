@@ -49,11 +49,11 @@ static bool _test_uses_ctr(const _test_mc_crypto_roundtrip_t *test) {
 
 static void _test_roundtrip_single(const _test_mc_crypto_roundtrip_t *test) {
     if (!_aes_ctr_is_supported_by_os && _test_uses_ctr(test)) {
-        printf("Common Crypto with no CTR support detected. Skipping %s", test->name);
+        TEST_PRINTF("Common Crypto with no CTR support detected. Skipping %s", test->name);
         return;
     }
 
-    printf("Begin %s...\n", test->name);
+    TEST_PRINTF("Begin %s...\n", test->name);
 
     mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
     mongocrypt_status_t *const status = mongocrypt_status_new();
@@ -125,7 +125,7 @@ done:
     mongocrypt_status_destroy(status);
     mongocrypt_destroy(crypt);
 
-    printf("End %s...\n", test->name);
+    TEST_PRINTF("End %s...\n", test->name);
 }
 
 static const _mongocrypt_value_encryption_algorithm_t *get_algo_by_name(const char *name) {
@@ -233,7 +233,7 @@ static void _test_mc_crypto_roundtrip_destroy(_test_mc_crypto_roundtrip_t *test)
 }
 
 static void _test_roundtrip_set(_mongocrypt_tester_t *tester, const char *path) {
-    printf("Loading tests from %s...\n", path);
+    TEST_PRINTF("Loading tests from %s...\n", path);
 
     mongocrypt_binary_t *test_bin = TEST_FILE(path);
     if (!test_bin) {
@@ -259,7 +259,7 @@ static void _test_roundtrip_set(_mongocrypt_tester_t *tester, const char *path) 
         _test_mc_crypto_roundtrip_destroy(&test);
     }
 
-    printf("Finished tests in %s\n", path);
+    TEST_PRINTF("Finished tests in %s\n", path);
 }
 
 static void _test_roundtrip(_mongocrypt_tester_t *tester) {
@@ -324,7 +324,7 @@ void _test_native_crypto_hmac_sha_256(_mongocrypt_tester_t *tester) {
         _mongocrypt_buffer_t got;
         mongocrypt_status_t *status;
 
-        printf("Begin test '%s'.\n", test->testname);
+        TEST_PRINTF("Begin test '%s'.\n", test->testname);
 
         _mongocrypt_buffer_copy_from_hex(&key, test->key);
         _mongocrypt_buffer_copy_from_hex(&input, test->input);
@@ -347,7 +347,7 @@ void _test_native_crypto_hmac_sha_256(_mongocrypt_tester_t *tester) {
         _mongocrypt_buffer_cleanup(&input);
         _mongocrypt_buffer_cleanup(&key);
 
-        printf("End test '%s'.\n", test->testname);
+        TEST_PRINTF("End test '%s'.\n", test->testname);
     }
 
     mongocrypt_destroy(crypt);

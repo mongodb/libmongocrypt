@@ -46,7 +46,7 @@ static void _run_one_test(_mongocrypt_tester_t *tester, bson_t *test) {
     }
 
     input_str = bson_as_relaxed_extended_json(&input, NULL);
-    printf("- testcase: %s\n", input_str);
+    TEST_PRINTF("- testcase: %s\n", input_str);
     bson_free(input_str);
 
     ret = _mongocrypt_kek_parse_owned(&input, &kek, status);

@@ -86,8 +86,9 @@ static void _test_cache_expiration(_mongocrypt_tester_t *tester) {
     BSON_ASSERT(bson_equal(entry, tmp));
     bson_destroy(tmp);
 
-    /* Sleep for 100 milliseconds */
-    _usleep(1000 * 100);
+    // Sleep to trigger cache expiration.
+    // Cache entries expire after 1ms, but use 20ms to avoid timing errors observed on Windows distros: CDRIVER-4526
+    _usleep(20 * 1000);
 
     BSON_ASSERT(_mongocrypt_cache_get(&cache, "1", (void **)&tmp));
     BSON_ASSERT(!tmp);

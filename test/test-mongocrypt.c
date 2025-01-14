@@ -52,7 +52,7 @@ void _load_json_as_bson(const char *path, bson_t *out) {
 
     reader = bson_json_reader_new_from_file(path, &error);
     if (!reader) {
-        fprintf(stderr, "error reading: %s\n", path);
+        TEST_STDERR_PRINTF("error reading: %s\n", path);
     }
     ASSERT_OR_PRINT_BSON(reader, error);
     bson_init(out);
@@ -118,7 +118,7 @@ static void _load_http(_mongocrypt_tester_t *tester, const char *path) {
     }
 
     if (n_read < 0) {
-        fprintf(stderr, "failed to read %s\n", path);
+        TEST_STDERR_PRINTF("failed to read %s\n", path);
         abort();
     }
 
@@ -158,12 +158,12 @@ void _mongocrypt_tester_install(_mongocrypt_tester_t *tester,
 #endif
 
     if (crypto_spec == CRYPTO_REQUIRED && !crypto_enabled) {
-        printf("Skipping test: %s – requires crypto to be enabled\n", name);
+        TEST_PRINTF("Skipping test: %s – requires crypto to be enabled\n", name);
         return;
     }
 
     if (crypto_spec == CRYPTO_PROHIBITED && crypto_enabled) {
-        printf("Skipping test: %s – requires crypto to be disabled\n", name);
+        TEST_PRINTF("Skipping test: %s – requires crypto to be disabled\n", name);
         return;
     }
 
@@ -218,7 +218,7 @@ bson_t *_mongocrypt_tester_bson_from_json(_mongocrypt_tester_t *tester, const ch
     bson = &tester->test_bson[tester->bson_count];
     TEST_DATA_COUNT_INC(tester->bson_count);
     if (!bson_init_from_json(bson, full_json, strlen(full_json), &error)) {
-        fprintf(stderr, "%s", error.message);
+        TEST_STDERR_PRINTF("%s", error.message);
         abort();
     }
     bson_free(full_json);
@@ -246,7 +246,7 @@ mongocrypt_binary_t *_mongocrypt_tester_bin_from_json(_mongocrypt_tester_t *test
     bson = &tester->test_bson[tester->bson_count];
     TEST_DATA_COUNT_INC(tester->bson_count);
     if (!bson_init_from_json(bson, full_json, strlen(full_json), &error)) {
-        fprintf(stderr, "failed to parse JSON %s: %s", error.message, json);
+        TEST_STDERR_PRINTF("failed to parse JSON %s: %s", error.message, json);
         abort();
     }
     bin = mongocrypt_binary_new();
@@ -363,7 +363,7 @@ void _mongocrypt_tester_run_ctx_to(_mongocrypt_tester_t *tester,
             break;
         case MONGOCRYPT_CTX_ERROR:
             mongocrypt_ctx_status(ctx, status);
-            fprintf(stderr, "Got error: %s\n", mongocrypt_status_message(status, NULL));
+            TEST_STDERR_PRINTF("Got error: %s\n", mongocrypt_status_message(status, NULL));
             ASSERT_STATE_EQUAL(state, stop_state);
             mongocrypt_status_destroy(status);
             return;
@@ -862,8 +862,8 @@ int main(int argc, char **argv) {
     _mongocrypt_tester_t tester = {0};
     int i;
 
-    printf("Pass a list of test names to run only specific tests. E.g.:\n");
-    printf("test-mongocrypt _mongocrypt_test_mcgrew\n\n");
+    TEST_PRINTF("Pass a list of test names to run only specific tests. E.g.:\n");
+    TEST_PRINTF("test-mongocrypt _mongocrypt_test_mcgrew\n\n");
 
     /* Install all tests. */
     _mongocrypt_tester_install_crypto(&tester);
@@ -955,7 +955,7 @@ int main(int argc, char **argv) {
 get_os_version_failed:
 #endif
 
-    printf("Running tests...\n");
+    TEST_PRINTF("Running tests...\n");
     for (i = 0; tester.test_names[i]; i++) {
         int j;
         bool found = false;
@@ -971,16 +971,16 @@ get_os_version_failed:
                 continue;
             }
         }
-        printf("  begin %s\n", tester.test_names[i]);
+        TEST_PRINTF("  begin %s\n", tester.test_names[i]);
         tester.test_fns[i](&tester);
         /* Clear state. */
         memset(&tester.paths, 0, sizeof(tester.paths));
-        printf("  end %s\n", tester.test_names[i]);
+        TEST_PRINTF("  end %s\n", tester.test_names[i]);
     }
-    printf("... done running tests\n");
+    TEST_PRINTF("... done running tests\n");
 
     if (i == 0) {
-        printf("WARNING - no tests run.\n");
+        TEST_PRINTF("WARNING - no tests run.\n");
     }
 
     /* Clean up tester. */

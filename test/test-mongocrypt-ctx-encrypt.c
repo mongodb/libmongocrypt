@@ -508,9 +508,7 @@ static void _test_encrypt_need_markings(_mongocrypt_tester_t *tester) {
 
 static void _test_encrypt_csfle_no_needs_markings(_mongocrypt_tester_t *tester) {
     if (!TEST_MONGOCRYPT_HAVE_REAL_CRYPT_SHARED_LIB) {
-        fputs("No 'real' csfle library is available. The "
-              "_test_encrypt_csfle_no_needs_markings test is a no-op.",
-              stderr);
+        TEST_STDERR_PRINTF("No 'real' csfle library is available. The %s test is a no-op.\n", BSON_FUNC);
         return;
     }
 
@@ -763,7 +761,9 @@ static void _test_encrypt_cache_expiration(_mongocrypt_tester_t *tester) {
     _mongocrypt_tester_run_ctx_to(tester, ctx, MONGOCRYPT_CTX_DONE);
     mongocrypt_ctx_destroy(ctx);
 
-    _usleep(2000);
+    // Sleep to trigger cache expiration.
+    // Cache entries expire after 1ms, but use 20ms to avoid timing errors observed on Windows distros: CDRIVER-4526
+    _usleep(20 * 1000);
     /* The next context requests keys again
      */
     ctx = mongocrypt_ctx_new(crypt);
@@ -1964,7 +1964,7 @@ static void _test_encrypt_fle2_encryption_placeholder(_mongocrypt_tester_t *test
         ((void)0)
 
     if (!_aes_ctr_is_supported_by_os) {
-        printf("Common Crypto with no CTR support detected. Skipping.");
+        TEST_PRINTF("Common Crypto with no CTR support detected. Skipping.");
         return;
     }
 
@@ -2248,7 +2248,7 @@ typedef struct {
 } ee_testcase;
 
 static void ee_testcase_run(ee_testcase *tc) {
-    printf("  explicit_encryption_finalize test case: %s ... begin\n", tc->desc);
+    TEST_PRINTF("  explicit_encryption_finalize test case: %s ... begin\n", tc->desc);
     extern void mc_reset_payloadId_for_testing(void);
     mc_reset_payloadId_for_testing();
     mongocrypt_t *crypt;
@@ -2330,7 +2330,7 @@ static void ee_testcase_run(ee_testcase *tc) {
     }
 
 cleanup:
-    printf("  explicit_encryption_finalize test case: %s ... end\n", tc->desc);
+    TEST_PRINTF("  explicit_encryption_finalize test case: %s ... end\n", tc->desc);
     mongocrypt_ctx_destroy(ctx);
     mongocrypt_destroy(crypt);
 }
@@ -2341,7 +2341,7 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
     _mongocrypt_buffer_t key123_id;
 
     if (!_aes_ctr_is_supported_by_os) {
-        printf("Common Crypto with no CTR support detected. Skipping.");
+        TEST_PRINTF("Common Crypto with no CTR support detected. Skipping.");
         return;
     }
 
@@ -3939,9 +3939,7 @@ static void _test_encrypt_fle2_explain_with_mongocryptd(_mongocrypt_tester_t *te
 
 static void _test_encrypt_fle2_explain_with_csfle(_mongocrypt_tester_t *tester) {
     if (!TEST_MONGOCRYPT_HAVE_REAL_CRYPT_SHARED_LIB) {
-        fputs("No 'real' csfle library is available. The "
-              "_test_encrypt_fle2_explain_with_csfle test is a no-op.",
-              stderr);
+        TEST_STDERR_PRINTF("No 'real' csfle library is available. The %s test is a no-op.\n", BSON_FUNC);
         return;
     }
 
@@ -4037,9 +4035,7 @@ static void _test_encrypt_fle1_explain_with_mongocryptd(_mongocrypt_tester_t *te
 
 static void _test_encrypt_fle1_explain_with_csfle(_mongocrypt_tester_t *tester) {
     if (!TEST_MONGOCRYPT_HAVE_REAL_CRYPT_SHARED_LIB) {
-        fputs("No 'real' csfle library is available. The "
-              "_test_encrypt_fle1_explain_with_csfle test is a no-op.",
-              stderr);
+        TEST_STDERR_PRINTF("No 'real' csfle library is available. The %s test is a no-op.\n", BSON_FUNC);
         return;
     }
 
@@ -4494,9 +4490,7 @@ static void _test_fle1_create_old_mongocryptd(_mongocrypt_tester_t *tester) {
 
 static void _test_fle1_create_with_csfle(_mongocrypt_tester_t *tester) {
     if (!TEST_MONGOCRYPT_HAVE_REAL_CRYPT_SHARED_LIB) {
-        fputs("No 'real' csfle library is available. The "
-              "_test_fle1_create_with_csfle test is a no-op.",
-              stderr);
+        TEST_STDERR_PRINTF("No 'real' csfle library is available. The %s test is a no-op.\n", BSON_FUNC);
         return;
     }
 
@@ -4607,7 +4601,7 @@ static void _test_encrypt_macos_no_ctr(_mongocrypt_tester_t *tester) {
     _mongocrypt_buffer_t key_id;
 
     if (_aes_ctr_is_supported_by_os) {
-        printf("Common Crypto with CTR support detected. Skipping.");
+        TEST_PRINTF("Common Crypto with CTR support detected. Skipping.");
         return;
     }
 
@@ -4688,7 +4682,7 @@ static void _test_fle1_collmod_without_jsonSchema(_mongocrypt_tester_t *tester) 
 
 static void _test_bulkWrite(_mongocrypt_tester_t *tester) {
     if (!_aes_ctr_is_supported_by_os) {
-        printf("Common Crypto with no CTR support detected. Required by QEv2 encryption. Skipping.");
+        TEST_PRINTF("Common Crypto with no CTR support detected. Required by QEv2 encryption. Skipping.");
         return;
     }
 
@@ -5160,11 +5154,11 @@ typedef struct {
 
 static void autoencryption_test_run(autoencryption_test *aet) {
     if (!_aes_ctr_is_supported_by_os) {
-        printf("Common Crypto with no CTR support detected. Skipping.");
+        TEST_PRINTF("Common Crypto with no CTR support detected. Skipping.");
         return;
     }
 
-    printf("  auto_encryption test: '%s' ... begin\n", aet->desc);
+    TEST_PRINTF("  auto_encryption test: '%s' ... begin\n", aet->desc);
 
     // Reset global counter for the `payloadId` to produce deterministic payloads.
     extern void mc_reset_payloadId_for_testing(void);
@@ -5231,14 +5225,14 @@ static void autoencryption_test_run(autoencryption_test *aet) {
         mongocrypt_binary_destroy(got);
     }
 
-    printf("  auto_encryption test: '%s' ... end\n", aet->desc);
+    TEST_PRINTF("  auto_encryption test: '%s' ... end\n", aet->desc);
     mongocrypt_ctx_destroy(ctx);
     mongocrypt_destroy(crypt);
 }
 
 static void _test_no_trimFactor(_mongocrypt_tester_t *tester) {
     if (!_aes_ctr_is_supported_by_os) {
-        printf("Common Crypto with no CTR support detected. Skipping.");
+        TEST_PRINTF("Common Crypto with no CTR support detected. Skipping.");
         return;
     }
 
@@ -5306,7 +5300,7 @@ static void lookup_payload_bson(mongocrypt_binary_t *result, char *path, bson_t 
 // Test that the crypto params added in SERVER-91889 are sent for "range" payloads.
 static void _test_range_sends_cryptoParams(_mongocrypt_tester_t *tester) {
     if (!_aes_ctr_is_supported_by_os) {
-        printf("Common Crypto with no CTR support detected. Skipping.");
+        TEST_PRINTF("Common Crypto with no CTR support detected. Skipping.");
         return;
     }
 
