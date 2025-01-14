@@ -81,7 +81,7 @@ static void _mc_token_test_cleanup(_mc_token_test *test) {
 }
 
 static void _mc_token_test_run(_mongocrypt_tester_t *tester, const char *path) {
-    printf("Loading test from %s...\n", path);
+    TEST_PRINTF("Loading test from %s...\n", path);
 
     mongocrypt_binary_t *test_bin = TEST_FILE(path);
     if (!test_bin) {
@@ -318,7 +318,7 @@ static void _mc_token_test_run(_mongocrypt_tester_t *tester, const char *path) {
     mongocrypt_destroy(crypt);
     mongocrypt_status_destroy(status);
 
-    printf("Finished tests in %s\n", path);
+    TEST_PRINTF("Finished tests in %s\n", path);
 }
 
 static void _test_mc_tokens(_mongocrypt_tester_t *tester) {

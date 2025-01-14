@@ -275,7 +275,7 @@ static void _test_decrypt_fle2(_mongocrypt_tester_t *tester) {
     _mongocrypt_buffer_t K_KeyId;
 
     if (!_aes_ctr_is_supported_by_os) {
-        printf("Common Crypto with no CTR support detected. Skipping.");
+        TEST_PRINTF("Common Crypto with no CTR support detected. Skipping.");
         return;
     }
 
@@ -611,7 +611,7 @@ static void _test_decrypt_fle2(_mongocrypt_tester_t *tester) {
 
 static void _test_decrypt_fle2_iup(_mongocrypt_tester_t *tester) {
     if (!_aes_ctr_is_supported_by_os) {
-        printf("Common Crypto with no CTR support detected. Skipping.");
+        TEST_PRINTF("Common Crypto with no CTR support detected. Skipping.");
         return;
     }
 
@@ -724,7 +724,7 @@ static void _test_decrypt_wrong_binary_subtype(_mongocrypt_tester_t *tester) {
 /* Test decrypting FLE2IndexedRangeEncryptedValue */
 static void _test_decrypt_fle2_irev(_mongocrypt_tester_t *tester) {
     if (!_aes_ctr_is_supported_by_os) {
-        printf("Common Crypto with no CTR support detected. Skipping.");
+        TEST_PRINTF("Common Crypto with no CTR support detected. Skipping.");
         return;
     }
 
