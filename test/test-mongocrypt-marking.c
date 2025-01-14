@@ -1077,7 +1077,6 @@ static void validate_range_ciphertext(_mongocrypt_ciphertext_t *ciphertext,
                                       bool useRangeV2,
                                       uint32_t expectedEdges) {
     uint32_t expectedPLength = useRangeV2 ? (MONGOCRYPT_HMAC_SHA256_LEN + 1) : MONGOCRYPT_HMAC_SHA256_LEN;
-    const _mongocrypt_value_encryption_algorithm_t *fle2alg = _mcFLE2Algorithm();
 
     bson_t ciphertextBSON;
     bson_iter_t iter;
