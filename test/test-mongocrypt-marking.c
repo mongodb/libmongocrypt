@@ -1306,7 +1306,7 @@ static void validate_text_search_ciphertext(_mongocrypt_tester_t *tester,
             _mongocrypt_buffer_init_size(&key, MONGOCRYPT_KEY_LEN);
             memset(key.data, 0, key.len);
             ASSERT(_mongocrypt_buffer_copy_from_data_and_size(&aad, res.v.data, 16));
-            ASSERT(_mongocrypt_buffer_copy_from_data_and_size(&ctext, ((uint8_t*)res.v.data) + 16, res.v.len - 16));
+            ASSERT(_mongocrypt_buffer_copy_from_data_and_size(&ctext, ((uint8_t *)res.v.data) + 16, res.v.len - 16));
             uint32_t plen = fle2alg->get_plaintext_len(res.v.len - 16, status);
             _mongocrypt_buffer_init_size(&ptext, plen);
 
