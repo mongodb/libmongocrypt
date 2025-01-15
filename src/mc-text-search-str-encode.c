@@ -26,6 +26,7 @@ static mc_affix_set_t *generate_prefix_or_suffix_tree(const mc_utf8_string_with_
                                                       uint32_t lb,
                                                       uint32_t ub,
                                                       bool is_prefix) {
+    BSON_ASSERT_PARAM(base_str);
     // 16 * ceil(unfolded codepoint len / 16)
     uint32_t cbclen = 16 * (uint32_t)((unfolded_codepoint_len + 15) / 16);
     if (cbclen < lb) {
@@ -63,12 +64,16 @@ static mc_affix_set_t *generate_prefix_or_suffix_tree(const mc_utf8_string_with_
 static mc_affix_set_t *generate_suffix_tree(const mc_utf8_string_with_bad_char_t *base_str,
                                             uint32_t unfolded_codepoint_len,
                                             const mc_FLE2SuffixInsertSpec_t *spec) {
+    BSON_ASSERT_PARAM(base_str);
+    BSON_ASSERT_PARAM(spec);
     return generate_prefix_or_suffix_tree(base_str, unfolded_codepoint_len, spec->lb, spec->ub, false);
 }
 
 static mc_affix_set_t *generate_prefix_tree(const mc_utf8_string_with_bad_char_t *base_str,
                                             uint32_t unfolded_codepoint_len,
                                             const mc_FLE2PrefixInsertSpec_t *spec) {
+    BSON_ASSERT_PARAM(base_str);
+    BSON_ASSERT_PARAM(spec);
     return generate_prefix_or_suffix_tree(base_str, unfolded_codepoint_len, spec->lb, spec->ub, true);
 }
 
@@ -89,6 +94,8 @@ static uint32_t calc_number_of_substrings(uint32_t strlen, uint32_t lb, uint32_t
 static mc_substring_set_t *generate_substring_tree(const mc_utf8_string_with_bad_char_t *base_str,
                                                    uint32_t unfolded_codepoint_len,
                                                    const mc_FLE2SubstringInsertSpec_t *spec) {
+    BSON_ASSERT_PARAM(base_str);
+    BSON_ASSERT_PARAM(spec);
     // 16 * ceil(unfolded len / 16)
     uint32_t cbclen = 16 * (uint32_t)((unfolded_codepoint_len + 15) / 16);
     if (unfolded_codepoint_len > spec->mlen || cbclen < spec->lb) {
@@ -142,12 +149,13 @@ static mc_substring_set_t *generate_substring_tree(const mc_utf8_string_with_bad
     if (msize != n_real_substrings) {
         // Insert msize - n_real_substrings padding
         BSON_ASSERT(msize > n_real_substrings);
-        mc_substring_set_insert_base_string(set, msize - n_real_substrings);
+        mc_substring_set_increment_fake_string(set, msize - n_real_substrings);
     }
     return set;
 }
 
 static uint32_t mc_get_utf8_codepoint_length(const char *buf, uint32_t len) {
+    BSON_ASSERT_PARAM(buf);
     const char *cur = buf;
     const char *end = buf + len;
     uint32_t codepoint_len = 0;
@@ -214,7 +222,7 @@ mc_str_encode_sets_t *mc_text_search_str_encode(const mc_FLE2TextSearchInsertSpe
 }
 
 void mc_str_encode_sets_destroy(mc_str_encode_sets_t *sets) {
-    if (sets == NULL) {
+    if (!sets) {
         return;
     }
     mc_utf8_string_with_bad_char_destroy(sets->base_string);

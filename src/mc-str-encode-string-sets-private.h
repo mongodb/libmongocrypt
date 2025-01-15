@@ -72,7 +72,7 @@ void mc_substring_set_destroy(mc_substring_set_t *set);
 
 // Insert the base string count times into the set. Treated as a special case, since this is the only substring that
 // will appear multiple times. Always inserts successfully.
-void mc_substring_set_insert_base_string(mc_substring_set_t *set, uint32_t count);
+void mc_substring_set_increment_fake_string(mc_substring_set_t *set, uint32_t count);
 
 // Insert substring into set. base_start/end_idx are codepoint indices. base_end_idx is exclusive. Returns true if
 // inserted, false otherwise.

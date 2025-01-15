@@ -23,6 +23,7 @@
 
 // Input must be pre-validated by bson_utf8_validate().
 mc_utf8_string_with_bad_char_t *mc_utf8_string_with_bad_char_from_buffer(const char *buf, uint32_t len) {
+    BSON_ASSERT_PARAM(buf);
     mc_utf8_string_with_bad_char_t *ret = bson_malloc0(sizeof(mc_utf8_string_with_bad_char_t));
     _mongocrypt_buffer_init_size(&ret->buf, len + 1);
     memcpy(ret->buf.data, buf, len);
@@ -64,6 +65,7 @@ struct _mc_affix_set_t {
 };
 
 mc_affix_set_t *mc_affix_set_new(const mc_utf8_string_with_bad_char_t *base_string, uint32_t n_indices) {
+    BSON_ASSERT_PARAM(base_string);
     mc_affix_set_t *set = (mc_affix_set_t *)bson_malloc0(sizeof(mc_affix_set_t));
     set->base_string = base_string;
     set->start_indices = (uint32_t *)bson_malloc0(sizeof(uint32_t) * n_indices);
@@ -74,7 +76,7 @@ mc_affix_set_t *mc_affix_set_new(const mc_utf8_string_with_bad_char_t *base_stri
 }
 
 void mc_affix_set_destroy(mc_affix_set_t *set) {
-    if (set == NULL) {
+    if (!set) {
         return;
     }
     bson_free(set->start_indices);
@@ -84,6 +86,7 @@ void mc_affix_set_destroy(mc_affix_set_t *set) {
 }
 
 bool mc_affix_set_insert(mc_affix_set_t *set, uint32_t base_start_idx, uint32_t base_end_idx, uint32_t idx) {
+    BSON_ASSERT_PARAM(set);
     if (base_start_idx > base_end_idx || base_end_idx >= set->base_string->codepoint_len || idx >= set->n_indices) {
         return false;
     }
@@ -94,6 +97,7 @@ bool mc_affix_set_insert(mc_affix_set_t *set, uint32_t base_start_idx, uint32_t 
 }
 
 bool mc_affix_set_insert_base_string(mc_affix_set_t *set, uint32_t idx, uint32_t count) {
+    BSON_ASSERT_PARAM(set);
     if (idx >= set->n_indices || count == 0) {
         return false;
     }
@@ -104,19 +108,18 @@ bool mc_affix_set_insert_base_string(mc_affix_set_t *set, uint32_t idx, uint32_t
 }
 
 void mc_affix_set_iter_init(mc_affix_set_iter_t *it, mc_affix_set_t *set) {
+    BSON_ASSERT_PARAM(it);
+    BSON_ASSERT_PARAM(set);
     it->set = set;
     it->cur_idx = 0;
 }
 
 bool mc_affix_set_iter_next(mc_affix_set_iter_t *it, const char **str, uint32_t *len, uint32_t *count) {
+    BSON_ASSERT_PARAM(it);
     if (it->cur_idx >= it->set->n_indices) {
         return false;
     }
     uint32_t idx = it->cur_idx++;
-    if (str == NULL) {
-        // If out parameters are NULL, just increment cur_idx.
-        return true;
-    }
     uint32_t start_idx = it->set->start_indices[idx];
     uint32_t end_idx = it->set->end_indices[idx];
     uint32_t start_byte_offset = it->set->base_string->codepoint_offsets[start_idx];
@@ -125,9 +128,15 @@ bool mc_affix_set_iter_next(mc_affix_set_iter_t *it, const char **str, uint32_t 
     if (end_idx != it->set->base_string->codepoint_len) {
         end_byte_offset = it->set->base_string->codepoint_offsets[end_idx];
     }
-    *str = (const char *)it->set->base_string->buf.data + start_byte_offset;
-    *len = end_byte_offset - start_byte_offset;
-    *count = it->set->substring_counts[idx];
+    if (str) {
+        *str = (const char *)it->set->base_string->buf.data + start_byte_offset;
+    }
+    if (len) {
+        *len = end_byte_offset - start_byte_offset;
+    }
+    if (count) {
+        *count = it->set->substring_counts[idx];
+    }
     return true;
 }
 
@@ -146,7 +155,7 @@ static mc_substring_set_node_t *new_ssnode(uint32_t start_byte_offset, uint32_t 
 }
 
 static void mc_substring_set_node_destroy(mc_substring_set_node_t *node) {
-    if (node == NULL) {
+    if (!node) {
         return;
     }
     bson_free(node);
@@ -156,7 +165,8 @@ static void mc_substring_set_node_destroy(mc_substring_set_node_t *node) {
 const uint32_t FNV1APRIME = 16777619;
 const uint32_t FNV1ABASIS = 2166136261;
 
-uint32_t fnv1a(const uint8_t *data, uint32_t len) {
+static uint32_t fnv1a(const uint8_t *data, uint32_t len) {
+    BSON_ASSERT_PARAM(data);
     uint32_t hash = FNV1ABASIS;
     const uint8_t *ptr = data;
     while (ptr != data + len) {
@@ -172,18 +182,18 @@ struct _mc_substring_set_t {
     // base_string is not owned
     const mc_utf8_string_with_bad_char_t *base_string;
     mc_substring_set_node_t *set[HASHSET_SIZE];
-    // uint32_t size;
     uint32_t base_string_count;
 };
 
 mc_substring_set_t *mc_substring_set_new(const mc_utf8_string_with_bad_char_t *base_string) {
+    BSON_ASSERT_PARAM(base_string);
     mc_substring_set_t *set = (mc_substring_set_t *)bson_malloc0(sizeof(mc_substring_set_t));
     set->base_string = base_string;
     return set;
 }
 
 void mc_substring_set_destroy(mc_substring_set_t *set) {
-    if (set == NULL) {
+    if (!set) {
         return;
     }
     for (int i = 0; i < HASHSET_SIZE; i++) {
@@ -197,17 +207,21 @@ void mc_substring_set_destroy(mc_substring_set_t *set) {
     bson_free(set);
 }
 
-void mc_substring_set_insert_base_string(mc_substring_set_t *set, uint32_t count) {
+void mc_substring_set_increment_fake_string(mc_substring_set_t *set, uint32_t count) {
+    BSON_ASSERT_PARAM(set);
     set->base_string_count += count;
 }
 
 bool mc_substring_set_insert(mc_substring_set_t *set, uint32_t base_start_idx, uint32_t base_end_idx) {
-    if (base_start_idx > base_end_idx || base_end_idx >= set->base_string->codepoint_len) {
-        return false;
-    }
+    BSON_ASSERT_PARAM(set);
+    BSON_ASSERT(base_start_idx <= base_end_idx);
+    BSON_ASSERT(base_end_idx <= set->base_string->codepoint_len);
     uint32_t start_byte_offset = set->base_string->codepoint_offsets[base_start_idx];
+    uint32_t end_byte_offset = (base_end_idx == set->base_string->codepoint_len)
+                                 ? set->base_string->buf.len
+                                 : set->base_string->codepoint_offsets[base_end_idx];
     const uint8_t *start = set->base_string->buf.data + start_byte_offset;
-    uint32_t len = set->base_string->codepoint_offsets[base_end_idx] - start_byte_offset;
+    uint32_t len = end_byte_offset - start_byte_offset;
     uint32_t hash = fnv1a(start, len);
     uint32_t idx = hash % HASHSET_SIZE;
     mc_substring_set_node_t *node = set->set[idx];
@@ -232,12 +246,15 @@ bool mc_substring_set_insert(mc_substring_set_t *set, uint32_t base_start_idx, u
 }
 
 void mc_substring_set_iter_init(mc_substring_set_iter_t *it, mc_substring_set_t *set) {
+    BSON_ASSERT_PARAM(it);
+    BSON_ASSERT_PARAM(set);
     it->set = set;
-    it->cur_node = NULL;
+    it->cur_node = set->set[0];
     it->cur_idx = 0;
 }
 
 bool mc_substring_set_iter_next(mc_substring_set_iter_t *it, const char **str, uint32_t *len, uint32_t *count) {
+    BSON_ASSERT_PARAM(it);
     if (it->cur_idx >= HASHSET_SIZE) {
         // No next.
         return false;
@@ -251,9 +268,15 @@ bool mc_substring_set_iter_next(mc_substring_set_iter_t *it, const char **str, u
         if (it->cur_idx >= HASHSET_SIZE) {
             // Almost done with iteration; return base string if count is not 0.
             if (it->set->base_string_count) {
-                *count = it->set->base_string_count;
-                *str = (const char *)it->set->base_string->buf.data;
-                *len = it->set->base_string->buf.len;
+                if (count) {
+                    *count = it->set->base_string_count;
+                }
+                if (str) {
+                    *str = (const char *)it->set->base_string->buf.data;
+                }
+                if (len) {
+                    *len = it->set->base_string->buf.len;
+                }
                 return true;
             }
             return false;
@@ -263,9 +286,15 @@ bool mc_substring_set_iter_next(mc_substring_set_iter_t *it, const char **str, u
     }
     mc_substring_set_node_t *cur = (mc_substring_set_node_t *)(it->cur_node);
     // Count is always 1 for substrings in the hashset
-    *count = 1;
-    *str = (const char *)it->set->base_string->buf.data + cur->start_offset;
-    *len = cur->len;
+    if (count) {
+        *count = 1;
+    }
+    if (str) {
+        *str = (const char *)it->set->base_string->buf.data + cur->start_offset;
+    }
+    if (len) {
+        *len = cur->len;
+    }
     it->cur_node = (void *)cur->next;
     return true;
 }
