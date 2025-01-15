@@ -31,6 +31,7 @@ for arg in "$@"; do
 done
 
 on_exit () {
+  sudo umount ./unstable-chroot/proc ./unstable-chroot/sys
   if [ -e ./unstable-chroot/debootstrap/debootstrap.log ]; then
     echo "Dumping debootstrap.log"
     cat ./unstable-chroot/debootstrap/debootstrap.log
@@ -64,6 +65,8 @@ _dbs_args+=(unstable)
 git clone https://salsa.debian.org/installer-team/debootstrap.git debootstrap.git
 export DEBOOTSTRAP_DIR=`pwd`/debootstrap.git
 sudo -E ./debootstrap.git/debootstrap "${_dbs_args[@]}" ./unstable-chroot/ http://cdn-aws.deb.debian.org/debian
+sudo mount sysfs ./unstable-chroot/sys -t sysfs
+sudo mount proc ./unstable-chroot/proc -t proc
 cp -a libmongocrypt ./unstable-chroot/tmp/
 sudo chroot ./unstable-chroot /bin/bash -c '(set -o xtrace && \
   apt-get install -y build-essential git-buildpackage fakeroot debhelper cmake curl ca-certificates libssl-dev pkg-config libbson-dev libintelrdfpmath-dev python3-packaging && \
