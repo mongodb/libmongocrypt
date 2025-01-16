@@ -1252,7 +1252,6 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForTextSearc
     BSON_ASSERT_PARAM(marking);
     BSON_ASSERT_PARAM(ciphertext);
     BSON_ASSERT(kb->crypt);
-    BSON_ASSERT(kb->crypt->opts.use_fle2_v2 == true);
     BSON_ASSERT(marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION);
 
     mc_FLE2EncryptionPlaceholder_t *placeholder = &marking->fle2;
