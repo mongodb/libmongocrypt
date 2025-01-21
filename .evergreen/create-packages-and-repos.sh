@@ -22,7 +22,9 @@ if test -d "$WORKDIR/venv"; then
   fi
   python=python
 else
-  python="${PYTHON:-/opt/mongodbtoolchain/v3/bin/python3}"
+  # Require PYTHON be set:
+  : "${PYTHON:?}"
+  python="${PYTHON}"
 fi
 
 export PYTHONPATH

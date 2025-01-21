@@ -1,7 +1,6 @@
 {
    "db.test": {
       "escCollection": "fle2.test.esc",
-      "eccCollection": "fle2.test.ecc",
       "ecocCollection": "fle2.test.ecoc",
       "fields": [
          {

@@ -2,7 +2,6 @@
     "options": {
         "encryptedFields": {
             "escCollection": "fle2.basic.esc",
-            "eccCollection": "fle2.basic.ecc",
             "ecocCollection": "fle2.basic.ecoc",
             "fields": [
                 {
@@ -16,6 +15,6 @@
                     }
                 }
             ]
-        }        
+        }
     }
 }
