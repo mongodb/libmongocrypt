@@ -444,7 +444,9 @@ SERIALIZE_TEXT_TOKEN_SET_FOR_TYPE_IMPL(Prefix)
         const char *index_string = NULL;                                                                               \
         char storage[16];                                                                                              \
         uint32_t index = 0;                                                                                            \
-        for (size_t i = 0; i < BSON_MIN(array->len, ((size_t)UINT32_MAX + 1)); i++) {                                  \
+        size_t limit = UINT32_MAX;                                                                                     \
+        limit = BSON_MIN(array->len, limit + 1);                                                                       \
+        for (size_t i = 0; i < limit; i++) {                                                                           \
             mc_Text##Type##TokenSet_t ts = _mc_array_index(array, mc_Text##Type##TokenSet_t, i);                       \
             bson_uint32_to_string(index, &index_string, storage, sizeof(storage));                                     \
                                                                                                                        \
