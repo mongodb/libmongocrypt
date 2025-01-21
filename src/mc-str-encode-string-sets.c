@@ -62,6 +62,7 @@ struct _mc_affix_set_t {
     // hash later.
     uint32_t *substring_counts;
     uint32_t n_indices;
+    uint32_t cur_idx;
 };
 
 mc_affix_set_t *mc_affix_set_new(const mc_utf8_string_with_bad_char_t *base_string, uint32_t n_indices) {
@@ -85,22 +86,25 @@ void mc_affix_set_destroy(mc_affix_set_t *set) {
     bson_free(set);
 }
 
-bool mc_affix_set_insert(mc_affix_set_t *set, uint32_t base_start_idx, uint32_t base_end_idx, uint32_t idx) {
+bool mc_affix_set_insert(mc_affix_set_t *set, uint32_t base_start_idx, uint32_t base_end_idx) {
     BSON_ASSERT_PARAM(set);
-    if (base_start_idx > base_end_idx || base_end_idx >= set->base_string->codepoint_len || idx >= set->n_indices) {
+    if (base_start_idx > base_end_idx || base_end_idx >= set->base_string->codepoint_len
+        || set->cur_idx >= set->n_indices) {
         return false;
     }
+    uint32_t idx = set->cur_idx++;
     set->start_indices[idx] = base_start_idx;
     set->end_indices[idx] = base_end_idx;
     set->substring_counts[idx] = 1;
     return true;
 }
 
-bool mc_affix_set_insert_base_string(mc_affix_set_t *set, uint32_t idx, uint32_t count) {
+bool mc_affix_set_insert_base_string(mc_affix_set_t *set, uint32_t count) {
     BSON_ASSERT_PARAM(set);
-    if (idx >= set->n_indices || count == 0) {
+    if (count == 0 || set->cur_idx >= set->n_indices) {
         return false;
     }
+    uint32_t idx = set->cur_idx++;
     set->start_indices[idx] = 0;
     set->end_indices[idx] = set->base_string->codepoint_len;
     set->substring_counts[idx] = count;
@@ -114,7 +118,7 @@ void mc_affix_set_iter_init(mc_affix_set_iter_t *it, mc_affix_set_t *set) {
     it->cur_idx = 0;
 }
 
-bool mc_affix_set_iter_next(mc_affix_set_iter_t *it, const char **str, uint32_t *len, uint32_t *count) {
+bool mc_affix_set_iter_next(mc_affix_set_iter_t *it, const char **str, uint32_t *byte_len, uint32_t *count) {
     BSON_ASSERT_PARAM(it);
     if (it->cur_idx >= it->set->n_indices) {
         return false;
@@ -131,8 +135,8 @@ bool mc_affix_set_iter_next(mc_affix_set_iter_t *it, const char **str, uint32_t 
     if (str) {
         *str = (const char *)it->set->base_string->buf.data + start_byte_offset;
     }
-    if (len) {
-        *len = end_byte_offset - start_byte_offset;
+    if (byte_len) {
+        *byte_len = end_byte_offset - start_byte_offset;
     }
     if (count) {
         *count = it->set->substring_counts[idx];
@@ -143,14 +147,14 @@ bool mc_affix_set_iter_next(mc_affix_set_iter_t *it, const char **str, uint32_t 
 // Linked list node in the hashset.
 typedef struct _mc_substring_set_node_t {
     uint32_t start_offset;
-    uint32_t len;
+    uint32_t byte_len;
     struct _mc_substring_set_node_t *next;
 } mc_substring_set_node_t;
 
 static mc_substring_set_node_t *new_ssnode(uint32_t start_byte_offset, uint32_t byte_len) {
     mc_substring_set_node_t *ret = (mc_substring_set_node_t *)bson_malloc0(sizeof(mc_substring_set_node_t));
     ret->start_offset = start_byte_offset;
-    ret->len = byte_len;
+    ret->byte_len = byte_len;
     return ret;
 }
 
@@ -230,7 +234,7 @@ bool mc_substring_set_insert(mc_substring_set_t *set, uint32_t base_start_idx, u
         mc_substring_set_node_t *prev;
         while (node) {
             prev = node;
-            if (len == node->len && memcmp(start, set->base_string->buf.data + node->start_offset, len) == 0) {
+            if (len == node->byte_len && memcmp(start, set->base_string->buf.data + node->start_offset, len) == 0) {
                 // Match, no insertion
                 return false;
             }
@@ -253,7 +257,7 @@ void mc_substring_set_iter_init(mc_substring_set_iter_t *it, mc_substring_set_t 
     it->cur_idx = 0;
 }
 
-bool mc_substring_set_iter_next(mc_substring_set_iter_t *it, const char **str, uint32_t *len, uint32_t *count) {
+bool mc_substring_set_iter_next(mc_substring_set_iter_t *it, const char **str, uint32_t *byte_len, uint32_t *count) {
     BSON_ASSERT_PARAM(it);
     if (it->cur_idx >= HASHSET_SIZE) {
         // No next.
@@ -274,8 +278,8 @@ bool mc_substring_set_iter_next(mc_substring_set_iter_t *it, const char **str, u
                 if (str) {
                     *str = (const char *)it->set->base_string->buf.data;
                 }
-                if (len) {
-                    *len = it->set->base_string->buf.len;
+                if (byte_len) {
+                    *byte_len = it->set->base_string->buf.len;
                 }
                 return true;
             }
@@ -292,8 +296,8 @@ bool mc_substring_set_iter_next(mc_substring_set_iter_t *it, const char **str, u
     if (str) {
         *str = (const char *)it->set->base_string->buf.data + cur->start_offset;
     }
-    if (len) {
-        *len = cur->len;
+    if (byte_len) {
+        *byte_len = cur->byte_len;
     }
     it->cur_node = (void *)cur->next;
     return true;

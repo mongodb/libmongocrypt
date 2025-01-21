@@ -21,6 +21,9 @@
 #include <bson/bson.h>
 #include <stdint.h>
 
+// 16MiB - maximum length in bytes of a string to be encoded.
+#define MAX_ENCODE_BYTE_LEN 16777216
+
 static mc_affix_set_t *generate_prefix_or_suffix_tree(const mc_utf8_string_with_bad_char_t *base_str,
                                                       uint32_t unfolded_codepoint_len,
                                                       uint32_t lb,
@@ -43,21 +46,22 @@ static mc_affix_set_t *generate_prefix_or_suffix_tree(const mc_utf8_string_with_
     // If real_substrings and msize differ, we need to insert padding, so allocate one extra slot.
     uint32_t set_size = real_substrings == msize ? real_substrings : real_substrings + 1;
     mc_affix_set_t *set = mc_affix_set_new(base_str, set_size);
-    uint32_t idx = 0;
-    for (uint32_t i = lb; i < real_max_len + 1; i++) {
+    uint32_t n_inserted = 0;
+    for (uint32_t i = lb; i < real_max_len + 1; i++, n_inserted++) {
         if (is_prefix) {
             // [0, lb), [0, lb + 1), ..., [0, min(len, ub))
-            BSON_ASSERT(mc_affix_set_insert(set, 0, i, idx++));
+            BSON_ASSERT(mc_affix_set_insert(set, 0, i));
         } else {
             // [len - lb, len), [len - lb - 1, len), ..., [max(0, len - ub), len)
-            BSON_ASSERT(mc_affix_set_insert(set, folded_codepoint_len - i, folded_codepoint_len, idx++));
+            BSON_ASSERT(mc_affix_set_insert(set, folded_codepoint_len - i, folded_codepoint_len));
         }
     }
     if (msize != real_substrings) {
         // Insert padding to get to msize
-        BSON_ASSERT(mc_affix_set_insert_base_string(set, idx++, msize - real_substrings));
+        BSON_ASSERT(mc_affix_set_insert_base_string(set, msize - real_substrings));
+        n_inserted++;
     }
-    BSON_ASSERT(idx == set_size);
+    BSON_ASSERT(n_inserted == set_size);
     return set;
 }
 
@@ -208,6 +212,12 @@ mc_str_encode_sets_t *mc_text_search_str_encode_helper(const mc_FLE2TextSearchIn
 mc_str_encode_sets_t *mc_text_search_str_encode(const mc_FLE2TextSearchInsertSpec_t *spec,
                                                 mongocrypt_status_t *status) {
     BSON_ASSERT_PARAM(spec);
+    if (spec->len > MAX_ENCODE_BYTE_LEN) {
+        CLIENT_ERR("StrEncode: String passed in was too long: String was %u bytes, but max is %u bytes",
+                   spec->len,
+                   MAX_ENCODE_BYTE_LEN);
+        return NULL;
+    }
     // TODO MONGOCRYPT-759 Implement and use CFold
     if (!bson_utf8_validate(spec->v, spec->len, false /* allow_null */)) {
         CLIENT_ERR("StrEncode: String passed in was not valid UTF-8");

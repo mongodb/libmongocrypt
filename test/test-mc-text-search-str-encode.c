@@ -23,9 +23,6 @@
 #include <stdint.h>
 #include <string.h>
 
-#undef MIN
-#define MIN(a, b) (((a) < (b)) ? (a) : (b))
-
 uint32_t get_utf8_codepoint_length(const char *buf, uint32_t len) {
     const char *cur = buf;
     const char *end = buf + len;
@@ -44,30 +41,27 @@ static void test_nofold_suffix_prefix_case(_mongocrypt_tester_t *tester,
                                            uint32_t lb,
                                            uint32_t ub,
                                            uint32_t unfolded_codepoint_len) {
-    fprintf(stderr,
-            "Testing nofold suffix/prefix case: str=\"%s\", lb=%u, ub=%u, unfolded_codepoint_len=%u\n",
-            str,
-            lb,
-            ub,
-            unfolded_codepoint_len);
+    TEST_PRINTF("Testing nofold suffix/prefix case: str=\"%s\", lb=%u, ub=%u, unfolded_codepoint_len=%u\n",
+                str,
+                lb,
+                ub,
+                unfolded_codepoint_len);
     uint32_t byte_len = (uint32_t)strlen(str);
     uint32_t codepoint_len = get_utf8_codepoint_length(str, byte_len);
     uint32_t max_padded_len = 16 * (uint32_t)((unfolded_codepoint_len + 15) / 16);
-    uint32_t max_affix_len = MIN(ub, codepoint_len);
+    uint32_t max_affix_len = BSON_MIN(ub, codepoint_len);
     uint32_t n_real_affixes = max_affix_len >= lb ? max_affix_len - lb + 1 : 0;
-    uint32_t n_affixes = MIN(ub, max_padded_len) - lb + 1;
+    uint32_t n_affixes = BSON_MIN(ub, max_padded_len) - lb + 1;
     uint32_t n_padding = n_affixes - n_real_affixes;
 
     mc_str_encode_sets_t *sets;
     mongocrypt_status_t *status = mongocrypt_status_new();
     for (int suffix = 0; suffix <= 1; suffix++) {
         if (suffix) {
-            mc_FLE2TextSearchInsertSpec_t spec =
-                {str, byte_len, {{0, 0, 0}, false}, {{lb, ub}, true}, {{0, 0}, false}, false, false};
+            mc_FLE2TextSearchInsertSpec_t spec = {.v = str, .len = byte_len, .suffix = {{lb, ub}, true}};
             sets = mc_text_search_str_encode_helper(&spec, unfolded_codepoint_len, status);
         } else {
-            mc_FLE2TextSearchInsertSpec_t spec =
-                {str, byte_len, {{0, 0, 0}, false}, {{0, 0}, false}, {{lb, ub}, true}, false, false};
+            mc_FLE2TextSearchInsertSpec_t spec = {.v = str, .len = byte_len, .prefix = {{lb, ub}, true}};
             sets = mc_text_search_str_encode_helper(&spec, unfolded_codepoint_len, status);
         }
         ASSERT_OR_PRINT(sets, status);
@@ -85,11 +79,10 @@ static void test_nofold_suffix_prefix_case(_mongocrypt_tester_t *tester,
             goto CONTINUE;
         }
 
-        fprintf(stderr,
-                "Expecting: n_real_affixes: %u, n_affixes: %u, n_padding: %u\n",
-                n_real_affixes,
-                n_affixes,
-                n_padding);
+        TEST_PRINTF("Expecting: n_real_affixes: %u, n_affixes: %u, n_padding: %u\n",
+                    n_real_affixes,
+                    n_affixes,
+                    n_padding);
 
         mc_affix_set_t *set;
         if (suffix) {
@@ -110,13 +103,12 @@ static void test_nofold_suffix_prefix_case(_mongocrypt_tester_t *tester,
         uint32_t affix_count = 0;
         uint32_t total_real_affix_count = 0;
         while (mc_affix_set_iter_next(&it, &affix, &affix_len, &affix_count)) {
-            // Since all substrings are just views on the base string, we can use pointer math to find our start and
+            // Since all substrings are just views on the base string, we can use pointer math to find our start and end
             // indices.
-            fprintf(stderr,
-                    "Affix starting %lld, ending %lld, count %u\n",
-                    (long long)((uint8_t *)affix - sets->base_string->buf.data),
-                    (long long)((uint8_t *)affix - sets->base_string->buf.data + affix_len),
-                    affix_count);
+            TEST_PRINTF("Affix starting %lld, ending %lld, count %u\n",
+                        (long long)((uint8_t *)affix - sets->base_string->buf.data),
+                        (long long)((uint8_t *)affix - sets->base_string->buf.data + affix_len),
+                        affix_count);
             if (affix_len == byte_len + 1) {
                 // This is padding, so there should be no more entries due to how we ordered them
                 ASSERT(!mc_affix_set_iter_next(&it, NULL, NULL, NULL));
@@ -161,7 +153,7 @@ static uint32_t calc_number_of_substrings(uint32_t len, uint32_t lb, uint32_t ub
     uint32_t ret = 0;
     // Calculate the long way to make sure our math in calc_number_of_substrings is correct
     for (uint32_t i = 0; i < len; i++) {
-        uint32_t max_sublen = MIN(ub, len - i);
+        uint32_t max_sublen = BSON_MIN(ub, len - i);
         uint32_t n_substrings = max_sublen < lb ? 0 : max_sublen - lb + 1;
         ret += n_substrings;
     }
@@ -211,22 +203,20 @@ static void test_nofold_substring_case(_mongocrypt_tester_t *tester,
                                        uint32_t ub,
                                        uint32_t mlen,
                                        uint32_t unfolded_codepoint_len) {
-    fprintf(stderr,
-            "Testing nofold substring case: str=\"%s\", lb=%u, ub=%u, mlen=%u, unfolded_codepoint_len=%u\n",
-            str,
-            lb,
-            ub,
-            mlen,
-            unfolded_codepoint_len);
+    TEST_PRINTF("Testing nofold substring case: str=\"%s\", lb=%u, ub=%u, mlen=%u, unfolded_codepoint_len=%u\n",
+                str,
+                lb,
+                ub,
+                mlen,
+                unfolded_codepoint_len);
     uint32_t byte_len = (uint32_t)strlen(str);
     uint32_t codepoint_len = get_utf8_codepoint_length(str, byte_len);
     uint32_t max_padded_len = 16 * (uint32_t)((unfolded_codepoint_len + 15) / 16);
-    uint32_t n_substrings = calc_number_of_substrings(MIN(max_padded_len, mlen), lb, ub);
+    uint32_t n_substrings = calc_number_of_substrings(BSON_MIN(max_padded_len, mlen), lb, ub);
 
     mongocrypt_status_t *status = mongocrypt_status_new();
     mc_str_encode_sets_t *sets;
-    mc_FLE2TextSearchInsertSpec_t spec =
-        {str, byte_len, {{mlen, lb, ub}, true}, {{0, 0}, false}, {{0, 0}, false}, false, false};
+    mc_FLE2TextSearchInsertSpec_t spec = {.v = str, .len = byte_len, .substr = {{mlen, lb, ub}, true}};
     sets = mc_text_search_str_encode_helper(&spec, unfolded_codepoint_len, status);
     if (unfolded_codepoint_len > mlen) {
         ASSERT_FAILS_STATUS(sets, status, "longer than the maximum length");
@@ -244,7 +234,7 @@ static void test_nofold_substring_case(_mongocrypt_tester_t *tester,
     ASSERT(sets->exact.len == byte_len);
     ASSERT(0 == memcmp(sets->exact.data, str, byte_len));
 
-    if (unfolded_codepoint_len > mlen || lb > max_padded_len) {
+    if (lb > max_padded_len) {
         ASSERT(sets->substring_set == NULL);
         goto cleanup;
     } else {
@@ -254,11 +244,10 @@ static void test_nofold_substring_case(_mongocrypt_tester_t *tester,
     uint32_t n_real_substrings = calc_unique_substrings(sets->base_string, lb, ub);
     uint32_t n_padding = n_substrings - n_real_substrings;
 
-    fprintf(stderr,
-            "Expecting: n_real_substrings: %u, n_substrings: %u, n_padding: %u\n",
-            n_real_substrings,
-            n_substrings,
-            n_padding);
+    TEST_PRINTF("Expecting: n_real_substrings: %u, n_substrings: %u, n_padding: %u\n",
+                n_real_substrings,
+                n_substrings,
+                n_padding);
 
     mc_substring_set_t *set = sets->substring_set;
     mc_substring_set_iter_t it;
@@ -269,13 +258,12 @@ static void test_nofold_substring_case(_mongocrypt_tester_t *tester,
     uint32_t substring_count = 0;
     uint32_t total_real_substring_count = 0;
     while (mc_substring_set_iter_next(&it, &substring, &substring_len, &substring_count)) {
-        fprintf(stderr,
-                "Substring starting %lld, ending %lld, count %u: \"%.*s\"\n",
-                (long long)((uint8_t *)substring - sets->base_string->buf.data),
-                (long long)((uint8_t *)substring - sets->base_string->buf.data + substring_len),
-                substring_count,
-                substring_len,
-                substring);
+        TEST_PRINTF("Substring starting %lld, ending %lld, count %u: \"%.*s\"\n",
+                    (long long)((uint8_t *)substring - sets->base_string->buf.data),
+                    (long long)((uint8_t *)substring - sets->base_string->buf.data + substring_len),
+                    substring_count,
+                    substring_len,
+                    substring);
         if (substring_len == byte_len + 1) {
             // This is padding, so there should be no more entries due to how we ordered them
             ASSERT(!mc_substring_set_iter_next(&it, NULL, NULL, NULL));
@@ -548,8 +536,11 @@ static void _test_text_search_str_encode_substring_utf8(_mongocrypt_tester_t *te
 }
 
 static void _test_text_search_str_encode_multiple(_mongocrypt_tester_t *tester) {
-    mc_FLE2TextSearchInsertSpec_t spec =
-        {"123456789", 9, {{20, 9, 9}, true}, {{1, 5}, true}, {{6, 8}, true}, false, false};
+    mc_FLE2TextSearchInsertSpec_t spec = {.v = "123456789",
+                                          .len = 9,
+                                          .substr = {{20, 9, 9}, true},
+                                          .suffix = {{1, 5}, true},
+                                          .prefix = {{6, 8}, true}};
     mongocrypt_status_t *status = mongocrypt_status_new();
     mc_str_encode_sets_t *sets = mc_text_search_str_encode(&spec, status);
     // Ensure that we ran tree generation for suffix, prefix, and substring successfully by checking the first entry of
@@ -590,8 +581,11 @@ static void _test_text_search_str_encode_multiple(_mongocrypt_tester_t *tester) 
 
 static void _test_text_search_str_encode_bad_string(_mongocrypt_tester_t *tester) {
     mongocrypt_status_t *status = mongocrypt_status_new();
-    mc_FLE2TextSearchInsertSpec_t spec =
-        {"\xff\xff\xff\xff\xff\xff\xff\xff\xff", 9, {{20, 4, 7}, true}, {{1, 5}, true}, {{6, 8}, true}, false, false};
+    mc_FLE2TextSearchInsertSpec_t spec = {.v = "\xff\xff\xff\xff\xff\xff\xff\xff\xff",
+                                          .len = 9,
+                                          .substr = {{20, 4, 7}, true},
+                                          .suffix = {{1, 5}, true},
+                                          .prefix = {{6, 8}, true}};
     mc_str_encode_sets_t *sets = mc_text_search_str_encode(&spec, status);
     ASSERT_FAILS_STATUS(sets, status, "not valid UTF-8");
     mc_str_encode_sets_destroy(sets);

@@ -119,6 +119,8 @@ bool mc_FLE2RangeInsertSpec_parse(mc_FLE2RangeInsertSpec_t *out,
                                   bool use_range_v2,
                                   mongocrypt_status_t *status);
 
+// Note: For the substring/suffix/prefix insert specs, all lengths are in terms of number of UTF-8 codepoints, not
+// number of bytes.
 typedef struct {
     // mlen is the max string length that can be indexed.
     uint32_t mlen;
@@ -145,6 +147,7 @@ typedef struct {
 typedef struct {
     // v is the value to encrypt.
     const char *v;
+    // len is the byte length of v.
     uint32_t len;
 
     // substr is the spec for substring indexing.

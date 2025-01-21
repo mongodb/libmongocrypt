@@ -42,13 +42,13 @@ mc_affix_set_t *mc_affix_set_new(const mc_utf8_string_with_bad_char_t *base_stri
 
 void mc_affix_set_destroy(mc_affix_set_t *set);
 
-// Insert affix into set at idx. base_start/end_idx are codepoint indices. base_end_idx is exclusive. Returns true if
+// Insert affix into set. base_start/end_idx are codepoint indices. base_end_idx is exclusive. Returns true if
 // inserted, false otherwise.
-bool mc_affix_set_insert(mc_affix_set_t *set, uint32_t base_start_idx, uint32_t base_end_idx, uint32_t idx);
+bool mc_affix_set_insert(mc_affix_set_t *set, uint32_t base_start_idx, uint32_t base_end_idx);
 
 // Insert the base string count times into the set. Treated as a special case, since this is the only affix that
 // will appear multiple times. Returns true if inserted, false otherwise.
-bool mc_affix_set_insert_base_string(mc_affix_set_t *set, uint32_t idx, uint32_t count);
+bool mc_affix_set_insert_base_string(mc_affix_set_t *set, uint32_t count);
 
 // Iterator on affix set.
 typedef struct {
@@ -59,9 +59,9 @@ typedef struct {
 // Point the iterator to the first affix of the given set.
 void mc_affix_set_iter_init(mc_affix_set_iter_t *it, mc_affix_set_t *set);
 
-// Get the next affix, its length, and its count. Returns false if the set does not have a next element, true
+// Get the next affix, its length in bytes, and its count. Returns false if the set does not have a next element, true
 // otherwise.
-bool mc_affix_set_iter_next(mc_affix_set_iter_t *it, const char **str, uint32_t *len, uint32_t *count);
+bool mc_affix_set_iter_next(mc_affix_set_iter_t *it, const char **str, uint32_t *byte_len, uint32_t *count);
 
 // Set of substrings of a shared base string. Prevents duplicates.
 typedef struct _mc_substring_set_t mc_substring_set_t;
@@ -88,8 +88,8 @@ typedef struct {
 // Point the iterator to the first substring of the given set.
 void mc_substring_set_iter_init(mc_substring_set_iter_t *it, mc_substring_set_t *set);
 
-// Get the next substring, its length, and its count. Returns false if the set does not have a next element, true
-// otherwise.
-bool mc_substring_set_iter_next(mc_substring_set_iter_t *it, const char **str, uint32_t *len, uint32_t *count);
+// Get the next substring, its length in bytes, and its count. Returns false if the set does not have a next element,
+// true otherwise.
+bool mc_substring_set_iter_next(mc_substring_set_iter_t *it, const char **str, uint32_t *byte_len, uint32_t *count);
 
 #endif
