@@ -331,11 +331,9 @@ static bool _parse_text_search_spec_from_placeholder(_mongocrypt_tester_t *teste
     });
     bson_t *const as_bson = TMP_BSON(template, spec_json_in);
 
-    mongocrypt_status_t *inner_status = mongocrypt_status_new();
-
     mc_FLE2EncryptionPlaceholder_t placeholder;
     mc_FLE2EncryptionPlaceholder_init(&placeholder);
-    ASSERT_OK_STATUS(mc_FLE2EncryptionPlaceholder_parse(&placeholder, as_bson, inner_status), inner_status);
+    ASSERT_OK_STATUS(mc_FLE2EncryptionPlaceholder_parse(&placeholder, as_bson, status_out), status_out);
 
     ASSERT(placeholder.type == MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT);
     ASSERT(placeholder.algorithm == MONGOCRYPT_FLE2_ALGORITHM_TEXT_SEARCH);
@@ -356,7 +354,6 @@ static bool _parse_text_search_spec_from_placeholder(_mongocrypt_tester_t *teste
     bool res = mc_FLE2TextSearchInsertSpec_parse(spec_out, &placeholder.v_iter, status_out);
 
     mc_FLE2EncryptionPlaceholder_cleanup(&placeholder);
-    mongocrypt_status_destroy(inner_status);
     return res;
 }
 

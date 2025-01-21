@@ -277,7 +277,7 @@ DERIVE_TOKEN_IMPL(ESC)
  * E?CText<T>Token = HMAC(E?CToken, t)
  * E?CText<T>DerivedFromDataTokenAndContentionFactorToken = HMAC(HMAC(E?CText<T>Token, v) cf)
  *
- * E?C = EDC|ESC|ECC
+ * E?C = EDC|ESC
  * n = 1 for EDC, 2 for ESC, 3 for ECC
  * <T> = Exact|Substring|Suffix|Prefix
  * t = 1 for Exact, 2 for Substring, 3 for Suffix, 4 for Prefix
@@ -297,6 +297,7 @@ DERIVE_TOKEN_IMPL(ESC)
         BSON_ASSERT_PARAM(out);                                                                                        \
         BSON_ASSERT_PARAM(level1Token);                                                                                \
         BSON_ASSERT_PARAM(value);                                                                                      \
+        BSON_ASSERT(contentionFactor >= 0);                                                                            \
                                                                                                                        \
         _mongocrypt_buffer_init(out);                                                                                  \
                                                                                                                        \
@@ -319,7 +320,6 @@ DERIVE_TOKEN_IMPL(ESC)
         if (!fromDataAndContentionFactor) {                                                                            \
             return false;                                                                                              \
         }                                                                                                              \
-        BSON_ASSERT(contentionFactor >= 0);                                                                            \
         _mongocrypt_buffer_copy_to(                                                                                    \
             mc_##Name##Text##Type##DerivedFromDataTokenAndContentionFactorToken_get(fromDataAndContentionFactor),      \
             out);                                                                                                      \

@@ -42,7 +42,7 @@ DEF_TEXT_SEARCH_TOKEN_SET_INIT_CLEANUP(Prefix)
 
 void mc_TextSearchTokenSets_init(mc_TextSearchTokenSets_t *tsts) {
     BSON_ASSERT_PARAM(tsts);
-    memset(tsts, 0, sizeof(mc_TextSearchTokenSets_t));
+    mc_TextExactTokenSet_init(&tsts->exact);
     _mc_array_init(&tsts->substringArray, sizeof(mc_TextSubstringTokenSet_t));
     _mc_array_init(&tsts->suffixArray, sizeof(mc_TextSuffixTokenSet_t));
     _mc_array_init(&tsts->prefixArray, sizeof(mc_TextPrefixTokenSet_t));
@@ -444,16 +444,12 @@ SERIALIZE_TEXT_TOKEN_SET_FOR_TYPE_IMPL(Prefix)
         const char *index_string = NULL;                                                                               \
         char storage[16];                                                                                              \
         uint32_t index = 0;                                                                                            \
-                                                                                                                       \
-        for (size_t i = 0; i < array->len; i++) {                                                                      \
+        for (size_t i = 0; i < BSON_MIN(array->len, ((size_t)UINT32_MAX + 1)); i++) {                                  \
             mc_Text##Type##TokenSet_t ts = _mc_array_index(array, mc_Text##Type##TokenSet_t, i);                       \
             bson_uint32_to_string(index, &index_string, storage, sizeof(storage));                                     \
                                                                                                                        \
             if (!_fle2_serialize_Text##Type##TokenSet(&arr_bson, index_string, &ts)) {                                 \
                 return false;                                                                                          \
-            }                                                                                                          \
-            if (index == UINT32_MAX) {                                                                                 \
-                break;                                                                                                 \
             }                                                                                                          \
             index++;                                                                                                   \
         }                                                                                                              \
