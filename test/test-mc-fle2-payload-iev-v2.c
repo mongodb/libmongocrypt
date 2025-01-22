@@ -164,7 +164,7 @@ _mc_fle2_iev_v2_test_serialize_payload(mongocrypt_t *crypt, _mc_fle2_iev_v2_test
     mc_FLE2IndexedEncryptedValueV2_destroy(iev);
 }
 
-static bool _mc_fle2_iev_v2_test_parse(mongocrypt_t *crypt, _mc_fle2_iev_v2_test *test, bson_iter_t *iter) {
+static bool _mc_fle2_iev_v2_test_parse(_mc_fle2_iev_v2_test *test, bson_iter_t *iter) {
     bool hasType = false;
 
     while (bson_iter_next(iter)) {
@@ -278,6 +278,7 @@ static bool _mc_fle2_iev_v2_test_parse(mongocrypt_t *crypt, _mc_fle2_iev_v2_test
     }
 
 #define CHECK_HAS(Name) ASSERT_OR_PRINT_MSG(test->Name.data, "Missing field '" #Name "'")
+    CHECK_HAS(payload);
     CHECK_HAS(S_KeyId);
     CHECK_HAS(S_Key);
     CHECK_HAS(K_KeyId);
@@ -347,14 +348,12 @@ static void _mc_fle2_iev_v2_test_run(mongocrypt_t *crypt, _mongocrypt_tester_t *
     uint8_t substr_tag_count = 0, suffix_tag_count = 0;
     if (test->type == kTypeText) {
         // Validate substr/suffix/prefix tag counts
-        substr_tag_count = mc_FLE2IndexedEncryptedValueV2_get_substr_tag_count(iev, status);
-        ASSERT_OK_STATUS(substr_tag_count, status);
+        ASSERT_OK_STATUS(mc_FLE2IndexedEncryptedValueV2_get_substr_tag_count(iev, &substr_tag_count, status), status);
         ASSERT_CMPINT(substr_tag_count, ==, test->substr_tag_count);
-        suffix_tag_count = mc_FLE2IndexedEncryptedValueV2_get_suffix_tag_count(iev, status);
-        ASSERT_OK_STATUS(suffix_tag_count, status);
+        ASSERT_OK_STATUS(mc_FLE2IndexedEncryptedValueV2_get_suffix_tag_count(iev, &suffix_tag_count, status), status);
         ASSERT_CMPINT(suffix_tag_count, ==, test->suffix_tag_count);
-        uint8_t prefix_tag_count = mc_FLE2IndexedEncryptedValueV2_get_prefix_tag_count(iev, status);
-        ASSERT_OK_STATUS(prefix_tag_count, status);
+        uint8_t prefix_tag_count;
+        ASSERT_OK_STATUS(mc_FLE2IndexedEncryptedValueV2_get_prefix_tag_count(iev, &prefix_tag_count, status), status);
         ASSERT_CMPINT(prefix_tag_count, ==, test->edge_count - test->substr_tag_count - test->suffix_tag_count - 1);
     }
 
@@ -562,17 +561,12 @@ static void test_fle2_iev_v2_test(mongocrypt_t *crypt, _mongocrypt_tester_t *tes
     _mc_fle2_iev_v2_test test = {.payload = {0}};
     bson_iter_t iter;
     ASSERT(bson_iter_init(&iter, &test_bson));
-    ASSERT(_mc_fle2_iev_v2_test_parse(crypt, &test, &iter));
-    if (test.payload.data) {
-        // Run once with given payload, then run with empty payload (self-test).
-        _mc_fle2_iev_v2_test_run(crypt, tester, &test);
-        _mongocrypt_buffer_cleanup(&test.payload);
-        test.payload.data = NULL;
-        _mc_fle2_iev_v2_test_run(crypt, tester, &test);
-    } else {
-        // No payload specified, run once.
-        _mc_fle2_iev_v2_test_run(crypt, tester, &test);
-    }
+    ASSERT(_mc_fle2_iev_v2_test_parse(&test, &iter));
+    // Run once with given payload, then run with empty payload (self-test).
+    _mc_fle2_iev_v2_test_run(crypt, tester, &test);
+    _mongocrypt_buffer_cleanup(&test.payload);
+    test.payload.data = NULL;
+    _mc_fle2_iev_v2_test_run(crypt, tester, &test);
 
     _mc_fle2_iev_v2_test_explicit_ctx(tester, &test);
     _mc_fle2_iev_v2_validate(tester, &test);
@@ -589,7 +583,8 @@ static void test_fle2_iev_v2(_mongocrypt_tester_t *tester) {
     test_fle2_iev_v2_test(crypt, tester, "test/data/iev-v2/FLECrudTest-insertOneV2.json");
     // Produced by Server test: (FLECrudTest, insertOneRangeV2)
     test_fle2_iev_v2_test(crypt, tester, "test/data/iev-v2/FLECrudTest-insertOneRangeV2.json");
-    // Modified version of insertOneRangeV2
+    // Fields are modified from insertOneRangeV2.json, payload was produced by _mc_fle2_iev_v2_test_serialize_payload in
+    // this test
     test_fle2_iev_v2_test(crypt, tester, "test/data/iev-v2/FLECrudTest-insertOneText.json");
     mongocrypt_destroy(crypt);
 }

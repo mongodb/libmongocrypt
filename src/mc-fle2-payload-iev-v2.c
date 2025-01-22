@@ -296,61 +296,70 @@ uint8_t mc_FLE2IndexedEncryptedValueV2_get_edge_count(const mc_FLE2IndexedEncryp
     return iev->edge_count;
 }
 
-uint8_t mc_FLE2IndexedEncryptedValueV2_get_substr_tag_count(const mc_FLE2IndexedEncryptedValueV2_t *iev,
-                                                            mongocrypt_status_t *status) {
+bool mc_FLE2IndexedEncryptedValueV2_get_substr_tag_count(const mc_FLE2IndexedEncryptedValueV2_t *iev,
+                                                         uint8_t *count,
+                                                         mongocrypt_status_t *status) {
     BSON_ASSERT_PARAM(iev);
+    BSON_ASSERT_PARAM(count);
 
     if (iev->type == kFLE2IEVTypeInitV2) {
         CLIENT_ERR("mc_FLE2IndexedEncryptedValueV2_get_substr_tag_count "
                    "must be called after "
                    "mc_FLE2IndexedEncryptedValueV2_parse");
-        return 0;
+        return false;
     }
 
     if (iev->type != kFLE2IEVTypeText) {
         CLIENT_ERR("mc_FLE2IndexedEncryptedValueV2_get_substr_tag_count must be called with type text");
-        return 0;
+        return false;
     }
 
-    return iev->substr_tag_count;
+    *count = iev->substr_tag_count;
+    return true;
 }
 
-uint8_t mc_FLE2IndexedEncryptedValueV2_get_suffix_tag_count(const mc_FLE2IndexedEncryptedValueV2_t *iev,
-                                                            mongocrypt_status_t *status) {
+bool mc_FLE2IndexedEncryptedValueV2_get_suffix_tag_count(const mc_FLE2IndexedEncryptedValueV2_t *iev,
+                                                         uint8_t *count,
+                                                         mongocrypt_status_t *status) {
     BSON_ASSERT_PARAM(iev);
+    BSON_ASSERT_PARAM(count);
 
     if (iev->type == kFLE2IEVTypeInitV2) {
         CLIENT_ERR("mc_FLE2IndexedEncryptedValueV2_get_suffix_tag_count "
                    "must be called after "
                    "mc_FLE2IndexedEncryptedValueV2_parse");
-        return 0;
+        return false;
     }
 
     if (iev->type != kFLE2IEVTypeText) {
         CLIENT_ERR("mc_FLE2IndexedEncryptedValueV2_get_suffix_tag_count must be called with type text");
-        return 0;
+        return false;
     }
 
-    return iev->suffix_tag_count;
+    *count = iev->suffix_tag_count;
+    return true;
 }
 
-uint8_t mc_FLE2IndexedEncryptedValueV2_get_prefix_tag_count(const mc_FLE2IndexedEncryptedValueV2_t *iev,
-                                                            mongocrypt_status_t *status) {
+bool mc_FLE2IndexedEncryptedValueV2_get_prefix_tag_count(const mc_FLE2IndexedEncryptedValueV2_t *iev,
+                                                         uint8_t *count,
+                                                         mongocrypt_status_t *status) {
     BSON_ASSERT_PARAM(iev);
+    BSON_ASSERT_PARAM(count);
 
     if (iev->type == kFLE2IEVTypeInitV2) {
         CLIENT_ERR("mc_FLE2IndexedEncryptedValueV2_get_prefix_tag_count "
                    "must be called after "
                    "mc_FLE2IndexedEncryptedValueV2_parse");
-        return 0;
+        return false;
     }
 
     if (iev->type != kFLE2IEVTypeText) {
         CLIENT_ERR("mc_FLE2IndexedEncryptedValueV2_get_prefix_tag_count must be called with type text");
-        return 0;
+        return false;
     }
 
-    return (uint8_t)(iev->edge_count - iev->substr_tag_count - iev->suffix_tag_count - 1);
+    *count = (uint8_t)(iev->edge_count - iev->substr_tag_count - iev->suffix_tag_count - 1);
+    return true;
 }
 
 bool mc_FLE2IndexedEncryptedValueV2_get_edge(const mc_FLE2IndexedEncryptedValueV2_t *iev,
@@ -496,20 +505,11 @@ bool mc_FLE2IndexedEncryptedValueV2_get_prefix_metadata(const mc_FLE2IndexedEncr
     BSON_ASSERT_PARAM(iev);
     BSON_ASSERT_PARAM(out);
 
-    if (iev->type == kFLE2IEVTypeInitV2) {
-        CLIENT_ERR("mc_FLE2IndexedEncryptedValueV2_get_prefix_metadata "
-                   "must be called after "
-                   "mc_FLE2IndexedEncryptedValueV2_parse");
+    // We can skip the check for text type because get_prefix_tag_count does it for us.
+    uint8_t prefix_tag_count;
+    if (!mc_FLE2IndexedEncryptedValueV2_get_prefix_tag_count(iev, &prefix_tag_count, status)) {
         return false;
     }
-
-    if (iev->type != kFLE2IEVTypeText) {
-        CLIENT_ERR("mc_FLE2IndexedEncryptedValueV2_get_prefix_metadata must be called with type text");
-        return false;
-    }
-
-    uint8_t prefix_tag_count =
-        (uint8_t)(iev->edge_count - iev->suffix_tag_count - iev->substr_tag_count - 1 /* exact block */);
     if (block_index >= prefix_tag_count) {
         CLIENT_ERR("mc_FLE2IndexedEncryptedValueV2_get_prefix_metadata must be called with index block_index less "
                    "than prefix tag count");

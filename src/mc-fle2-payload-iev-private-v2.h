@@ -206,14 +206,17 @@ const _mongocrypt_buffer_t *mc_FLE2IndexedEncryptedValueV2_get_ClientValue(const
 uint8_t mc_FLE2IndexedEncryptedValueV2_get_edge_count(const mc_FLE2IndexedEncryptedValueV2_t *iev,
                                                       mongocrypt_status_t *status);
 
-uint8_t mc_FLE2IndexedEncryptedValueV2_get_substr_tag_count(const mc_FLE2IndexedEncryptedValueV2_t *iev,
-                                                            mongocrypt_status_t *status);
+bool mc_FLE2IndexedEncryptedValueV2_get_substr_tag_count(const mc_FLE2IndexedEncryptedValueV2_t *iev,
+                                                         uint8_t *count,
+                                                         mongocrypt_status_t *status);
 
-uint8_t mc_FLE2IndexedEncryptedValueV2_get_suffix_tag_count(const mc_FLE2IndexedEncryptedValueV2_t *iev,
-                                                            mongocrypt_status_t *status);
+bool mc_FLE2IndexedEncryptedValueV2_get_suffix_tag_count(const mc_FLE2IndexedEncryptedValueV2_t *iev,
+                                                         uint8_t *count,
+                                                         mongocrypt_status_t *status);
 
-uint8_t mc_FLE2IndexedEncryptedValueV2_get_prefix_tag_count(const mc_FLE2IndexedEncryptedValueV2_t *iev,
-                                                            mongocrypt_status_t *status);
+bool mc_FLE2IndexedEncryptedValueV2_get_prefix_tag_count(const mc_FLE2IndexedEncryptedValueV2_t *iev,
+                                                         uint8_t *count,
+                                                         mongocrypt_status_t *status);
 
 bool mc_FLE2IndexedEncryptedValueV2_get_edge(const mc_FLE2IndexedEncryptedValueV2_t *iev,
                                              mc_FLE2TagAndEncryptedMetadataBlock_t *out,
