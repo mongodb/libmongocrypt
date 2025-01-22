@@ -8,7 +8,6 @@
         "schema": {
             "db.test": {
                 "escCollection": "esc",
-                "eccCollection": "ecc",
                 "ecocCollection": "ecoc",
                 "fields": [
                     {

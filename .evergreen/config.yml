@@ -14,6 +14,40 @@ functions:
           rm -rf ~/.aws ~/.notary_env.sh
           exit 0
 
+  "fetch drivers-evergreen-tools":
+    - command: subprocess.exec
+      type: setup
+      params:
+        binary: bash
+        args:
+          - -c
+          - |
+            if [[ ! -d drivers-evergreen-tools ]]; then
+                git clone --depth=1 https://github.com/mongodb-labs/drivers-evergreen-tools.git
+            fi
+    - command: subprocess.exec
+      type: setup
+      params:
+        binary: bash
+        working_dir: drivers-evergreen-tools
+        args:
+          - -c
+          - find .evergreen -type f -name "*.sh" -exec chmod +rx "{}" \;
+    - command: subprocess.exec
+      type: setup
+      params:
+        binary: bash
+        args:
+          - -c
+          - |
+            set -o errexit
+            . drivers-evergreen-tools/.evergreen/find-python3.sh
+            echo "PYTHON3_BINARY: $(find_python3)" >|python3_binary.yml
+    - command: expansions.update
+      type: setup
+      params:
+        file: python3_binary.yml
+
   "fetch source":
     - command: git.get_project
       params: {directory: libmongocrypt}
@@ -89,7 +123,7 @@ functions:
         shell: bash
         script: |
           env "WORKDIR=${workdir}" \
-              "PYTHON=${python|}" \
+              "PYTHON=${PYTHON3_BINARY|}" \
               "HAS_PACKAGES=${has_packages|false}" \
               "PACKAGER_DISTRO=${packager_distro}" \
               "PACKAGER_ARCH=${packager_arch}" \
@@ -360,6 +394,7 @@ tasks:
   - func: "fetch source"
   - func: "build and test"
   - func: "tar and upload libmongocrypt libraries"
+  - func: "fetch drivers-evergreen-tools" # Set PYTHON3_BINARY.
   - func: "create packages and repos"
   - func: "upload packages and repos"
 
@@ -1155,7 +1190,6 @@ buildvariants:
     has_packages: true
     packager_distro: debian12
     packager_arch: x86_64
-    python: python3
   tasks:
   - build-and-test-and-upload
   - name: publish-packages

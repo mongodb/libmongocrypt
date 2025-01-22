@@ -508,9 +508,6 @@ mongocrypt_t *_mongocrypt_tester_mongocrypt(tester_mongocrypt_flags flags) {
     ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, bin), crypt);
     bson_destroy(kms_providers);
     mongocrypt_binary_destroy(bin);
-    if (flags & TESTER_MONGOCRYPT_WITH_CRYPT_V1) {
-        ASSERT(mongocrypt_setopt_fle2v2(crypt, false));
-    }
     if (flags & TESTER_MONGOCRYPT_WITH_CRYPT_SHARED_LIB) {
         mongocrypt_setopt_append_crypt_shared_lib_search_path(crypt, "$ORIGIN");
     }
@@ -926,6 +923,7 @@ int main(int argc, char **argv) {
     _mongocrypt_tester_install_opts(&tester);
     _mongocrypt_tester_install_named_kms_providers(&tester);
     _mongocrypt_tester_install_mc_cmp(&tester);
+    _mongocrypt_tester_install_text_search_str_encode(&tester);
 
 #ifdef MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO
     char osversion[32];
