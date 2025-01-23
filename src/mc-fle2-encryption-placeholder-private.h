@@ -119,30 +119,32 @@ bool mc_FLE2RangeInsertSpec_parse(mc_FLE2RangeInsertSpec_t *out,
                                   bool use_range_v2,
                                   mongocrypt_status_t *status);
 
+// Note: For the substring/suffix/prefix insert specs, all lengths are in terms of number of UTF-8 codepoints, not
+// number of bytes.
 /* mc_FLE2SubstringInsertSpec_t holds the parameters used to encode for substring search. */
 typedef struct {
-    // max substring code point length to be indexed
-    int32_t mlen;
-    // upper bound code point length of valid substring queries
-    int32_t ub;
-    // lower bound code point length of valid substring queries
-    int32_t lb;
+    // mlen is the max string length that can be indexed.
+    uint32_t mlen;
+    // lb is the lower bound on the length of substrings to be indexed.
+    uint32_t lb;
+    // ub is the upper bound on the length of substrings to be indexed.
+    uint32_t ub;
 } mc_FLE2SubstringInsertSpec_t;
 
 /* mc_FLE2SuffixInsertSpec_t holds the parameters used to encode for suffix search. */
 typedef struct {
-    // upper bound code point length of valid suffix queries
-    int32_t ub;
-    // lower bound code point length of valid suffix queries
-    int32_t lb;
+    // lb is the lower bound on the length of suffixes to be indexed.
+    uint32_t lb;
+    // ub is the upper bound on the length of suffixes to be indexed.
+    uint32_t ub;
 } mc_FLE2SuffixInsertSpec_t;
 
 /* mc_FLE2PrefixInsertSpec_t holds the parameters used to encode for prefix search. */
 typedef struct {
-    // upper bound code point length of valid prefix queries
-    int32_t ub;
-    // lower bound code point length of valid prefix queries
-    int32_t lb;
+    // lb is the lower bound on the length of prefixes to be indexed.
+    uint32_t lb;
+    // ub is the upper bound on the length of prefixes to be indexed.
+    uint32_t ub;
 } mc_FLE2PrefixInsertSpec_t;
 
 /** mc_FLE2TextSearchInsertSpec_t represents the text search insert specification that is
@@ -151,35 +153,33 @@ typedef struct {
  * for the representation in the MongoDB server. */
 typedef struct {
     // v is the value to encrypt.
-    bson_iter_t v;
-    // casef is whether or not to case fold
-    bool casef;
-    // diacf is whether or not to diacritic fold
-    bool diacf;
+    const char *v;
+    // len is the byte length of v.
+    uint32_t len;
 
-    // optional parameters for substring search
+    // substr is the spec for substring indexing.
     struct {
         mc_FLE2SubstringInsertSpec_t value;
         bool set;
-    } substringSpec;
+    } substr;
 
-    // optional parameters for suffix search
+    // suffix is the spec for suffix indexing.
     struct {
         mc_FLE2SuffixInsertSpec_t value;
         bool set;
-    } suffixSpec;
+    } suffix;
 
-    // optional parameters for prefix search
+    // prefix is the spec for prefix indexing.
     struct {
         mc_FLE2PrefixInsertSpec_t value;
         bool set;
-    } prefixSpec;
-} mc_FLE2TextSearchInsertSpec_t;
+    } prefix;
 
-// `mc_FLE2TextSearchInsertSpec_t` inherits extended alignment from libbson. To dynamically allocate, use
-// aligned allocation (e.g. BSON_ALIGNED_ALLOC)
-BSON_STATIC_ASSERT2(alignof_mc_FLE2TextSearchInsertSpec_t,
-                    BSON_ALIGNOF(mc_FLE2TextSearchInsertSpec_t) >= BSON_ALIGNOF(bson_iter_t));
+    // casef indicates if case folding is enabled.
+    bool casef;
+    // diacf indicates if diacritic folding is enabled.
+    bool diacf;
+} mc_FLE2TextSearchInsertSpec_t;
 
 bool mc_FLE2TextSearchInsertSpec_parse(mc_FLE2TextSearchInsertSpec_t *out,
                                        const bson_iter_t *in,
