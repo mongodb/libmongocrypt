@@ -21,6 +21,7 @@
 #include "mc-fle2-encryption-placeholder-private.h"
 #include "mongocrypt-buffer-private.h"
 #include "mongocrypt-private.h"
+#include "mongocrypt-util-private.h" // mc_bson_type_to_string
 #include "mongocrypt.h"
 
 #define CLIENT_ERR_PREFIXED_HELPER(Prefix, ErrorString, ...) CLIENT_ERR(Prefix ": " ErrorString, ##__VA_ARGS__)
@@ -630,7 +631,7 @@ bool mc_FLE2TextSearchInsertSpec_parse(mc_FLE2TextSearchInsertSpec_t *out,
     BSON_ASSERT_PARAM(out);
     BSON_ASSERT_PARAM(in);
 
-    *out = (mc_FLE2TextSearchInsertSpec_t){{0}};
+    *out = (mc_FLE2TextSearchInsertSpec_t){0};
 
     bson_iter_t iter = *in;
     bool has_v = false, has_casef = false, has_diacf = false;
@@ -647,7 +648,12 @@ bool mc_FLE2TextSearchInsertSpec_parse(mc_FLE2TextSearchInsertSpec_t *out,
         BSON_ASSERT(field);
 
         IF_FIELD(v) {
-            out->v = iter;
+            out->v = bson_iter_utf8(&iter, &out->len);
+            if (!out->v) {
+                CLIENT_ERR_PREFIXED("unsupported BSON type: %s for text search", mc_bson_type_to_string(bson_iter_type(&iter)));
+                goto fail;
+            }
+            out->v_iter = iter;
         }
         END_IF_FIELD
 
@@ -670,26 +676,26 @@ bool mc_FLE2TextSearchInsertSpec_parse(mc_FLE2TextSearchInsertSpec_t *out,
         END_IF_FIELD
 
         IF_FIELD(substr) {
-            if (!mc_FLE2SubstringInsertSpec_parse(&out->substringSpec.value, &iter, status)) {
+            if (!mc_FLE2SubstringInsertSpec_parse(&out->substr.value, &iter, status)) {
                 goto fail;
             }
-            out->substringSpec.set = true;
+            out->substr.set = true;
         }
         END_IF_FIELD
 
         IF_FIELD(suffix) {
-            if (!mc_FLE2SuffixInsertSpec_parse(&out->suffixSpec.value, &iter, status)) {
+            if (!mc_FLE2SuffixInsertSpec_parse(&out->suffix.value, &iter, status)) {
                 goto fail;
             }
-            out->suffixSpec.set = true;
+            out->suffix.set = true;
         }
         END_IF_FIELD
 
         IF_FIELD(prefix) {
-            if (!mc_FLE2PrefixInsertSpec_parse(&out->prefixSpec.value, &iter, status)) {
+            if (!mc_FLE2PrefixInsertSpec_parse(&out->prefix.value, &iter, status)) {
                 goto fail;
             }
-            out->prefixSpec.set = true;
+            out->prefix.set = true;
         }
         END_IF_FIELD
     }

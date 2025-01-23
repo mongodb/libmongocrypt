@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include "bson/bson.h"
 #include "mc-fle-blob-subtype-private.h"
 #include "mc-fle2-encryption-placeholder-private.h"
 #include "mc-fle2-find-equality-payload-private-v2.h"
@@ -1173,7 +1174,7 @@ static bool _fle2_generate_TextSearchTokenSets(_mongocrypt_key_broker_t *kb,
         goto fail;
     }
 
-    if (spec->substringSpec.set) {
+    if (spec->substr.set) {
         // TODO MONGOCRYPT-762 iterate on StrEncode substrings set
         mc_TextSubstringTokenSet_t substrSet = {{0}};
         mc_TextSubstringTokenSet_init(&substrSet);
@@ -1190,7 +1191,7 @@ static bool _fle2_generate_TextSearchTokenSets(_mongocrypt_key_broker_t *kb,
         }
         _mc_array_append_val(&tsts->substringArray, substrSet);
     }
-    if (spec->suffixSpec.set) {
+    if (spec->suffix.set) {
         // TODO MONGOCRYPT-762 iterate on StrEncode suffixes set
         mc_TextSuffixTokenSet_t suffixSet = {{0}};
         mc_TextSuffixTokenSet_init(&suffixSet);
@@ -1207,7 +1208,7 @@ static bool _fle2_generate_TextSearchTokenSets(_mongocrypt_key_broker_t *kb,
         }
         _mc_array_append_val(&tsts->suffixArray, suffixSet);
     }
-    if (spec->prefixSpec.set) {
+    if (spec->prefix.set) {
         // TODO MONGOCRYPT-762 iterate on StrEncode suffixes set
         mc_TextPrefixTokenSet_t prefixSet = {{0}};
         mc_TextPrefixTokenSet_init(&prefixSet);
@@ -1271,11 +1272,7 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForTextSearc
     }
 
     // t
-    payload.valueType = bson_iter_type(&insertSpec.v);
-    if (payload.valueType != BSON_TYPE_UTF8) {
-        CLIENT_ERR("unsupported BSON type: %s for text search", mc_bson_type_to_string(payload.valueType));
-        goto fail;
-    }
+    payload.valueType = BSON_TYPE_UTF8;
 
     // k
     payload.contentionFactor = 0;
@@ -1293,7 +1290,7 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForTextSearc
     // u
     _mongocrypt_buffer_copy_to(&placeholder->index_key_id, &payload.indexKeyId);
 
-    _mongocrypt_buffer_from_iter(&value, &insertSpec.v);
+    _mongocrypt_buffer_from_iter(&value, &insertSpec.v_iter);
     if (!_mongocrypt_fle2_placeholder_common(kb,
                                              &common,
                                              &placeholder->index_key_id,

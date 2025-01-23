@@ -371,20 +371,22 @@ static void _test_FLE2EncryptionPlaceholder_textSearch_parse(_mongocrypt_tester_
         mongocrypt_status_t *status = mongocrypt_status_new();
         mc_FLE2TextSearchInsertSpec_t spec;
         ASSERT_OK_STATUS(_parse_text_search_spec_from_placeholder(tester, input, &spec, status), status);
-        ASSERT(BSON_ITER_HOLDS_UTF8(&spec.v));
-        ASSERT(0 == strcmp("foobar", bson_iter_utf8(&spec.v, NULL)));
+        ASSERT(BSON_ITER_HOLDS_UTF8(&spec.v_iter));
+        ASSERT(bson_iter_utf8(&spec.v_iter, NULL) == spec.v);
+        ASSERT(strlen("foobar") == spec.len);
+        ASSERT(0 == strncmp("foobar", spec.v, spec.len));
         ASSERT(spec.diacf == true);
         ASSERT(spec.casef == false);
-        ASSERT(spec.substringSpec.set == true);
-        ASSERT(spec.substringSpec.value.lb == 20);
-        ASSERT(spec.substringSpec.value.ub == 200);
-        ASSERT(spec.substringSpec.value.mlen == 2000);
-        ASSERT(spec.suffixSpec.set == true);
-        ASSERT(spec.suffixSpec.value.lb == 30);
-        ASSERT(spec.suffixSpec.value.ub == 300);
-        ASSERT(spec.prefixSpec.set == true);
-        ASSERT(spec.prefixSpec.value.lb == 400);
-        ASSERT(spec.prefixSpec.value.ub == 400);
+        ASSERT(spec.substr.set == true);
+        ASSERT(spec.substr.value.lb == 20);
+        ASSERT(spec.substr.value.ub == 200);
+        ASSERT(spec.substr.value.mlen == 2000);
+        ASSERT(spec.suffix.set == true);
+        ASSERT(spec.suffix.value.lb == 30);
+        ASSERT(spec.suffix.value.ub == 300);
+        ASSERT(spec.prefix.set == true);
+        ASSERT(spec.prefix.value.lb == 400);
+        ASSERT(spec.prefix.value.ub == 400);
         mongocrypt_status_destroy(status);
     }
 
