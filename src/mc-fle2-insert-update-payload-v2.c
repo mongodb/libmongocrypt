@@ -445,14 +445,13 @@ SERIALIZE_TEXT_TOKEN_SET_FOR_TYPE_IMPL(Prefix)
         char storage[16];                                                                                              \
         uint32_t index = 0;                                                                                            \
         uint32_t limit = (array->len > UINT32_MAX) ? UINT32_MAX : (uint32_t)array->len;                                \
-        while (index < limit) {                                                                                        \
+        for (; index < limit; index++) {                                                                               \
             mc_Text##Type##TokenSet_t ts = _mc_array_index(array, mc_Text##Type##TokenSet_t, index);                   \
             bson_uint32_to_string(index, &index_string, storage, sizeof(storage));                                     \
                                                                                                                        \
             if (!_fle2_serialize_Text##Type##TokenSet(&arr_bson, index_string, &ts)) {                                 \
                 return false;                                                                                          \
             }                                                                                                          \
-            index++;                                                                                                   \
         }                                                                                                              \
         if (index == UINT32_MAX && array->len > UINT32_MAX) {                                                          \
             mc_Text##Type##TokenSet_t ts = _mc_array_index(array, mc_Text##Type##TokenSet_t, index);                   \
