@@ -58,7 +58,7 @@
             CLIENT_ERR_PREFIXED("'" #Name "' must be greater than zero");                                              \
             goto fail;                                                                                                 \
         }                                                                                                              \
-        Dest = val;                                                                                                    \
+        Dest = (uint32_t)val;                                                                                          \
     }                                                                                                                  \
     END_IF_FIELD
 
@@ -631,7 +631,7 @@ bool mc_FLE2TextSearchInsertSpec_parse(mc_FLE2TextSearchInsertSpec_t *out,
     BSON_ASSERT_PARAM(out);
     BSON_ASSERT_PARAM(in);
 
-    *out = (mc_FLE2TextSearchInsertSpec_t){0};
+    *out = (mc_FLE2TextSearchInsertSpec_t){{0}};
 
     bson_iter_t iter = *in;
     bool has_v = false, has_casef = false, has_diacf = false;
