@@ -650,7 +650,8 @@ bool mc_FLE2TextSearchInsertSpec_parse(mc_FLE2TextSearchInsertSpec_t *out,
         IF_FIELD(v) {
             out->v = bson_iter_utf8(&iter, &out->len);
             if (!out->v) {
-                CLIENT_ERR_PREFIXED("unsupported BSON type: %s for text search", mc_bson_type_to_string(bson_iter_type(&iter)));
+                CLIENT_ERR_PREFIXED("unsupported BSON type: %s for text search",
+                                    mc_bson_type_to_string(bson_iter_type(&iter)));
                 goto fail;
             }
             out->v_iter = iter;
