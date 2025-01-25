@@ -18,6 +18,7 @@
 #include "mc-text-search-str-encode-private.h"
 #include "mongocrypt-buffer-private.h"
 #include "mongocrypt.h"
+#include "unicode/fold.h"
 #include <bson/bson.h>
 #include <stdint.h>
 
@@ -218,7 +219,7 @@ mc_str_encode_sets_t *mc_text_search_str_encode(const mc_FLE2TextSearchInsertSpe
                    MAX_ENCODE_BYTE_LEN);
         return NULL;
     }
-    // TODO MONGOCRYPT-759 Implement and use CFold
+
     if (!bson_utf8_validate(spec->v, spec->len, false /* allow_null */)) {
         CLIENT_ERR("StrEncode: String passed in was not valid UTF-8");
         return NULL;
@@ -228,7 +229,48 @@ mc_str_encode_sets_t *mc_text_search_str_encode(const mc_FLE2TextSearchInsertSpe
         // Empty string: We set unfolded length to 1 so that we generate fake tokens.
         unfolded_codepoint_len = 1;
     }
-    return mc_text_search_str_encode_helper(spec, unfolded_codepoint_len, status);
+
+    mc_utf8_string_with_bad_char_t *base_string;
+    if (spec->casef || spec->diacf) {
+        char *folded_str;
+        size_t folded_str_bytes_len;
+        if (!unicode_fold(spec->v,
+                          spec->len,
+                          (spec->casef * kUnicodeFoldToLower) | (spec->diacf * kUnicodeFoldRemoveDiacritics),
+                          &folded_str,
+                          &folded_str_bytes_len,
+                          status)) {
+            return NULL;
+        }
+        base_string = mc_utf8_string_with_bad_char_from_buffer(folded_str, (uint32_t)folded_str_bytes_len);
+        bson_free(folded_str);
+    } else {
+        base_string = mc_utf8_string_with_bad_char_from_buffer(spec->v, spec->len);
+    }
+
+    mc_str_encode_sets_t *sets = bson_malloc0(sizeof(mc_str_encode_sets_t));
+    // Base string is the folded string plus the 0xFF character
+    sets->base_string = base_string;
+    if (spec->suffix.set) {
+        sets->suffix_set = generate_suffix_tree(sets->base_string, unfolded_codepoint_len, &spec->suffix.value);
+    }
+    if (spec->prefix.set) {
+        sets->prefix_set = generate_prefix_tree(sets->base_string, unfolded_codepoint_len, &spec->prefix.value);
+    }
+    if (spec->substr.set) {
+        if (unfolded_codepoint_len > spec->substr.value.mlen) {
+            CLIENT_ERR("StrEncode: String passed in was longer than the maximum length for substring indexing -- "
+                       "String len: %u, max len: %u",
+                       unfolded_codepoint_len,
+                       spec->substr.value.mlen);
+            mc_str_encode_sets_destroy(sets);
+            return NULL;
+        }
+        sets->substring_set = generate_substring_tree(sets->base_string, unfolded_codepoint_len, &spec->substr.value);
+    }
+    // Exact string is always equal to the base string up until the bad character
+    _mongocrypt_buffer_from_data(&sets->exact, sets->base_string->buf.data, (uint32_t)sets->base_string->buf.len - 1);
+    return sets;
 }
 
 void mc_str_encode_sets_destroy(mc_str_encode_sets_t *sets) {

@@ -153,6 +153,9 @@ set (MONGOCRYPT_SOURCES
    src/os_posix/os_mutex.c
    src/os_win/os_dll.c
    src/os_posix/os_dll.c
+   src/unicode/case-fold-map.c
+   src/unicode/diacritic-fold-map.c
+   src/unicode/fold.c
    )
 
 # If MONGOCRYPT_CRYPTO is not set, choose a system default.
@@ -513,6 +516,7 @@ set (TEST_MONGOCRYPT_SOURCES
    test/test-mongocrypt-util.c
    test/test-mongocrypt.c
    test/test-named-kms-providers.c
+   test/test-unicode-fold.c
    )
 
 # Define test-mongocrypt
