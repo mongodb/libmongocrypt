@@ -510,7 +510,7 @@ const uint32_t LONG_LEN = 27;
 
 static void _test_text_search_str_encode_suffix_prefix(_mongocrypt_tester_t *tester) {
     srand((unsigned int)time(0));
-    // Run diacritic folding for a variety of folded/unfolded sizes.
+    // Run diacritic folding and case+diacritic folding for a variety of folded/unfolded sizes.
     for (uint32_t i = 0; i < sizeof(UNFOLDED_CASES) / sizeof(UNFOLDED_CASES[0]); i++) {
         char *short_s = build_random_string_to_fold(SHORT_LEN, SHORT_LEN + UNFOLDED_CASES[i]);
         char *medium_s = build_random_string_to_fold(MEDIUM_LEN, MEDIUM_LEN + UNFOLDED_CASES[i]);
@@ -528,12 +528,12 @@ static void _test_text_search_str_encode_suffix_prefix(_mongocrypt_tester_t *tes
         bson_free(medium_s);
         bson_free(long_s);
     }
-    // Run case folding for different sizes. Only unfolded size matters.
+    // Run case folding and no folding for different sizes. Only unfolded size matters.
     char *short_s = build_random_string_to_fold(SHORT_LEN, SHORT_LEN);
     char *medium_s = build_random_string_to_fold(MEDIUM_LEN, MEDIUM_LEN);
     char *long_s = build_random_string_to_fold(LONG_LEN, LONG_LEN);
-    for (int diacf = 0; diacf <= 1; diacf++) {
-        suffix_prefix_run_folding_case(tester, short_s, medium_s, long_s, true /* casef */, diacf, 0);
+    for (int casef = 0; casef <= 1; casef++) {
+        suffix_prefix_run_folding_case(tester, short_s, medium_s, long_s, casef, false /* diacf*/, 0);
     }
     bson_free(short_s);
     bson_free(medium_s);
@@ -1049,7 +1049,7 @@ static void substring_run_folding_case(_mongocrypt_tester_t *tester,
 
 static void _test_text_search_str_encode_substring(_mongocrypt_tester_t *tester) {
     srand((unsigned int)time(0));
-    // Run diacritic folding for a variety of folded/unfolded sizes.
+    // Run diacritic folding and case+diacritic folding for a variety of folded/unfolded sizes.
     for (uint32_t i = 0; i < sizeof(UNFOLDED_CASES) / sizeof(UNFOLDED_CASES[0]); i++) {
         char *short_s = build_random_string_to_fold(SHORT_LEN, SHORT_LEN + UNFOLDED_CASES[i]);
         char *medium_s = build_random_string_to_fold(MEDIUM_LEN, MEDIUM_LEN + UNFOLDED_CASES[i]);
@@ -1070,11 +1070,11 @@ static void _test_text_search_str_encode_substring(_mongocrypt_tester_t *tester)
         bson_free(medium_s);
         bson_free(long_s);
     }
-    // Run case folding for different sizes. Only unfolded size matters.
+    // Run case folding and no folding for different sizes. Only unfolded size matters.
     char *short_s = build_random_string_to_fold(SHORT_LEN, SHORT_LEN);
     char *medium_s = build_random_string_to_fold(MEDIUM_LEN, MEDIUM_LEN);
     char *long_s = build_random_string_to_fold(LONG_LEN, LONG_LEN);
-    for (int diacf = 0; diacf <= 1; diacf++) {
+    for (int casef = 0; casef <= 1; casef++) {
         substring_run_folding_case(tester,
                                    short_s,
                                    SHORT_LEN,
@@ -1082,8 +1082,8 @@ static void _test_text_search_str_encode_substring(_mongocrypt_tester_t *tester)
                                    MEDIUM_LEN,
                                    long_s,
                                    LONG_LEN,
-                                   true /* casef */,
-                                   diacf,
+                                   casef,
+                                   false /* diacf */,
                                    0);
     }
     bson_free(short_s);
