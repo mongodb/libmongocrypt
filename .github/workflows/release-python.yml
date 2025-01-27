@@ -13,6 +13,8 @@ on:
         description: "Dry Run?"
         default: false
         type: boolean
+  schedule:
+    - cron:  '30 5 * * *'
 
 env:
   # Changes per repo
@@ -20,6 +22,10 @@ env:
   # Changes per branch
   SILK_ASSET_GROUP: pymongocrypt
   EVERGREEN_PROJECT: libmongocrypt
+  # Constant
+  DRY_RUN: ${{ inputs.dry_run || 'true' }}
+  FOLLOWING_VERSION: ${{ inputs.following_version || '' }}
+  VERSION: ${{ inputs.version || '10.10.10.10' }}
 
 defaults:
   run:
@@ -48,9 +54,9 @@ jobs:
       - uses: mongodb-labs/drivers-github-tools/python/pre-publish@v2
         id: pre-publish
         with:
-          version: ${{ inputs.version }}
+          version: ${{ env.VERSION }}
           working_directory: ./bindings/python
-          dry_run: ${{ inputs.dry_run }}
+          dry_run: ${{ env.DRY_RUN }}
           tag_template: "pymongocrypt-${VERSION}"
           tag_message_template:  "Release PyMongoCrypt ${VERSION}"
 
@@ -81,7 +87,7 @@ jobs:
           name: all-dist-${{ github.run_id }}
           path: dist/
       - name: Publish package distributions to PyPI
-        if: startsWith(inputs.dry_run, 'false')
+        if: startsWith(env.DRY_RUN, 'false')
         uses: pypa/gh-action-pypi-publish@release/v1
 
   post-publish:
@@ -106,12 +112,12 @@ jobs:
           artifactory_username: ${{ vars.ARTIFACTORY_USERNAME }}
       - uses: mongodb-labs/drivers-github-tools/python/post-publish@v2
         with:
-          version: ${{ inputs.version }}
-          following_version: ${{ inputs.following_version }}
+          version: ${{ env.VERSION }}
+          following_version: ${{ env.FOLLOWING_VERSION }}
           working_directory: ./bindings/python
           product_name: ${{ env.PRODUCT_NAME }}
           silk_asset_group: ${{ env.SILK_ASSET_GROUP }}
           evergreen_project: ${{ env.EVERGREEN_PROJECT }}
           tag_template: "pymongocrypt-${VERSION}"
           token: ${{ github.token }}
-          dry_run: ${{ inputs.dry_run }}
+          dry_run: ${{ env.DRY_RUN }}
