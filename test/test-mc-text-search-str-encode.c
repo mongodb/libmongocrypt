@@ -343,8 +343,8 @@ const char *normal_unicode_strings[] = {"ぁ", "あ", "ぃ", "い", "ぅ", "う"
                                         "き", "ぎ", "く", "け", "Ѐ",  "Ё",  "Ђ",  "Ѓ",  "Є",  "Ѕ",  "І",  "Ї",
                                         "Ј",  "Љ",  "Њ",  "Ћ",  "Ќ",  "Ѝ",  "Ў",  "Џ",  "𓀀",  "𓀁",  "𓀂",  "𓀃",
                                         "𓀄",  "𓀅",  "𓀆",  "𓀇",  "𓀈",  "𓀉",  "𓀊",  "𓀋",  "𓀌",  "𓀍",  "𓀎",  "𓀏"};
-const char *unicode_diacritics[] = {"̀", "́", "̂", "̃", "̄", "̅",  "̆",  "̇",  "̈",  "̉",  "̊",  "̋",  "̌",  "̍", "̎",
-                                    "̏", "᷄", "᷅", "᷆", "᷇", "᷈",  "᷉",  "᷊",  "᷋",  "᷌",  "᷍",  "᷎",  "᷏",  "︠", "︡",
+const char *unicode_diacritics[] = {"̀", "́", "̂", "̃", "̄", "̅", "̆", "̇", "̈", "̉", "̊", "̋", "̌", "̍", "̎",
+                                    "̏", "᷄", "᷅", "᷆", "᷇", "᷈", "᷉", "᷊", "᷋", "᷌", "᷍", "᷎", "᷏", "︠", "︡",
                                     "︢", "︣", "︤", "︥", "︦", "︧", "︨", "︩", "︪", "︫", "︬", "︭", "︮", "︯"};
 
 // Build a random string which has unfolded_len codepoints, but folds to folded_len codepoints after diacritic folding.
@@ -368,7 +368,6 @@ char *build_random_string_to_fold(uint32_t folded_len, uint32_t unfolded_len) {
             } else {
                 int i = rand() % (sizeof(unicode_diacritics) / sizeof(char *));
                 src_ptr = unicode_diacritics[i];
-                TEST_PRINTF("Unicode diacritic - ");
             }
         } else {
             // Add normal character.
@@ -381,15 +380,13 @@ char *build_random_string_to_fold(uint32_t folded_len, uint32_t unfolded_len) {
             }
             folded_size++;
         }
-        TEST_PRINTF("Copying: %s, with length: %ld\n", src_ptr, strlen(src_ptr));
         strcpy(ptr, src_ptr);
         ptr += strlen(src_ptr);
     }
 
-    int64_t len = ptr - str;
+    uint32_t len = (uint32_t)(ptr - str);
     // ptr points to the final null character, include that in the final string.
     str = realloc(str, len + 1);
-    TEST_PRINTF("Folded=%u, Unfolded=%u, String gen'd: %s\n", folded_len, unfolded_len, str);
 
     // Make sure we did everything right.
     ASSERT_CMPUINT32(unfolded_len, ==, get_utf8_codepoint_length(str, len));
@@ -397,22 +394,11 @@ char *build_random_string_to_fold(uint32_t folded_len, uint32_t unfolded_len) {
     char *out_str;
     size_t out_len;
     ASSERT_OK_STATUS(unicode_fold(str, len, kUnicodeFoldRemoveDiacritics, &out_str, &out_len, status), status);
-    ASSERT_CMPUINT32(folded_len, ==, get_utf8_codepoint_length(out_str, out_len));
+    ASSERT_CMPUINT32(folded_len, ==, get_utf8_codepoint_length(out_str, (uint32_t)out_len));
     bson_free(out_str);
     mongocrypt_status_destroy(status);
     return str;
 }
-
-// const char short_string[] = "123456789";
-// const char medium_string[] = "0123456789abcdef";
-// const char long_string[] = "123456789123456789123458980";
-// // The unicode test strings are a mix of 1, 2, and 3-byte unicode characters.
-// const char short_unicode_string[] = "1二𓀀4五六❼8𓀯";
-// const char medium_unicode_string[] = "⓪1二𓀀4五六❼8𓀯あいうえおf";
-// const char long_unicode_string[] = "1二𓀀4五六❼8𓀯1二𓀀4五六𓀯1二𓀀4❼8𓀯❼8五六";
-// const uint32_t SHORT_LEN = sizeof(short_string) - 1;
-// const uint32_t MEDIUM_LEN = sizeof(medium_string) - 1;
-// const uint32_t LONG_LEN = sizeof(long_string) - 1;
 
 static void suffix_prefix_run_folding_case(_mongocrypt_tester_t *tester,
                                            const char *short_s,
@@ -519,7 +505,7 @@ const uint32_t MEDIUM_LEN = 16;
 const uint32_t LONG_LEN = 27;
 
 static void _test_text_search_str_encode_suffix_prefix(_mongocrypt_tester_t *tester) {
-    srand(time(0));
+    srand((unsigned int)time(0));
     // Run diacritic folding for a variety of folded/unfolded sizes.
     for (uint32_t i = 0; i < sizeof(UNFOLDED_CASES) / sizeof(UNFOLDED_CASES[0]); i++) {
         char *short_s = build_random_string_to_fold(SHORT_LEN, SHORT_LEN + UNFOLDED_CASES[i]);
@@ -1058,7 +1044,7 @@ static void substring_run_folding_case(_mongocrypt_tester_t *tester,
 }
 
 static void _test_text_search_str_encode_substring(_mongocrypt_tester_t *tester) {
-    srand(time(0));
+    srand((unsigned int)time(0));
     // Run diacritic folding for a variety of folded/unfolded sizes.
     for (uint32_t i = 0; i < sizeof(UNFOLDED_CASES) / sizeof(UNFOLDED_CASES[0]); i++) {
         char *short_s = build_random_string_to_fold(SHORT_LEN, SHORT_LEN + UNFOLDED_CASES[i]);
