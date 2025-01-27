@@ -35,8 +35,6 @@ static uint32_t get_utf8_codepoint_length(const char *buf, uint32_t len) {
     return codepoint_len;
 }
 
-// TODO MONGOCRYPT-759 Modify these tests not to take unfolded_codepoint_len, but to instead take strings with
-// diacritics and fold them
 static void test_nofold_suffix_prefix_case(_mongocrypt_tester_t *tester,
                                            const char *str,
                                            uint32_t lb,
@@ -345,8 +343,8 @@ const char *normal_unicode_strings[] = {"ぁ", "あ", "ぃ", "い", "ぅ", "う"
                                         "き", "ぎ", "く", "け", "Ѐ",  "Ё",  "Ђ",  "Ѓ",  "Є",  "Ѕ",  "І",  "Ї",
                                         "Ј",  "Љ",  "Њ",  "Ћ",  "Ќ",  "Ѝ",  "Ў",  "Џ",  "𓀀",  "𓀁",  "𓀂",  "𓀃",
                                         "𓀄",  "𓀅",  "𓀆",  "𓀇",  "𓀈",  "𓀉",  "𓀊",  "𓀋",  "𓀌",  "𓀍",  "𓀎",  "𓀏"};
-const char *unicode_diacritics[] = {"̀", "́", "̂", "̃", "̄", "̅", "̆", "̇", "̈", "̉", "̊", "̋", "̌", "̍", "̎",
-                                    "̏", "᷄", "᷅", "᷆", "᷇", "᷈", "᷉", "᷊", "᷋", "᷌", "᷍", "᷎", "᷏", "︠", "︡",
+const char *unicode_diacritics[] = {"̀", "́", "̂", "̃", "̄", "̅",  "̆",  "̇",  "̈",  "̉",  "̊",  "̋",  "̌",  "̍", "̎",
+                                    "̏", "᷄", "᷅", "᷆", "᷇", "᷈",  "᷉",  "᷊",  "᷋",  "᷌",  "᷍",  "᷎",  "᷏",  "︠", "︡",
                                     "︢", "︣", "︤", "︥", "︦", "︧", "︨", "︩", "︪", "︫", "︬", "︭", "︮", "︯"};
 
 // Build a random string which has unfolded_len codepoints, but folds to folded_len codepoints after diacritic folding.

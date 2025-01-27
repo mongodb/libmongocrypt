@@ -171,45 +171,6 @@ static uint32_t mc_get_utf8_codepoint_length(const char *buf, uint32_t len) {
     return codepoint_len;
 }
 
-// TODO MONGOCRYPT-759 This helper only exists to test folded len != unfolded len; make the test actually use folding
-mc_str_encode_sets_t *mc_text_search_str_encode_helper(const mc_FLE2TextSearchInsertSpec_t *spec,
-                                                       uint32_t unfolded_codepoint_len,
-                                                       mongocrypt_status_t *status) {
-    BSON_ASSERT_PARAM(spec);
-
-    if (!bson_utf8_validate(spec->v, spec->len, false /* allow_null */)) {
-        CLIENT_ERR("StrEncode: String passed in was not valid UTF-8");
-        return NULL;
-    }
-
-    const char *folded_str = spec->v;
-    uint32_t folded_str_bytes_len = spec->len;
-
-    mc_str_encode_sets_t *sets = bson_malloc0(sizeof(mc_str_encode_sets_t));
-    // Base string is the folded string plus the 0xFF character
-    sets->base_string = mc_utf8_string_with_bad_char_from_buffer(folded_str, folded_str_bytes_len);
-    if (spec->suffix.set) {
-        sets->suffix_set = generate_suffix_tree(sets->base_string, unfolded_codepoint_len, &spec->suffix.value);
-    }
-    if (spec->prefix.set) {
-        sets->prefix_set = generate_prefix_tree(sets->base_string, unfolded_codepoint_len, &spec->prefix.value);
-    }
-    if (spec->substr.set) {
-        if (unfolded_codepoint_len > spec->substr.value.mlen) {
-            CLIENT_ERR("StrEncode: String passed in was longer than the maximum length for substring indexing -- "
-                       "String len: %u, max len: %u",
-                       unfolded_codepoint_len,
-                       spec->substr.value.mlen);
-            mc_str_encode_sets_destroy(sets);
-            return NULL;
-        }
-        sets->substring_set = generate_substring_tree(sets->base_string, unfolded_codepoint_len, &spec->substr.value);
-    }
-    // Exact string is always the first len characters of the base string
-    _mongocrypt_buffer_from_data(&sets->exact, sets->base_string->buf.data, folded_str_bytes_len);
-    return sets;
-}
-
 mc_str_encode_sets_t *mc_text_search_str_encode(const mc_FLE2TextSearchInsertSpec_t *spec,
                                                 mongocrypt_status_t *status) {
     BSON_ASSERT_PARAM(spec);
