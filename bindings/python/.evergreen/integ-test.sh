@@ -28,6 +28,7 @@ export PYMONGOCRYPT_LIB
 
 createvirtualenv $PYTHON .venv
 pip install -e .
+pip install uv
 pushd $PYMONGO_DIR
 pip install -e ".[test,encryption]"
 source ${DRIVERS_TOOLS}/.evergreen/csfle/secrets-export.sh
