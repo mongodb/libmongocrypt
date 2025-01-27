@@ -19,6 +19,7 @@
 #include "mlib/str.h"
 #include "mongocrypt-private.h"
 #include "mongocrypt-util-private.h" // mc_iter_document_as_bson
+#include <stdint.h>
 
 static bool _parse_query_type_string(const char *queryType, supported_query_type_flags *out) {
     BSON_ASSERT_PARAM(queryType);
@@ -190,6 +191,22 @@ bool mc_EncryptedFieldConfig_parse(mc_EncryptedFieldConfig_t *efc,
         if (!_parse_field(efc, &field, status, use_range_v2)) {
             return false;
         }
+    }
+
+    if (!bson_iter_init_find(&field_iter, field, "strEncodeVersion")) {
+        // Set to default of 1.
+        efc->str_encode_version = 1;
+    } else {
+        if (!BSON_ITER_HOLDS_INT32(&iter)) {
+            CLIENT_ERR("expected 'strEncodeVersion' to be type int32, got: %d", bson_iter_type(&iter));
+            return false;
+        }
+        int32_t version = bson_iter_int32(&iter);
+        if (version != 1) {
+            CLIENT_ERR("expected 'strEncodeVersion' to be equal to 1, got: %d", version);
+            return false;
+        }
+        efc->str_encode_version = (uint8_t)version;
     }
     return true;
 }
