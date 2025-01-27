@@ -76,15 +76,15 @@ static void test_nofold_suffix_prefix_case(_mongocrypt_tester_t *tester,
             sets = mc_text_search_str_encode(&spec, status);
         }
         ASSERT_OR_PRINT(sets, status);
-        ASSERT(sets->base_string->codepoint_len == folded_codepoint_len + 1);
-        if (casef == false && diacf == false) {
-            ASSERT(sets->base_string->buf.len == byte_len + 1);
-            ASSERT(0 == memcmp(sets->base_string->buf.data, str, byte_len));
+        ASSERT_CMPUINT32(sets->base_string->codepoint_len, ==, folded_codepoint_len + 1);
+        if (!casef && !diacf) {
+            ASSERT_CMPUINT32(sets->base_string->buf.len, ==, byte_len + 1);
+            ASSERT_CMPINT(0, ==, memcmp(sets->base_string->buf.data, str, byte_len));
         }
-        ASSERT(sets->base_string->buf.data[sets->base_string->buf.len - 1] == (uint8_t)0xFF);
+        ASSERT_CMPUINT8(sets->base_string->buf.data[sets->base_string->buf.len - 1], ==, (uint8_t)0xFF);
         ASSERT(sets->substring_set == NULL);
-        ASSERT(sets->exact.len == sets->base_string->buf.len - 1);
-        ASSERT(0 == memcmp(sets->exact.data, sets->base_string->buf.data, sets->exact.len));
+        ASSERT_CMPUINT32(sets->exact.len, ==, sets->base_string->buf.len - 1);
+        ASSERT_CMPINT(0, ==, memcmp(sets->exact.data, sets->base_string->buf.data, sets->exact.len));
 
         if (lb > max_padded_len) {
             ASSERT(sets->suffix_set == NULL);
@@ -128,33 +128,35 @@ static void test_nofold_suffix_prefix_case(_mongocrypt_tester_t *tester,
                 break;
             }
 
-            ASSERT(affix_len <= sets->base_string->buf.len - 1);
-            ASSERT(0 < affix_len);
+            ASSERT_CMPUINT32(affix_len, <=, sets->base_string->buf.len - 1);
+            ASSERT_CMPUINT32(0, <, affix_len);
 
             // We happen to always order from smallest to largest in the suffix/prefix algorithm, which makes our
             // life slightly easier when testing.
             if (suffix) {
                 uint32_t start_offset = sets->base_string->codepoint_offsets[folded_codepoint_len - (lb + idx)];
-                ASSERT((uint8_t *)affix == sets->base_string->buf.data + start_offset);
-                ASSERT(affix_len == sets->base_string->codepoint_offsets[folded_codepoint_len] - start_offset)
+                ASSERT_CMPPTR((uint8_t *)affix, ==, sets->base_string->buf.data + start_offset);
+                ASSERT_CMPUINT32(affix_len,
+                                 ==,
+                                 sets->base_string->codepoint_offsets[folded_codepoint_len] - start_offset)
             } else {
                 uint32_t end_offset = sets->base_string->codepoint_offsets[lb + idx];
-                ASSERT((uint8_t *)affix == sets->base_string->buf.data);
-                ASSERT(affix_len == end_offset);
+                ASSERT_CMPPTR((uint8_t *)affix, ==, sets->base_string->buf.data);
+                ASSERT_CMPUINT32(affix_len, ==, end_offset);
             }
             // The count should always be 1, except for padding.
-            ASSERT(1 == affix_count);
+            ASSERT_CMPUINT32(1, ==, affix_count);
             total_real_affix_count++;
             idx++;
         }
         ASSERT_CMPUINT32(total_real_affix_count, ==, n_real_affixes);
         if (affix_len == sets->base_string->buf.len) {
             // Padding
-            ASSERT((uint8_t *)affix == sets->base_string->buf.data);
-            ASSERT(affix_count == n_padding);
+            ASSERT_CMPPTR((uint8_t *)affix, ==, sets->base_string->buf.data);
+            ASSERT_CMPUINT32(affix_count, ==, n_padding);
         } else {
             // No padding found
-            ASSERT(n_padding == 0);
+            ASSERT_CMPUINT32(n_padding, ==, 0);
         }
     CONTINUE:
         mc_str_encode_sets_destroy(sets);
@@ -246,17 +248,17 @@ static void test_nofold_substring_case(_mongocrypt_tester_t *tester,
     }
     ASSERT_OR_PRINT(sets, status);
     mongocrypt_status_destroy(status);
-    ASSERT(sets->base_string->codepoint_len == folded_codepoint_len + 1);
+    ASSERT_CMPUINT32(sets->base_string->codepoint_len, ==, folded_codepoint_len + 1);
     if (!casef && !diacf) {
-        ASSERT(sets->base_string->buf.len == byte_len + 1);
-        ASSERT(0 == memcmp(sets->base_string->buf.data, str, byte_len));
+        ASSERT_CMPUINT32(sets->base_string->buf.len, ==, byte_len + 1);
+        ASSERT_CMPINT(0, ==, memcmp(sets->base_string->buf.data, str, byte_len));
     }
 
-    ASSERT(sets->base_string->buf.data[sets->base_string->buf.len - 1] == (uint8_t)0xFF);
+    ASSERT_CMPUINT8(sets->base_string->buf.data[sets->base_string->buf.len - 1], ==, (uint8_t)0xFF);
     ASSERT(sets->suffix_set == NULL);
     ASSERT(sets->prefix_set == NULL);
-    ASSERT(sets->exact.len == sets->base_string->buf.len - 1);
-    ASSERT(0 == memcmp(sets->exact.data, sets->base_string->buf.data, sets->base_string->buf.len - 1));
+    ASSERT_CMPUINT32(sets->exact.len, ==, sets->base_string->buf.len - 1);
+    ASSERT_CMPINT(0, ==, memcmp(sets->exact.data, sets->base_string->buf.data, sets->base_string->buf.len - 1));
 
     if (lb > max_padded_len) {
         ASSERT(sets->substring_set == NULL);
@@ -294,20 +296,22 @@ static void test_nofold_substring_case(_mongocrypt_tester_t *tester,
             break;
         }
 
-        ASSERT((uint8_t *)substring + substring_len <= sets->base_string->buf.data + sets->base_string->buf.len);
-        ASSERT(substring_len <= sets->base_string->buf.len - 1);
-        ASSERT(0 < substring_len);
-        ASSERT(1 == substring_count);
+        ASSERT_CMPPTR((uint8_t *)substring + substring_len,
+                      <=,
+                      sets->base_string->buf.data + sets->base_string->buf.len);
+        ASSERT_CMPUINT32(substring_len, <=, sets->base_string->buf.len - 1);
+        ASSERT_CMPUINT32(0, <, substring_len);
+        ASSERT_CMPUINT32(1, ==, substring_count);
         total_real_substring_count++;
     }
-    ASSERT(total_real_substring_count == n_real_substrings);
+    ASSERT_CMPUINT32(total_real_substring_count, ==, n_real_substrings);
     if (substring_len == sets->base_string->buf.len) {
         // Padding
-        ASSERT((uint8_t *)substring == sets->base_string->buf.data);
-        ASSERT(substring_count == n_padding);
+        ASSERT_CMPPTR((uint8_t *)substring, ==, sets->base_string->buf.data);
+        ASSERT_CMPUINT32(substring_count, ==, n_padding);
     } else {
         // No padding found
-        ASSERT(n_padding == 0);
+        ASSERT_CMPUINT32(n_padding, ==, 0);
     }
 cleanup:
     mc_str_encode_sets_destroy(sets);
@@ -343,13 +347,13 @@ const char *normal_unicode_strings[] = {"ぁ", "あ", "ぃ", "い", "ぅ", "う"
                                         "き", "ぎ", "く", "け", "Ѐ",  "Ё",  "Ђ",  "Ѓ",  "Є",  "Ѕ",  "І",  "Ї",
                                         "Ј",  "Љ",  "Њ",  "Ћ",  "Ќ",  "Ѝ",  "Ў",  "Џ",  "𓀀",  "𓀁",  "𓀂",  "𓀃",
                                         "𓀄",  "𓀅",  "𓀆",  "𓀇",  "𓀈",  "𓀉",  "𓀊",  "𓀋",  "𓀌",  "𓀍",  "𓀎",  "𓀏"};
-const char *unicode_diacritics[] = {"̀", "́", "̂", "̃", "̄", "̅",  "̆",  "̇",  "̈",  "̉",  "̊",  "̋",  "̌",  "̍", "̎",
-                                    "̏", "᷄", "᷅", "᷆", "᷇", "᷈",  "᷉",  "᷊",  "᷋",  "᷌",  "᷍",  "᷎",  "᷏",  "︠", "︡",
+const char *unicode_diacritics[] = {"̀", "́", "̂", "̃", "̄", "̅", "̆", "̇", "̈", "̉", "̊", "̋", "̌", "̍", "̎",
+                                    "̏", "᷄", "᷅", "᷆", "᷇", "᷈", "᷉", "᷊", "᷋", "᷌", "᷍", "᷎", "᷏", "︠", "︡",
                                     "︢", "︣", "︤", "︥", "︦", "︧", "︨", "︩", "︪", "︫", "︬", "︭", "︮", "︯"};
 
 // Build a random string which has unfolded_len codepoints, but folds to folded_len codepoints after diacritic folding.
 char *build_random_string_to_fold(uint32_t folded_len, uint32_t unfolded_len) {
-    ASSERT(unfolded_len >= folded_len);
+    ASSERT_CMPUINT32(unfolded_len, >=, folded_len);
     // Max size in bytes is # unicode characters * 4 bytes for each character + 1 null terminator.
     char *str = malloc(unfolded_len * 4 + 1);
     char *ptr = str;
@@ -1106,27 +1110,27 @@ static void _test_text_search_str_encode_multiple(_mongocrypt_tester_t *tester) 
     mc_affix_set_iter_t it;
     mc_affix_set_iter_init(&it, sets->suffix_set);
     ASSERT(mc_affix_set_iter_next(&it, &str, &len, &count));
-    ASSERT(len == 1);
-    ASSERT(*str == '9');
-    ASSERT(count == 1);
+    ASSERT_CMPUINT32(len, ==, 1);
+    ASSERT_CMPUINT8((uint8_t)*str, ==, (uint8_t)'9');
+    ASSERT_CMPUINT32(count, ==, 1);
 
     ASSERT(sets->prefix_set != NULL);
     mc_affix_set_iter_init(&it, sets->prefix_set);
     ASSERT(mc_affix_set_iter_next(&it, &str, &len, &count));
-    ASSERT(len == 6);
-    ASSERT(0 == memcmp("123456", str, 6));
-    ASSERT(count == 1);
+    ASSERT_CMPUINT32(len, ==, 6);
+    ASSERT_CMPINT(0, ==, memcmp("123456", str, 6));
+    ASSERT_CMPUINT32(count, ==, 1);
 
     ASSERT(sets->substring_set != NULL);
     mc_substring_set_iter_t ss_it;
     mc_substring_set_iter_init(&ss_it, sets->substring_set);
     ASSERT(mc_substring_set_iter_next(&ss_it, &str, &len, &count));
-    ASSERT(len == 9);
-    ASSERT(0 == memcmp("123456789", str, 9));
-    ASSERT(count == 1);
+    ASSERT_CMPUINT32(len, ==, 9);
+    ASSERT_CMPINT(0, ==, memcmp("123456789", str, 9));
+    ASSERT_CMPUINT32(count, ==, 1);
 
-    ASSERT(sets->exact.len == 9);
-    ASSERT(0 == memcmp(sets->exact.data, str, 9));
+    ASSERT_CMPUINT32(sets->exact.len, ==, 9);
+    ASSERT_CMPINT(0, ==, memcmp(sets->exact.data, str, 9));
 
     mc_str_encode_sets_destroy(sets);
 }
