@@ -77,7 +77,7 @@ bool unicode_fold(const char *str,
     const char *end_it = str + len;
     char *output_it = *out_str;
     while (input_it < end_it) {
-        const uint8_t first_byte = *input_it++;
+        const uint8_t first_byte = (uint8_t)*input_it++;
         bson_unichar_t codepoint = 0;
         if (first_byte <= 0x7f) {
             // ASCII special case. Can use faster operations.
@@ -103,9 +103,9 @@ bool unicode_fold(const char *str,
                 return false;
             }
 
-            codepoint = first_byte & (0xff >> leading_ones); // mask off the size indicator.
+            codepoint = (bson_unichar_t)(first_byte & (0xff >> leading_ones)); // mask off the size indicator.
             for (size_t sub_byte_index = 1; sub_byte_index < leading_ones; sub_byte_index++) {
-                const uint8_t sub_byte = *input_it++;
+                const uint8_t sub_byte = (uint8_t)*input_it++;
                 codepoint <<= 6;
                 codepoint |= sub_byte & 0x3f; // mask off continuation bits.
             }
