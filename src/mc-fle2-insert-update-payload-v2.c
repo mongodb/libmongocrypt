@@ -453,14 +453,6 @@ SERIALIZE_TEXT_TOKEN_SET_FOR_TYPE_IMPL(Prefix)
                 return false;                                                                                          \
             }                                                                                                          \
         }                                                                                                              \
-        if (index == UINT32_MAX && array->len > UINT32_MAX) {                                                          \
-            mc_Text##Type##TokenSet_t ts = _mc_array_index(array, mc_Text##Type##TokenSet_t, index);                   \
-            bson_uint32_to_string(index, &index_string, storage, sizeof(storage));                                     \
-            if (!_fle2_serialize_Text##Type##TokenSet(&arr_bson, index_string, &ts)) {                                 \
-                return false;                                                                                          \
-            }                                                                                                          \
-        }                                                                                                              \
-                                                                                                                       \
         if (!bson_append_array_end(parent, &arr_bson)) {                                                               \
             return false;                                                                                              \
         }                                                                                                              \
