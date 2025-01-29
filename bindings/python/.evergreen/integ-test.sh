@@ -39,7 +39,7 @@ export CA_PEM="$DRIVERS_TOOLS/.evergreen/x509gen/ca.pem"
 export DYLD_FALLBACK_LIBRARY_PATH=$CRYPT_SHARED_DIR:${DYLD_FALLBACK_LIBRARY_PATH:-}
 export LD_LIBRARY_PATH=$CRYPT_SHARED_DIR:${LD_LIBRARY_PATH-}
 export PATH=$CRYPT_SHARED_DIR:$PATH
-pytest -m encryption
+pytest --maxfail=10 -v -m encryption
 
 popd
 deactivate
