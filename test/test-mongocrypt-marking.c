@@ -1345,15 +1345,15 @@ static void validate_text_search_ciphertext(_mongocrypt_tester_t *tester,
         size_t tscount = 0;
         ASSERT(bson_iter_init_find(&b_iter, &b_bson, "s"));
         tscount = validate_text_search_token_set_array_common(&b_iter, crypt);
-        ASSERT(expected_tag_counts.substrings == tscount);
+        ASSERT_CMPSIZE_T(expected_tag_counts.substrings, ==, tscount);
 
         ASSERT(bson_iter_init_find(&b_iter, &b_bson, "u"));
         tscount = validate_text_search_token_set_array_common(&b_iter, crypt);
-        ASSERT(expected_tag_counts.suffixes == tscount);
+        ASSERT_CMPSIZE_T(expected_tag_counts.suffixes, ==, tscount);
 
         ASSERT(bson_iter_init_find(&b_iter, &b_bson, "p"));
         tscount = validate_text_search_token_set_array_common(&b_iter, crypt);
-        ASSERT(expected_tag_counts.prefixes == tscount);
+        ASSERT_CMPSIZE_T(expected_tag_counts.prefixes, ==, tscount);
     }
 
     mc_ServerDataEncryptionLevel1Token_destroy(sdel1Token);

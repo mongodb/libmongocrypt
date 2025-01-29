@@ -349,23 +349,23 @@ static void _mongocrypt_buffer_copy_as_bson_value(_mongocrypt_buffer_t *plaintex
     bson_destroy(&wrapper);
 }
 
-bool append_iter(bson_t *bson, const void *iter, int len) {
+static bool _append_iter(bson_t *bson, const void *iter, int len) {
     return bson_append_iter(bson, "", 0, (const bson_iter_t *)iter);
 }
 
-bool append_utf8(bson_t *bson, const void *str, int len) {
+static bool _append_utf8(bson_t *bson, const void *str, int len) {
     return bson_append_utf8(bson, "", 0, (const char *)str, len);
 }
 
 void _mongocrypt_buffer_copy_from_string_as_bson_value(_mongocrypt_buffer_t *plaintext, const char *str, int len) {
     BSON_ASSERT_PARAM(str);
     BSON_ASSERT(len >= 0);
-    _mongocrypt_buffer_copy_as_bson_value(plaintext, append_utf8, str, len);
+    _mongocrypt_buffer_copy_as_bson_value(plaintext, _append_utf8, str, len);
 }
 
 void _mongocrypt_buffer_from_iter(_mongocrypt_buffer_t *plaintext, bson_iter_t *iter) {
     BSON_ASSERT_PARAM(iter);
-    _mongocrypt_buffer_copy_as_bson_value(plaintext, append_iter, iter, 0);
+    _mongocrypt_buffer_copy_as_bson_value(plaintext, _append_iter, iter, 0);
 }
 
 bool _mongocrypt_buffer_from_uuid_iter(_mongocrypt_buffer_t *buf, bson_iter_t *iter) {
