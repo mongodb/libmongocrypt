@@ -8,7 +8,6 @@ on:
         required: true
       following_version:
         description: "The post (dev) version to set"
-        required: true
       dry_run:
         description: "Dry Run?"
         default: false
@@ -23,7 +22,7 @@ env:
   SILK_ASSET_GROUP: pymongocrypt
   EVERGREEN_PROJECT: libmongocrypt
   # Constant
-  DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'true' }}
+  DRY_RUN: ${{ ! contains(inputs.dry_run, 'false') }}
   FOLLOWING_VERSION: ${{ inputs.following_version || '' }}
   VERSION: ${{ inputs.version || '10.10.10.10' }}
 
