@@ -239,10 +239,10 @@ static void _test_mongocrypt_buffer_copy_from_string_as_bson_value(_mongocrypt_t
     const char *data = "foobar";
 
     // expect output to contain 4-byte length + data + null string terminator
-    uint32_t expectedLen = sizeof(int32_t) + strlen(data) + sizeof(uint8_t);
+    size_t expectedLen = sizeof(int32_t) + strlen(data) + sizeof(uint8_t);
     _mongocrypt_buffer_copy_from_hex(&expectedLenBuf, "07000000");
 
-    _mongocrypt_buffer_copy_from_string_as_bson_value(&buf, data, strlen(data));
+    _mongocrypt_buffer_copy_from_string_as_bson_value(&buf, data, (int)strlen(data));
     ASSERT(buf.len == expectedLen);
 
     // check 4-byte length
