@@ -32,11 +32,14 @@ pushd $PYMONGO_DIR
 pip install -e ".[test,encryption]"
 source ${DRIVERS_TOOLS}/.evergreen/csfle/secrets-export.sh
 set -x
-TEST_CRYPT_SHARED=1 DYLD_FALLBACK_LIBRARY_PATH=$CRYPT_SHARED_DIR:${DYLD_FALLBACK_LIBRARY_PATH:-} \
-    LD_LIBRARY_PATH=$CRYPT_SHARED_DIR:${LD_LIBRARY_PATH-} \
-    PATH=$CRYPT_SHARED_DIR:$PATH \
-    AUTH=auth SSL=ssl \
-    .evergreen/run-tests.sh -m encryption
+export DB_USER="bob"
+export DB_PASSWORD="pwd123"
+export CLIENT_PEM="$DRIVERS_TOOLS/.evergreen/x509gen/client.pem"
+export CA_PEM="$DRIVERS_TOOLS/.evergreen/x509gen/ca.pem"
+export DYLD_FALLBACK_LIBRARY_PATH=$CRYPT_SHARED_DIR:${DYLD_FALLBACK_LIBRARY_PATH:-}
+export LD_LIBRARY_PATH=$CRYPT_SHARED_DIR:${LD_LIBRARY_PATH-}
+export PATH=$CRYPT_SHARED_DIR:$PATH
+pytest -m encryption
 
 popd
 deactivate
