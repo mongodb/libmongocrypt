@@ -38,6 +38,8 @@ EOT
 
 # Get the secrets
 bash $DRIVERS_TOOLS/.evergreen/csfle/setup-secrets.sh
+# Start the csfle servers
+bash $DRIVERS_TOOLS/.evergreen/csfle/start-servers.sh
 
 # Clone mongo-python-driver
 git clone https://github.com/mongodb/mongo-python-driver.git ${PYMONGO_DIR}
