@@ -1187,7 +1187,7 @@ static bool _fle2_generate_TextSearchTokenSets(_mongocrypt_key_broker_t *kb,
     uint32_t appendCount;
 
     // Generate array of substring token sets
-    if (spec->substr.set) {
+    if (encodeSets->substring_set) {
         mc_substring_set_iter_t set_itr;
         mc_substring_set_iter_init(&set_itr, encodeSets->substring_set);
 
@@ -1195,20 +1195,19 @@ static bool _fle2_generate_TextSearchTokenSets(_mongocrypt_key_broker_t *kb,
             BSON_ASSERT(appendCount > 0);
             BSON_ASSERT(bytelen < INT_MAX);
 
-            mc_TextSubstringTokenSet_t tset = {{0}};
-            mc_TextSubstringTokenSet_init(&tset);
+            mc_TextSubstringTokenSet_t tset = {0};
 
             _mongocrypt_buffer_t asBsonValue;
             _mongocrypt_buffer_init(&asBsonValue);
             _mongocrypt_buffer_copy_from_string_as_bson_value(&asBsonValue, substring, (int)bytelen);
 
             if (!_fle2_generate_TextSubstringTokenSet(kb,
-                                                        &tset,
-                                                        &asBsonValue,
-                                                        contentionFactor,
-                                                        common.collectionsLevel1Token,
-                                                        common.serverTokenDerivationLevel1Token,
-                                                        status)) {
+                                                      &tset,
+                                                      &asBsonValue,
+                                                      contentionFactor,
+                                                      common.collectionsLevel1Token,
+                                                      common.serverTokenDerivationLevel1Token,
+                                                      status)) {
                 _mongocrypt_buffer_cleanup(&asBsonValue);
                 mc_TextSubstringTokenSet_cleanup(&tset);
                 goto fail;
@@ -1217,8 +1216,7 @@ static bool _fle2_generate_TextSearchTokenSets(_mongocrypt_key_broker_t *kb,
 
             for (; appendCount > 1; appendCount--) {
                 mc_TextSubstringTokenSet_t tset_copy;
-                mc_TextSubstringTokenSet_init(&tset_copy);
-                mc_TextSubstringTokenSet_copy(&tset, &tset_copy);
+                mc_TextSubstringTokenSet_shallow_copy(&tset, &tset_copy);
                 _mc_array_append_val(&tsts->substringArray, tset_copy); // array now owns tset_copy
             }
             _mc_array_append_val(&tsts->substringArray, tset); // array now owns tset
@@ -1226,7 +1224,7 @@ static bool _fle2_generate_TextSearchTokenSets(_mongocrypt_key_broker_t *kb,
     }
 
     // Generate array of suffix token sets
-    if (spec->suffix.set) {
+    if (encodeSets->suffix_set) {
         mc_affix_set_iter_t set_itr;
         mc_affix_set_iter_init(&set_itr, encodeSets->suffix_set);
 
@@ -1234,7 +1232,7 @@ static bool _fle2_generate_TextSearchTokenSets(_mongocrypt_key_broker_t *kb,
             BSON_ASSERT(appendCount > 0);
             BSON_ASSERT(bytelen < INT_MAX);
 
-            mc_TextSuffixTokenSet_t tset = {{0}};
+            mc_TextSuffixTokenSet_t tset = {0};
             mc_TextSuffixTokenSet_init(&tset);
 
             _mongocrypt_buffer_t asBsonValue;
@@ -1242,12 +1240,12 @@ static bool _fle2_generate_TextSearchTokenSets(_mongocrypt_key_broker_t *kb,
             _mongocrypt_buffer_copy_from_string_as_bson_value(&asBsonValue, substring, (int)bytelen);
 
             if (!_fle2_generate_TextSuffixTokenSet(kb,
-                                                    &tset,
-                                                    &asBsonValue,
-                                                    contentionFactor,
-                                                    common.collectionsLevel1Token,
-                                                    common.serverTokenDerivationLevel1Token,
-                                                    status)) {
+                                                   &tset,
+                                                   &asBsonValue,
+                                                   contentionFactor,
+                                                   common.collectionsLevel1Token,
+                                                   common.serverTokenDerivationLevel1Token,
+                                                   status)) {
                 _mongocrypt_buffer_cleanup(&asBsonValue);
                 mc_TextSuffixTokenSet_cleanup(&tset);
                 goto fail;
@@ -1256,8 +1254,7 @@ static bool _fle2_generate_TextSearchTokenSets(_mongocrypt_key_broker_t *kb,
 
             for (; appendCount > 1; appendCount--) {
                 mc_TextSuffixTokenSet_t tset_copy;
-                mc_TextSuffixTokenSet_init(&tset_copy);
-                mc_TextSuffixTokenSet_copy(&tset, &tset_copy);
+                mc_TextSuffixTokenSet_shallow_copy(&tset, &tset_copy);
                 _mc_array_append_val(&tsts->suffixArray, tset_copy); // array now owns tset_copy
             }
             _mc_array_append_val(&tsts->suffixArray, tset); // array now owns tset
@@ -1265,7 +1262,7 @@ static bool _fle2_generate_TextSearchTokenSets(_mongocrypt_key_broker_t *kb,
     }
 
     // Generate array of prefix token sets
-    if (spec->prefix.set) {
+    if (encodeSets->prefix_set) {
         mc_affix_set_iter_t set_itr;
         mc_affix_set_iter_init(&set_itr, encodeSets->prefix_set);
 
@@ -1273,7 +1270,7 @@ static bool _fle2_generate_TextSearchTokenSets(_mongocrypt_key_broker_t *kb,
             BSON_ASSERT(appendCount > 0);
             BSON_ASSERT(bytelen < INT_MAX);
 
-            mc_TextPrefixTokenSet_t tset = {{0}};
+            mc_TextPrefixTokenSet_t tset = {0};
             mc_TextPrefixTokenSet_init(&tset);
 
             _mongocrypt_buffer_t asBsonValue;
@@ -1281,12 +1278,12 @@ static bool _fle2_generate_TextSearchTokenSets(_mongocrypt_key_broker_t *kb,
             _mongocrypt_buffer_copy_from_string_as_bson_value(&asBsonValue, substring, (int)bytelen);
 
             if (!_fle2_generate_TextPrefixTokenSet(kb,
-                                                    &tset,
-                                                    &asBsonValue,
-                                                    contentionFactor,
-                                                    common.collectionsLevel1Token,
-                                                    common.serverTokenDerivationLevel1Token,
-                                                    status)) {
+                                                   &tset,
+                                                   &asBsonValue,
+                                                   contentionFactor,
+                                                   common.collectionsLevel1Token,
+                                                   common.serverTokenDerivationLevel1Token,
+                                                   status)) {
                 _mongocrypt_buffer_cleanup(&asBsonValue);
                 mc_TextPrefixTokenSet_cleanup(&tset);
                 goto fail;
@@ -1295,8 +1292,7 @@ static bool _fle2_generate_TextSearchTokenSets(_mongocrypt_key_broker_t *kb,
 
             for (; appendCount > 1; appendCount--) {
                 mc_TextPrefixTokenSet_t tset_copy;
-                mc_TextPrefixTokenSet_init(&tset_copy);
-                mc_TextPrefixTokenSet_copy(&tset, &tset_copy);
+                mc_TextPrefixTokenSet_shallow_copy(&tset, &tset_copy);
                 _mc_array_append_val(&tsts->prefixArray, tset_copy); // array now owns tset_copy
             }
             _mc_array_append_val(&tsts->prefixArray, tset); // moves ownership of tset
