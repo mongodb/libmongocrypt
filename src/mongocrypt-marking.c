@@ -1166,9 +1166,10 @@ static bool _fle2_generate_TextSearchTokenSets(_mongocrypt_key_broker_t *kb,
     {
         _mongocrypt_buffer_t asBsonValue;
         _mongocrypt_buffer_init(&asBsonValue);
+        BSON_ASSERT(encodeSets->exact.len < INT_MAX);
         _mongocrypt_buffer_copy_from_string_as_bson_value(&asBsonValue,
                                                           (const char *)encodeSets->exact.data,
-                                                          encodeSets->exact.len);
+                                                          (int)encodeSets->exact.len);
         if (!_fle2_generate_TextExactTokenSet(kb,
                                               &tsts->exact,
                                               &asBsonValue,
@@ -1197,7 +1198,8 @@ static bool _fle2_generate_TextSearchTokenSets(_mongocrypt_key_broker_t *kb,
 
                 _mongocrypt_buffer_t asBsonValue;
                 _mongocrypt_buffer_init(&asBsonValue);
-                _mongocrypt_buffer_copy_from_string_as_bson_value(&asBsonValue, substring, bytelen);
+                BSON_ASSERT(bytelen < INT_MAX);
+                _mongocrypt_buffer_copy_from_string_as_bson_value(&asBsonValue, substring, (int)bytelen);
 
                 if (!_fle2_generate_TextSubstringTokenSet(kb,
                                                           &tset,
@@ -1228,7 +1230,8 @@ static bool _fle2_generate_TextSearchTokenSets(_mongocrypt_key_broker_t *kb,
 
                 _mongocrypt_buffer_t asBsonValue;
                 _mongocrypt_buffer_init(&asBsonValue);
-                _mongocrypt_buffer_copy_from_string_as_bson_value(&asBsonValue, substring, bytelen);
+                BSON_ASSERT(bytelen < INT_MAX);
+                _mongocrypt_buffer_copy_from_string_as_bson_value(&asBsonValue, substring, (int)bytelen);
 
                 if (!_fle2_generate_TextSuffixTokenSet(kb,
                                                        &tset,
@@ -1259,7 +1262,8 @@ static bool _fle2_generate_TextSearchTokenSets(_mongocrypt_key_broker_t *kb,
 
                 _mongocrypt_buffer_t asBsonValue;
                 _mongocrypt_buffer_init(&asBsonValue);
-                _mongocrypt_buffer_copy_from_string_as_bson_value(&asBsonValue, substring, bytelen);
+                BSON_ASSERT(bytelen < INT_MAX);
+                _mongocrypt_buffer_copy_from_string_as_bson_value(&asBsonValue, substring, (int)bytelen);
 
                 if (!_fle2_generate_TextPrefixTokenSet(kb,
                                                        &tset,
