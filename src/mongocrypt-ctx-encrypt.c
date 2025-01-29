@@ -27,7 +27,7 @@
 #include "mongocrypt.h"
 
 /* _fle2_append_encryptedFieldConfig copies encryptedFieldConfig and applies
- * default state collection names for escCollection, and ecocCollection if required. */
+ * default state collection names for escCollection and ecocCollection, and default strEncodeVersion, if required. */
 static bool _fle2_append_encryptedFieldConfig(const mongocrypt_ctx_t *ctx,
                                               bson_t *dst,
                                               bson_t *encryptedFieldConfig,
@@ -36,6 +36,7 @@ static bool _fle2_append_encryptedFieldConfig(const mongocrypt_ctx_t *ctx,
     bson_iter_t iter;
     bool has_escCollection = false;
     bool has_ecocCollection = false;
+    bool has_strEncodeVersion = false;
 
     BSON_ASSERT_PARAM(dst);
     BSON_ASSERT_PARAM(encryptedFieldConfig);
@@ -52,6 +53,9 @@ static bool _fle2_append_encryptedFieldConfig(const mongocrypt_ctx_t *ctx,
         }
         if (strcmp(bson_iter_key(&iter), "ecocCollection") == 0) {
             has_ecocCollection = true;
+        }
+        if (strcmp(bson_iter_key(&iter), "strEncodeVersion") == 0) {
+            has_strEncodeVersion = true;
         }
         if (!BSON_APPEND_VALUE(dst, bson_iter_key(&iter), bson_iter_value(&iter))) {
             CLIENT_ERR("unable to append field: %s", bson_iter_key(&iter));
@@ -76,6 +80,12 @@ static bool _fle2_append_encryptedFieldConfig(const mongocrypt_ctx_t *ctx,
             return false;
         }
         bson_free(default_ecocCollection);
+    }
+    if (!has_strEncodeVersion) {
+        if (!BSON_APPEND_INT32(dst, "strEncodeVersion", 1)) {
+            CLIENT_ERR("unable to append strEncodeVersion");
+            return false;
+        }
     }
     return true;
 }

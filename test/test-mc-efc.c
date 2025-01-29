@@ -39,6 +39,19 @@ static void _test_efc(_mongocrypt_tester_t *tester) {
     {
         _load_test_file(tester, "./test/data/efc/efc-oneField.json", &efc_bson);
         ASSERT_OK_STATUS(mc_EncryptedFieldConfig_parse(&efc, &efc_bson, status, use_range_v2), status);
+        ASSERT_CMPUINT8(efc.str_encode_version, ==, 1);
+        ptr = efc.fields;
+        ASSERT(ptr);
+        ASSERT_STREQUAL(ptr->path, "firstName");
+        ASSERT_CMPBUF(expect_keyId1, ptr->keyId);
+        ASSERT(ptr->next == NULL);
+        mc_EncryptedFieldConfig_cleanup(&efc);
+    }
+
+    {
+        _load_test_file(tester, "./test/data/efc/efc-oneField-goodVersionSet.json", &efc_bson);
+        ASSERT_OK_STATUS(mc_EncryptedFieldConfig_parse(&efc, &efc_bson, status, use_range_v2), status);
+        ASSERT_CMPUINT8(efc.str_encode_version, ==, 1);
         ptr = efc.fields;
         ASSERT(ptr);
         ASSERT_STREQUAL(ptr->path, "firstName");
@@ -50,6 +63,7 @@ static void _test_efc(_mongocrypt_tester_t *tester) {
     {
         _load_test_file(tester, "./test/data/efc/efc-extraField.json", &efc_bson);
         ASSERT_OK_STATUS(mc_EncryptedFieldConfig_parse(&efc, &efc_bson, status, use_range_v2), status);
+        ASSERT_CMPUINT8(efc.str_encode_version, ==, 1);
         ptr = efc.fields;
         ASSERT(ptr);
         ASSERT_STREQUAL(ptr->path, "firstName");
@@ -61,6 +75,7 @@ static void _test_efc(_mongocrypt_tester_t *tester) {
     {
         _load_test_file(tester, "./test/data/efc/efc-twoFields.json", &efc_bson);
         ASSERT_OK_STATUS(mc_EncryptedFieldConfig_parse(&efc, &efc_bson, status, use_range_v2), status);
+        ASSERT_CMPUINT8(efc.str_encode_version, ==, 1);
         ptr = efc.fields;
         ASSERT(ptr);
         ASSERT_STREQUAL(ptr->path, "lastName");
@@ -83,8 +98,18 @@ static void _test_efc(_mongocrypt_tester_t *tester) {
     }
 
     {
+        _load_test_file(tester, "./test/data/efc/efc-oneField-badVersionSet.json", &efc_bson);
+        ASSERT_FAILS_STATUS(mc_EncryptedFieldConfig_parse(&efc, &efc_bson, status, use_range_v2),
+                            status,
+                            "expected 'strEncodeVersion' to be equal to 1");
+        mc_EncryptedFieldConfig_cleanup(&efc);
+        _mongocrypt_status_reset(status);
+    }
+
+    {
         _load_test_file(tester, "./test/data/efc/efc-textSearchFields.json", &efc_bson);
         ASSERT_OK_STATUS(mc_EncryptedFieldConfig_parse(&efc, &efc_bson, status, use_range_v2), status);
+        ASSERT_CMPUINT8(efc.str_encode_version, ==, 1);
         ptr = efc.fields;
         ASSERT(ptr);
         ASSERT_STREQUAL(ptr->path, "lastName");

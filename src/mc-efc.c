@@ -193,7 +193,7 @@ bool mc_EncryptedFieldConfig_parse(mc_EncryptedFieldConfig_t *efc,
         }
     }
 
-    if (!bson_iter_init_find(&field_iter, field, "strEncodeVersion")) {
+    if (!bson_iter_init_find(&iter, efc_bson, "strEncodeVersion")) {
         // Set to default of 1.
         efc->str_encode_version = 1;
     } else {
