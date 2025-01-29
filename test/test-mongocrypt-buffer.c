@@ -252,6 +252,7 @@ static void _test_mongocrypt_buffer_copy_from_string_as_bson_value(_mongocrypt_t
                     strlen(data) + 1,
                     buf.data + expectedLenBuf.len,
                     buf.len - expectedLenBuf.len);
+    _mongocrypt_buffer_cleanup(&buf);
     _mongocrypt_buffer_cleanup(&expectedLenBuf);
 }
 
