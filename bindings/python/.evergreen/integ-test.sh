@@ -10,7 +10,7 @@ BASE_PYTHON=$(find_python3)
 
 # MONGOCRYPT_DIR is set by libmongocrypt/.evergreen/config.yml
 MONGOCRYPT_DIR="$MONGOCRYPT_DIR"
-CRYPT_SHARED_DIR="$DRIVERS_TOOLS/mongodb/bin"
+CRYPT_SHARED_DIR="$DRIVERS_TOOLS"
 
 MACHINE=$(uname -m)
 if [ $MACHINE == "aarch64" ]; then

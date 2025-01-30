@@ -22,6 +22,8 @@ env:
   SILK_ASSET_GROUP: pymongocrypt
   EVERGREEN_PROJECT: libmongocrypt
   # Constant
+  # inputs will be empty on a scheduled run.  so, we only set dry_run
+  # to 'false' when the input is set to 'false'.
   DRY_RUN: ${{ ! contains(inputs.dry_run, 'false') }}
   FOLLOWING_VERSION: ${{ inputs.following_version || '' }}
   VERSION: ${{ inputs.version || '10.10.10.10' }}
