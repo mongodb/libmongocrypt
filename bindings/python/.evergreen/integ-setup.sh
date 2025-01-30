@@ -28,7 +28,7 @@ MONGOCRYPT_DIR: "$MONGOCRYPT_DIR"
 EOT
 
 # Set up drivers-tools with a .env file.
-git clone --branch https://github.com/mongodb-labs/drivers-evergreen-tools.git ${DRIVERS_TOOLS}
+git clone https://github.com/mongodb-labs/drivers-evergreen-tools.git ${DRIVERS_TOOLS}
 cat <<EOT > ${DRIVERS_TOOLS}/.env
 DRIVERS_TOOLS="$DRIVERS_TOOLS"
 MONGO_ORCHESTRATION_HOME="$MONGO_ORCHESTRATION_HOME"
