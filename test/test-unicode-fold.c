@@ -65,6 +65,8 @@ static void test_unicode_fold(_mongocrypt_tester_t *tester) {
             TEST_UNICODE_FOLD_ALL_CASES(buf1, buf2, buf1, buf2);
         } else if (ch == '^' || ch == '`') {
             TEST_UNICODE_FOLD_ALL_CASES(buf1, buf1, "", "");
+        } else {
+            TEST_UNICODE_FOLD_ALL_CASES(buf1, buf1, buf1, buf1);
         }
     }
     bson_free(buf1);
