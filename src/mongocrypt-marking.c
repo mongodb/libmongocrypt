@@ -1195,7 +1195,7 @@ static bool _fle2_generate_TextSearchTokenSets(_mongocrypt_key_broker_t *kb,
             BSON_ASSERT(appendCount > 0);
             BSON_ASSERT(bytelen < INT_MAX);
 
-            mc_TextSubstringTokenSet_t tset = {0};
+            mc_TextSubstringTokenSet_t tset = {{0}};
 
             _mongocrypt_buffer_t asBsonValue;
             _mongocrypt_buffer_init(&asBsonValue);
@@ -1232,7 +1232,7 @@ static bool _fle2_generate_TextSearchTokenSets(_mongocrypt_key_broker_t *kb,
             BSON_ASSERT(appendCount > 0);
             BSON_ASSERT(bytelen < INT_MAX);
 
-            mc_TextSuffixTokenSet_t tset = {0};
+            mc_TextSuffixTokenSet_t tset = {{0}};
             mc_TextSuffixTokenSet_init(&tset);
 
             _mongocrypt_buffer_t asBsonValue;
@@ -1270,7 +1270,7 @@ static bool _fle2_generate_TextSearchTokenSets(_mongocrypt_key_broker_t *kb,
             BSON_ASSERT(appendCount > 0);
             BSON_ASSERT(bytelen < INT_MAX);
 
-            mc_TextPrefixTokenSet_t tset = {0};
+            mc_TextPrefixTokenSet_t tset = {{0}};
             mc_TextPrefixTokenSet_init(&tset);
 
             _mongocrypt_buffer_t asBsonValue;
