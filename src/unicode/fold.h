@@ -45,6 +45,9 @@ typedef enum {
     kUnicodeFoldRemoveDiacritics = 1 << 1
 } unicode_fold_options_t;
 
+// Fold unicode string str of length len according to options. len should not include the null terminator, if it exists.
+// Returns true if successful, and returns the null-terminated folded string and its byte length, excluding the null
+// terminator, as out_str and out_len. On failure, returns false and sets status accordingly.
 bool unicode_fold(const char *str,
                   size_t len,
                   unicode_fold_options_t options,

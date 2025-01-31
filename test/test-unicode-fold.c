@@ -33,7 +33,8 @@
                     _buf);                                                                                             \
         ASSERT_CMPSIZE_T(_len, ==, expected_len);                                                                      \
         ASSERT_CMPBYTES((uint8_t *)_buf, _len, (uint8_t *)expected, expected_len);                                     \
-        free(_buf);                                                                                                    \
+        ASSERT_CMPUINT8((uint8_t)(_buf[_len]), ==, 0);                                                                 \
+        bson_free(_buf);                                                                                               \
     } while (0)
 
 #define TEST_UNICODE_FOLD_ALL_CASES(input, case_folded, dia_folded, both_folded)                                       \
@@ -66,8 +67,8 @@ static void test_unicode_fold(_mongocrypt_tester_t *tester) {
             TEST_UNICODE_FOLD_ALL_CASES(buf1, buf1, "", "");
         }
     }
-    free(buf1);
-    free(buf2);
+    bson_free(buf1);
+    bson_free(buf2);
     TEST_UNICODE_FOLD_ALL_CASES("abc", "abc", "abc", "abc");
     // Tests of composed unicode
     TEST_UNICODE_FOLD_ALL_CASES("¿CUÁNTOS AÑOS tienes Tú?",
@@ -77,13 +78,13 @@ static void test_unicode_fold(_mongocrypt_tester_t *tester) {
     TEST_UNICODE_FOLD_ALL_CASES("СКОЛЬКО ТЕБЕ ЛЕТ?", "сколько тебе лет?", "СКОЛЬКО ТЕБЕ ЛЕТ?", "сколько тебе лет?");
     TEST_UNICODE_FOLD_ALL_CASES("Πόσο χρονών είσαι?", "πόσο χρονών είσαι?", "Ποσο χρονων εισαι?", "ποσο χρονων εισαι?");
     // Tests of decomposed unicode
-    const char nfd1[] = {'C', 'a', 'f', 'e', 0xcc, 0x81, 0};
-    const char nfd1_lower[] = {'c', 'a', 'f', 'e', 0xcc, 0x81, 0};
-    TEST_UNICODE_FOLD_ALL_CASES(nfd1, nfd1_lower, "Cafe", "cafe");
-    const char nfd2[] = {'C', 'a', 'f', 'E', 0xcc, 0x81, 0};
-    const char nfd2_lower[] = {'c', 'a', 'f', 'e', 0xcc, 0x81, 0};
-    TEST_UNICODE_FOLD_ALL_CASES(nfd2, nfd2_lower, "CafE", "cafe");
-
+    TEST_UNICODE_FOLD_ALL_CASES("Cafe\xcc\x81", "cafe\xcc\x81", "Cafe", "cafe");
+    TEST_UNICODE_FOLD_ALL_CASES("CafE\xcc\x81", "cafe\xcc\x81", "CafE", "cafe");
+    // Test string with null bytes
+    TEST_UNICODE_FOLD("fo\0bar", 6, "fo\0bar", 6, kUnicodeFoldToLower | kUnicodeFoldRemoveDiacritics);
+    // Test strings with folded representations longer in bytes than the input
+    TEST_UNICODE_FOLD("\xe2\xb1\xa6", 3, "\xc8\xbe", 2, kUnicodeFoldToLower);
+    TEST_UNICODE_FOLD("\xf0\xa4\x8b\xae", 4, "\xef\xa9\xac", 3, kUnicodeFoldRemoveDiacritics);
     mongocrypt_status_destroy(status);
 }
 

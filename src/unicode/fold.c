@@ -72,7 +72,10 @@ bool unicode_fold(const char *str,
         CLIENT_ERR("unicode_fold: Either case or diacritic folding must be enabled");
         return false;
     }
-    *out_str = bson_malloc(len);
+    // Allocate space for possible growth. Folding characters may result in longer UTF-8 sequences.
+    // 2x is an upper bound. With current fold maps, the largest growth is a 2-byte sequence mapping to a 3-byte
+    // sequence.
+    *out_str = bson_malloc(2 * len + 1);
     const char *input_it = str;
     const char *end_it = str + len;
     char *output_it = *out_str;
@@ -99,7 +102,7 @@ bool unicode_fold(const char *str,
             // utf-8. We make no guarantees about what results will be returned in this case.
             if (!(leading_ones > 1 && leading_ones <= 4 && input_it + (leading_ones - 1) <= end_it)) {
                 CLIENT_ERR("unicode_fold: Text contains invalid UTF-8");
-                free(*out_str);
+                bson_free(*out_str);
                 return false;
             }
 
@@ -124,12 +127,13 @@ bool unicode_fold(const char *str,
         }
 
         if (!append_utf8_codepoint(codepoint, &output_it, status)) {
-            free(*out_str);
+            bson_free(*out_str);
             return false;
         }
     }
 
+    // Null terminate
+    *output_it = '\0';
     *out_len = (size_t)(output_it - *out_str);
-    *out_str = realloc(*out_str, *out_len);
     return true;
 }
