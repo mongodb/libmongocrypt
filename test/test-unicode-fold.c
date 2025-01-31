@@ -59,13 +59,15 @@ static void test_unicode_fold(_mongocrypt_tester_t *tester) {
     char *buf2 = bson_malloc0(2);
     for (unsigned char ch = 0; ch <= 0x7f; ch++) {
         buf1[0] = ch;
-        // Diacritics
         if (ch >= 'A' && ch <= 'Z') {
+            // Caps
             buf2[0] = ch + 0x20;
             TEST_UNICODE_FOLD_ALL_CASES(buf1, buf2, buf1, buf2);
         } else if (ch == '^' || ch == '`') {
+            // Diacritics
             TEST_UNICODE_FOLD_ALL_CASES(buf1, buf1, "", "");
         } else {
+            // Characters with no transformations
             TEST_UNICODE_FOLD_ALL_CASES(buf1, buf1, buf1, buf1);
         }
     }
