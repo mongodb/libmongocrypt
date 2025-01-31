@@ -1536,6 +1536,8 @@ static void test_mc_marking_to_ciphertext_fle2_text_search(_mongocrypt_tester_t 
         _mongocrypt_ciphertext_init(&ciphertext);
         mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
         text_search_expected_token_counts counts = {0};
+
+        // beta is 1 for empty strings
         counts.prefixes = calculate_expected_nfix_tag_count(1, 100, 10);
 
         get_ciphertext_from_marking_json(tester, crypt, markingJSON, &ciphertext);

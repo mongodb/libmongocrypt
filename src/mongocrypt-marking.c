@@ -1177,6 +1177,7 @@ static bool _fle2_generate_TextSearchTokenSets(_mongocrypt_key_broker_t *kb,
                                               common.collectionsLevel1Token,
                                               common.serverTokenDerivationLevel1Token,
                                               status)) {
+            _mongocrypt_buffer_cleanup(&asBsonValue);
             goto fail;
         }
         _mongocrypt_buffer_cleanup(&asBsonValue);
@@ -1214,10 +1215,12 @@ static bool _fle2_generate_TextSearchTokenSets(_mongocrypt_key_broker_t *kb,
             }
             _mongocrypt_buffer_cleanup(&asBsonValue);
 
-            for (; appendCount > 1; appendCount--) {
+            if (appendCount > 1) {
                 mc_TextSubstringTokenSet_t tset_copy;
                 mc_TextSubstringTokenSet_shallow_copy(&tset, &tset_copy);
-                _mc_array_append_val(&tsts->substringArray, tset_copy); // array now owns tset_copy
+                for (; appendCount > 1; appendCount--) {
+                    _mc_array_append_val(&tsts->substringArray, tset_copy);
+                }
             }
             _mc_array_append_val(&tsts->substringArray, tset); // array now owns tset
         }
@@ -1252,10 +1255,12 @@ static bool _fle2_generate_TextSearchTokenSets(_mongocrypt_key_broker_t *kb,
             }
             _mongocrypt_buffer_cleanup(&asBsonValue);
 
-            for (; appendCount > 1; appendCount--) {
+            if (appendCount > 1) {
                 mc_TextSuffixTokenSet_t tset_copy;
                 mc_TextSuffixTokenSet_shallow_copy(&tset, &tset_copy);
-                _mc_array_append_val(&tsts->suffixArray, tset_copy); // array now owns tset_copy
+                for (; appendCount > 1; appendCount--) {
+                    _mc_array_append_val(&tsts->suffixArray, tset_copy);
+                }
             }
             _mc_array_append_val(&tsts->suffixArray, tset); // array now owns tset
         }
@@ -1290,10 +1295,12 @@ static bool _fle2_generate_TextSearchTokenSets(_mongocrypt_key_broker_t *kb,
             }
             _mongocrypt_buffer_cleanup(&asBsonValue);
 
-            for (; appendCount > 1; appendCount--) {
+            if (appendCount > 1) {
                 mc_TextPrefixTokenSet_t tset_copy;
                 mc_TextPrefixTokenSet_shallow_copy(&tset, &tset_copy);
-                _mc_array_append_val(&tsts->prefixArray, tset_copy); // array now owns tset_copy
+                for (; appendCount > 1; appendCount--) {
+                    _mc_array_append_val(&tsts->prefixArray, tset_copy); // array now owns tset_copy
+                }
             }
             _mc_array_append_val(&tsts->prefixArray, tset); // moves ownership of tset
         }
