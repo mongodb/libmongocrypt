@@ -4671,6 +4671,58 @@ static void _test_encrypt_retry(_mongocrypt_tester_t *tester) {
     }
 }
 
+static void capture_logs(mongocrypt_log_level_t level, const char *message, uint32_t message_len, void *ctx) {
+    mc_array_t *log_msgs = ctx;
+    char *message_copy = bson_strdup(message);
+    _mc_array_append_val(log_msgs, message_copy);
+}
+
+// Regression test for: MONGOCRYPT-770
+static void _test_does_not_warn_for_empty_local_schema(_mongocrypt_tester_t *tester) {
+    mongocrypt_t *crypt = mongocrypt_new();
+    ASSERT_OK(mongocrypt_setopt_kms_providers(
+                  crypt,
+                  TEST_BSON(BSON_STR({"aws" : {"accessKeyId" : "foo", "secretAccessKey" : "bar"}}))),
+              crypt);
+
+    mc_array_t log_msgs; // Array of char *;
+    _mc_array_init(&log_msgs, sizeof(char *));
+    ASSERT_OK(mongocrypt_setopt_log_handler(crypt, capture_logs, &log_msgs), crypt);
+
+    // Configure a local schema for "db.coll":
+    ASSERT_OK(mongocrypt_setopt_schema_map(crypt, TEST_BSON(BSON_STR({"db.coll" : {}}))), crypt);
+
+    ASSERT_OK(mongocrypt_init(crypt), crypt);
+    mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+    ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_BSON(BSON_STR({"find" : "coll", "filter" : {}}))), ctx);
+    ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+
+    // Feed mongocryptd reply indicating `schemaRequiresEncryption: false`.
+    ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TEST_BSON(BSON_STR({
+                                            "hasEncryptionPlaceholders" : false,
+                                            "schemaRequiresEncryption" : false,
+                                            "result" : {"find" : "test", "filter" : {}},
+                                            "ok" : {"$numberDouble" : "1.0"}
+                                        }))),
+              ctx);
+
+    // Expect no warning (passing an empty local schema is a valid use-case).
+    if (log_msgs.len > 0) {
+        TEST_STDERR_PRINTF("Got unexpected log messages:\n");
+        for (size_t i = 0; i < log_msgs.len; i++) {
+            TEST_STDERR_PRINTF("> %s\n", _mc_array_index(&log_msgs, char *, i));
+        }
+        abort();
+    }
+
+    for (size_t i = 0; i < log_msgs.len; i++) {
+        bson_free(_mc_array_index(&log_msgs, char *, i));
+    }
+    _mc_array_destroy(&log_msgs);
+    mongocrypt_ctx_destroy(ctx);
+    mongocrypt_destroy(crypt);
+}
+
 void _mongocrypt_tester_install_ctx_encrypt(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_explicit_encrypt_init);
     INSTALL_TEST(_test_encrypt_init);
@@ -4754,4 +4806,5 @@ void _mongocrypt_tester_install_ctx_encrypt(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_no_trimFactor);
     INSTALL_TEST(_test_range_sends_cryptoParams);
     INSTALL_TEST(_test_encrypt_retry);
+    INSTALL_TEST(_test_does_not_warn_for_empty_local_schema);
 }
