@@ -792,13 +792,7 @@ static bool _mongo_feed_markings(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in)
 
     if (bson_iter_init_find(&iter, &as_bson, "schemaRequiresEncryption") && !bson_iter_as_bool(&iter)) {
         /* TODO: update cache: this schema does not require encryption. */
-
-        /* If using a local schema, warn if there are no encrypted fields. */
-        if (ectx->used_local_schema) {
-            _mongocrypt_log(&ctx->crypt->log,
-                            MONGOCRYPT_LOG_LEVEL_WARNING,
-                            "local schema used but does not have encryption specifiers");
-        }
+        // Schema does not require encryption. Skip copying the `result`.
         return true;
     } else {
         /* if the schema requires encryption, but has sibling validators, error.
