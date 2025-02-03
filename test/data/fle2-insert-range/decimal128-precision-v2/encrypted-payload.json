@@ -46,7 +46,8 @@
                             }
                         }
                     }
-                ]
+                ],
+                "strEncodeVersion": 1
             }
         }
     }

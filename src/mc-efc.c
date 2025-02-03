@@ -194,16 +194,16 @@ bool mc_EncryptedFieldConfig_parse(mc_EncryptedFieldConfig_t *efc,
     }
 
     if (!bson_iter_init_find(&iter, efc_bson, "strEncodeVersion")) {
-        // Set to default of 1.
-        efc->str_encode_version = 1;
+        // Set to latest.
+        efc->str_encode_version = LATEST_STR_ENCODE_VERSION;
     } else {
         if (!BSON_ITER_HOLDS_INT32(&iter)) {
             CLIENT_ERR("expected 'strEncodeVersion' to be type int32, got: %d", bson_iter_type(&iter));
             return false;
         }
         int32_t version = bson_iter_int32(&iter);
-        if (version != 1) {
-            CLIENT_ERR("expected 'strEncodeVersion' to be equal to 1, got: %d", version);
+        if (version > LATEST_STR_ENCODE_VERSION || version < MIN_STR_ENCODE_VERSION) {
+            CLIENT_ERR("'strEncodeVersion' of %d is not supported", version);
             return false;
         }
         efc->str_encode_version = (uint8_t)version;

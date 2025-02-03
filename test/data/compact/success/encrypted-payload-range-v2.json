@@ -62,7 +62,8 @@
                             "sparsity": 1
                         }
                     }
-                ]
+                ],
+                "strEncodeVersion": 1
             }
         }
     },

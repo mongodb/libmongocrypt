@@ -22,6 +22,7 @@
 #include "mongocrypt-ctx-private.h"
 #include "mongocrypt-key-broker-private.h"
 #include "mongocrypt-marking-private.h"
+#include "mongocrypt-private.h"
 #include "mongocrypt-traverse-util-private.h"
 #include "mongocrypt-util-private.h" // mc_iter_document_as_bson
 #include "mongocrypt.h"
@@ -82,7 +83,7 @@ static bool _fle2_append_encryptedFieldConfig(const mongocrypt_ctx_t *ctx,
         bson_free(default_ecocCollection);
     }
     if (!has_strEncodeVersion) {
-        if (!BSON_APPEND_INT32(dst, "strEncodeVersion", 1)) {
+        if (!BSON_APPEND_INT32(dst, "strEncodeVersion", LATEST_STR_ENCODE_VERSION)) {
             CLIENT_ERR("unable to append strEncodeVersion");
             return false;
         }
@@ -1443,6 +1444,67 @@ fail:
     return ok;
 }
 
+/*
+ * Parses and re-serializes "encryptedFields" field for "create" commands.
+ */
+static bool
+_fle2_fixup_encryptedFields(const char *cmd_name, bson_t *cmd /* in and out */, mongocrypt_status_t *status) {
+    BSON_ASSERT_PARAM(cmd_name);
+    BSON_ASSERT_PARAM(cmd);
+
+    if (0 == strcmp(cmd_name, "create")) {
+        bson_iter_t ef_iter;
+        if (!bson_iter_init_find(&ef_iter, cmd, "encryptedFields")) {
+            // No encryptedFields, this is fine
+            return true;
+        }
+        bson_iter_t sev_iter;
+        if (!bson_iter_init(&sev_iter, cmd)) {
+            CLIENT_ERR("Failed to initialize bson_iter in fixup_encryptedFields");
+            return false;
+        }
+        if (!bson_iter_find_descendant(&sev_iter, "encryptedFields.strEncodeVersion", &sev_iter)) {
+            // No strEncodeVersion, add it
+            bson_t fixed = BSON_INITIALIZER;
+            bson_copy_to_excluding_noinit(cmd, &fixed, "encryptedFields", NULL);
+            bson_t ef;
+            bson_t fixed_ef;
+            const uint8_t *data;
+            uint32_t len;
+            BSON_ASSERT(BSON_ITER_HOLDS_DOCUMENT(&ef_iter));
+            bson_iter_document(&ef_iter, &len, &data);
+            bson_init_static(&ef, data, len);
+            bson_copy_to(&ef, &fixed_ef);
+            if (!BSON_APPEND_INT32(&fixed_ef, "strEncodeVersion", LATEST_STR_ENCODE_VERSION)) {
+                CLIENT_ERR("Failed to append strEncodeVersion in fixup_encryptedFields");
+                return false;
+            }
+            if (!BSON_APPEND_DOCUMENT(&fixed, "encryptedFields", &fixed_ef)) {
+                CLIENT_ERR("Failed to append encryptedFields in fixup_encryptedFields");
+                return false;
+            }
+            bson_destroy(cmd);
+            if (!bson_steal(cmd, &fixed)) {
+                CLIENT_ERR("Failed to steal BSON in fixup_encryptedFields");
+                bson_destroy(&fixed);
+                return false;
+            }
+            return true;
+        } else {
+            if (!BSON_ITER_HOLDS_INT32(&sev_iter)) {
+                CLIENT_ERR("expected 'strEncodeVersion' to be type int32, got: %d", bson_iter_type(&sev_iter));
+                return false;
+            }
+            int32_t version = bson_iter_int32(&sev_iter);
+            if (version > LATEST_STR_ENCODE_VERSION || version < MIN_STR_ENCODE_VERSION) {
+                CLIENT_ERR("'strEncodeVersion' of %d is not supported", version);
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 /* Process a call to mongocrypt_ctx_finalize when an encryptedFieldConfig is
  * associated with the command. */
 static bool _fle2_finalize(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
@@ -1511,6 +1573,17 @@ static bool _fle2_finalize(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
                                                         &ectx->efc,
                                                         ctx->status);
     if (!result.ok) {
+        bson_destroy(&converted);
+        return _mongocrypt_ctx_fail(ctx);
+    }
+
+    {
+        char *json = bson_as_canonical_extended_json(&converted, NULL);
+        fprintf(stderr, "converted: %s\n", json);
+        bson_free(json);
+    }
+
+    if (!_fle2_fixup_encryptedFields(command_name, &converted, ctx->status)) {
         bson_destroy(&converted);
         return _mongocrypt_ctx_fail(ctx);
     }

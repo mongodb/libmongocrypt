@@ -21,7 +21,8 @@
                     "db.test": {
                         "escCollection": "enxcol_.test.esc",
                         "ecocCollection": "enxcol_.test.ecoc",
-                        "fields": []
+                        "fields": [],
+                        "strEncodeVersion": 1
                     }
                 }
             }

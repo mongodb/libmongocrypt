@@ -36,7 +36,8 @@
                         }
                      }
                   }
-               ]
+               ],
+               "strEncodeVersion": 1
             }
          }
       }

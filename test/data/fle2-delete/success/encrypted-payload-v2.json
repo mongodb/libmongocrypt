@@ -58,7 +58,8 @@
                   "path": "nested.notindexed",
                   "bsonType": "string"
                }
-            ]
+            ],
+            "strEncodeVersion": 1
          }
       }
    }

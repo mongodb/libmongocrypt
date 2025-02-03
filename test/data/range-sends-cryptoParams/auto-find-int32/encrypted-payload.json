@@ -46,7 +46,8 @@
                     }
                 ],
                 "escCollection": "enxcol_.test.esc",
-                "ecocCollection": "enxcol_.test.ecoc"
+                "ecocCollection": "enxcol_.test.ecoc",
+                "strEncodeVersion": 1
             }
         }
     }

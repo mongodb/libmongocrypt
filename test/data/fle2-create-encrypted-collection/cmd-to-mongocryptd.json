@@ -1,14 +1,23 @@
 {
-    "explain": {
-        "find": "test",
-        "filter": {
-            "value": 123456
-        }
-    },
-    "encryptionInformation": {
+    "create": "coll",
+    "encryptedFields": {
+      "fields": [
+         {
+            "path": "encrypted",
+            "bsonType": "int",
+            "queries": {
+               "queryType": "equality",
+               "contention": {
+                     "$numberLong": "0"
+               }
+            }
+         }
+      ]
+   },
+   "encryptionInformation": {
         "type": 1,
         "schema": {
-            "db.test": {
+            "db.coll": {
                 "escCollection": "esc",
                 "ecocCollection": "ecoc",
                 "fields": [
@@ -19,12 +28,12 @@
                                 "subType": "04"
                             }
                         },
-                        "path": "value",
+                        "path": "encrypted",
                         "bsonType": "int",
                         "queries": {
                             "queryType": "equality",
                             "contention": {
-                                "$numberLong": "0"
+                                    "$numberLong": "0"
                             }
                         }
                     }

@@ -16,7 +16,8 @@
             "db.coll": {
                 "fields": [],
                 "escCollection": "enxcol_.coll.esc",
-                "ecocCollection": "enxcol_.coll.ecoc"
+                "ecocCollection": "enxcol_.coll.ecoc",
+                "strEncodeVersion": 1
             }
         }
     }

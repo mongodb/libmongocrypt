@@ -9,7 +9,8 @@
             "db.test": {
                 "escCollection": "esc",
                 "ecocCollection": "ecoc",
-                "fields": []
+                "fields": [],
+                "strEncodeVersion": 1
             }
         }
     }
