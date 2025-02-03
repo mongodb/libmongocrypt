@@ -1445,7 +1445,8 @@ fail:
 }
 
 /*
- * Parses and re-serializes "encryptedFields" field for "create" commands.
+ * Checks the "encryptedFields.strEncodeVersion" field for "create" commands for validity, and sets it to the default if
+ * it does not exist.
  */
 static bool
 _fle2_fixup_encryptedFields(const char *cmd_name, bson_t *cmd /* in and out */, mongocrypt_status_t *status) {
@@ -1455,42 +1456,55 @@ _fle2_fixup_encryptedFields(const char *cmd_name, bson_t *cmd /* in and out */, 
     if (0 == strcmp(cmd_name, "create")) {
         bson_iter_t ef_iter;
         if (!bson_iter_init_find(&ef_iter, cmd, "encryptedFields")) {
-            // No encryptedFields, this is fine
+            // No encryptedFields, nothing to check or fix
             return true;
         }
         bson_iter_t sev_iter;
         if (!bson_iter_init(&sev_iter, cmd)) {
-            CLIENT_ERR("Failed to initialize bson_iter in fixup_encryptedFields");
+            CLIENT_ERR("_fle2_fixup_encryptedFields: Failed to initialize bson_iter");
             return false;
         }
         if (!bson_iter_find_descendant(&sev_iter, "encryptedFields.strEncodeVersion", &sev_iter)) {
+            bool ok = false;
             // No strEncodeVersion, add it
             bson_t fixed = BSON_INITIALIZER;
             bson_copy_to_excluding_noinit(cmd, &fixed, "encryptedFields", NULL);
             bson_t ef;
-            bson_t fixed_ef;
             const uint8_t *data;
             uint32_t len;
-            BSON_ASSERT(BSON_ITER_HOLDS_DOCUMENT(&ef_iter));
+            if (!BSON_ITER_HOLDS_DOCUMENT(&ef_iter)) {
+                CLIENT_ERR("_fle2_fixup_encryptedFields: Expected encryptedFields to be type obj, got: %d",
+                           bson_iter_type(&ef_iter));
+                goto fail2;
+            }
             bson_iter_document(&ef_iter, &len, &data);
-            bson_init_static(&ef, data, len);
+            if (!bson_init_static(&ef, data, len)) {
+                CLIENT_ERR("_fle2_fixup_encryptedFields: bson_init_static failed");
+                goto fail2;
+            }
+            bson_t fixed_ef;
             bson_copy_to(&ef, &fixed_ef);
             if (!BSON_APPEND_INT32(&fixed_ef, "strEncodeVersion", LATEST_STR_ENCODE_VERSION)) {
-                CLIENT_ERR("Failed to append strEncodeVersion in fixup_encryptedFields");
-                return false;
+                CLIENT_ERR("_fle2_fixup_encryptedFields: Failed to append strEncodeVersion");
+                goto fail1;
             }
             if (!BSON_APPEND_DOCUMENT(&fixed, "encryptedFields", &fixed_ef)) {
-                CLIENT_ERR("Failed to append encryptedFields in fixup_encryptedFields");
-                return false;
+                CLIENT_ERR("_fle2_fixup_encryptedFields: Failed to append encryptedFields");
+                goto fail1;
             }
             bson_destroy(cmd);
             if (!bson_steal(cmd, &fixed)) {
-                CLIENT_ERR("Failed to steal BSON in fixup_encryptedFields");
-                bson_destroy(&fixed);
-                return false;
+                CLIENT_ERR("_fle2_fixup_encryptedFields: Failed to steal BSON");
+                goto fail1;
             }
-            return true;
+            ok = true;
+        fail1:
+            bson_destroy(&fixed_ef);
+        fail2:
+            bson_destroy(&fixed);
+            return ok;
         } else {
+            // Check strEncodeVersion for validity
             if (!BSON_ITER_HOLDS_INT32(&sev_iter)) {
                 CLIENT_ERR("expected 'strEncodeVersion' to be type int32, got: %d", bson_iter_type(&sev_iter));
                 return false;
@@ -1575,12 +1589,6 @@ static bool _fle2_finalize(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
     if (!result.ok) {
         bson_destroy(&converted);
         return _mongocrypt_ctx_fail(ctx);
-    }
-
-    {
-        char *json = bson_as_canonical_extended_json(&converted, NULL);
-        fprintf(stderr, "converted: %s\n", json);
-        bson_free(json);
     }
 
     if (!_fle2_fixup_encryptedFields(command_name, &converted, ctx->status)) {
