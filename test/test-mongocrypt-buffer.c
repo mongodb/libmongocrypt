@@ -16,6 +16,7 @@
 
 #include <mongocrypt-marking-private.h>
 
+#include "mongocrypt-buffer-private.h"
 #include "test-mongocrypt-assert.h"
 #include "test-mongocrypt.h"
 
@@ -232,6 +233,29 @@ static void _test_mongocrypt_buffer_from_subrange(_mongocrypt_tester_t *tester) 
     _mongocrypt_buffer_cleanup(&input);
 }
 
+static void _test_mongocrypt_buffer_copy_from_string_as_bson_value(_mongocrypt_tester_t *tester) {
+    _mongocrypt_buffer_t buf;
+    _mongocrypt_buffer_t expectedLenBuf;
+    const char *data = "foobar";
+
+    // expect output to contain 4-byte length + data + null string terminator
+    size_t expectedLen = sizeof(int32_t) + strlen(data) + sizeof(uint8_t);
+    _mongocrypt_buffer_copy_from_hex(&expectedLenBuf, "07000000");
+
+    _mongocrypt_buffer_copy_from_string_as_bson_value(&buf, data, (int)strlen(data));
+    ASSERT(buf.len == expectedLen);
+
+    // check 4-byte length
+    ASSERT_CMPBYTES(expectedLenBuf.data, expectedLenBuf.len, buf.data, expectedLenBuf.len);
+    // check data + null byte
+    ASSERT_CMPBYTES((const uint8_t *)data,
+                    strlen(data) + 1,
+                    buf.data + expectedLenBuf.len,
+                    buf.len - expectedLenBuf.len);
+    _mongocrypt_buffer_cleanup(&buf);
+    _mongocrypt_buffer_cleanup(&expectedLenBuf);
+}
+
 void _mongocrypt_tester_install_buffer(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_mongocrypt_buffer_from_iter);
     INSTALL_TEST(_test_mongocrypt_buffer_copy_from_data_and_size);
@@ -239,4 +263,5 @@ void _mongocrypt_tester_install_buffer(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_mongocrypt_buffer_steal_from_string);
     INSTALL_TEST(_test_mongocrypt_buffer_copy_from_uint64_le);
     INSTALL_TEST(_test_mongocrypt_buffer_from_subrange);
+    INSTALL_TEST(_test_mongocrypt_buffer_copy_from_string_as_bson_value);
 }
