@@ -1004,9 +1004,8 @@ static void _test_encrypt_invalid_siblings(_mongocrypt_tester_t *tester) {
     ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
 
     BSON_ASSERT(MONGOCRYPT_CTX_NEED_MONGO_MARKINGS == mongocrypt_ctx_state(ctx));
-    ASSERT_FAILS(mongocrypt_ctx_mongo_feed(ctx, TEST_FILE("./test/example/mongocryptd-reply.json")),
-                 ctx,
-                 "JSON schema validator has siblings");
+    // MONGOCRYPT-771 removes checks for sibling validators.
+    ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TEST_FILE("./test/example/mongocryptd-reply.json")), ctx);
 
     mongocrypt_ctx_destroy(ctx);
     mongocrypt_destroy(crypt);
