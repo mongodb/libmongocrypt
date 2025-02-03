@@ -1501,7 +1501,9 @@ _fle2_fixup_encryptedFields(const char *cmd_name, bson_t *cmd /* in and out */, 
         fail1:
             bson_destroy(&fixed_ef);
         fail2:
-            bson_destroy(&fixed);
+            if (!ok) {
+                bson_destroy(&fixed);
+            }
             return ok;
         } else {
             // Check strEncodeVersion for validity

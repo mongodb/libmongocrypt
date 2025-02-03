@@ -4915,6 +4915,7 @@ static void _test_fle2_encrypted_fields_with_bad_str_encode_version(_mongocrypt_
     {
         mongocrypt_binary_t *out = mongocrypt_binary_new();
         ASSERT_FAILS(mongocrypt_ctx_finalize(ctx, out), ctx, "'strEncodeVersion' of 99 is not supported");
+        mongocrypt_binary_destroy(out);
     }
 
     mongocrypt_ctx_destroy(ctx);
