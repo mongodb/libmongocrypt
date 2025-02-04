@@ -218,6 +218,8 @@ void _mongocrypt_tester_install_mc_cmp(_mongocrypt_tester_t *tester);
 
 void _mongocrypt_tester_install_text_search_str_encode(_mongocrypt_tester_t *tester);
 
+void _mongocrypt_tester_install_unicode_fold(_mongocrypt_tester_t *tester);
+
 /* Conveniences for getting test data. */
 
 /* Get a temporary bson_t from a JSON string. Do not free it. */
