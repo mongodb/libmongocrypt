@@ -1004,28 +1004,8 @@ static void _test_encrypt_invalid_siblings(_mongocrypt_tester_t *tester) {
     ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
 
     BSON_ASSERT(MONGOCRYPT_CTX_NEED_MONGO_MARKINGS == mongocrypt_ctx_state(ctx));
-    ASSERT_FAILS(mongocrypt_ctx_mongo_feed(ctx, TEST_FILE("./test/example/mongocryptd-reply.json")),
-                 ctx,
-                 "JSON schema validator has siblings");
-
-    mongocrypt_ctx_destroy(ctx);
-    mongocrypt_destroy(crypt);
-}
-
-static void _test_encrypt_dupe_jsonschema(_mongocrypt_tester_t *tester) {
-    mongocrypt_t *crypt;
-    mongocrypt_ctx_t *ctx;
-
-    crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
-    ctx = mongocrypt_ctx_new(crypt);
-    ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "test", -1, TEST_FILE("./test/example/cmd.json")), ctx);
-
-    BSON_ASSERT(MONGOCRYPT_CTX_NEED_MONGO_COLLINFO == mongocrypt_ctx_state(ctx));
-    ASSERT_FAILS(mongocrypt_ctx_mongo_feed(ctx,
-                                           TEST_BSON("{'options': {'validator': { '$jsonSchema': {}, "
-                                                     "'$jsonSchema': {} } } }")),
-                 ctx,
-                 "duplicate $jsonSchema");
+    // MONGOCRYPT-771 removes checks for sibling validators.
+    ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TEST_FILE("./test/example/mongocryptd-reply.json")), ctx);
 
     mongocrypt_ctx_destroy(ctx);
     mongocrypt_destroy(crypt);
@@ -4690,7 +4670,6 @@ void _mongocrypt_tester_install_ctx_encrypt(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_encrypt_is_remote_schema);
     INSTALL_TEST(_test_encrypt_init_each_cmd);
     INSTALL_TEST(_test_encrypt_invalid_siblings);
-    INSTALL_TEST(_test_encrypt_dupe_jsonschema);
     INSTALL_TEST(_test_encrypting_with_explicit_encryption);
     INSTALL_TEST(_test_explicit_encryption);
     INSTALL_TEST(_test_encrypt_empty_aws);

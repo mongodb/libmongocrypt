@@ -426,8 +426,7 @@ static bool _set_schema_from_collinfo(mongocrypt_ctx_t *ctx, bson_t *collinfo) {
                     return _mongocrypt_ctx_fail_w_msg(ctx, "malformed $jsonSchema");
                 }
                 found_jsonschema = true;
-            } else {
-                ectx->collinfo_has_siblings = true;
+                break;
             }
         }
     }
@@ -800,15 +799,6 @@ static bool _mongo_feed_markings(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in)
                             "local schema used but does not have encryption specifiers");
         }
         return true;
-    } else {
-        /* if the schema requires encryption, but has sibling validators, error.
-         */
-        if (ectx->collinfo_has_siblings) {
-            return _mongocrypt_ctx_fail_w_msg(ctx,
-                                              "schema requires encryption, "
-                                              "but collection JSON schema "
-                                              "validator has siblings");
-        }
     }
 
     if (bson_iter_init_find(&iter, &as_bson, "hasEncryptedPlaceholders") && !bson_iter_as_bool(&iter)) {
