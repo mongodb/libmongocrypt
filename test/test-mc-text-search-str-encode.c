@@ -509,7 +509,9 @@ const uint32_t MEDIUM_LEN = 16;
 const uint32_t LONG_LEN = 27;
 
 static void _test_text_search_str_encode_suffix_prefix(_mongocrypt_tester_t *tester) {
-    srand((unsigned int)time(0));
+    unsigned int seed = (unsigned int)time(0);
+    TEST_PRINTF("Testing with seed: %u", seed);
+    srand(seed);
     // Run diacritic folding and case+diacritic folding for a variety of folded/unfolded sizes.
     for (uint32_t i = 0; i < sizeof(UNFOLDED_CASES) / sizeof(UNFOLDED_CASES[0]); i++) {
         char *short_s = build_random_string_to_fold(SHORT_LEN, SHORT_LEN + UNFOLDED_CASES[i]);
