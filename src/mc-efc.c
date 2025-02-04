@@ -183,6 +183,7 @@ bool mc_EncryptedFieldConfig_parse(mc_EncryptedFieldConfig_t *efc,
         CLIENT_ERR("unable to recurse into encrypted_field_config 'fields'");
         return false;
     }
+    supported_query_type_flags all_supported_queries = SUPPORTS_NO_QUERIES;
     while (bson_iter_next(&iter)) {
         bson_t field;
         if (!mc_iter_document_as_bson(&iter, &field, status)) {
@@ -191,11 +192,20 @@ bool mc_EncryptedFieldConfig_parse(mc_EncryptedFieldConfig_t *efc,
         if (!_parse_field(efc, &field, status, use_range_v2)) {
             return false;
         }
+        // The first element of efc->fields contains the newly parsed field.
+        all_supported_queries |= efc->fields->supported_queries;
     }
 
     if (!bson_iter_init_find(&iter, efc_bson, "strEncodeVersion")) {
-        // Set to latest.
-        efc->str_encode_version = LATEST_STR_ENCODE_VERSION;
+        if (all_supported_queries
+            & (SUPPORTS_SUBSTRING_PREVIEW_QUERIES | SUPPORTS_SUFFIX_PREVIEW_QUERIES
+               | SUPPORTS_PREFIX_PREVIEW_QUERIES)) {
+            // Has at least one text search query type, set to latest by default.
+            efc->str_encode_version = LATEST_STR_ENCODE_VERSION;
+        } else {
+            // Set to 0 to indicate no text search.
+            efc->str_encode_version = 0;
+        }
     } else {
         if (!BSON_ITER_HOLDS_INT32(&iter)) {
             CLIENT_ERR("expected 'strEncodeVersion' to be type int32, got: %d", bson_iter_type(&iter));
