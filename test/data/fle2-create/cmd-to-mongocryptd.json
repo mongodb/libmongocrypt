@@ -6,8 +6,7 @@
             "db.coll": {
                 "escCollection": "esc",
                 "ecocCollection": "ecoc",
-                "fields": [],
-                "strEncodeVersion": 1
+                "fields": []
             }
         }
     }

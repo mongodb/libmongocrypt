@@ -2,16 +2,21 @@
     "create": "coll",
     "encryptedFields": {
       "fields": [
-         {
+        {
             "path": "encrypted",
-            "bsonType": "int",
+            "bsonType": "string",
             "queries": {
-               "queryType": "equality",
+               "queryType": "substringPreview",
                "contention": {
                      "$numberLong": "0"
-               }
+               },
+               "strMaxLength": 100,
+               "strMinQueryLength": 5,
+               "strMaxQueryLength": 20,
+               "caseSensitive": false,
+               "diacriticSensitive": true
             }
-         }
+        }
       ],
       "strEncodeVersion": 1
    },
@@ -30,15 +35,21 @@
                             }
                         },
                         "path": "encrypted",
-                        "bsonType": "int",
+                        "bsonType": "string",
                         "queries": {
-                            "queryType": "equality",
-                            "contention": {
-                                    "$numberLong": "0"
-                            }
+                           "queryType": "substringPreview",
+                           "contention": {
+                                 "$numberLong": "0"
+                           },
+                           "strMaxLength": 100,
+                           "strMinQueryLength": 5,
+                           "strMaxQueryLength": 20,
+                           "caseSensitive": false,
+                           "diacriticSensitive": true
                         }
                     }
-                ]
+                ],
+                "strEncodeVersion": 1
             }
         }
     }

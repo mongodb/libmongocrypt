@@ -33,8 +33,7 @@
                     }
                 ],
                 "escCollection": "enxcol_.test.esc",
-                "ecocCollection": "enxcol_.test.ecoc",
-                "strEncodeVersion": 1
+                "ecocCollection": "enxcol_.test.ecoc"
             }
         }
     }

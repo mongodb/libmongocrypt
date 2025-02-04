@@ -16,8 +16,7 @@
                         }
                     }
                 }
-            ],
-            "strEncodeVersion": 1
+            ]
         },
         "encryptionInformation": {
             "type": 1,
@@ -42,7 +41,8 @@
                                 }
                             }
                         }
-                    ]
+                    ],
+                    "strEncodeVersion": 1
                 }
             }
         }
