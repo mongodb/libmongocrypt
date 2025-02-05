@@ -1589,12 +1589,12 @@ typedef struct {
 
 static bool _test_rng_source(void *ctx, mongocrypt_binary_t *out, uint32_t count, mongocrypt_status_t *status) {
     _test_rng_data_source *source = (_test_rng_data_source *)ctx;
+
     if ((source->pos + count) > source->buf.len) {
         TEST_ERROR("Out of random data, wanted: %" PRIu32, count);
         return false;
     }
 
-    TEST_PRINTF("Got: %" PRIu32 "\n", count);
     memcpy(out->data, source->buf.data + source->pos, count);
     source->pos += count;
     return true;
