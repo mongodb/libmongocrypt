@@ -203,7 +203,7 @@ bool mc_EncryptedFieldConfig_parse(mc_EncryptedFieldConfig_t *efc,
             // Has at least one text search query type, set to latest by default.
             efc->str_encode_version = LATEST_STR_ENCODE_VERSION;
         } else {
-            // Set to 0 to indicate no text search.
+            // Set to 0 to indicate no text search, and thus no strEncodeVersion needed.
             efc->str_encode_version = 0;
         }
     } else {
