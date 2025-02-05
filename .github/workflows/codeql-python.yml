@@ -14,9 +14,9 @@ on:
   workflow_dispatch:
   workflow_call:
     inputs:
-      force:
+      ref:
         required: true
-        type: boolean
+        type: string
 
 jobs:
   analyze-python:
