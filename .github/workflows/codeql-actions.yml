@@ -7,12 +7,14 @@ on:
   pull_request:
     paths:
       - .github/workflows/*.yml
+  workflow_dispatch:
   schedule:
     - cron: '17 10 * * 2'
 
 jobs:
   analyze-python:
     name: Analyze GitHub Actions
+    if: github.repository_owner == 'mongodb' || github.event_name == 'workflow_dispatch'
     runs-on: "ubuntu-latest"
     timeout-minutes: 360
     permissions:
