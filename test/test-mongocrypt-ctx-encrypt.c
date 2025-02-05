@@ -1590,18 +1590,8 @@ typedef struct {
 static bool _test_rng_source(void *ctx, mongocrypt_binary_t *out, uint32_t count, mongocrypt_status_t *status) {
     _test_rng_data_source *source = (_test_rng_data_source *)ctx;
     if ((source->pos + count) > source->buf.len) {
-        // TEST_ERROR("Out of random data, wanted: %" PRIu32, count);
-        // return false;
-        uint32_t remaining = (uint32_t)(source->buf.len - source->pos);
-        TEST_PRINTF("Out of random data, wanted: %" PRIu32 ", had: %" PRIu32 "\n", count, remaining);
-        if (remaining) {
-            memcpy(out->data, source->buf.data + source->pos, remaining);
-            source->pos += remaining;
-        }
-        if (count - remaining) {
-            memset(out->data + remaining, 0, count - remaining);
-        }
-        return true;
+        TEST_ERROR("Out of random data, wanted: %" PRIu32, count);
+        return false;
     }
 
     TEST_PRINTF("Got: %" PRIu32 "\n", count);
@@ -1732,6 +1722,20 @@ static void _test_encrypt_fle2_insert_payload_with_str_encode_version(_mongocryp
 
     _test_rng_data_source source = {.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
     TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-v2-with-str-encode-version", &source, NULL)
+}
+
+static void _test_encrypt_fle2_insert_text_search_payload(_mongocrypt_tester_t *tester) {
+    uint8_t rng_data[] = RNG_DATA;
+
+    _test_rng_data_source source = {.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-text-search", &source, NULL)
+}
+
+static void _test_encrypt_fle2_insert_text_search_payload_with_str_encode_version(_mongocrypt_tester_t *tester) {
+    uint8_t rng_data[] = RNG_DATA;
+
+    _test_rng_data_source source = {.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-text-search-with-str-encode-version", &source, NULL)
 }
 
 #undef RNG_DATA
@@ -1869,26 +1873,6 @@ static void _test_encrypt_fle2_find_range_payload_decimal128_precision(_mongocry
     TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-range/decimal128-precision-v2", &source, NULL)
 }
 #endif // MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
-
-#define RNG_DATA                                                                                                       \
-    "\xc7\x43\xd6\x75\x76\x9e\xa7\x88\xd5\xe5\xc4\x40\xdb\x24\x0d\xf9"                                                 \
-    "\x4c\xd9\x64\x10\x43\x81\xe6\x61\xfa\x1f\xa0\x5c\x49\x8e\xad\x21"
-
-static void _test_encrypt_fle2_insert_text_search_payload(_mongocrypt_tester_t *tester) {
-    uint8_t rng_data[] = RNG_DATA;
-
-    _test_rng_data_source source = {.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-text-search", &source, NULL)
-}
-
-static void _test_encrypt_fle2_insert_text_search_payload_with_str_encode_version(_mongocrypt_tester_t *tester) {
-    uint8_t rng_data[] = RNG_DATA;
-
-    _test_rng_data_source source = {.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-text-search-with-str-encode-version", &source, NULL)
-}
-
-#undef RNG_DATA
 
 static mongocrypt_t *_crypt_with_rng(_test_rng_data_source *rng_source, bool use_range_v2) {
     mongocrypt_t *crypt;

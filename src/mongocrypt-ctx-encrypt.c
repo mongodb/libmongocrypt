@@ -1461,6 +1461,7 @@ static bool _fle2_fixup_encryptedFields_strEncodeVersion(const char *cmd_name,
                                                          mongocrypt_status_t *status) {
     BSON_ASSERT_PARAM(cmd_name);
     BSON_ASSERT_PARAM(cmd);
+    BSON_ASSERT_PARAM(efc);
 
     if (0 == strcmp(cmd_name, "create")) {
         bson_iter_t ef_iter;
