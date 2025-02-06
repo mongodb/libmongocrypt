@@ -9,6 +9,7 @@ on:
 jobs:
   zizmor:
     name: zizmor latest via Cargo
+    if: github.repository_owner == 'mongodb'
     runs-on: ubuntu-latest
     permissions:
       security-events: write

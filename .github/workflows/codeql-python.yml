@@ -11,6 +11,7 @@ on:
       - .github/workflows/*python.yml
   schedule:
     - cron: '17 10 * * 2'
+  workflow_dispatch:
   workflow_call:
     inputs:
       ref:
@@ -20,6 +21,7 @@ on:
 jobs:
   analyze-python:
     name: Analyze Python
+    if: github.repository_owner == 'mongodb' || (github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call')
     runs-on: "macos-latest"
     timeout-minutes: 360
     permissions:
