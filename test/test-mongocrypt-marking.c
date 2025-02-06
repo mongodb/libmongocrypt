@@ -1366,8 +1366,8 @@ static size_t calculate_expected_substring_tag_count(size_t beta, size_t mlen, s
     ASSERT_CMPSIZE_T(lb, <=, ub);
     ASSERT_CMPSIZE_T(mlen, >=, ub);
 
-    size_t cbclen = 16 * ((beta + 15) / 16);
-    if (beta > mlen || lb > cbclen) {
+    size_t padded_len = 16 * ((beta + 5 + 15) / 16) - 5;
+    if (beta > mlen || lb > padded_len) {
         return 0;
     }
     size_t maxkgram1 = 0;
@@ -1375,8 +1375,8 @@ static size_t calculate_expected_substring_tag_count(size_t beta, size_t mlen, s
     for (size_t j = lb; j <= ub; j++) {
         maxkgram1 += (mlen - j + 1);
     }
-    for (size_t j = lb; j <= BSON_MIN(ub, cbclen); j++) {
-        maxkgram2 += (cbclen - j + 1);
+    for (size_t j = lb; j <= BSON_MIN(ub, padded_len); j++) {
+        maxkgram2 += (padded_len - j + 1);
     }
     return BSON_MIN(maxkgram1, maxkgram2); // msize
 }
@@ -1384,11 +1384,11 @@ static size_t calculate_expected_substring_tag_count(size_t beta, size_t mlen, s
 static size_t calculate_expected_nfix_tag_count(size_t beta, size_t ub, size_t lb) {
     ASSERT_CMPSIZE_T(beta, <=, (SIZE_MAX - 15));
     ASSERT_CMPSIZE_T(lb, <=, ub);
-    size_t cbclen = 16 * ((beta + 15) / 16);
-    if (lb > cbclen) {
+    size_t padded_len = 16 * ((beta + 5 + 15) / 16) - 5;
+    if (lb > padded_len) {
         return 0;
     }
-    return BSON_MIN(ub, cbclen) - lb + 1;
+    return BSON_MIN(ub, padded_len) - lb + 1;
 }
 
 // Runs _mongocrypt_marking_to_ciphertext to compute the ciphertext for the given marking.
