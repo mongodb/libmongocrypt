@@ -336,7 +336,7 @@ static void test_nofold_substring_case_multiple_mlen(_mongocrypt_tester_t *teste
     // mlen >> unfolded_codepoint_len
     test_nofold_substring_case(tester, str, lb, ub, unfolded_codepoint_len + 64, casef, diacf, foldable_codepoints);
 
-    uint32_t byte_len = strlen(str);
+    uint32_t byte_len = (uint32_t)strlen(str);
     if (byte_len > 1) {
         // mlen < byte_len
         test_nofold_substring_case(tester, str, lb, ub, byte_len - 1, casef, diacf, foldable_codepoints);
