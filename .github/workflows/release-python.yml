@@ -70,7 +70,7 @@ jobs:
 
   static-scan:
     needs: [pre-publish]
-    uses: ./.github/workflows/codeql.yml
+    uses: ./.github/workflows/codeql-python.yml
     with:
       ref: ${{ needs.pre-publish.outputs.version }}
 
