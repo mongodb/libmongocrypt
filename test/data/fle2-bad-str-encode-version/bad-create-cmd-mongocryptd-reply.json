@@ -1,0 +1,51 @@
+{
+    "ok": {
+        "$numberInt": "1"
+    },
+    "result": {
+        "create": "coll",
+        "encryptedFields": {
+            "fields": [
+                {
+                    "path": "encrypted",
+                    "bsonType": "int",
+                    "queries": {
+                        "queryType": "equality",
+                        "contention": {
+                                "$numberLong": "0"
+                        }
+                    }
+                }
+            ],
+            "strEncodeVersion": 1
+        },
+        "encryptionInformation": {
+            "type": 1,
+            "schema": {
+                "db.coll": {
+                    "keyId": {
+                        "$binary": {
+                            "base64": "EjRWeBI0mHYSNBI0VniQEg==",
+                            "subType": "04"
+                        }
+                    },
+                    "escCollection": "esc",
+                    "ecocCollection": "ecoc",
+                    "fields": [
+                        {
+                            "path": "encrypted",
+                            "bsonType": "int",
+                            "queries": {
+                                "queryType": "equality",
+                                "contention": {
+                                        "$numberLong": "0"
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    },
+    "hasEncryptedPlaceholders": false
+}

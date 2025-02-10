@@ -1,0 +1,61 @@
+{
+    "ok": {
+        "$numberInt": "1"
+    },
+    "result": {
+        "create": "coll",
+        "encryptedFields": {
+          "fields": [
+            {
+                "path": "encrypted",
+                "bsonType": "string",
+                "queries": {
+                   "queryType": "substringPreview",
+                   "contention": {
+                         "$numberLong": "0"
+                   },
+                   "strMaxLength": 100,
+                   "strMinQueryLength": 5,
+                   "strMaxQueryLength": 20,
+                   "caseSensitive": false,
+                   "diacriticSensitive": true
+                }
+            }
+          ]
+       },
+       "encryptionInformation": {
+            "type": 1,
+            "schema": {
+                "db.coll": {
+                    "escCollection": "esc",
+                    "ecocCollection": "ecoc",
+                    "fields": [
+                        {
+                            "keyId": {
+                                "$binary": {
+                                    "base64": "EjRWeBI0mHYSNBI0VniQEg==",
+                                    "subType": "04"
+                                }
+                            },
+                            "path": "encrypted",
+                            "bsonType": "string",
+                            "queries": {
+                               "queryType": "substringPreview",
+                               "contention": {
+                                     "$numberLong": "0"
+                               },
+                               "strMaxLength": 100,
+                               "strMinQueryLength": 5,
+                               "strMaxQueryLength": 20,
+                               "caseSensitive": false,
+                               "diacriticSensitive": true
+                            }
+                        }
+                    ],
+                    "strEncodeVersion": 1
+                }
+            }
+        }
+    },
+    "hasEncryptedPlaceholders": false
+}
