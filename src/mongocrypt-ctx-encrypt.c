@@ -1469,58 +1469,64 @@ static bool _fle2_fixup_encryptedFields_strEncodeVersion(const char *cmd_name,
             // No encryptedFields, nothing to check or fix
             return true;
         }
-        bson_iter_t sev_iter;
-        if (!bson_iter_init(&sev_iter, cmd)) {
-            CLIENT_ERR("_fle2_fixup_encryptedFields_strEncodeVersion: Failed to initialize bson_iter");
+        if (!BSON_ITER_HOLDS_DOCUMENT(&ef_iter)) {
+            CLIENT_ERR("_fle2_fixup_encryptedFields_strEncodeVersion: Expected encryptedFields to be type obj, got: %s",
+                       mc_bson_type_to_string(bson_iter_type(&ef_iter)));
             return false;
         }
-        if (!bson_iter_find_descendant(&sev_iter, "encryptedFields.strEncodeVersion", &sev_iter)) {
+        bson_iter_t sev_iter;
+        if (!bson_iter_recurse(&ef_iter, &sev_iter)) {
+            CLIENT_ERR("_fle2_fixup_encryptedFields_strEncodeVersion: Failed to recurse bson_iter");
+            return false;
+        }
+        if (!bson_iter_find(&sev_iter, "strEncodeVersion")) {
             if (efc->str_encode_version == 0) {
                 // Unset StrEncodeVersion matches the EFC, nothing to fix.
                 return true;
             }
-            bool ok = false;
+
             // No strEncodeVersion and the EFC has a nonzero strEncodeVersion, add it.
+            // Initialize the new cmd object from the old one, excluding encryptedFields.
             bson_t fixed = BSON_INITIALIZER;
             bson_copy_to_excluding_noinit(cmd, &fixed, "encryptedFields", NULL);
-            bson_t ef;
-            const uint8_t *data;
-            uint32_t len;
-            if (!BSON_ITER_HOLDS_DOCUMENT(&ef_iter)) {
-                CLIENT_ERR(
-                    "_fle2_fixup_encryptedFields_strEncodeVersion: Expected encryptedFields to be type obj, got: %d",
-                    bson_iter_type(&ef_iter));
-                goto fail2;
-            }
-            bson_iter_document(&ef_iter, &len, &data);
-            if (!bson_init_static(&ef, data, len)) {
-                CLIENT_ERR("_fle2_fixup_encryptedFields_strEncodeVersion: bson_init_static failed");
-                goto fail2;
+
+            // Recurse the original encryptedFields and copy everything over.
+            bson_iter_t copy_iter;
+            if (!bson_iter_recurse(&ef_iter, &copy_iter)) {
+                CLIENT_ERR("_fle2_fixup_encryptedFields_strEncodeVersion: Failed to recurse bson_iter");
+                goto fail;
             }
             bson_t fixed_ef;
-            bson_copy_to(&ef, &fixed_ef);
+            if (!BSON_APPEND_DOCUMENT_BEGIN(&fixed, "encryptedFields", &fixed_ef)) {
+                CLIENT_ERR("_fle2_fixup_encryptedFields_strEncodeVersion: Failed to start appending encryptedFields");
+                goto fail;
+            }
+            while (bson_iter_next(&copy_iter)) {
+                if (!bson_append_iter(&fixed_ef, NULL, 0, &copy_iter)) {
+                    CLIENT_ERR("_fle2_fixup_encryptedFields_strEncodeVersion: Failed to copy element");
+                    goto fail;
+                }
+            }
+
+            // Add the EFC's strEncodeVersion to encryptedFields.
             if (!BSON_APPEND_INT32(&fixed_ef, "strEncodeVersion", efc->str_encode_version)) {
                 CLIENT_ERR("_fle2_fixup_encryptedFields_strEncodeVersion: Failed to append strEncodeVersion");
-                goto fail1;
+                goto fail;
             }
-            if (!BSON_APPEND_DOCUMENT(&fixed, "encryptedFields", &fixed_ef)) {
-                CLIENT_ERR("_fle2_fixup_encryptedFields_strEncodeVersion: Failed to append encryptedFields");
-                goto fail1;
+            if (!bson_append_document_end(&fixed, &fixed_ef)) {
+                CLIENT_ERR("_fle2_fixup_encryptedFields_strEncodeVersion: Failed to finish appending encryptedFields");
+                goto fail;
             }
+
             bson_destroy(cmd);
             if (!bson_steal(cmd, &fixed)) {
                 CLIENT_ERR("_fle2_fixup_encryptedFields_strEncodeVersion: Failed to steal BSON");
-                goto fail1;
+                goto fail;
             }
-            ok = true;
-        fail1:
-            bson_destroy(&fixed_ef);
-        fail2:
-            // If OK, fixed was stolen and put in cmd; don't destroy it
-            if (!ok) {
-                bson_destroy(&fixed);
-            }
-            return ok;
+            return true;
+        fail:
+            bson_destroy(&fixed);
+            return false;
         } else {
             // Check strEncodeVersion for match against EFC
             if (!BSON_ITER_HOLDS_INT32(&sev_iter)) {

@@ -176,7 +176,7 @@ bool mc_EncryptedFieldConfig_parse(mc_EncryptedFieldConfig_t *efc,
         return false;
     }
     if (!BSON_ITER_HOLDS_ARRAY(&iter)) {
-        CLIENT_ERR("expected 'fields' to be type array, got: %d", bson_iter_type(&iter));
+        CLIENT_ERR("expected 'fields' to be type array, got: %s", mc_bson_type_to_string(bson_iter_type(&iter)));
         return false;
     }
     if (!bson_iter_recurse(&iter, &iter)) {
@@ -208,12 +208,13 @@ bool mc_EncryptedFieldConfig_parse(mc_EncryptedFieldConfig_t *efc,
         }
     } else {
         if (!BSON_ITER_HOLDS_INT32(&iter)) {
-            CLIENT_ERR("expected 'strEncodeVersion' to be type int32, got: %d", bson_iter_type(&iter));
+            CLIENT_ERR("expected 'strEncodeVersion' to be type int32, got: %s",
+                       mc_bson_type_to_string(bson_iter_type(&iter)));
             return false;
         }
         int32_t version = bson_iter_int32(&iter);
         if (version > LATEST_STR_ENCODE_VERSION || version < MIN_STR_ENCODE_VERSION) {
-            CLIENT_ERR("'strEncodeVersion' of %d is not supported", version);
+            CLIENT_ERR("'strEncodeVersion' of %" PRId32 " is not supported", version);
             return false;
         }
         efc->str_encode_version = (uint8_t)version;
