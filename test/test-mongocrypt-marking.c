@@ -1712,9 +1712,9 @@ static void test_ciphertext_len_steps_fle2_text_search(_mongocrypt_tester_t *tes
     mongocrypt_binary_t *ki = TEST_BIN(16);
     mongocrypt_binary_t *ku = TEST_BIN(16);
 
-    for (size_t strlen = 0; strlen < 256; strlen++) {
-        char *v = bson_malloc0(strlen + 1);
-        memset(v, 'a', strlen);
+    for (size_t str_len = 0; str_len < 256; str_len++) {
+        char *v = bson_malloc0(str_len + 1);
+        memset(v, 'a', str_len);
         size_t bufsize = snprintf(NULL, 0, markingJSONFormat, v) + 1;
         char *markingJSON = bson_malloc(bufsize);
         sprintf(markingJSON, markingJSONFormat, v);
@@ -1730,10 +1730,10 @@ static void test_ciphertext_len_steps_fle2_text_search(_mongocrypt_tester_t *tes
         bson_t ciphertext_bson;
         ASSERT(_mongocrypt_buffer_to_bson(&ciphertext.data, &ciphertext_bson));
         iupv2_fields_common res = validate_iupv2_common(&ciphertext_bson);
-        if (strlen != 0) {
-            // We expect a step in ciphertext len iff strlen + 5 goes from 16k-1 to 16k. 5 is the number of overhead
+        if (str_len != 0) {
+            // We expect a step in ciphertext len iff str_len + 5 goes from 16k-1 to 16k. 5 is the number of overhead
             // bytes from the BSON header + null byte.
-            if ((strlen + 5) % 16 == 0) {
+            if ((str_len + 5) % 16 == 0) {
                 ASSERT_CMPSIZE_T(res.v.len, ==, last_len + 16);
             } else {
                 ASSERT_CMPSIZE_T(res.v.len, ==, last_len);
