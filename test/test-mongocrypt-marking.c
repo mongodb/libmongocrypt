@@ -908,27 +908,29 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
     }
 }
 
-// Runs _mongocrypt_marking_to_ciphertext to compute the ciphertext for the given marking.
-static void get_ciphertext_from_marking_json(_mongocrypt_tester_t *tester,
-                                             mongocrypt_t *crypt,
-                                             const char *markingJSON,
-                                             _mongocrypt_ciphertext_t *out) {
+// Helper for get_ciphertext_from_marking_json when we don't want to use extra test buffer space.
+static void get_ciphertext_from_marking_json_with_bufs(mongocrypt_t *crypt,
+                                                       bson_t *marking_bson,
+                                                       _mongocrypt_ciphertext_t *out,
+                                                       mongocrypt_binary_t *cmd,
+                                                       mongocrypt_binary_t *keyIdSpace,
+                                                       mongocrypt_binary_t *kiSpace,
+                                                       mongocrypt_binary_t *kuSpace) {
     mongocrypt_status_t *status = mongocrypt_status_new();
     mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
     // Set up encryption environment
-    ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "test", -1, TEST_FILE("./test/example/cmd.json")), ctx);
+    ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "test", -1, cmd), ctx);
     // Add a test key
     _mongocrypt_buffer_t keyId;
-    _mongocrypt_buffer_from_binary(&keyId, TEST_BIN(16));
+    _mongocrypt_buffer_from_binary(&keyId, keyIdSpace);
     keyId.subtype = BSON_SUBTYPE_UUID;
     _mongocrypt_key_broker_add_test_key(&ctx->kb, &keyId);
 
     _mongocrypt_buffer_t marking_buf;
     _mongocrypt_marking_t marking;
-    bson_t *marking_bson = TMP_BSON(markingJSON);
     // Add key identifier info to the marking
-    BSON_APPEND_BINARY(marking_bson, "ki", BSON_SUBTYPE_UUID, (TEST_BIN(16))->data, 16);
-    BSON_APPEND_BINARY(marking_bson, "ku", BSON_SUBTYPE_UUID, (TEST_BIN(16))->data, 16);
+    BSON_APPEND_BINARY(marking_bson, "ki", BSON_SUBTYPE_UUID, (kiSpace)->data, 16);
+    BSON_APPEND_BINARY(marking_bson, "ku", BSON_SUBTYPE_UUID, (kuSpace)->data, 16);
     _make_marking(marking_bson, &marking_buf);
     // Use FLE2 as the subtype (default is FLE1)
     marking_buf.data[0] = MC_SUBTYPE_FLE2EncryptionPlaceholder;
@@ -940,6 +942,20 @@ static void get_ciphertext_from_marking_json(_mongocrypt_tester_t *tester,
     _mongocrypt_buffer_cleanup(&marking_buf);
     _mongocrypt_marking_cleanup(&marking);
     mongocrypt_ctx_destroy(ctx);
+}
+
+// Runs _mongocrypt_marking_to_ciphertext to compute the ciphertext for the given marking.
+static void get_ciphertext_from_marking_json(_mongocrypt_tester_t *tester,
+                                             mongocrypt_t *crypt,
+                                             const char *markingJSON,
+                                             _mongocrypt_ciphertext_t *out) {
+    get_ciphertext_from_marking_json_with_bufs(crypt,
+                                               TMP_BSON(markingJSON),
+                                               out,
+                                               TEST_FILE("./test/example/cmd.json"),
+                                               TEST_BIN(16),
+                                               TEST_BIN(16),
+                                               TEST_BIN(16));
 }
 
 // Get the ECOC token to use in decryption.
@@ -1366,8 +1382,8 @@ static size_t calculate_expected_substring_tag_count(size_t beta, size_t mlen, s
     ASSERT_CMPSIZE_T(lb, <=, ub);
     ASSERT_CMPSIZE_T(mlen, >=, ub);
 
-    size_t cbclen = 16 * ((beta + 15) / 16);
-    if (beta > mlen || lb > cbclen) {
+    size_t padded_len = 16 * ((beta + 5 + 15) / 16) - 5;
+    if (beta > mlen || lb > padded_len) {
         return 0;
     }
     size_t maxkgram1 = 0;
@@ -1375,8 +1391,8 @@ static size_t calculate_expected_substring_tag_count(size_t beta, size_t mlen, s
     for (size_t j = lb; j <= ub; j++) {
         maxkgram1 += (mlen - j + 1);
     }
-    for (size_t j = lb; j <= BSON_MIN(ub, cbclen); j++) {
-        maxkgram2 += (cbclen - j + 1);
+    for (size_t j = lb; j <= BSON_MIN(ub, padded_len); j++) {
+        maxkgram2 += (padded_len - j + 1);
     }
     return BSON_MIN(maxkgram1, maxkgram2); // msize
 }
@@ -1384,11 +1400,11 @@ static size_t calculate_expected_substring_tag_count(size_t beta, size_t mlen, s
 static size_t calculate_expected_nfix_tag_count(size_t beta, size_t ub, size_t lb) {
     ASSERT_CMPSIZE_T(beta, <=, (SIZE_MAX - 15));
     ASSERT_CMPSIZE_T(lb, <=, ub);
-    size_t cbclen = 16 * ((beta + 15) / 16);
-    if (lb > cbclen) {
+    size_t padded_len = 16 * ((beta + 5 + 15) / 16) - 5;
+    if (lb > padded_len) {
         return 0;
     }
-    return BSON_MIN(ub, cbclen) - lb + 1;
+    return BSON_MIN(ub, padded_len) - lb + 1;
 }
 
 // Runs _mongocrypt_marking_to_ciphertext to compute the ciphertext for the given marking.
@@ -1678,9 +1694,68 @@ static void test_mc_marking_to_ciphertext_fle2_text_search(_mongocrypt_tester_t 
     }
 }
 
+static void test_ciphertext_len_steps_fle2_text_search(_mongocrypt_tester_t *tester) {
+    const char *markingJSONFormat = RAW_STRING({
+        't' : 1,
+        'a' : 4,
+        'v' : {
+            'v' : "%s",
+            'casef' : false,
+            'diacf' : false,
+            'suffix' : {'ub' : {'$numberInt' : '2'}, 'lb' : {'$numberInt' : '1'}}
+        },
+        'cm' : {'$numberLong' : '2'}
+    });
+    size_t last_len = 0;
+    mongocrypt_binary_t *cmd = TEST_FILE("./test/example/cmd.json");
+    mongocrypt_binary_t *key_file = TEST_BIN(16);
+    mongocrypt_binary_t *ki = TEST_BIN(16);
+    mongocrypt_binary_t *ku = TEST_BIN(16);
+
+    for (size_t str_len = 0; str_len < 256; str_len++) {
+        char *v = bson_malloc0(str_len + 1);
+        memset(v, 'a', str_len);
+        size_t bufsize = snprintf(NULL, 0, markingJSONFormat, v) + 1;
+        char *markingJSON = bson_malloc(bufsize);
+        sprintf(markingJSON, markingJSONFormat, v);
+        bson_t *marking_bson = TMP_BSON(markingJSON);
+
+        _mongocrypt_ciphertext_t ciphertext;
+        _mongocrypt_ciphertext_init(&ciphertext);
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+
+        get_ciphertext_from_marking_json_with_bufs(crypt, marking_bson, &ciphertext, cmd, key_file, ki, ku);
+
+        // Get res.v, and make sure its size steps when we expect.
+        bson_t ciphertext_bson;
+        ASSERT(_mongocrypt_buffer_to_bson(&ciphertext.data, &ciphertext_bson));
+        iupv2_fields_common res = validate_iupv2_common(&ciphertext_bson);
+        if (str_len != 0) {
+            // We expect a step in ciphertext len iff str_len + 5 goes from 16k-1 to 16k. 5 is the number of overhead
+            // bytes from the BSON header + null byte.
+            if ((str_len + 5) % 16 == 0) {
+                ASSERT_CMPSIZE_T(res.v.len, ==, last_len + 16);
+            } else {
+                ASSERT_CMPSIZE_T(res.v.len, ==, last_len);
+            }
+        }
+        last_len = res.v.len;
+
+        bson_destroy(&ciphertext_bson);
+        bson_free(markingJSON);
+        bson_free(v);
+        mongocrypt_destroy(crypt);
+        _mongocrypt_ciphertext_cleanup(&ciphertext);
+        // Clean up marking_bson and decrement the tester bson_count so we can reuse the space.
+        bson_destroy(marking_bson);
+        tester->bson_count--;
+    }
+}
+
 void _mongocrypt_tester_install_marking(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(test_mongocrypt_marking_parse);
     INSTALL_TEST(test_mc_get_mincover_from_FLE2RangeFindSpec);
     INSTALL_TEST(test_mc_marking_to_ciphertext_fle2_range);
     INSTALL_TEST(test_mc_marking_to_ciphertext_fle2_text_search);
+    INSTALL_TEST(test_ciphertext_len_steps_fle2_text_search);
 }
