@@ -41,6 +41,9 @@ void mc_schema_broker_use_rangev2(mc_schema_broker_t *sb);
 // Returns error if two requests have different databases (not-yet supported).
 bool mc_schema_broker_request(mc_schema_broker_t *sb, const char *db, const char *coll, mongocrypt_status_t *status);
 
+// mc_schema_broker_has_multiple_requests returns true if there are requests for multiple unique collections
+bool mc_schema_broker_has_multiple_requests(const mc_schema_broker_t *sb);
+
 // mc_schema_broker_append_listCollections_filter appends a filter to use with the listCollections command.
 // Example: { "name": { "$in": [ "coll1", "coll2" ] } }
 // The filter matches all not-yet-satisfied collections.
