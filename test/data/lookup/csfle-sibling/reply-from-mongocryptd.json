@@ -1,0 +1,18 @@
+{
+   "result": {
+      "aggregate": "c1",
+      "pipeline": [
+         {
+            "$lookup": {
+               "from": "c2",
+               "localField": "joinme",
+               "foreignField": "joinme",
+               "as": "matched"
+            }
+         }
+      ],
+      "cursor": {}
+   },
+   "hasEncryptionPlaceholders": false,
+   "schemaRequiresEncryption": true
+}

@@ -1,0 +1,17 @@
+{
+    "type": "collection",
+    "name": "c1",
+    "idIndex": {
+        "ns": "db.c1",
+        "name": "_id_",
+        "key": {
+            "_id": {
+                "$numberInt": "1"
+            }
+        },
+        "v": {
+            "$numberInt": "2"
+        }
+    },
+    "options": {}
+}

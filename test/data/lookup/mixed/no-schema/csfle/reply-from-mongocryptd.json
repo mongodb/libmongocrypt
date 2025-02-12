@@ -1,0 +1,33 @@
+{
+   "hasEncryptionPlaceholders": false,
+   "schemaRequiresEncryption": true,
+   "result": {
+      "aggregate": "c1",
+      "pipeline": [
+         {
+            "$lookup": {
+               "from": "c2",
+               "localField": "joinme",
+               "foreignField": "joinme",
+               "as": "matched"
+            }
+         },
+         {
+            "$match": {
+               "matched.e2": {
+                  "$eq": {
+                     "$binary": {
+                        "base64": "ADAAAAAQYQABAAAABWtpABAAAAAEuJ2Njy8YQDuYKbzu2vEKQgJ2AAQAAABmb28AAA==",
+                        "subType": "06"
+                     }
+                  }
+               }
+            }
+         }
+      ],
+      "cursor": {}
+   },
+   "ok": {
+      "$numberDouble": "1.0"
+   }
+}

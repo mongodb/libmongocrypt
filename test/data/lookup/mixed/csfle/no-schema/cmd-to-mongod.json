@@ -1,0 +1,26 @@
+{
+   "aggregate": "c1",
+   "pipeline": [
+      {
+         "$lookup": {
+            "from": "c2",
+            "localField": "joinme",
+            "foreignField": "joinme",
+            "as": "matched"
+         }
+      },
+      {
+         "$match": {
+            "e1": {
+               "$eq": {
+                  "$binary": {
+                     "base64": "AbidjY8vGEA7mCm87trxCkIC8kZKVHsnE5QVf4xhKcl5AesA5UowxrXhd2IOU6/bQ5EjCTRjLABgU4qpPkwCtbkZX4COgHCmiyzOenkRVBV7NQ==",
+                     "subType": "06"
+                  }
+               }
+            }
+         }
+      }
+   ],
+   "cursor": {}
+}
