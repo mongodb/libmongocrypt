@@ -1561,7 +1561,9 @@ static void _test_encrypt_with_bypassqueryanalysis(_mongocrypt_tester_t *tester)
 
         ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
         {
-            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TEST_BSON("{'options': {'encryptedFields': {'fields': []}}}")),
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(
+                          ctx,
+                          TEST_BSON("{'name': 'coll', 'options': {'encryptedFields': {'fields': []}}}")),
                       ctx);
             ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
         }
