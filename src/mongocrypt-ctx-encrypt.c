@@ -2225,6 +2225,150 @@ static bool needs_ismaster_check(mongocrypt_ctx_t *ctx) {
     return using_mongocryptd && (0 == strcmp(ectx->cmd_name, "create") || 0 == strcmp(ectx->cmd_name, "createIndexes"));
 }
 
+// `find_collections_in_pipeline` finds other collection names in an aggregate pipeline that may need schemas.
+static bool find_collections_in_pipeline(mc_schema_broker_t *sb,
+                                         bson_iter_t pipeline_iter,
+                                         const char *db,
+                                         mstr_view path,
+                                         mongocrypt_status_t *status) {
+    bson_iter_t array_iter;
+    if (!BSON_ITER_HOLDS_ARRAY(&pipeline_iter) || !bson_iter_recurse(&pipeline_iter, &array_iter)) {
+        CLIENT_ERR("failed to recurse pipeline at path: %s", path.data);
+        return false;
+    }
+
+    while (bson_iter_next(&array_iter)) {
+        bson_iter_t stage_iter;
+        const char *stage_key = bson_iter_key(&array_iter);
+
+        if (!BSON_ITER_HOLDS_DOCUMENT(&array_iter) || !bson_iter_recurse(&array_iter, &stage_iter)
+            || !bson_iter_next(&stage_iter)) {
+            CLIENT_ERR("failed to recurse stage at path: %s.%s", path.data, stage_key);
+            return false;
+        }
+
+        const char *stage = bson_iter_key(&stage_iter);
+        // Check for $lookup.
+        if (0 == strcmp(stage, "$lookup")) {
+            bson_iter_t lookup_iter;
+            if (!BSON_ITER_HOLDS_DOCUMENT(&stage_iter) || !bson_iter_recurse(&stage_iter, &lookup_iter)) {
+                CLIENT_ERR("failed to recurse $lookup at path: %s.%s", path.data, stage_key);
+                return false;
+            }
+
+            while (bson_iter_next(&lookup_iter)) {
+                const char *field = bson_iter_key(&lookup_iter);
+                if (0 == strcmp(field, "from")) {
+                    if (!BSON_ITER_HOLDS_UTF8(&lookup_iter)) {
+                        CLIENT_ERR("expected string, but '%s' for 'from' field at path: %s.%s",
+                                   mc_bson_type_to_string(bson_iter_type(&lookup_iter)),
+                                   path.data,
+                                   stage_key);
+                        return false;
+                    }
+                    const char *from = bson_iter_utf8(&lookup_iter, NULL);
+                    if (!mc_schema_broker_request(sb, db, from, status)) {
+                        return false;
+                    }
+                }
+
+                if (0 == strcmp(field, "pipeline")) {
+                    mstr subpath = mstr_append(path, mstrv_lit("."));
+                    mstr_inplace_append(&subpath, mstrv_view_cstr(stage_key));
+                    mstr_inplace_append(&subpath, mstrv_lit(".$lookup.pipeline"));
+                    if (!find_collections_in_pipeline(sb, lookup_iter, db, subpath.view, status)) {
+                        mstr_free(subpath);
+                        return false;
+                    }
+                    mstr_free(subpath);
+                }
+            }
+        }
+
+        // Check for $facet.
+        if (0 == strcmp(stage, "$facet")) {
+            bson_iter_t facet_iter;
+            if (!BSON_ITER_HOLDS_DOCUMENT(&stage_iter) || !bson_iter_recurse(&stage_iter, &facet_iter)) {
+                CLIENT_ERR("failed to recurse $facet at path: %s.%s", path.data, stage_key);
+                return false;
+            }
+
+            while (bson_iter_next(&facet_iter)) {
+                const char *field = bson_iter_key(&facet_iter);
+                mstr subpath = mstr_append(path, mstrv_lit("."));
+                mstr_inplace_append(&subpath, mstrv_view_cstr(stage_key));
+                mstr_inplace_append(&subpath, mstrv_lit(".$facet."));
+                mstr_inplace_append(&subpath, mstrv_view_cstr(field));
+                if (!find_collections_in_pipeline(sb, facet_iter, db, subpath.view, status)) {
+                    mstr_free(subpath);
+                    return false;
+                }
+                mstr_free(subpath);
+            }
+        }
+
+        // Check for $unionWith.
+        if (0 == strcmp(stage, "$unionWith")) {
+            bson_iter_t unionWith_iter;
+            if (!BSON_ITER_HOLDS_DOCUMENT(&stage_iter) || !bson_iter_recurse(&stage_iter, &unionWith_iter)) {
+                CLIENT_ERR("failed to recurse $unionWith at path: %s.%s", path.data, stage_key);
+                return false;
+            }
+
+            while (bson_iter_next(&unionWith_iter)) {
+                const char *field = bson_iter_key(&unionWith_iter);
+                if (0 == strcmp(field, "coll")) {
+                    if (!BSON_ITER_HOLDS_UTF8(&unionWith_iter)) {
+                        CLIENT_ERR("expected string, but got '%s' for 'coll' field at path: %s.%s",
+                                   mc_bson_type_to_string(bson_iter_type(&unionWith_iter)),
+                                   path.data,
+                                   stage_key);
+                        return false;
+                    }
+                    const char *coll = bson_iter_utf8(&unionWith_iter, NULL);
+                    if (!mc_schema_broker_request(sb, db, coll, status)) {
+                        return false;
+                    }
+                }
+
+                if (0 == strcmp(field, "pipeline")) {
+                    mstr subpath = mstr_append(path, mstrv_lit("."));
+                    mstr_inplace_append(&subpath, mstrv_view_cstr(stage_key));
+                    mstr_inplace_append(&subpath, mstrv_lit(".$unionWith.pipeline"));
+                    if (!find_collections_in_pipeline(sb, unionWith_iter, db, subpath.view, status)) {
+                        mstr_free(subpath);
+                        return false;
+                    }
+                    mstr_free(subpath);
+                }
+            }
+        }
+    }
+
+    return true;
+}
+
+static bool
+find_collections_in_agg(mongocrypt_binary_t *cmd, mc_schema_broker_t *sb, const char *db, mongocrypt_status_t *status) {
+    bson_t cmd_bson;
+    if (!_mongocrypt_binary_to_bson(cmd, &cmd_bson)) {
+        CLIENT_ERR("failed to convert command to BSON");
+        return false;
+    }
+
+    bson_iter_t iter;
+    if (!bson_iter_init_find(&iter, &cmd_bson, "pipeline")) {
+        // Command may be malformed. Let server error.
+        return true;
+    }
+
+    if (!find_collections_in_pipeline(sb, iter, db, mstrv_lit("aggregate.pipeline"), status)) {
+        return false;
+    }
+
+    return true;
+}
+
 bool mongocrypt_ctx_encrypt_init(mongocrypt_ctx_t *ctx, const char *db, int32_t db_len, mongocrypt_binary_t *cmd) {
     _mongocrypt_ctx_encrypt_t *ectx;
     _mongocrypt_ctx_opts_spec_t opts_spec;
@@ -2310,6 +2454,22 @@ bool mongocrypt_ctx_encrypt_init(mongocrypt_ctx_t *ctx, const char *db, int32_t 
         ectx->target_ns = bson_strdup_printf("%s.%s", ectx->cmd_db, ectx->target_coll);
         if (!mc_schema_broker_request(ectx->sb, ectx->cmd_db, ectx->target_coll, ctx->status)) {
             return _mongocrypt_ctx_fail(ctx);
+        }
+    }
+
+    if (0 == strcmp(ectx->cmd_name, "aggregate")) {
+        if (!find_collections_in_agg(cmd, ectx->sb, ectx->cmd_db, ctx->status)) {
+            _mongocrypt_ctx_fail(ctx);
+            return false;
+        }
+
+        if (mc_schema_broker_has_multiple_requests(ectx->sb)) {
+            if (!ctx->crypt->multiple_collinfo_enabled) {
+                return _mongocrypt_ctx_fail_w_msg(ctx,
+                                                  "aggregate includes a $lookup stage, but libmongocrypt is not "
+                                                  "configured to support encrypting a "
+                                                  "command with multiple collections");
+            }
         }
     }
 
