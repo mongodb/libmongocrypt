@@ -12,10 +12,10 @@
          }
       }
    ],
-   "$db": "admin",
    "nsInfo": [
       {
          "ns": "db.test"
       }
-   ]
+   ],
+   "$db": "admin"
 }
