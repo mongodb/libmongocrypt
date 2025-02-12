@@ -30,15 +30,18 @@
 /* Construct the list collections command to send. */
 static bool _mongo_op_collinfo(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
     _mongocrypt_ctx_encrypt_t *ectx;
-    bson_t *cmd;
 
     BSON_ASSERT_PARAM(ctx);
     BSON_ASSERT_PARAM(out);
 
     ectx = (_mongocrypt_ctx_encrypt_t *)ctx;
-    cmd = BCON_NEW("name", BCON_UTF8(ectx->target_coll));
-    CRYPT_TRACEF(&ectx->parent.crypt->log, "constructed: %s\n", tmp_json(cmd));
-    _mongocrypt_buffer_steal_from_bson(&ectx->list_collections_filter, cmd);
+    bson_t filter = BSON_INITIALIZER;
+    if (!mc_schema_broker_append_listCollections_filter(ectx->sb, &filter, ctx->status)) {
+        _mongocrypt_ctx_fail(ctx);
+        return false;
+    }
+    CRYPT_TRACEF(&ectx->parent.crypt->log, "constructed: %s\n", tmp_json(filter));
+    _mongocrypt_buffer_steal_from_bson(&ectx->list_collections_filter, &filter);
     out->data = ectx->list_collections_filter.data;
     out->len = ectx->list_collections_filter.len;
     return true;
