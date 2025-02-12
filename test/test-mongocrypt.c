@@ -233,6 +233,61 @@ bson_t *_mongocrypt_tester_bson_from_json(_mongocrypt_tester_t *tester, const ch
     return bson;
 }
 
+bson_t *tmp_bsonf(_mongocrypt_tester_t *tester, const char *fmt, ...) {
+    va_list arg;
+    va_start(arg, fmt);
+
+    char *dst = bson_malloc(strlen(fmt));
+    size_t dst_capacity = strlen(fmt);
+    size_t dst_len = 0;
+
+#define ENSURE_CAPACITY(len)                                                                                           \
+    if (1) {                                                                                                           \
+        if (len + dst_len >= dst_capacity) {                                                                           \
+            dst_capacity = len + dst_len;                                                                              \
+            dst_capacity *= 2;                                                                                         \
+            dst = bson_realloc(dst, dst_capacity);                                                                     \
+        }                                                                                                              \
+    } else                                                                                                             \
+        (void)0
+
+    for (const char *ptr = fmt; *ptr != '\0'; ptr++) {
+        if (0 == strncmp(ptr, "MC_STR", strlen("MC_STR"))) {
+            const char *src = va_arg(arg, const char *);
+            size_t src_len = strlen(src);
+            ENSURE_CAPACITY(src_len + 2);
+            *(dst + dst_len++) = '"';
+            strcpy(dst + dst_len, src);
+            dst_len += src_len;
+            *(dst + dst_len++) = '"';
+            ptr += strlen("MC_STR") - 1;
+            continue;
+        }
+
+        if (0 == strncmp(ptr, "MC_BSON", strlen("MC_BSON"))) {
+            const bson_t *src_bson = va_arg(arg, const bson_t *);
+            size_t src_len;
+            char *src = bson_as_canonical_extended_json(src_bson, &src_len);
+            ENSURE_CAPACITY(src_len);
+            strcpy(dst + dst_len, src);
+            dst_len += src_len;
+            bson_free(src);
+            ptr += strlen("MC_BSON") - 1;
+            continue;
+        }
+
+        ENSURE_CAPACITY(1);
+        *(dst + dst_len++) = *ptr;
+    }
+#undef ENSURE_CAPACITY
+
+    dst[dst_len] = '\0';
+    bson_t *tmp = TMP_BSON(dst);
+    va_end(arg);
+    bson_free(dst);
+    return tmp;
+}
+
 mongocrypt_binary_t *_mongocrypt_tester_bin_from_json(_mongocrypt_tester_t *tester, const char *json, ...) {
     va_list ap;
     char *full_json;
@@ -861,6 +916,13 @@ static void _test_setopt_kms_providers(_mongocrypt_tester_t *tester) {
     }
 }
 
+static void test_tmp_bsonf(_mongocrypt_tester_t *tester) {
+    bson_t *one = TMP_BSONF("{'foo' : MC_STR}", "bar");
+    ASSERT_EQUAL_BSON(one, TMP_BSONF("{'foo': 'bar'}"));
+    bson_t *two = TMP_BSONF("{'blah': MC_BSON}", one);
+    ASSERT_EQUAL_BSON(two, TMP_BSONF("{'blah': {'foo': 'bar'}}"));
+}
+
 bool _aes_ctr_is_supported_by_os = true;
 
 int main(int argc, char **argv) {
@@ -937,6 +999,7 @@ int main(int argc, char **argv) {
     _mongocrypt_tester_install_mc_cmp(&tester);
     _mongocrypt_tester_install_text_search_str_encode(&tester);
     _mongocrypt_tester_install_unicode_fold(&tester);
+    _mongocrypt_tester_install(&tester, "test_tmp_bsonf", test_tmp_bsonf, CRYPTO_OPTIONAL);
 
 #ifdef MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO
     char osversion[32];
