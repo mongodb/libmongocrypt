@@ -1000,6 +1000,7 @@ int main(int argc, char **argv) {
     _mongocrypt_tester_install_text_search_str_encode(&tester);
     _mongocrypt_tester_install_unicode_fold(&tester);
     _mongocrypt_tester_install(&tester, "test_tmp_bsonf", test_tmp_bsonf, CRYPTO_OPTIONAL);
+    _mongocrypt_tester_install_mc_schema_broker(&tester);
 
 #ifdef MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO
     char osversion[32];
