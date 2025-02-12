@@ -3577,6 +3577,33 @@ _test_fle2_text_search_create_with_encrypted_fields_unmatching_str_encode_versio
                                 "fle2-text-search-create-encrypted-collection-with-str-encode-version");
 }
 
+// Test that the JSON Schema found from a "create" command is not cached.
+static void _test_fle2_create_does_not_cache_empty_schema(_mongocrypt_tester_t *tester) {
+    mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+    // Auto encrypt a "create" to "db.coll".
+    {
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_FILE("./test/data/fle2-create/cmd.json")), ctx);
+        expect_and_reply_to_ismaster(ctx);
+
+        // Expect MONGOCRYPT_CTX_NEED_MONGO_COLLINFO is skipped since no server-side schema is expected for "create".
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+        mongocrypt_ctx_destroy(ctx);
+    }
+
+    // Auto encrypt "find" to "db.coll". Expect server-side schema is requested.
+    {
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_BSON(BSON_STR({"find" : "coll", "filter" : {}}))),
+                  ctx);
+        // The MONGOCRYPT_CTX_NEED_COLLINFO state is entered to request a server-side schema.
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+        mongocrypt_ctx_destroy(ctx);
+    }
+
+    mongocrypt_destroy(crypt);
+}
+
 /* Regression test for MONGOCRYPT-435 */
 static void _test_fle2_create_bypass_query_analysis(_mongocrypt_tester_t *tester) {
     mongocrypt_t *crypt = mongocrypt_new();
@@ -4892,6 +4919,7 @@ void _mongocrypt_tester_install_ctx_encrypt(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_fle2_text_search_create_with_encrypted_fields_and_str_encode_version);
     INSTALL_TEST(_test_fle2_text_search_create_with_encrypted_fields_unset_str_encode_version);
     INSTALL_TEST(_test_fle2_text_search_create_with_encrypted_fields_unmatching_str_encode_version);
+    INSTALL_TEST(_test_fle2_create_does_not_cache_empty_schema);
     INSTALL_TEST(_test_fle2_create_bypass_query_analysis);
     INSTALL_TEST(_test_encrypt_macos_no_ctr);
     INSTALL_TEST(_test_fle1_collmod_with_jsonSchema);
