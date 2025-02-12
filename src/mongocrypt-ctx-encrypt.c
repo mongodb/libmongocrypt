@@ -685,9 +685,12 @@ static moe_result must_omit_encryptionInformation(const char *command_name,
 
     BSON_ASSERT_PARAM(command_name);
     BSON_ASSERT_PARAM(command);
-    BSON_ASSERT_PARAM(efc);
 
     if (0 == strcmp("compactStructuredEncryptionData", command_name)) {
+        if (!efc) {
+            CLIENT_ERR("target collection does not have encryptedFields");
+            return (moe_result){.ok = false};
+        }
         // `compactStructuredEncryptionData` is a special case:
         // - Server 7.0 prohibits `encryptionInformation`.
         // - Server 8.0 requires `encryptionInformation` if "range" fields are referenced. Otherwise ignores.
@@ -755,7 +758,6 @@ static bool _fle2_append_compactionTokens(mongocrypt_t *crypt,
 
     BSON_ASSERT_PARAM(crypt);
     BSON_ASSERT_PARAM(kb);
-    BSON_ASSERT_PARAM(efc);
     BSON_ASSERT_PARAM(command_name);
     BSON_ASSERT_PARAM(out);
     _mongocrypt_crypto_t *crypto = crypt->crypto;
@@ -764,6 +766,11 @@ static bool _fle2_append_compactionTokens(mongocrypt_t *crypt,
 
     if (0 != strcmp(command_name, "compactStructuredEncryptionData") && !cleanup) {
         return true;
+    }
+
+    if (!efc) {
+        CLIENT_ERR("expected to have encryptedFields for %s command but have none", command_name);
+        return false;
     }
 
     if (cleanup) {
@@ -982,9 +989,12 @@ static bool _fle2_fixup_encryptedFields_strEncodeVersion(const char *cmd_name,
                                                          mongocrypt_status_t *status) {
     BSON_ASSERT_PARAM(cmd_name);
     BSON_ASSERT_PARAM(cmd);
-    BSON_ASSERT_PARAM(efc);
 
     if (0 == strcmp(cmd_name, "create")) {
+        if (!efc) {
+            CLIENT_ERR("expected to have encryptedFields for create command but have none");
+            return false;
+        }
         bson_iter_t ef_iter;
         if (!bson_iter_init_find(&ef_iter, cmd, "encryptedFields")) {
             // No encryptedFields, nothing to check or fix
@@ -1123,14 +1133,10 @@ static bool _fle2_finalize(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
         return _mongocrypt_ctx_fail(ctx);
     }
 
-    // For create/cleanupStructuredEncryptionData/compactStructuredEncryptionData, get the encryptedFields for the
-    // single target collection.
+    // For create/cleanupStructuredEncryptionData/compactStructuredEncryptionData, get encryptedFields for the
+    // single target collection. Ignore error since encryptedFields may not be present for other commands.
     const mc_EncryptedFieldConfig_t *target_efc =
-        mc_schema_broker_get_encryptedFields(ectx->sb, ectx->target_coll, ctx->status);
-    if (!target_efc) {
-        bson_destroy(&converted);
-        return _mongocrypt_ctx_fail(ctx);
-    }
+        mc_schema_broker_get_encryptedFields(ectx->sb, ectx->target_coll, NULL);
 
     moe_result result = must_omit_encryptionInformation(command_name,
                                                         &converted,
