@@ -616,7 +616,7 @@ static void _test_view(_mongocrypt_tester_t *tester) {
 
     crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
     ctx = mongocrypt_ctx_new(crypt);
-    ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "test", -1, TEST_FILE("./test/example/cmd.json")), ctx);
+    ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "test", -1, TEST_BSON(BSON_STR({"find" : "v", "filter" : {}}))), ctx);
     _mongocrypt_tester_run_ctx_to(tester, ctx, MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
     ASSERT_FAILS(mongocrypt_ctx_mongo_feed(ctx, TEST_FILE("./test/data/collection-info-view.json")),
                  ctx,
