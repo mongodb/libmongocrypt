@@ -2432,7 +2432,7 @@ static bool mongocrypt_ctx_encrypt_ismaster_done(mongocrypt_ctx_t *ctx) {
     /* If an encrypted_field_config was set, check if keys are required for
      * compactionTokens. */
 
-    if (!_fle2_collect_keys_for_compaction(ctx)) {
+    if (!mc_schema_broker_need_more_schemas(ectx->sb) && !_fle2_collect_keys_for_compaction(ctx)) {
         return false;
     }
 
