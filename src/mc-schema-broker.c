@@ -868,7 +868,11 @@ static bool insert_encryptionInformation(const mc_schema_broker_t *sb,
         //       "encryptionInformation": {}
         //    }
         // }
-        BSON_ASSERT(bson_iter_init_find(&iter, cmd, "explain"));
+        if (!bson_iter_init_find(&iter, cmd, "explain")) {
+            CLIENT_ERR("expected to find 'explain' field");
+            goto fail;
+        }
+
         if (!BSON_ITER_HOLDS_DOCUMENT(&iter)) {
             CLIENT_ERR("expected 'explain' to be document");
             goto fail;
