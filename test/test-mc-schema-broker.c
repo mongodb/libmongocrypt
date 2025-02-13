@@ -1083,9 +1083,21 @@ static void test_mc_schema_broker_has_any_qe_schemas(_mongocrypt_tester_t *teste
         mc_schema_broker_t *sb = mc_schema_broker_new();
 
         ASSERT_OK_STATUS(mc_schema_broker_request(sb, "db", "coll", status), status);
-        ASSERT(!mc_schema_broker_has_any_qe_schemas(sb));
         ASSERT_OK_STATUS(mc_schema_broker_satisfy_from_encryptedFieldsMap(sb, encryptedFieldsMap, status), status);
         ASSERT(mc_schema_broker_has_any_qe_schemas(sb));
+
+        mc_schema_broker_destroy(sb);
+        mongocrypt_status_destroy(status);
+    }
+
+    // Returns false if no QE schema.
+    {
+        mongocrypt_status_t *status = mongocrypt_status_new();
+        mc_schema_broker_t *sb = mc_schema_broker_new();
+
+        ASSERT_OK_STATUS(mc_schema_broker_request(sb, "db", "coll", status), status);
+        ASSERT_OK_STATUS(mc_schema_broker_satisfy_remaining_with_empty_schemas(sb, NULL, status), status);
+        ASSERT(!mc_schema_broker_has_any_qe_schemas(sb));
 
         mc_schema_broker_destroy(sb);
         mongocrypt_status_destroy(status);
