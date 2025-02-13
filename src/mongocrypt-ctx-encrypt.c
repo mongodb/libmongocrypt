@@ -2370,7 +2370,13 @@ static bool mongocrypt_ctx_encrypt_ismaster_done(mongocrypt_ctx_t *ctx) {
      * older than version 6.0. */
     if (needs_ismaster_check(ctx)) {
         if (ectx->ismaster.maxwireversion < WIRE_VERSION_SERVER_6) {
-            /* Bypass. */
+            // Bypass auto encryption.
+            // Satisfy schema request with an empty schema.
+            if (!mc_schema_broker_satisfy_remaining_with_empty_schemas(ectx->sb,
+                                                                       NULL /* do not cache */,
+                                                                       ctx->status)) {
+                return _mongocrypt_ctx_fail(ctx);
+            }
             ctx->nothing_to_do = true;
             ctx->state = MONGOCRYPT_CTX_READY;
             return true;
