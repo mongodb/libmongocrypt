@@ -1134,8 +1134,9 @@ static bool _fle2_finalize(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
         return _mongocrypt_ctx_fail(ctx);
     }
 
+    // Defer error handling for potentially missing encryptedFields to command-specific routines below.
     // For create/cleanupStructuredEncryptionData/compactStructuredEncryptionData, get encryptedFields for the
-    // single target collection. Ignore error. encryptedFields may not be on the target collection for other commands.
+    // single target collection. For other commands, encryptedFields may not be on the target collection.
     const mc_EncryptedFieldConfig_t *target_efc =
         mc_schema_broker_get_encryptedFields(ectx->sb, ectx->target_coll, NULL);
 
