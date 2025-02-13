@@ -277,7 +277,7 @@ bson_t *tmp_bsonf(_mongocrypt_tester_t *tester, const char *fmt, ...) {
         }
 
         ENSURE_CAPACITY(1);
-        *(dst + dst_len++) = *ptr;
+        dst[dst_len++] = *ptr;
     }
 #undef ENSURE_CAPACITY
 
