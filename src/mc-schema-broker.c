@@ -860,60 +860,56 @@ static bool insert_encryptionInformation(const mc_schema_broker_t *sb,
         goto success;
     }
 
-    if (0 != strcmp(cmd_name, "explain") || cmd_target == MC_CMD_SCHEMAS_FOR_MONGOCRYPTD) {
-        // All commands except "explain" and "bulkWrite" expect "encryptionInformation"
-        // at top-level. "explain" sent to mongocryptd expects
-        // "encryptionInformation" at top-level.
-        if (!append_encryptionInformation(sb, cmd_name, cmd, status)) {
+    if (0 == strcmp(cmd_name, "explain")
+        && (cmd_target == MC_CMD_SCHEMAS_FOR_CRYPT_SHARED || cmd_target == MC_CMD_SCHEMAS_FOR_SERVER)) {
+        // The "explain" command is a special case when sent to crypt_shared or the server.
+        // crypt_shared and the server expect "encryptionInformation" nested in the "explain" document. Example:
+        // {
+        //    "explain": {
+        //       "find": "to-crypt_shared-or-server"
+        //       "encryptionInformation": {}
+        //    }
+        // }
+        // mongocryptd expects "encryptionInformation" to be a sibling of the "explain" document. Example:
+        // {
+        //    "explain": { "find": "to-mongocryptd" },
+        //    "encryptionInformation": {}
+        // }
+        BSON_ASSERT(bson_iter_init_find(&iter, cmd, "explain"));
+        if (!BSON_ITER_HOLDS_DOCUMENT(&iter)) {
+            CLIENT_ERR("expected 'explain' to be document");
             goto fail;
         }
-        bson_destroy(&out);
+
+        {
+            bson_t tmp;
+            if (!mc_iter_document_as_bson(&iter, &tmp, status)) {
+                goto fail;
+            }
+            bson_destroy(&explain);
+            bson_copy_to(&tmp, &explain);
+        }
+
+        if (!append_encryptionInformation(sb, cmd_name, &explain, status)) {
+            goto fail;
+        }
+
+        if (!BSON_APPEND_DOCUMENT(&out, "explain", &explain)) {
+            CLIENT_ERR("unable to append 'explain' document");
+            goto fail;
+        }
+
+        bson_copy_to_excluding_noinit(cmd, &out, "explain", NULL);
+        bson_destroy(cmd);
+        if (!bson_steal(cmd, &out)) {
+            CLIENT_ERR("failed to steal BSON with encryptionInformation");
+            goto fail;
+        }
         goto success;
     }
 
-    // The "explain" command for csfle is a special case.
-    // mongocryptd expects "encryptionInformation" to be a sibling of the
-    // "explain" document. Example:
-    // {
-    //    "explain": { "find": "to-mongocryptd" },
-    //    "encryptionInformation": {}
-    // }
-    // csfle and mongod expect "encryptionInformation" to be nested in the
-    // "explain" document. Example:
-    // {
-    //    "explain": {
-    //       "find": "to-csfle-or-mongod"
-    //       "encryptionInformation": {}
-    //    }
-    // }
-    BSON_ASSERT(bson_iter_init_find(&iter, cmd, "explain"));
-    if (!BSON_ITER_HOLDS_DOCUMENT(&iter)) {
-        CLIENT_ERR("expected 'explain' to be document");
-        goto fail;
-    }
-
-    {
-        bson_t tmp;
-        if (!mc_iter_document_as_bson(&iter, &tmp, status)) {
-            goto fail;
-        }
-        bson_destroy(&explain);
-        bson_copy_to(&tmp, &explain);
-    }
-
-    if (!append_encryptionInformation(sb, cmd_name, &explain, status)) {
-        goto fail;
-    }
-
-    if (!BSON_APPEND_DOCUMENT(&out, "explain", &explain)) {
-        CLIENT_ERR("unable to append 'explain' document");
-        goto fail;
-    }
-
-    bson_copy_to_excluding_noinit(cmd, &out, "explain", NULL);
-    bson_destroy(cmd);
-    if (!bson_steal(cmd, &out)) {
-        CLIENT_ERR("failed to steal BSON with encryptionInformation");
+    // Default case: append "encryptionInformation" at top-level.
+    if (!append_encryptionInformation(sb, cmd_name, cmd, status)) {
         goto fail;
     }
 

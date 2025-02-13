@@ -897,6 +897,29 @@ static void test_mc_schema_broker_add_schemas_to_cmd(_mongocrypt_tester_t *teste
         mongocrypt_status_destroy(status);
     }
 
+    // Adds nested in "explain" for crypt_shared.
+    {
+        mongocrypt_status_t *status = mongocrypt_status_new();
+        mc_schema_broker_t *sb = mc_schema_broker_new();
+
+        ASSERT_OK_STATUS(mc_schema_broker_request(sb, "db", "coll", status), status);
+        ASSERT(mc_schema_broker_need_more_schemas(sb));
+        ASSERT_OK_STATUS(mc_schema_broker_satisfy_from_encryptedFieldsMap(sb, encryptedFieldsMap, status), status);
+        ASSERT(!mc_schema_broker_need_more_schemas(sb));
+
+        bson_t *cmd = TMP_BSON(BSON_STR({"explain" : {"find" : "coll"}}));
+        ASSERT_OK_STATUS(mc_schema_broker_add_schemas_to_cmd(sb, cmd, MC_CMD_SCHEMAS_FOR_CRYPT_SHARED, status), status);
+        bson_t *expect = TMP_BSONF(
+            BSON_STR({
+                "explain" : {"find" : "coll", "encryptionInformation" : {"type" : 1, "schema" : {"db.coll" : MC_BSON}}}
+            }),
+            encryptedFields);
+        ASSERT_EQUAL_BSON(expect, cmd);
+
+        mc_schema_broker_destroy(sb);
+        mongocrypt_status_destroy(status);
+    }
+
     // Adds empty QE schema in 'encryptionInformation' when one collection has a QE schema and other does not.
     {
         mongocrypt_status_t *status = mongocrypt_status_new();
