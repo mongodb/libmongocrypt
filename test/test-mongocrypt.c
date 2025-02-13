@@ -931,9 +931,9 @@ int main(int argc, char **argv) {
 
     TEST_PRINTF("Pass a list of patterns to run a subset of tests.\n");
     TEST_PRINTF("Patterns may be exact matches or include a trailing wildcard (*). Examples:\n");
-    TEST_PRINTF("$ test-mongocrypt _mongocrypt_test_mcgrew\n");
-    TEST_PRINTF("$ test-mongocrypt test_mc_schema_broker*\n");
-    TEST_PRINTF("$ test-mongocrypt test_mc_named_kms_provider_parse test_mc_named_kms_provider_map\n");
+    TEST_PRINTF("  test-mongocrypt _mongocrypt_test_mcgrew\n");
+    TEST_PRINTF("  test-mongocrypt 'test_mc_*'\n");
+    TEST_PRINTF("  test-mongocrypt test_mc_named_kms_provider_parse test_mc_named_kms_provider_map\n");
 
     /* Install all tests. */
     _mongocrypt_tester_install_crypto(&tester);
