@@ -611,8 +611,8 @@ static void test_mc_schema_broker_add_schemas_to_cmd(_mongocrypt_tester_t *teste
         bson_t *expect = TMP_BSONF(BSON_STR({
                                        "find" : "coll",
                                        "csfleEncryptionSchemas" : {
-                                           "db.coll" : {"schema" : MC_BSON, "isRemoteSchema" : false},
-                                           "db.coll2" : {"schema" : MC_BSON, "isRemoteSchema" : false}
+                                           "db.coll" : {"jsonSchema" : MC_BSON, "isRemoteSchema" : false},
+                                           "db.coll2" : {"jsonSchema" : MC_BSON, "isRemoteSchema" : false}
                                        }
                                    }),
                                    jsonSchema,
@@ -663,8 +663,8 @@ static void test_mc_schema_broker_add_schemas_to_cmd(_mongocrypt_tester_t *teste
         bson_t *expect = TMP_BSONF(BSON_STR({
                                        "find" : "coll",
                                        "csfleEncryptionSchemas" : {
-                                           "db.coll" : {"schema" : MC_BSON, "isRemoteSchema" : true},
-                                           "db.coll2" : {"schema" : {}, "isRemoteSchema" : false}
+                                           "db.coll" : {"jsonSchema" : MC_BSON, "isRemoteSchema" : true},
+                                           "db.coll2" : {"jsonSchema" : {}, "isRemoteSchema" : false}
                                        }
                                    }),
                                    jsonSchema);
@@ -691,8 +691,8 @@ static void test_mc_schema_broker_add_schemas_to_cmd(_mongocrypt_tester_t *teste
         bson_t *expect = TMP_BSON(BSON_STR({
             "find" : "coll",
             "csfleEncryptionSchemas" : {
-                "db.coll" : {"schema" : {}, "isRemoteSchema" : false},
-                "db.coll2" : {"schema" : {}, "isRemoteSchema" : false}
+                "db.coll" : {"jsonSchema" : {}, "isRemoteSchema" : false},
+                "db.coll2" : {"jsonSchema" : {}, "isRemoteSchema" : false}
             }
         }));
         ASSERT_EQUAL_BSON(expect, cmd);

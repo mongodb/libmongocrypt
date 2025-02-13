@@ -989,14 +989,14 @@ static bool insert_csfleEncryptionSchemas(const mc_schema_broker_t *sb,
         if (!se->jsonSchema.set) {
             // Append as an empty document.
             bson_t empty = BSON_INITIALIZER;
-            TRY_BSON_OR(BSON_APPEND_DOCUMENT(&ns_to_doc, "schema", &empty)) {
+            TRY_BSON_OR(BSON_APPEND_DOCUMENT(&ns_to_doc, "jsonSchema", &empty)) {
                 return false;
             }
             TRY_BSON_OR(BSON_APPEND_BOOL(&ns_to_doc, "isRemoteSchema", false)) {
                 return false;
             }
         } else {
-            TRY_BSON_OR(BSON_APPEND_DOCUMENT(&ns_to_doc, "schema", &se->jsonSchema.bson)) {
+            TRY_BSON_OR(BSON_APPEND_DOCUMENT(&ns_to_doc, "jsonSchema", &se->jsonSchema.bson)) {
                 return false;
             }
             TRY_BSON_OR(BSON_APPEND_BOOL(&ns_to_doc, "isRemoteSchema", se->jsonSchema.is_remote)) {
