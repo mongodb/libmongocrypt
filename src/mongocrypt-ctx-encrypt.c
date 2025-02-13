@@ -219,7 +219,7 @@ static bool _create_markings_cmd_bson(mongocrypt_ctx_t *ctx, bson_t *out) {
     bson_copy_to_excluding_noinit(&bson_view, out, "$db", NULL);
     if (!mc_schema_broker_add_schemas_to_cmd(ectx->sb,
                                              out,
-                                             ctx->crypt->csfle.okay ? MC_CMD_SCHEMAS_FOR_CSFLE
+                                             ctx->crypt->csfle.okay ? MC_CMD_SCHEMAS_FOR_CRYPT_SHARED
                                                                     : MC_CMD_SCHEMAS_FOR_MONGOCRYPTD,
                                              ctx->status)) {
         return _mongocrypt_ctx_fail(ctx);

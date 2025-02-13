@@ -938,7 +938,7 @@ static bool insert_csfleEncryptionSchemas(const mc_schema_broker_t *sb,
     BSON_ASSERT_PARAM(sb);
     BSON_ASSERT_PARAM(cmd);
 
-    if (cmd_target != MC_CMD_SCHEMAS_FOR_CSFLE && cmd_target != MC_CMD_SCHEMAS_FOR_MONGOCRYPTD) {
+    if (cmd_target != MC_CMD_SCHEMAS_FOR_CRYPT_SHARED && cmd_target != MC_CMD_SCHEMAS_FOR_MONGOCRYPTD) {
         // CSFLE schemas are only used for query analysis.
         return true;
     }
