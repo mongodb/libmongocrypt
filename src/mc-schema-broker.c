@@ -860,18 +860,13 @@ static bool insert_encryptionInformation(const mc_schema_broker_t *sb,
 
     if (0 == strcmp(cmd_name, "explain")
         && (cmd_target == MC_CMD_SCHEMAS_FOR_CRYPT_SHARED || cmd_target == MC_CMD_SCHEMAS_FOR_SERVER)) {
-        // The "explain" command is a special case when sent to crypt_shared or the server.
-        // crypt_shared and the server expect "encryptionInformation" nested in the "explain" document. Example:
+        // The "explain" command is a special case when sent to crypt_shared or the server, which expect
+        // "encryptionInformation" nested in the "explain" document instead of at top-level. Example:
         // {
         //    "explain": {
         //       "find": "to-crypt_shared-or-server"
         //       "encryptionInformation": {}
         //    }
-        // }
-        // mongocryptd expects "encryptionInformation" to be a sibling of the "explain" document. Example:
-        // {
-        //    "explain": { "find": "to-mongocryptd" },
-        //    "encryptionInformation": {}
         // }
         BSON_ASSERT(bson_iter_init_find(&iter, cmd, "explain"));
         if (!BSON_ITER_HOLDS_DOCUMENT(&iter)) {
@@ -906,7 +901,11 @@ static bool insert_encryptionInformation(const mc_schema_broker_t *sb,
         goto success;
     }
 
-    // Default case: append "encryptionInformation" at top-level.
+    // Default case: append "encryptionInformation" at top-level. Example:
+    // {
+    //    "<command name>": { ... }
+    //    "encryptionInformation": {}
+    // }
     if (!append_encryptionInformation(sb, cmd_name, cmd, status)) {
         goto fail;
     }
