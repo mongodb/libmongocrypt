@@ -42,7 +42,7 @@ typedef struct mc_schema_entry_t {
     } encryptedFields;
 
     struct mc_schema_entry_t *next;
-    bool satisfied; // true once a schema is applied or all sources exhausted.
+    bool satisfied; // true once a schema is found and applied, or an empty schema is applied.
 } mc_schema_entry_t;
 
 // mc_schema_broker_t stores schemas for an auto encryption operation.
