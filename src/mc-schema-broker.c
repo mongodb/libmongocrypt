@@ -860,7 +860,7 @@ static bool insert_encryptionInformation(const mc_schema_broker_t *sb,
         goto success;
     }
 
-    if (0 != strcmp(cmd_name, "explain") || cmd_target == MC_TO_MONGOCRYPTD) {
+    if (0 != strcmp(cmd_name, "explain") || cmd_target == MC_CMD_SCHEMAS_FOR_MONGOCRYPTD) {
         // All commands except "explain" and "bulkWrite" expect "encryptionInformation"
         // at top-level. "explain" sent to mongocryptd expects
         // "encryptionInformation" at top-level.
@@ -938,7 +938,7 @@ static bool insert_csfleEncryptionSchemas(const mc_schema_broker_t *sb,
     BSON_ASSERT_PARAM(sb);
     BSON_ASSERT_PARAM(cmd);
 
-    if (cmd_target != MC_TO_CSFLE && cmd_target != MC_TO_MONGOCRYPTD) {
+    if (cmd_target != MC_CMD_SCHEMAS_FOR_CSFLE && cmd_target != MC_CMD_SCHEMAS_FOR_MONGOCRYPTD) {
         // CSFLE schemas are only used for query analysis.
         return true;
     }

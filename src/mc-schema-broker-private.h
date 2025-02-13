@@ -93,9 +93,9 @@ const mc_EncryptedFieldConfig_t *
 mc_schema_broker_get_encryptedFields(const mc_schema_broker_t *sb, const char *coll, mongocrypt_status_t *status);
 
 typedef enum {
-    MC_TO_CSFLE,       // target the crypt_shared library.
-    MC_TO_MONGOCRYPTD, // target mongocryptd process.
-    MC_TO_MONGOD       // target the server (mongod/mongos)
+    MC_CMD_SCHEMAS_FOR_CSFLE,       // target the crypt_shared library.
+    MC_CMD_SCHEMAS_FOR_MONGOCRYPTD, // target mongocryptd process.
+    MC_CMD_SCHEMAS_FOR_SERVER       // target the server (mongod/mongos).
 } mc_cmd_target_t;
 
 // mc_schema_broker_add_schemas_to_cmd adds schema information to a command.

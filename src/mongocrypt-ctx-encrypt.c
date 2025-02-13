@@ -219,7 +219,8 @@ static bool _create_markings_cmd_bson(mongocrypt_ctx_t *ctx, bson_t *out) {
     bson_copy_to_excluding_noinit(&bson_view, out, "$db", NULL);
     if (!mc_schema_broker_add_schemas_to_cmd(ectx->sb,
                                              out,
-                                             ctx->crypt->csfle.okay ? MC_TO_CSFLE : MC_TO_MONGOCRYPTD,
+                                             ctx->crypt->csfle.okay ? MC_CMD_SCHEMAS_FOR_CSFLE
+                                                                    : MC_CMD_SCHEMAS_FOR_MONGOCRYPTD,
                                              ctx->status)) {
         return _mongocrypt_ctx_fail(ctx);
     }
@@ -1157,7 +1158,7 @@ static bool _fle2_finalize(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
 
     /* Append a new 'encryptionInformation'. */
     if (!result.must_omit) {
-        if (!mc_schema_broker_add_schemas_to_cmd(ectx->sb, &converted, MC_TO_MONGOD, ctx->status)) {
+        if (!mc_schema_broker_add_schemas_to_cmd(ectx->sb, &converted, MC_CMD_SCHEMAS_FOR_SERVER, ctx->status)) {
             bson_destroy(&converted);
             return _mongocrypt_ctx_fail(ctx);
         }
