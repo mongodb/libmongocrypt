@@ -82,13 +82,21 @@ bool mc_schema_broker_satisfy_remaining_with_empty_schemas(mc_schema_broker_t *s
                                                            _mongocrypt_cache_t *collinfo_cache /* may be NULL */,
                                                            mongocrypt_status_t *status);
 
-// mc_schema_broker_has_any_qe_schemas returns true if any schema has encryptedFields.
+// mc_schema_broker_has_any_qe_schemas returns true if any collection has encryptedFields.
+//
+// Aborts if any unsatisfied schema requests. `mc_schema_broker_need_more_schemas(sb)` must be false.
+//
 bool mc_schema_broker_has_any_qe_schemas(const mc_schema_broker_t *sb);
 
 // mc_schema_broker_need_more_schemas returns true if there are unsatisfied schema requests.
 bool mc_schema_broker_need_more_schemas(const mc_schema_broker_t *sb);
 
-// mc_schema_broker_get_encryptedFields returns encryptedFields for a collection. Returns NULL and errors if not found.
+// mc_schema_broker_get_encryptedFields returns encryptedFields for a collection.
+//
+// Returns NULL and sets error if `coll` is not found or has no encryptedFields.
+//
+// Aborts if any unsatisfied schema requests. `mc_schema_broker_need_more_schemas(sb)` must be false.
+//
 const mc_EncryptedFieldConfig_t *
 mc_schema_broker_get_encryptedFields(const mc_schema_broker_t *sb, const char *coll, mongocrypt_status_t *status);
 
@@ -99,6 +107,8 @@ typedef enum {
 } mc_cmd_target_t;
 
 // mc_schema_broker_add_schemas_to_cmd adds schema information to a command.
+//
+// Aborts if any unsatisfied schema requests. `mc_schema_broker_need_more_schemas(sb)` must be false.
 //
 // Schemas are added with the fields:
 // - jsonSchema: for CSFLE with one schema.

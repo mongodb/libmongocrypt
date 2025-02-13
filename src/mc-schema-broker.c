@@ -116,7 +116,8 @@ void mc_schema_broker_destroy(mc_schema_broker_t *sb) {
 bool mc_schema_broker_has_any_qe_schemas(const mc_schema_broker_t *sb) {
     BSON_ASSERT_PARAM(sb);
     for (mc_schema_entry_t *se = sb->ll; se != NULL; se = se->next) {
-        if (se->satisfied && se->encryptedFields.set) {
+        BSON_ASSERT(se->satisfied);
+        if (se->encryptedFields.set) {
             return true;
         }
     }
@@ -593,12 +594,9 @@ mc_schema_broker_get_encryptedFields(const mc_schema_broker_t *sb, const char *c
     BSON_ASSERT_PARAM(coll);
 
     for (const mc_schema_entry_t *it = sb->ll; it != NULL; it = it->next) {
+        BSON_ASSERT(it->satisfied);
         if (0 != strcmp(it->coll, coll)) {
             continue;
-        }
-        if (!it->satisfied) {
-            CLIENT_ERR("Expected encryptedFields for '%s', but schema request not satisfied", coll);
-            return NULL;
         }
         if (!it->encryptedFields.set) {
             CLIENT_ERR("Expected encryptedFields for '%s', but none set", coll);
