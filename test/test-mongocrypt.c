@@ -237,8 +237,8 @@ bson_t *tmp_bsonf(_mongocrypt_tester_t *tester, const char *fmt, ...) {
     va_list arg;
     va_start(arg, fmt);
 
-    char *dst = bson_malloc(strlen(fmt));
     size_t dst_capacity = strlen(fmt);
+    char *dst = bson_malloc(dst_capacity);
     size_t dst_len = 0;
 
 #define ENSURE_CAPACITY(len)                                                                                           \
