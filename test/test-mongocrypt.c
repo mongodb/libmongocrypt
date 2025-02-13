@@ -1031,30 +1031,27 @@ get_os_version_failed:
 
     TEST_PRINTF("Running tests...\n");
     for (i = 0; tester.test_names[i]; i++) {
-        int j;
-        bool found = false;
-
         if (argc > 1) {
-            for (j = 1; j < argc; j++) {
-                char *pattern = argv[j];
-                size_t pattern_len = strlen(pattern);
-                // Check for exact match:
-                found = (0 == strcmp(pattern, tester.test_names[i]));
-                // Check for trailing asterisk:
-                if (pattern[strlen(pattern) - 1] == '*') {
-                    if (0 == strncmp(pattern, tester.test_names[i], pattern_len - 1)) {
-                        found = true;
-                        break;
+            for (int j = 1; j < argc; j++) {
+                char *const pattern = argv[j];
+                const size_t pattern_len = strlen(pattern);
+                const bool match_prefix_only = pattern_len > 0u && pattern[pattern_len - 1u] == '*';
+
+                if (match_prefix_only) {
+                    if (0 == strncmp(pattern, tester.test_names[i], pattern_len - 1u)) {
+                        goto found_match;
+                    }
+                } else {
+                    if (0 == strcmp(pattern, tester.test_names[i])) {
+                        goto found_match;
                     }
                 }
-                if (found) {
-                    break;
-                }
             }
-            if (!found) {
-                continue;
-            }
+
+            continue; // No match found.
         }
+    found_match: {}
+
         TEST_PRINTF("  begin %s\n", tester.test_names[i]);
         tester.test_fns[i](&tester);
         /* Clear state. */
