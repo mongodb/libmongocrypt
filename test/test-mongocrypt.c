@@ -243,8 +243,8 @@ bson_t *tmp_bsonf(_mongocrypt_tester_t *tester, const char *fmt, ...) {
 
 #define ENSURE_CAPACITY(len)                                                                                           \
     if (1) {                                                                                                           \
-        if (len + dst_len >= dst_capacity) {                                                                           \
-            dst_capacity = len + dst_len;                                                                              \
+        if ((len) + dst_len >= dst_capacity) {                                                                         \
+            dst_capacity = (len) + dst_len;                                                                            \
             dst_capacity *= 2;                                                                                         \
             dst = bson_realloc(dst, dst_capacity);                                                                     \
         }                                                                                                              \
