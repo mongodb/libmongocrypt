@@ -577,9 +577,9 @@ bool mc_schema_broker_satisfy_remaining_with_empty_schemas(mc_schema_broker_t *s
     return true;
 }
 
-bool mc_schema_broker_need_more_schemas(mc_schema_broker_t *sb) {
+bool mc_schema_broker_need_more_schemas(const mc_schema_broker_t *sb) {
     BSON_ASSERT_PARAM(sb);
-    for (mc_schema_entry_t *it = sb->ll; it != NULL; it = it->next) {
+    for (const mc_schema_entry_t *it = sb->ll; it != NULL; it = it->next) {
         if (!it->satisfied) {
             return true;
         }
@@ -588,11 +588,11 @@ bool mc_schema_broker_need_more_schemas(mc_schema_broker_t *sb) {
 }
 
 const mc_EncryptedFieldConfig_t *
-mc_schema_broker_get_encryptedFields(mc_schema_broker_t *sb, const char *coll, mongocrypt_status_t *status) {
+mc_schema_broker_get_encryptedFields(const mc_schema_broker_t *sb, const char *coll, mongocrypt_status_t *status) {
     BSON_ASSERT_PARAM(sb);
     BSON_ASSERT_PARAM(coll);
 
-    for (mc_schema_entry_t *it = sb->ll; it != NULL; it = it->next) {
+    for (const mc_schema_entry_t *it = sb->ll; it != NULL; it = it->next) {
         if (0 != strcmp(it->coll, coll)) {
             continue;
         }

@@ -86,11 +86,11 @@ bool mc_schema_broker_satisfy_remaining_with_empty_schemas(mc_schema_broker_t *s
 bool mc_schema_broker_has_any_qe_schemas(const mc_schema_broker_t *sb);
 
 // mc_schema_broker_need_more_schemas returns true if there are unsatisfied schema requests.
-bool mc_schema_broker_need_more_schemas(mc_schema_broker_t *sb);
+bool mc_schema_broker_need_more_schemas(const mc_schema_broker_t *sb);
 
 // mc_schema_broker_get_encryptedFields returns encryptedFields for a collection. Returns NULL and errors if not found.
 const mc_EncryptedFieldConfig_t *
-mc_schema_broker_get_encryptedFields(mc_schema_broker_t *sb, const char *coll, mongocrypt_status_t *status);
+mc_schema_broker_get_encryptedFields(const mc_schema_broker_t *sb, const char *coll, mongocrypt_status_t *status);
 
 typedef enum {
     MC_TO_CSFLE,       // target the crypt_shared library.
