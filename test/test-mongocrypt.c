@@ -254,7 +254,7 @@ bson_t *tmp_bsonf(_mongocrypt_tester_t *tester, const char *fmt, ...) {
     for (const char *ptr = fmt; *ptr != '\0'; ptr++) {
         if (0 == strncmp(ptr, "MC_STR", strlen("MC_STR"))) {
             const char *src = va_arg(arg, const char *);
-            size_t src_len = strlen(src);
+            const size_t src_len = strlen(src);
             ENSURE_CAPACITY(src_len + 2);
             *(dst + dst_len++) = '"';
             strcpy(dst + dst_len, src);
