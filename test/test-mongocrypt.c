@@ -252,6 +252,7 @@ bson_t *tmp_bsonf(_mongocrypt_tester_t *tester, const char *fmt, ...) {
         (void)0
 
     for (const char *ptr = fmt; *ptr != '\0'; ptr++) {
+        // TODO: consider optimizing this loop to use strstr to find MC_STR or MC_BSON.
         if (0 == strncmp(ptr, "MC_STR", strlen("MC_STR"))) {
             const char *src = va_arg(arg, const char *);
             const size_t src_len = strlen(src);
