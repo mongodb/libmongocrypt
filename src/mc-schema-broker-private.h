@@ -24,9 +24,9 @@
 
 // mc_schema_broker_t manages schemas for an auto encryption operation.
 //
-// A schema is either of:
-// - jsonSchema for CSFLE.
-// - encryptedFields for QE.
+// A schema is either:
+// - a JSON Schema for CSFLE operations, or
+// - an encryptedFields document for QE operations.
 //
 typedef struct mc_schema_broker_t mc_schema_broker_t;
 
