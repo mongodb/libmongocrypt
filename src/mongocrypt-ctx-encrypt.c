@@ -688,7 +688,7 @@ static moe_result must_omit_encryptionInformation(const char *command_name,
 
     if (0 == strcmp("compactStructuredEncryptionData", command_name)) {
         if (!efc) {
-            CLIENT_ERR("target collection does not have encryptedFields");
+            CLIENT_ERR("expected to have encryptedFields for compactStructuredEncryptionData command but have none");
             return (moe_result){.ok = false};
         }
         // `compactStructuredEncryptionData` is a special case:
@@ -1134,7 +1134,7 @@ static bool _fle2_finalize(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
     }
 
     // For create/cleanupStructuredEncryptionData/compactStructuredEncryptionData, get encryptedFields for the
-    // single target collection. Ignore error since encryptedFields may not be present for other commands.
+    // single target collection. Ignore error. encryptedFields may not be on the target collection for other commands.
     const mc_EncryptedFieldConfig_t *target_efc =
         mc_schema_broker_get_encryptedFields(ectx->sb, ectx->target_coll, NULL);
 
