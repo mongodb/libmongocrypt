@@ -2220,9 +2220,21 @@ static bool needs_ismaster_check(mongocrypt_ctx_t *ctx) {
     BSON_ASSERT_PARAM(ctx);
 
     bool using_mongocryptd = !ectx->bypass_query_analysis && !ctx->crypt->csfle.okay;
-    // The "create" and "createIndexes" command require an isMaster check when
-    // using mongocryptd. See MONGOCRYPT-429.
-    return using_mongocryptd && (0 == strcmp(ectx->cmd_name, "create") || 0 == strcmp(ectx->cmd_name, "createIndexes"));
+
+    if (!using_mongocryptd) {
+        return false;
+    }
+
+    if (mc_schema_broker_has_multiple_requests(ectx->sb)) {
+        // Only mongocryptd 8.1 (wire version 26) supports multiple schemas with csfleEncryptionSchemas.
+        return true;
+    }
+    // MONGOCRYPT-429: The "create" and "createIndexes" command are only supported on mongocrypt 6.0 (wire version 17).
+    if (0 == strcmp(ectx->cmd_name, "create") || 0 == strcmp(ectx->cmd_name, "createIndexes")) {
+        return true;
+    }
+
+    return false;
 }
 
 // `find_collections_in_pipeline` finds other collection names in an aggregate pipeline that may need schemas.
@@ -2501,11 +2513,8 @@ bool mongocrypt_ctx_encrypt_init(mongocrypt_ctx_t *ctx, const char *db, int32_t 
         bson_free(cmd_val);
     }
 
-    /* The "create" and "createIndexes" command require sending an isMaster
-     * request to mongocryptd. */
+    // Check if an isMaster request to mongocryptd is needed check for feature support:
     if (needs_ismaster_check(ctx)) {
-        /* We are using mongocryptd. We need to ensure that mongocryptd
-         * maxWireVersion >= 17. */
         ectx->ismaster.needed = true;
         ctx->state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
         return true;
@@ -2515,6 +2524,7 @@ bool mongocrypt_ctx_encrypt_init(mongocrypt_ctx_t *ctx, const char *db, int32_t 
 }
 
 #define WIRE_VERSION_SERVER_6 17
+#define WIRE_VERSION_SERVER_8_1 26
 
 /* mongocrypt_ctx_encrypt_ismaster_done is called when:
  * 1. The max wire version of mongocryptd is known.
@@ -2527,20 +2537,35 @@ static bool mongocrypt_ctx_encrypt_ismaster_done(mongocrypt_ctx_t *ctx) {
 
     ectx->ismaster.needed = false;
 
-    /* The "create" and "createIndexes" command require bypassing on mongocryptd
-     * older than version 6.0. */
     if (needs_ismaster_check(ctx)) {
-        if (ectx->ismaster.maxwireversion < WIRE_VERSION_SERVER_6) {
-            // Bypass auto encryption.
-            // Satisfy schema request with an empty schema.
-            if (!mc_schema_broker_satisfy_remaining_with_empty_schemas(ectx->sb,
-                                                                       NULL /* do not cache */,
-                                                                       ctx->status)) {
-                return _mongocrypt_ctx_fail(ctx);
+        // MONGOCRYPT-429: "create" and "createIndexes" require bypassing on mongocryptd older than version 6.0.
+        if (0 == strcmp(ectx->cmd_name, "create") || 0 == strcmp(ectx->cmd_name, "createIndexes")) {
+            if (ectx->ismaster.maxwireversion < WIRE_VERSION_SERVER_6) {
+                // Bypass auto encryption.
+                // Satisfy schema request with an empty schema.
+                if (!mc_schema_broker_satisfy_remaining_with_empty_schemas(ectx->sb,
+                                                                           NULL /* do not cache */,
+                                                                           ctx->status)) {
+                    return _mongocrypt_ctx_fail(ctx);
+                }
+                ctx->nothing_to_do = true;
+                ctx->state = MONGOCRYPT_CTX_READY;
+                return true;
             }
-            ctx->nothing_to_do = true;
-            ctx->state = MONGOCRYPT_CTX_READY;
-            return true;
+        }
+
+        if (mc_schema_broker_has_multiple_requests(ectx->sb)) {
+            if (ectx->ismaster.maxwireversion < WIRE_VERSION_SERVER_8_1) {
+                // Ensure mongocryptd supports multiple schemas.
+                mongocrypt_status_t *status = ctx->status;
+                CLIENT_ERR("Encrypting '%s' requires multiple schemas. Detected mongocryptd with wire version %" PRId32
+                           ", but need %" PRId32 ". Upgrade mongocryptd to 8.1 or newer.",
+                           ectx->cmd_name,
+                           ectx->ismaster.maxwireversion,
+                           WIRE_VERSION_SERVER_8_1);
+                _mongocrypt_ctx_fail(ctx);
+                return false;
+            }
         }
     }
 
