@@ -407,7 +407,7 @@ static void _test_key_cache(_mongocrypt_tester_t *tester) {
 
         bson_iter_bson(&iter, &test);
 
-        BSON_ASSERT(mongocrypt_ctx_encrypt_init(ctx, "test", -1, TEST_BSON("{'insert': 'coll'}")));
+        BSON_ASSERT(mongocrypt_ctx_encrypt_init(ctx, "test", -1, TEST_BSON("{'insert': 'test'}")));
         _run_one_test(tester, ctx, &test);
         bson_destroy(&test);
 
