@@ -690,7 +690,7 @@ bool mc_FLE2IndexedEncryptedValueV2_serialize(const mc_FLE2IndexedEncryptedValue
         mc_writer_write_buffer(&writer, &iev->ServerEncryptedValue, iev->ServerEncryptedValue.len, status));
 
     // Serialize metadata
-    for (int i = 0; i < iev->edge_count; ++i) {
+    for (uint32_t i = 0; i < iev->edge_count; ++i) {
         _mongocrypt_buffer_t tmp_buf;
         _mongocrypt_buffer_init(&tmp_buf);
 
