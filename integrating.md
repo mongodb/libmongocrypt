@@ -140,13 +140,11 @@ All contexts.
 
 #### State: `MONGOCRYPT_CTX_NEED_MONGO_COLLINFO` ####
 
-##### Multi-collection commands
-Prior to 1.13.0, drivers were expected to return at most one result from `listCollections`. In 1.13.0, drivers are
-expected to return all results to support multi-collection commands (e.g. aggregate with `$lookup`).
-
-libmongocrypt cannot distinguish between "did not pass all results" and "server did not have results". Drivers must call
-`mongocrypt_setopt_enable_multiple_collinfo` to indicate the new behavior is implemented and enable support for
-multi-collection commands.
+<a name="multi-collection-commands"></a>
+> [!IMPORTANT]
+> **Multi-collection commands**: prior to 1.13.0, drivers were expected to pass _at most one result_ from `listCollections`. In 1.13.0, drivers are expected to pass _all results_ from `listCollections` to support multi-collection commands (e.g. aggregate with `$lookup`).
+>
+> Drivers must call `mongocrypt_setopt_enable_multiple_collinfo` to indicate the new behavior is implemented and enable support for multi-collection commands.
 
 **libmongocrypt needs**...
 
