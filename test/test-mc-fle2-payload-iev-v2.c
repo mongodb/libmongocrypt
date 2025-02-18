@@ -48,7 +48,7 @@ static void _mc_fle2_iev_v2_test_destroy(_mc_fle2_iev_v2_test *test) {
     _mongocrypt_buffer_cleanup(&test->K_KeyId);
     _mongocrypt_buffer_cleanup(&test->K_Key);
     _mongocrypt_buffer_cleanup(&test->bson_value);
-    for (int i = 0; i < test->edge_count; ++i) {
+    for (uint32_t i = 0; i < test->edge_count; ++i) {
         mc_FLE2TagAndEncryptedMetadataBlock_cleanup(&test->metadata[i]);
     }
 
@@ -358,7 +358,7 @@ static void _mc_fle2_iev_v2_test_run(mongocrypt_t *crypt, _mongocrypt_tester_t *
 
     // Validate edges/metadata
     mc_FLE2TagAndEncryptedMetadataBlock_t metadata;
-    for (int i = 0; i < edge_count; ++i) {
+    for (uint32_t i = 0; i < edge_count; ++i) {
         if (test->type == kTypeText) {
             if (i == 0) {
                 ASSERT(mc_FLE2IndexedEncryptedValueV2_get_exact_metadata(iev, &metadata, status));
