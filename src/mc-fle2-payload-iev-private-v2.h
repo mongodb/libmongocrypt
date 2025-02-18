@@ -155,7 +155,7 @@ bson_type_t mc_FLE2IndexedEncryptedValueV2_get_bson_value_type(const mc_FLE2Inde
  * if (text)
  *   edge_count(32u)
  *   substr_tag_count(32u)
- *   suffix_tag_count(32u) 
+ *   suffix_tag_count(32u)
  * ServerEncryptedValue (8u * SEV_len)
  * metadata (96u * {range || text ? edge_count : 1u})
  *
@@ -209,7 +209,7 @@ const _mongocrypt_buffer_t *mc_FLE2IndexedEncryptedValueV2_get_ClientValue(const
                                                                            mongocrypt_status_t *status);
 
 uint32_t mc_FLE2IndexedEncryptedValueV2_get_edge_count(const mc_FLE2IndexedEncryptedValueV2_t *iev,
-                                                      mongocrypt_status_t *status);
+                                                       mongocrypt_status_t *status);
 
 bool mc_FLE2IndexedEncryptedValueV2_get_substr_tag_count(const mc_FLE2IndexedEncryptedValueV2_t *iev,
                                                          uint32_t *count,

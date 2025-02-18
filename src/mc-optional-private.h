@@ -29,7 +29,9 @@ typedef struct {
 } mc_optional_bool_t;
 
 #define OPT_BOOL(val)                                                                                                  \
-    (mc_optional_bool_t) { .set = true, .value = val }
+    (mc_optional_bool_t) {                                                                                             \
+        .set = true, .value = val                                                                                      \
+    }
 
 #define OPT_BOOL_C(val)                                                                                                \
     { .set = true, .value = val }
@@ -40,7 +42,9 @@ typedef struct {
 } mc_optional_int32_t;
 
 #define OPT_I32(val)                                                                                                   \
-    (mc_optional_int32_t) { .set = true, .value = val }
+    (mc_optional_int32_t) {                                                                                            \
+        .set = true, .value = val                                                                                      \
+    }
 
 #define OPT_I32_C(val)                                                                                                 \
     { .set = true, .value = val }
@@ -51,7 +55,9 @@ typedef struct {
 } mc_optional_uint32_t;
 
 #define OPT_U32(val)                                                                                                   \
-    (mc_optional_uint32_t) { .set = true, .value = val }
+    (mc_optional_uint32_t) {                                                                                           \
+        .set = true, .value = val                                                                                      \
+    }
 
 #define OPT_U32_C(val)                                                                                                 \
     { .set = true, .value = val }
@@ -62,7 +68,9 @@ typedef struct {
 } mc_optional_int64_t;
 
 #define OPT_I64(val)                                                                                                   \
-    (mc_optional_int64_t) { .set = true, .value = val }
+    (mc_optional_int64_t) {                                                                                            \
+        .set = true, .value = val                                                                                      \
+    }
 
 #define OPT_I64_C(val)                                                                                                 \
     { .set = true, .value = val }
@@ -73,7 +81,9 @@ typedef struct {
 } mc_optional_uint64_t;
 
 #define OPT_U64(val)                                                                                                   \
-    (mc_optional_uint64_t) { .set = true, .value = val }
+    (mc_optional_uint64_t) {                                                                                           \
+        .set = true, .value = val                                                                                      \
+    }
 
 #define OPT_U64_C(val)                                                                                                 \
     { .set = true, .value = val }
@@ -84,7 +94,9 @@ typedef struct {
 } mc_optional_double_t;
 
 #define OPT_DOUBLE(val)                                                                                                \
-    (mc_optional_double_t) { .set = true, .value = val }
+    (mc_optional_double_t) {                                                                                           \
+        .set = true, .value = val                                                                                      \
+    }
 
 #define OPT_DOUBLE_C(val)                                                                                              \
     { .set = true, .value = val }
@@ -96,7 +108,9 @@ typedef struct {
 } mc_optional_dec128_t;
 
 #define OPT_MC_DEC128(...)                                                                                             \
-    (mc_optional_dec128_t) { .set = true, .value = __VA_ARGS__ }
+    (mc_optional_dec128_t) {                                                                                           \
+        .set = true, .value = __VA_ARGS__                                                                              \
+    }
 #endif // MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
 
 #define OPT_NULLOPT                                                                                                    \

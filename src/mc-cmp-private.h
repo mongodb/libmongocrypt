@@ -50,13 +50,21 @@ BSON_STATIC_ASSERT2(ssize_t_size_max_check, (size_t)SSIZE_MAX <= SIZE_MAX);
  */
 
 #define MC_CMP_SET(op, ss, uu, su, us)                                                                                 \
-    static BSON_INLINE bool BSON_CONCAT3(mc_cmp_, op, _ss)(int64_t t, int64_t u) { return (ss); }                      \
+    static BSON_INLINE bool BSON_CONCAT3(mc_cmp_, op, _ss)(int64_t t, int64_t u) {                                     \
+        return (ss);                                                                                                   \
+    }                                                                                                                  \
                                                                                                                        \
-    static BSON_INLINE bool BSON_CONCAT3(mc_cmp_, op, _uu)(uint64_t t, uint64_t u) { return (uu); }                    \
+    static BSON_INLINE bool BSON_CONCAT3(mc_cmp_, op, _uu)(uint64_t t, uint64_t u) {                                   \
+        return (uu);                                                                                                   \
+    }                                                                                                                  \
                                                                                                                        \
-    static BSON_INLINE bool BSON_CONCAT3(mc_cmp_, op, _su)(int64_t t, uint64_t u) { return (su); }                     \
+    static BSON_INLINE bool BSON_CONCAT3(mc_cmp_, op, _su)(int64_t t, uint64_t u) {                                    \
+        return (su);                                                                                                   \
+    }                                                                                                                  \
                                                                                                                        \
-    static BSON_INLINE bool BSON_CONCAT3(mc_cmp_, op, _us)(uint64_t t, int64_t u) { return (us); }
+    static BSON_INLINE bool BSON_CONCAT3(mc_cmp_, op, _us)(uint64_t t, int64_t u) {                                    \
+        return (us);                                                                                                   \
+    }
 
 MC_CMP_SET(equal, t == u, t == u, t < 0 ? false : (uint64_t)(t) == u, u < 0 ? false : t == (uint64_t)(u))
 

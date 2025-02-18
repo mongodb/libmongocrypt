@@ -29,7 +29,9 @@
         _mongocrypt_buffer_t data;                                                                                     \
     };                                                                                                                 \
     /* Data-getter */                                                                                                  \
-    const _mongocrypt_buffer_t *BSON_CONCAT(Prefix, _get)(const T *self) { return &self->data; }                       \
+    const _mongocrypt_buffer_t *BSON_CONCAT(Prefix, _get)(const T *self) {                                             \
+        return &self->data;                                                                                            \
+    }                                                                                                                  \
     /* Destructor */                                                                                                   \
     void BSON_CONCAT(Prefix, _destroy)(T * self) {                                                                     \
         if (!self) {                                                                                                   \
