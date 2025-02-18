@@ -156,7 +156,7 @@ A result from a listCollections cursor.
 
 1.  Run listCollections on the encrypted MongoClient with the filter
     provided by `mongocrypt_ctx_mongo_op`
-2.  Pass all results (if any) with calls to `mongocrypt_ctx_mongo_feed` or proceed to the next step if nothing was passed. Results may be passed in any order.
+2.  Pass all results (if any) with calls to `mongocrypt_ctx_mongo_feed` or proceed to the next step if nothing was returned. Results may be passed in any order.
 3.  Call `mongocrypt_ctx_mongo_done`
 
 **Applies to...**
@@ -175,7 +175,7 @@ Results from a listCollections cursor from a specified database.
 
 1.  Run listCollections on the encrypted MongoClient with the filter
     provided by `mongocrypt_ctx_mongo_op` on the database provided by `mongocrypt_ctx_mongo_db`.
-2.  Pass all results (if any) with calls to `mongocrypt_ctx_mongo_feed` or proceed to the next step if nothing was passed. Results may be passed in any order.
+2.  Pass all results (if any) with calls to `mongocrypt_ctx_mongo_feed` or proceed to the next step if nothing was returned. Results may be passed in any order.
 3.  Call `mongocrypt_ctx_mongo_done`
 
 **Applies to...**
