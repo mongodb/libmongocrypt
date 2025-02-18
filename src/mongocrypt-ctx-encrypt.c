@@ -2509,7 +2509,7 @@ bool mongocrypt_ctx_encrypt_init(mongocrypt_ctx_t *ctx, const char *db, int32_t 
         bson_free(cmd_val);
     }
 
-    // Check if an isMaster request to mongocryptd is needed check for feature support:
+    // Check if an isMaster request to mongocryptd is needed to detect feature support:
     if (needs_ismaster_check(ctx)) {
         ectx->ismaster.needed = true;
         ctx->state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
