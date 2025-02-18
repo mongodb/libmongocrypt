@@ -144,7 +144,9 @@ All contexts.
 > [!IMPORTANT]
 > **Multi-collection commands**: prior to 1.13.0, drivers were expected to pass _at most one result_ from `listCollections`. In 1.13.0, drivers are expected to pass _all results_ from `listCollections` to support multi-collection commands (e.g. aggregate with `$lookup`).
 >
-> Drivers must call `mongocrypt_setopt_enable_multiple_collinfo` to indicate the new behavior is implemented and enable support for multi-collection commands.
+> Drivers must call `mongocrypt_setopt_enable_multiple_collinfo` to indicate the new behavior is implemented and opt-in to support for multi-collection commands.
+>
+> The opt-in is avoids the following example scenario: Driver upgrades to 1.13.0 and does not update the behavior. A multi-collection command requests schemas for both `db.c1` and `db.c2`. Driver only passes the result for `db.c1` (even though `db.c2` has a result). libmongocrypt mistakenly assumes `db.c2` has no schema.
 
 **libmongocrypt needs**...
 
