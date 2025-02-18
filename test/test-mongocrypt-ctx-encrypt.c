@@ -3288,7 +3288,7 @@ static void _test_dollardb_preserved_fle1(_mongocrypt_tester_t *tester) {
         ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON((expect), got);                                                            \
         mongocrypt_binary_destroy(got);                                                                                \
     } else                                                                                                             \
-        (void)0
+        ((void)0)
 
 #define expect_and_reply_to_ismaster(ctx)                                                                              \
     if (1) {                                                                                                           \
@@ -3296,8 +3296,8 @@ static void _test_dollardb_preserved_fle1(_mongocrypt_tester_t *tester) {
         expect_mongo_op(ctx, TEST_BSON("{'isMaster': 1}"));                                                            \
         ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TEST_FILE("./test/data/mongocryptd-ismaster-26.json")), ctx);         \
         ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);                                                                \
-    }                                                                                                                  \
-    (void)0
+    } else                                                                                                             \
+        ((void)0)
 
 static void _test_fle1_create_without_schema(_mongocrypt_tester_t *tester) {
     mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
