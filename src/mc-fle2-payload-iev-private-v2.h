@@ -68,14 +68,14 @@
  *   uint8_t fle_blob_subtype = 15;
  *   uint8_t S_KeyId[16];
  *   uint8_t original_bson_type;
- *   uint32_t edge_count;
+ *   uint8_t edge_count;
  *   uint8_t ServerEncryptedValue[ServerEncryptedValue.length];
  *   FLE2TagAndEncryptedMetadataBlock metadata[edge_count];
  * }
  *
  * Note that this format differs from FLE2IndexedEqualityEncryptedValueV2
  * in only two ways:
- * 1/ `edge_count` is introduced as a 32 bit int following `original_bson_type`.
+ * 1/ `edge_count` is introduced as a 8 bit int following `original_bson_type`.
  * 2/ Rather than a single metadata block, we have {edge_count} blocks.
  *
  * FLE2IndexedTextEncryptedValue has the following data layout:
@@ -94,7 +94,8 @@
  *   FLE2TagAndEncryptedMetadataBlock prefix_metadata[edge_count - suffix_tag_count - substr_tag_count - 1];
  * }
  * The main difference in this format is that we split `metadata` into 4
- * sections, one for each text search index type. We add two 32 bit ints,
+ * sections, one for each text search index type. We expand edge_count
+ * to be a 32 bit integer rather than 8 bit. We add two 32 bit ints,
  * `substr_tag_count` and `suffix_tag_count`, following `edge_count`
  * in order to track the delineation of the metadata. Similarly to
  * FLE2IndexedEqualityEncryptedValueV2, we have `edge_count` total
@@ -149,11 +150,12 @@ bson_type_t mc_FLE2IndexedEncryptedValueV2_get_bson_value_type(const mc_FLE2Inde
  * fle_blob_subtype (8u)
  * S_KeyId (8u * 16u)
  * original_bson_type (8u)
- * if (range || text)
- *   edge_count(32u)
+ * if (range)
+ *   edge_count(8u)
  * if (text)
+ *   edge_count(32u)
  *   substr_tag_count(32u)
- *   suffix_tag_count(32u)
+ *   suffix_tag_count(32u) 
  * ServerEncryptedValue (8u * SEV_len)
  * metadata (96u * {range || text ? edge_count : 1u})
  *

@@ -196,14 +196,14 @@ static bool _mc_fle2_iev_v2_test_parse(_mc_fle2_iev_v2_test *test, bson_iter_t *
             ASSERT_OR_PRINT_MSG(!test->substr_tag_count, "Duplicate field 'substr_tag_count'");
             ASSERT(BSON_ITER_HOLDS_INT32(iter) || BSON_ITER_HOLDS_INT64(iter));
             int64_t value = bson_iter_as_int64(iter);
-            ASSERT_OR_PRINT_MSG((value >= 0) && (value < 256), "Field 'substr_tag_count' must be 0..255");
-            test->substr_tag_count = (uint8_t)value;
+            ASSERT_OR_PRINT_MSG((value >= 0) && (value < UINT32_MAX), "Field 'substr_tag_count' must be 0..2^32-1");
+            test->substr_tag_count = (uint32_t)value;
         } else if (!strcmp(field, "suffix_tag_count")) {
             ASSERT_OR_PRINT_MSG(!test->suffix_tag_count, "Duplicate field 'suffix_tag_count'");
             ASSERT(BSON_ITER_HOLDS_INT32(iter) || BSON_ITER_HOLDS_INT64(iter));
             int64_t value = bson_iter_as_int64(iter);
-            ASSERT_OR_PRINT_MSG((value >= 0) && (value < 256), "Field 'suffix_tag_count' must be 0..255");
-            test->suffix_tag_count = (uint8_t)value;
+            ASSERT_OR_PRINT_MSG((value >= 0) && (value < UINT32_MAX), "Field 'suffix_tag_count' must be 0..2^32-1");
+            test->suffix_tag_count = (uint32_t)value;
         } else if (!strcmp(field, "type")) {
             ASSERT_OR_PRINT_MSG(!hasType, "Duplicate field 'type'");
             ASSERT(BSON_ITER_HOLDS_UTF8(iter));
@@ -252,7 +252,7 @@ static bool _mc_fle2_iev_v2_test_parse(_mc_fle2_iev_v2_test *test, bson_iter_t *
 
             // Reinitialize iter and parse each metadata block
             bson_iter_init(&metadata_array_iter, &metadata_array);
-            int i = 0;
+            uint32_t i = 0;
             while (bson_iter_next(&metadata_array_iter)) {
                 ASSERT(BSON_ITER_HOLDS_UTF8(&metadata_array_iter));
 
@@ -342,18 +342,18 @@ static void _mc_fle2_iev_v2_test_run(mongocrypt_t *crypt, _mongocrypt_tester_t *
         // Validate edge count
         edge_count = mc_FLE2IndexedEncryptedValueV2_get_edge_count(iev, status);
         ASSERT_OK_STATUS(edge_count, status);
-        ASSERT_CMPINT(edge_count, ==, test->edge_count);
+        ASSERT_CMPUINT32(edge_count, ==, test->edge_count);
     }
 
     uint32_t substr_tag_count = 0, suffix_tag_count = 0, prefix_tag_count = 0;
     if (test->type == kTypeText) {
         // Validate substr/suffix/prefix tag counts
         ASSERT_OK_STATUS(mc_FLE2IndexedEncryptedValueV2_get_substr_tag_count(iev, &substr_tag_count, status), status);
-        ASSERT_CMPINT(substr_tag_count, ==, test->substr_tag_count);
+        ASSERT_CMPUINT32(substr_tag_count, ==, test->substr_tag_count);
         ASSERT_OK_STATUS(mc_FLE2IndexedEncryptedValueV2_get_suffix_tag_count(iev, &suffix_tag_count, status), status);
-        ASSERT_CMPINT(suffix_tag_count, ==, test->suffix_tag_count);
+        ASSERT_CMPUINT32(suffix_tag_count, ==, test->suffix_tag_count);
         ASSERT_OK_STATUS(mc_FLE2IndexedEncryptedValueV2_get_prefix_tag_count(iev, &prefix_tag_count, status), status);
-        ASSERT_CMPINT(prefix_tag_count, ==, test->edge_count - test->substr_tag_count - test->suffix_tag_count - 1);
+        ASSERT_CMPUINT32(prefix_tag_count, ==, test->edge_count - test->substr_tag_count - test->suffix_tag_count - 1);
     }
 
     // Validate edges/metadata

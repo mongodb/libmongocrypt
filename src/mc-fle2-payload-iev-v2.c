@@ -381,13 +381,6 @@ bool mc_FLE2IndexedEncryptedValueV2_get_edge(const mc_FLE2IndexedEncryptedValueV
         return false;
     }
 
-    if (iev->type == kFLE2IEVTypeRangeV2) {
-        if (iev->edge_count > (uint32_t) UINT8_MAX) {
-            CLIENT_ERR("mc_FLE2IndexedEncryptedValueV2_t edge_count must fit in a uint8_t");
-            return false;
-        }
-    }
-
     if (edge_index >= iev->edge_count) {
         CLIENT_ERR("mc_FLE2IndexedEncryptedValueV2_get_edge must be called with index edge_index less "
                    "than edge count");
@@ -581,9 +574,12 @@ bool mc_FLE2IndexedEncryptedValueV2_parse(mc_FLE2IndexedEncryptedValueV2_t *iev,
         if (iev->type == kFLE2IEVTypeRangeV2) {
             uint8_t ec;
             CHECK_AND_RETURN(mc_reader_read_u8(&reader, &ec, status));
+            if (ec == 0) {    
+                CLIENT_ERR("mc_FLE2IndexedEncryptedValueV2_parse edge count must not be 0 for type "
+                           "range, but found edge count is 0.");
+            }
             iev->edge_count = (uint32_t) ec;
-        }
-        if (iev->type == kFLE2IEVTypeText) {
+        } else if (iev->type == kFLE2IEVTypeText) {
             CHECK_AND_RETURN(mc_reader_read_u32(&reader, &iev->edge_count, status));
             CHECK_AND_RETURN(mc_reader_read_u32(&reader, &iev->substr_tag_count, status));
             CHECK_AND_RETURN(mc_reader_read_u32(&reader, &iev->suffix_tag_count, status));
@@ -672,13 +668,8 @@ bool mc_FLE2IndexedEncryptedValueV2_serialize(const mc_FLE2IndexedEncryptedValue
 
     if (iev->type == kFLE2IEVTypeRangeV2) {
         // Serialize edge_count (only serialized for types range and text)
-        if (iev->edge_count > (uint32_t) UINT8_MAX) {
-            CLIENT_ERR("mc_FLE2IndexedEncryptedValueV2_serialize failed. edge_count must fit in"
-                       "a uint8_t. edge_count: %" PRIu32, iev->edge_count);
-        }
         CHECK_AND_RETURN(mc_writer_write_u8(&writer, (uint8_t) iev->edge_count, status));
-    }
-    if (iev->type == kFLE2IEVTypeText) {
+    } else if (iev->type == kFLE2IEVTypeText) {
         // Serialize substr/suffix_tag_count (only serialized for text)
         CHECK_AND_RETURN(mc_writer_write_u32(&writer, iev->edge_count, status));
         CHECK_AND_RETURN(mc_writer_write_u32(&writer, iev->substr_tag_count, status));
@@ -761,6 +752,10 @@ static bool validate_for_equality(const mc_FLE2IndexedEncryptedValueV2_t *iev, m
 static bool validate_for_range(const mc_FLE2IndexedEncryptedValueV2_t *iev, mongocrypt_status_t *status) {
     CHECK(iev->fle_blob_subtype == MC_SUBTYPE_FLE2IndexedRangeEncryptedValueV2, "fle_blob_subtype does not match type");
     CHECK(is_fle2_range_indexed_supported_type(iev->bson_value_type), "bson_value_type is invalid");
+    if (iev->edge_count > (uint32_t) UINT8_MAX) {
+        CLIENT_ERR("mc_FLE2IndexedEncryptedValueV2_validate failed: edge count for range encrypted value "
+                   "must be less than max uint8_t. Got: %" PRIu32, iev->edge_count);
+    }
     return true;
 }
 
