@@ -2374,11 +2374,7 @@ find_collections_in_agg(mongocrypt_binary_t *cmd, mc_schema_broker_t *sb, const 
         return true;
     }
 
-    if (!find_collections_in_pipeline(sb, iter, db, mstrv_lit("aggregate.pipeline"), status)) {
-        return false;
-    }
-
-    return true;
+    return find_collections_in_pipeline(sb, iter, db, mstrv_lit("aggregate.pipeline"), status);
 }
 
 bool mongocrypt_ctx_encrypt_init(mongocrypt_ctx_t *ctx, const char *db, int32_t db_len, mongocrypt_binary_t *cmd) {
