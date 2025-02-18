@@ -586,12 +586,12 @@ mongocrypt_t *_mongocrypt_tester_mongocrypt(tester_mongocrypt_flags flags) {
     ASSERT_OK(mongocrypt_setopt_enable_multiple_collinfo(crypt), crypt);
     if (!(flags & TESTER_MONGOCRYPT_SKIP_INIT)) {
         ASSERT_OK(mongocrypt_init(crypt), crypt);
-    }
-    if (flags & TESTER_MONGOCRYPT_WITH_CRYPT_SHARED_LIB) {
-        if (mongocrypt_crypt_shared_lib_version(crypt) == 0) {
-            BSON_ASSERT(false
-                        && "tester mongocrypt requested WITH_CRYPT_SHARED_LIB, but "
-                           "no crypt_shared library was loaded by mongocrypt_init");
+        if (flags & TESTER_MONGOCRYPT_WITH_CRYPT_SHARED_LIB) {
+            if (mongocrypt_crypt_shared_lib_version(crypt) == 0) {
+                BSON_ASSERT(false
+                            && "tester mongocrypt requested WITH_CRYPT_SHARED_LIB, but "
+                               "no crypt_shared library was loaded by mongocrypt_init");
+            }
         }
     }
     return crypt;
