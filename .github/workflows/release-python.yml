@@ -18,7 +18,6 @@ on:
 env:
   # Changes per repo
   PRODUCT_NAME: PyMongoCrypt
-  SILK_ASSET_GROUP: test
   EVERGREEN_PROJECT: libmongocrypt
   # Constant
   # inputs will be empty on a scheduled run.  so, we only set dry_run
@@ -122,7 +121,7 @@ jobs:
           following_version: ${{ env.FOLLOWING_VERSION }}
           working_directory: ./bindings/python
           product_name: ${{ env.PRODUCT_NAME }}
-          silk_asset_group: ${{ env.SILK_ASSET_GROUP }}
+          sbom_in_path: bindings/python/sbom.json
           evergreen_project: ${{ env.EVERGREEN_PROJECT }}
           tag_template: "pymongocrypt-${VERSION}"
           token: ${{ github.token }}
