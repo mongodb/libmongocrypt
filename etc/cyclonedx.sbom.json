@@ -2,7 +2,6 @@
   "components": [
     {
       "bom-ref": "pkg:github/mongodb/mongo-c-driver@v1.28.1#src/libbson",
-      "copyright": "Copyright 2009-present MongoDB, Inc.",
       "externalReferences": [
         {
           "type": "distribution",
@@ -14,13 +13,6 @@
         }
       ],
       "group": "mongodb",
-      "licenses": [
-        {
-          "license": {
-            "id": "Apache-2.0"
-          }
-        }
-      ],
       "name": "mongo-c-driver",
       "purl": "pkg:github/mongodb/mongo-c-driver@v1.28.1#src/libbson",
       "type": "library",
@@ -28,18 +20,10 @@
     },
     {
       "bom-ref": "pkg:generic/IntelRDFPMathLib@20U2?download_url=https://www.netlib.org/misc/intel/IntelRDFPMathLib20U2.tar.gz",
-      "copyright": "Copyright (c) 2018, Intel Corp.",
       "externalReferences": [
         {
           "type": "distribution",
           "url": "https://www.netlib.org/misc/intel/IntelRDFPMathLib20U2.tar.gz"
-        }
-      ],
-      "licenses": [
-        {
-          "license": {
-            "id": "BSD-3-Clause"
-          }
         }
       ],
       "name": "IntelRDFPMathLib",
@@ -57,7 +41,7 @@
     }
   ],
   "metadata": {
-    "timestamp": "2024-10-10T20:09:56.207649+00:00",
+    "timestamp": "2025-02-19T18:57:22.103426+00:00",
     "tools": [
       {
         "externalReferences": [
@@ -100,8 +84,8 @@
       }
     ]
   },
-  "serialNumber": "urn:uuid:879e1b41-08d8-4505-8c89-2285bc3e442c",
-  "version": 2,
+  "serialNumber": "urn:uuid:d790c50e-571c-4a5a-a2c7-68adf34f8aaa",
+  "version": 1,
   "$schema": "http://cyclonedx.org/schema/bom-1.5.schema.json",
   "bomFormat": "CycloneDX",
   "specVersion": "1.5",
