@@ -1138,9 +1138,7 @@ static bool _mongocrypt_do_decryption(_mongocrypt_crypto_t *crypto,
         _mc_##name##_do_encryption,                                                                                    \
         _mc_##name##_do_decryption,                                                                                    \
     };                                                                                                                 \
-    const _mongocrypt_value_encryption_algorithm_t *_mc##name##Algorithm() {                                           \
-        return &_mc##name##Algorithm_definition;                                                                       \
-    }
+    const _mongocrypt_value_encryption_algorithm_t *_mc##name##Algorithm() { return &_mc##name##Algorithm_definition; }
 
 // FLE1 algorithm: AES-256-CBC HMAC/SHA-512-256 (SHA-512 truncated to 256 bits)
 DECLARE_ALGORITHM(FLE1, CBC, SHA_512_256)

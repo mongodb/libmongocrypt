@@ -233,9 +233,7 @@ DECL_IDF_COMPARE(less_equal)
 
 /// Test properties of Decimal128 numbers
 #define DECL_PREDICATE(Name, BIDName)                                                                                  \
-    static inline bool mc_dec128_##Name(mc_dec128 d) {                                                                 \
-        return 0 != bid128_##BIDName(_mc_to_bid128(d));                                                                \
-    }
+    static inline bool mc_dec128_##Name(mc_dec128 d) { return 0 != bid128_##BIDName(_mc_to_bid128(d)); }
 
 DECL_PREDICATE(is_zero, isZero)
 DECL_PREDICATE(is_negative, isSigned)
@@ -276,9 +274,7 @@ DECL_IDF_BINOP_WRAPPER(pow)
             bid128_##Oper(_mc_to_bid128(operand), MC_DEC128_ROUND_DEFAULT, flags ? &flags->bits : &zero_flags.bits));  \
     }                                                                                                                  \
                                                                                                                        \
-    static inline mc_dec128 mc_dec128_##Oper(mc_dec128 operand) {                                                      \
-        return mc_dec128_##Oper##_ex(operand, NULL);                                                                   \
-    }
+    static inline mc_dec128 mc_dec128_##Oper(mc_dec128 operand) { return mc_dec128_##Oper##_ex(operand, NULL); }
 
 DECL_IDF_UNOP_WRAPPER(log2)
 DECL_IDF_UNOP_WRAPPER(log10)
