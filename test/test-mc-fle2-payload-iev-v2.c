@@ -31,9 +31,9 @@ typedef struct {
     _mongocrypt_buffer_t K_Key;
     uint8_t bson_value_type;
     _mongocrypt_buffer_t bson_value;
-    uint8_t edge_count;
-    uint8_t substr_tag_count;
-    uint8_t suffix_tag_count;
+    uint32_t edge_count;
+    uint32_t substr_tag_count;
+    uint32_t suffix_tag_count;
     mc_FLE2TagAndEncryptedMetadataBlock_t *metadata;
 } _mc_fle2_iev_v2_test;
 
@@ -48,7 +48,7 @@ static void _mc_fle2_iev_v2_test_destroy(_mc_fle2_iev_v2_test *test) {
     _mongocrypt_buffer_cleanup(&test->K_KeyId);
     _mongocrypt_buffer_cleanup(&test->K_Key);
     _mongocrypt_buffer_cleanup(&test->bson_value);
-    for (int i = 0; i < test->edge_count; ++i) {
+    for (uint32_t i = 0; i < test->edge_count; ++i) {
         mc_FLE2TagAndEncryptedMetadataBlock_cleanup(&test->metadata[i]);
     }
 
@@ -143,7 +143,7 @@ _mc_fle2_iev_v2_test_serialize_payload(mongocrypt_t *crypt, _mc_fle2_iev_v2_test
 
     // Finally, add metadata, and we have a complete IEV.
     iev->metadata = bson_malloc0(test->edge_count * sizeof(mc_FLE2TagAndEncryptedMetadataBlock_t));
-    for (uint8_t i = 0; i < test->edge_count; i++) {
+    for (uint32_t i = 0; i < test->edge_count; i++) {
         _mongocrypt_buffer_t tmp_buf;
         _mongocrypt_buffer_init_size(&tmp_buf, kMetadataLen);
         memcpy(tmp_buf.data, test->metadata[i].encryptedCount.data, kMetadataFieldLen);
@@ -196,14 +196,14 @@ static bool _mc_fle2_iev_v2_test_parse(_mc_fle2_iev_v2_test *test, bson_iter_t *
             ASSERT_OR_PRINT_MSG(!test->substr_tag_count, "Duplicate field 'substr_tag_count'");
             ASSERT(BSON_ITER_HOLDS_INT32(iter) || BSON_ITER_HOLDS_INT64(iter));
             int64_t value = bson_iter_as_int64(iter);
-            ASSERT_OR_PRINT_MSG((value >= 0) && (value < 256), "Field 'substr_tag_count' must be 0..255");
-            test->substr_tag_count = (uint8_t)value;
+            ASSERT_OR_PRINT_MSG((value >= 0) && (value < UINT32_MAX), "Field 'substr_tag_count' must be 0..2^32-1");
+            test->substr_tag_count = (uint32_t)value;
         } else if (!strcmp(field, "suffix_tag_count")) {
             ASSERT_OR_PRINT_MSG(!test->suffix_tag_count, "Duplicate field 'suffix_tag_count'");
             ASSERT(BSON_ITER_HOLDS_INT32(iter) || BSON_ITER_HOLDS_INT64(iter));
             int64_t value = bson_iter_as_int64(iter);
-            ASSERT_OR_PRINT_MSG((value >= 0) && (value < 256), "Field 'suffix_tag_count' must be 0..255");
-            test->suffix_tag_count = (uint8_t)value;
+            ASSERT_OR_PRINT_MSG((value >= 0) && (value < UINT32_MAX), "Field 'suffix_tag_count' must be 0..2^32-1");
+            test->suffix_tag_count = (uint32_t)value;
         } else if (!strcmp(field, "type")) {
             ASSERT_OR_PRINT_MSG(!hasType, "Duplicate field 'type'");
             ASSERT(BSON_ITER_HOLDS_UTF8(iter));
@@ -252,7 +252,7 @@ static bool _mc_fle2_iev_v2_test_parse(_mc_fle2_iev_v2_test *test, bson_iter_t *
 
             // Reinitialize iter and parse each metadata block
             bson_iter_init(&metadata_array_iter, &metadata_array);
-            int i = 0;
+            uint32_t i = 0;
             while (bson_iter_next(&metadata_array_iter)) {
                 ASSERT(BSON_ITER_HOLDS_UTF8(&metadata_array_iter));
 
@@ -337,29 +337,28 @@ static void _mc_fle2_iev_v2_test_run(mongocrypt_t *crypt, _mongocrypt_tester_t *
     ASSERT_OK_STATUS(bson_value, status);
     ASSERT_CMPBUF(*bson_value, test->bson_value);
 
-    uint8_t edge_count = 1;
+    uint32_t edge_count = 1;
     if (test->type == kTypeRange || test->type == kTypeText) {
         // Validate edge count
         edge_count = mc_FLE2IndexedEncryptedValueV2_get_edge_count(iev, status);
         ASSERT_OK_STATUS(edge_count, status);
-        ASSERT_CMPINT(edge_count, ==, test->edge_count);
+        ASSERT_CMPUINT32(edge_count, ==, test->edge_count);
     }
 
-    uint8_t substr_tag_count = 0, suffix_tag_count = 0;
+    uint32_t substr_tag_count = 0, suffix_tag_count = 0, prefix_tag_count = 0;
     if (test->type == kTypeText) {
         // Validate substr/suffix/prefix tag counts
         ASSERT_OK_STATUS(mc_FLE2IndexedEncryptedValueV2_get_substr_tag_count(iev, &substr_tag_count, status), status);
-        ASSERT_CMPINT(substr_tag_count, ==, test->substr_tag_count);
+        ASSERT_CMPUINT32(substr_tag_count, ==, test->substr_tag_count);
         ASSERT_OK_STATUS(mc_FLE2IndexedEncryptedValueV2_get_suffix_tag_count(iev, &suffix_tag_count, status), status);
-        ASSERT_CMPINT(suffix_tag_count, ==, test->suffix_tag_count);
-        uint8_t prefix_tag_count;
+        ASSERT_CMPUINT32(suffix_tag_count, ==, test->suffix_tag_count);
         ASSERT_OK_STATUS(mc_FLE2IndexedEncryptedValueV2_get_prefix_tag_count(iev, &prefix_tag_count, status), status);
-        ASSERT_CMPINT(prefix_tag_count, ==, test->edge_count - test->substr_tag_count - test->suffix_tag_count - 1);
+        ASSERT_CMPUINT32(prefix_tag_count, ==, test->edge_count - test->substr_tag_count - test->suffix_tag_count - 1);
     }
 
     // Validate edges/metadata
     mc_FLE2TagAndEncryptedMetadataBlock_t metadata;
-    for (int i = 0; i < edge_count; ++i) {
+    for (uint32_t i = 0; i < edge_count; ++i) {
         if (test->type == kTypeText) {
             if (i == 0) {
                 ASSERT(mc_FLE2IndexedEncryptedValueV2_get_exact_metadata(iev, &metadata, status));
@@ -472,7 +471,7 @@ static void _mc_fle2_iev_v2_validate(_mongocrypt_tester_t *tester, _mc_fle2_iev_
     ASSERT(!mc_FLE2IndexedEncryptedValueV2_validate(iev, status));
     iev->bson_value_type = temp_bson_value_type;
 
-    uint8_t temp_edge_count = iev->edge_count;
+    uint32_t temp_edge_count = iev->edge_count;
     iev->edge_count = 0;
     ASSERT(!mc_FLE2IndexedEncryptedValueV2_validate(iev, status));
     iev->edge_count = temp_edge_count;
@@ -481,8 +480,8 @@ static void _mc_fle2_iev_v2_validate(_mongocrypt_tester_t *tester, _mc_fle2_iev_
         ASSERT(!mc_FLE2IndexedEncryptedValueV2_validate(iev, status));
         iev->edge_count = temp_edge_count;
     } else if (test->type == kTypeText) {
-        uint8_t temp_substr_count = iev->substr_tag_count;
-        uint8_t temp_suffix_count = iev->suffix_tag_count;
+        uint32_t temp_substr_count = iev->substr_tag_count;
+        uint32_t temp_suffix_count = iev->suffix_tag_count;
 
         iev->substr_tag_count = iev->edge_count;
         ASSERT(!mc_FLE2IndexedEncryptedValueV2_validate(iev, status));
@@ -586,6 +585,9 @@ static void test_fle2_iev_v2(_mongocrypt_tester_t *tester) {
     // Fields are modified from insertOneRangeV2.json, payload was produced by _mc_fle2_iev_v2_test_serialize_payload in
     // this test
     test_fle2_iev_v2_test(crypt, tester, "test/data/iev-v2/FLECrudTest-insertOneText.json");
+    // Fields are modified from insertOneText.json, payload was produced by _mc_fle2_iev_v2_test_serialize_payload in
+    // this test
+    test_fle2_iev_v2_test(crypt, tester, "test/data/iev-v2/FLECrudTest-insertOneTextLarge.json");
     mongocrypt_destroy(crypt);
 }
 
