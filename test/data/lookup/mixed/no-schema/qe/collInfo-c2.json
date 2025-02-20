@@ -1,0 +1,42 @@
+{
+    "name": "c2",
+    "type": "collection",
+    "options": {
+        "encryptedFields": {
+            "escCollection": "enxcol_.c2.esc",
+            "ecocCollection": "enxcol_.c2.ecoc",
+            "fields": [
+                {
+                    "keyId": {
+                        "$binary": {
+                            "base64": "uJ2Njy8YQDuYKbzu2vEKQg==",
+                            "subType": "04"
+                        }
+                    },
+                    "path": "e2",
+                    "bsonType": "string",
+                    "queries": {
+                        "queryType": "equality",
+                        "contention": 0
+                    }
+                }
+            ]
+        }
+    },
+    "info": {
+        "readOnly": false,
+        "uuid": {
+            "$binary": {
+                "base64": "1dVWZUeyRZGZ3/NwfKTdLQ==",
+                "subType": "04"
+            }
+        }
+    },
+    "idIndex": {
+        "v": 2,
+        "key": {
+            "_id": 1
+        },
+        "name": "_id_"
+    }
+}

@@ -1,0 +1,11 @@
+{
+    "name": "v1",
+    "type": "view",
+    "options": {
+        "viewOn": "c1",
+        "pipeline": []
+    },
+    "info": {
+        "readOnly": true
+    }
+}

@@ -93,6 +93,11 @@ bool mc_schema_broker_request(mc_schema_broker_t *sb, const char *db, const char
     return true;
 }
 
+bool mc_schema_broker_has_multiple_requests(const mc_schema_broker_t *sb) {
+    BSON_ASSERT_PARAM(sb);
+    return sb->ll_len > 1;
+}
+
 void mc_schema_broker_destroy(mc_schema_broker_t *sb) {
     if (!sb) {
         return;

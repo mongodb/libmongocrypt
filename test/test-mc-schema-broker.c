@@ -39,8 +39,11 @@ static void test_mc_schema_broker_request(_mongocrypt_tester_t *tester) {
     {
         mongocrypt_status_t *status = mongocrypt_status_new();
         mc_schema_broker_t *sb = mc_schema_broker_new();
+        ASSERT(!mc_schema_broker_has_multiple_requests(sb));
         ASSERT_OK_STATUS(mc_schema_broker_request(sb, "db", "coll1", status), status);
+        ASSERT(!mc_schema_broker_has_multiple_requests(sb));
         ASSERT_OK_STATUS(mc_schema_broker_request(sb, "db", "coll2", status), status);
+        ASSERT(mc_schema_broker_has_multiple_requests(sb));
 
         // Check listCollections filter:
         bson_t filter = BSON_INITIALIZER;
@@ -56,8 +59,11 @@ static void test_mc_schema_broker_request(_mongocrypt_tester_t *tester) {
     {
         mongocrypt_status_t *status = mongocrypt_status_new();
         mc_schema_broker_t *sb = mc_schema_broker_new();
+        ASSERT(!mc_schema_broker_has_multiple_requests(sb));
         ASSERT_OK_STATUS(mc_schema_broker_request(sb, "db", "coll1", status), status);
+        ASSERT(!mc_schema_broker_has_multiple_requests(sb));
         ASSERT_OK_STATUS(mc_schema_broker_request(sb, "db", "coll1", status), status);
+        ASSERT(!mc_schema_broker_has_multiple_requests(sb));
 
         // Check listCollections filter:
         bson_t filter = BSON_INITIALIZER;

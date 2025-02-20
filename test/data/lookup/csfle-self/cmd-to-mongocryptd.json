@@ -1,0 +1,34 @@
+{
+   "aggregate": "c1",
+   "pipeline": [
+      {
+         "$lookup": {
+            "from": "c1",
+            "localField": "joinme",
+            "foreignField": "joinme",
+            "as": "matched"
+         }
+      }
+   ],
+   "cursor": {},
+   "jsonSchema": {
+      "properties": {
+         "e1": {
+            "encrypt": {
+               "keyId": [
+                  {
+                     "$binary": {
+                        "base64": "uJ2Njy8YQDuYKbzu2vEKQg==",
+                        "subType": "04"
+                     }
+                  }
+               ],
+               "bsonType": "string",
+               "algorithm": "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic"
+            }
+         }
+      },
+      "bsonType": "object"
+   },
+   "isRemoteSchema": true
+}

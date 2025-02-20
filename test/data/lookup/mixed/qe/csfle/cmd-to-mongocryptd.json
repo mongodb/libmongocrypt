@@ -1,0 +1,70 @@
+{
+   "aggregate": "c1",
+   "pipeline": [
+      {
+         "$lookup": {
+            "from": "c2",
+            "localField": "joinme",
+            "foreignField": "joinme",
+            "as": "matched"
+         }
+      },
+      {
+         "$match": {
+            "e1": "foo"
+         }
+      }
+   ],
+   "cursor": {},
+   "encryptionInformation": {
+      "type": {
+         "$numberInt": "1"
+      },
+      "schema": {
+         "db.c1": {
+            "escCollection": "enxcol_.c1.esc",
+            "ecocCollection": "enxcol_.c1.ecoc",
+            "fields": [
+               {
+                  "keyId": {
+                     "$binary": {
+                        "base64": "uJ2Njy8YQDuYKbzu2vEKQg==",
+                        "subType": "04"
+                     }
+                  },
+                  "path": "e1",
+                  "bsonType": "string",
+                  "queries": {
+                     "queryType": "equality",
+                     "contention": 0
+                  }
+               }
+            ]
+         }
+      }
+   },
+   "csfleEncryptionSchemas": {
+      "db.c2": {
+         "jsonSchema": {
+            "properties": {
+               "e2": {
+                  "encrypt": {
+                     "keyId": [
+                        {
+                           "$binary": {
+                              "base64": "uJ2Njy8YQDuYKbzu2vEKQg==",
+                              "subType": "04"
+                           }
+                        }
+                     ],
+                     "bsonType": "string",
+                     "algorithm": "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic"
+                  }
+               }
+            },
+            "bsonType": "object"
+         },
+         "isRemoteSchema": true
+      }
+   }
+}

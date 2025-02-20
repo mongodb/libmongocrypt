@@ -170,6 +170,26 @@ static void _test_override_error_includes_reason(_mongocrypt_tester_t *tester) {
     mongocrypt_destroy(crypt);
 }
 
+static void _test_lookup_version_check(_mongocrypt_tester_t *tester) {
+    if (!TEST_MONGOCRYPT_HAVE_REAL_CRYPT_SHARED_LIB) {
+        TEST_STDERR_PRINTF("No 'real' csfle library is available. The %s test is a no-op.\n", BSON_FUNC);
+        return;
+    }
+
+#define CRYPT_SHARED_8_1 0x0008000100000000ull
+    mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_WITH_CRYPT_SHARED_LIB);
+    uint64_t version = crypt->csfle.get_version();
+    mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+    mongocrypt_binary_t *cmd = TEST_FILE("./test/data/lookup/csfle/01-cmd.json");
+    if (version >= CRYPT_SHARED_8_1) {
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, cmd), ctx);
+    } else {
+        ASSERT_FAILS(mongocrypt_ctx_encrypt_init(ctx, "db", -1, cmd), ctx, "Upgrade crypt_shared");
+    }
+    mongocrypt_ctx_destroy(ctx);
+    mongocrypt_destroy(crypt);
+}
+
 void _mongocrypt_tester_install_csfle_lib(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_csfle_no_paths);
     INSTALL_TEST(_test_csfle_not_found);
@@ -181,4 +201,5 @@ void _mongocrypt_tester_install_csfle_lib(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_cur_exe_path);
     INSTALL_TEST(_test_csfle_not_loaded_with_bypassqueryanalysis);
     INSTALL_TEST(_test_override_error_includes_reason);
+    INSTALL_TEST(_test_lookup_version_check);
 }

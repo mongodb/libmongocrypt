@@ -140,6 +140,15 @@ All contexts.
 
 #### State: `MONGOCRYPT_CTX_NEED_MONGO_COLLINFO` ####
 
+> [!IMPORTANT]
+> <a name="multi-collection-commands"></a> **Multi-collection commands**: prior to 1.13.0, drivers were expected to pass _at most one result_ from `listCollections`. In 1.13.0, drivers are expected to pass _all results_ from `listCollections` to support multi-collection commands (e.g. aggregate with `$lookup`).
+>
+> Drivers must call `mongocrypt_setopt_enable_multiple_collinfo` to indicate the new behavior is implemented and opt-in to support for multi-collection commands. This opt-in is to prevent the following bug scenario:
+> > A driver upgrades to 1.13.0, but does not update prior behavior which passes at most one result of a multi-collection command.
+> > A multi-collection command requests schemas for both `db.c1` and `db.c2`.
+> > The driver only passes the result for `db.c1` even though `db.c2` also has a result.
+> > Therefore, libmongocrypt incorrectly believes `db.c2` has no schema.
+
 **libmongocrypt needs**...
 
 A result from a listCollections cursor.
@@ -148,7 +157,7 @@ A result from a listCollections cursor.
 
 1.  Run listCollections on the encrypted MongoClient with the filter
     provided by `mongocrypt_ctx_mongo_op`
-2.  Return the first result (if any) with `mongocrypt_ctx_mongo_feed` or proceed to the next step if nothing was returned.
+2.  Pass all results (if any) with calls to `mongocrypt_ctx_mongo_feed` or proceed to the next step if nothing was returned. Results may be passed in any order.
 3.  Call `mongocrypt_ctx_mongo_done`
 
 **Applies to...**
@@ -156,6 +165,8 @@ A result from a listCollections cursor.
 auto encrypt
 
 #### State: `MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB` ####
+
+See [note](#multi-collection-commands) about multi-collection commands.
 
 **libmongocrypt needs**...
 
@@ -165,7 +176,7 @@ Results from a listCollections cursor from a specified database.
 
 1.  Run listCollections on the encrypted MongoClient with the filter
     provided by `mongocrypt_ctx_mongo_op` on the database provided by `mongocrypt_ctx_mongo_db`.
-2.  Return the first result (if any) with `mongocrypt_ctx_mongo_feed` or proceed to the next step if nothing was returned.
+2.  Pass all results (if any) with calls to `mongocrypt_ctx_mongo_feed` or proceed to the next step if nothing was returned. Results may be passed in any order.
 3.  Call `mongocrypt_ctx_mongo_done`
 
 **Applies to...**

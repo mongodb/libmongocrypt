@@ -1,0 +1,20 @@
+{
+   "aggregate": "c1",
+   "pipeline": [
+      {
+         "$facet": {
+            "output": [
+               {
+                  "$lookup": {
+                     "from": "c2",
+                     "localField": "joinme",
+                     "foreignField": "joinme",
+                     "as": "matched"
+                  }
+               }
+            ]
+         }
+      }
+   ],
+   "cursor": {}
+}

@@ -44,11 +44,14 @@ typedef enum tester_mongocrypt_flags {
     TESTER_MONGOCRYPT_WITH_RANGE_V2 = 1 << 2,
     /// Short cache expiration
     TESTER_MONGOCRYPT_WITH_SHORT_CACHE = 1 << 3,
+    /// Do not call `mongocrypt_init` yet to allow for further configuration of the resulting `mongocrypt_t`.
+    TESTER_MONGOCRYPT_SKIP_INIT = 1 << 4,
 } tester_mongocrypt_flags;
 
-/* Arbitrary max of 2048 instances of temporary test data. Increase as needed.
+/* Arbitrary max of 2148 instances of temporary test data. Increase as needed.
+ * TODO(MONGOCRYPT-775) increasing further (e.g. 3000+) causes a segfault on Windows test runs. Revise.
  */
-#define TEST_DATA_COUNT 2048
+#define TEST_DATA_COUNT 2148
 
 typedef struct __mongocrypt_tester_t {
     int test_count;
