@@ -577,6 +577,7 @@ bool mc_FLE2IndexedEncryptedValueV2_parse(mc_FLE2IndexedEncryptedValueV2_t *iev,
             if (ec == 0) {
                 CLIENT_ERR("mc_FLE2IndexedEncryptedValueV2_parse edge count must not be 0 for type "
                            "range, but found edge count is 0.");
+                return false;
             }
             iev->edge_count = (uint32_t)ec;
         } else if (iev->type == kFLE2IEVTypeText) {
@@ -616,7 +617,7 @@ bool mc_FLE2IndexedEncryptedValueV2_parse(mc_FLE2IndexedEncryptedValueV2_t *iev,
         iev->edge_count * sizeof(mc_FLE2TagAndEncryptedMetadataBlock_t));
 
     // Read each metadata element
-    for (uint8_t i = 0; i < iev->edge_count; i++) {
+    for (uint32_t i = 0; i < iev->edge_count; i++) {
         _mongocrypt_buffer_t tmp_buf;
 
         CHECK_AND_RETURN(mc_reader_read_buffer(&reader, &tmp_buf, kMetadataLen, status));

@@ -585,6 +585,9 @@ static void test_fle2_iev_v2(_mongocrypt_tester_t *tester) {
     // Fields are modified from insertOneRangeV2.json, payload was produced by _mc_fle2_iev_v2_test_serialize_payload in
     // this test
     test_fle2_iev_v2_test(crypt, tester, "test/data/iev-v2/FLECrudTest-insertOneText.json");
+    // Fields are modified from insertOneText.json, payload was produced by _mc_fle2_iev_v2_test_serialize_payload in
+    // this test
+    test_fle2_iev_v2_test(crypt, tester, "test/data/iev-v2/FLECrudTest-insertOneTextLarge.json");
     mongocrypt_destroy(crypt);
 }
 
