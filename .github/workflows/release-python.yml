@@ -41,17 +41,17 @@ jobs:
     outputs:
       version: ${{ steps.pre-publish.outputs.version }}
     steps:
-      - uses: mongodb-labs/drivers-github-tools/secure-checkout@b2
+      - uses: mongodb-labs/drivers-github-tools/secure-checkout@v2
         with:
           app_id: ${{ vars.APP_ID }}
           private_key: ${{ secrets.APP_PRIVATE_KEY }}
-      - uses: mongodb-labs/drivers-github-tools/setup@b2
+      - uses: mongodb-labs/drivers-github-tools/setup@v2
         with:
           aws_role_arn: ${{ secrets.AWS_ROLE_ARN }}
           aws_region_name: ${{ vars.AWS_REGION_NAME }}
           aws_secret_id: ${{ secrets.AWS_SECRET_ID }}
           artifactory_username: ${{ vars.ARTIFACTORY_USERNAME }}
-      - uses: mongodb-labs/drivers-github-tools/python/pre-publish@b2
+      - uses: mongodb-labs/drivers-github-tools/python/pre-publish@v2
         id: pre-publish
         with:
           version: ${{ env.VERSION }}
@@ -105,17 +105,17 @@ jobs:
       attestations: write
       security-events: write
     steps:
-      - uses: mongodb-labs/drivers-github-tools/secure-checkout@b2
+      - uses: mongodb-labs/drivers-github-tools/secure-checkout@v2
         with:
           app_id: ${{ vars.APP_ID }}
           private_key: ${{ secrets.APP_PRIVATE_KEY }}
-      - uses: mongodb-labs/drivers-github-tools/setup@b2
+      - uses: mongodb-labs/drivers-github-tools/setup@v2
         with:
           aws_role_arn: ${{ secrets.AWS_ROLE_ARN }}
           aws_region_name: ${{ vars.AWS_REGION_NAME }}
           aws_secret_id: ${{ secrets.AWS_SECRET_ID }}
           artifactory_username: ${{ vars.ARTIFACTORY_USERNAME }}
-      - uses: mongodb-labs/drivers-github-tools/python/post-publish@b2
+      - uses: mongodb-labs/drivers-github-tools/python/post-publish@v2
         with:
           version: ${{ env.VERSION }}
           following_version: ${{ env.FOLLOWING_VERSION }}
