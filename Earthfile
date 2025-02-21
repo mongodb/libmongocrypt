@@ -462,16 +462,15 @@ sign:
 #
 # See https://docs.devprod.prod.corp.mongodb.com/mms/python/src/sbom/silkbomb/ for documentation of silkbomb.
 silkbomb:
-    FROM artifactory.corp.mongodb.com/release-tools-container-registry-public-local/silkbomb:1.0
-    # Alias the silkbom executable to a simpler name:
+    FROM artifactory.corp.mongodb.com/release-tools-container-registry-public-local/silkbomb:2.0
+    # Alias the silkbomb executable to a simpler name:
     RUN ln -s /python/src/sbom/silkbomb/bin /usr/local/bin/silkbomb
 
 # sbom-generate:
 #   Generate/update the etc/cyclonedx.sbom.json file from the etc/purls.txt file.
 #
 # This target will update the existing etc/cyclonedx.sbom.json file in-place based
-# on the content of etc/purls.txt.
-#
+# on the content of etc/purls.txt and etc/cyclonedx.sbom.json.
 sbom-generate:
     FROM +silkbomb
     # Copy in the relevant files:
@@ -479,8 +478,44 @@ sbom-generate:
     COPY etc/purls.txt etc/cyclonedx.sbom.json /s/
     # Update the SBOM file:
     RUN silkbomb update \
+        --refresh \
+        --no-update-sbom-version \
         --purls purls.txt \
         --sbom-in cyclonedx.sbom.json \
         --sbom-out cyclonedx.sbom.json
     # Save the result back to the host:
     SAVE ARTIFACT /s/cyclonedx.sbom.json AS LOCAL etc/cyclonedx.sbom.json
+
+# sbom-generate-new-serial-number:
+#   Equivalent to +sbom-generate but includes the --generate-new-serial-number
+#   flag to generate a new unique serial number and reset the SBOM version to 1.
+#
+# This target will update the existing etc/cyclonedx.sbom.json file in-place based
+# on the content of etc/purls.txt and etc/cyclonedx.sbom.json.
+sbom-generate-new-serial-number:
+    FROM +silkbomb
+    # Copy in the relevant files:
+    WORKDIR /s
+    COPY etc/purls.txt etc/cyclonedx.sbom.json /s/
+    # Update the SBOM file:
+    RUN silkbomb update \
+        --refresh \
+        --generate-new-serial-number \
+        --purls purls.txt \
+        --sbom-in cyclonedx.sbom.json \
+        --sbom-out cyclonedx.sbom.json
+    # Save the result back to the host:
+    SAVE ARTIFACT /s/cyclonedx.sbom.json AS LOCAL etc/cyclonedx.sbom.json
+
+# sbom-validate:
+#   Validate the SBOM Lite for the given branch.
+sbom-validate:
+    FROM +silkbomb
+    # Copy in the relevant files:
+    WORKDIR /s
+    COPY etc/purls.txt etc/cyclonedx.sbom.json /s/
+    # Run the SilkBomb tool to download the artifact that matches the requested branch
+    RUN silkbomb validate \
+        --purls purls.txt \
+        --sbom-in cyclonedx.sbom.json \
+        --exclude jira
