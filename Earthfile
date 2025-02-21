@@ -484,24 +484,3 @@ sbom-generate:
         --sbom-out cyclonedx.sbom.json
     # Save the result back to the host:
     SAVE ARTIFACT /s/cyclonedx.sbom.json AS LOCAL etc/cyclonedx.sbom.json
-
-# sbom-download:
-#   Download the Augmented SBOM file from Silk.
-#
-# See https://wiki.corp.mongodb.com/display/DRIVERS/Using+AWS+Secrets+Manager+to+Store+Testing+Secrets for instructions to get secrets from AWS Secrets Manager. Secrets are available under `drivers/libmongocrypt`.
-#
-sbom-download:
-    ARG --required out
-    ARG --required branch
-    FROM +silkbomb
-    WORKDIR /s
-    # Download the Augmented SBOM file:
-    RUN --no-cache --secret silk_client_id --secret silk_client_secret \
-        SILK_CLIENT_ID=${silk_client_id} \
-        SILK_CLIENT_SECRET=${silk_client_secret} \
-        silkbomb download \
-        --sbom-out cyclonedx.augmented.sbom.json \
-        --silk-asset-group libmongocrypt-${branch}
-    # Save the result back to the host:
-    SAVE ARTIFACT /s/cyclonedx.augmented.sbom.json AS LOCAL ${out}
-    RUN echo "Augmented SBOM saved to ${out}"
