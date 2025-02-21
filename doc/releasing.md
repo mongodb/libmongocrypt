@@ -99,14 +99,6 @@ Do the following when releasing:
 
 - If this is a new minor release (e.g. `x.y.0`):
    - File a DOCSP ticket to update the installation instructions on [Install libmongocrypt](https://www.mongodb.com/docs/manual/core/csfle/reference/libmongocrypt/). ([Example](https://jira.mongodb.org/browse/DOCSP-36863))
-   - Create a new Silk asset group. Use the newly created release branch (e.g. `rx.y`) as the `--branch` argument:
-     ```bash
-     ./.evergreen/earthly.sh \
-        --secret silk_client_id=${silk_client_id} \
-        --secret silk_client_secret=${silk_client_secret} \
-        +silk-create-asset-group \
-        --branch <branch>
-     ```
    - Create a new Snyk reference target. The following instructions use the example branch `rx.y`:
 
      Run `cmake` to ensure generated source files are present:
@@ -164,4 +156,3 @@ index 609dc0b..f7530a9 100644
      Architectures: amd64 arm64
    suites:
 ```
-
