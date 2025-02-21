@@ -255,7 +255,7 @@ static inline bool mc_schema_entry_satisfy_from_collinfo(mc_schema_entry_t *se,
             return false;
         }
 
-        if (!mc_EncryptedFieldConfig_parse(&se->encryptedFields.efc, &se->encryptedFields.bson, status, use_range_v2)) {
+        if (!mc_EncryptedFieldConfig_parse(&se->encryptedFields.efc, &se->encryptedFields.bson, status)) {
             return false;
         }
         se->encryptedFields.set = true;
@@ -426,10 +426,7 @@ bool mc_schema_broker_satisfy_from_encryptedFieldsMap(mc_schema_broker_t *sb,
                 goto loop_fail;
             }
 
-            if (!mc_EncryptedFieldConfig_parse(&it->encryptedFields.efc,
-                                               &it->encryptedFields.bson,
-                                               status,
-                                               sb->use_range_v2)) {
+            if (!mc_EncryptedFieldConfig_parse(&it->encryptedFields.efc, &it->encryptedFields.bson, status)) {
                 goto loop_fail;
             }
 
