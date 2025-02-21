@@ -44,7 +44,16 @@ snyk monitor \
 
 Check the updated reference targets in Snyk for detected vulnerabilities.
 
-#### Check Augmented SBOM
+#### Check the Augmented SBOM
+
+Examine the Augmented SBOM from a recent execution of the `sbom` task in an Evergreen patch or commit build.
+
+Evergreen CLI may be used to schedule only the `sbom` task:
+
+```bash
+# Ensure `-p` matches the correct Evergreen project for the current branch!
+evergreen patch -y -p libmongocrypt -t all -v sbom -f
+```
 
 Check the contents of the "vulnerabilities" field (if present) in the Augmented SBOM.
 
@@ -71,13 +80,17 @@ Do the following when releasing:
       - If the `publish-packages` tasks fail with an error like `[curator] 2024/01/02 13:56:17 [p=emergency]: problem submitting repobuilder job: 404 (Not Found)`, this suggests the published path does not yet exist. Barque (the Linux package publishing service) has protection to avoid unintentional publishes. File a DEVPROD ticket ([example](https://jira.mongodb.org/browse/DEVPROD-4053)) and assign to the team called Release Infrastructure to request the path be created. Then re-run the failing `publish-packages` task. Ask in the slack channel `#devprod-release-tools` for further help with `Barque` or `curator`.
 - Create the release from the GitHub releases page from the new tag.
    - Attach the tarball and signature file from the Files tab of the `windows-upload-release` task. [Example](https://github.com/mongodb/libmongocrypt/releases/tag/1.10.0).
-   - Attach the Augmented SBOM file.
-     Secrets can be obtained from [AWS Secrets Manager](https://wiki.corp.mongodb.com/display/DRIVERS/Using+AWS+Secrets+Manager+to+Store+Testing+Secrets) under `drivers/libmongocrypt`.
+   - Attach the Augmented SBOM file to the release as `cyclonedx.augmented.sbom.json`.
+     Download the Augmented SBOM from a recent execution of the `sbom` task in an Evergreen patch or commit build.
    - Attach `etc/third_party_vulnerabilities.md` to the release.
    - Attach `etc/ssdlc_compliance_report.md` to the release.
 
 - If this is a new minor release (e.g. `x.y.0`):
    - File a DOCSP ticket to update the installation instructions on [Install libmongocrypt](https://www.mongodb.com/docs/manual/core/csfle/reference/libmongocrypt/). ([Example](https://jira.mongodb.org/browse/DOCSP-36863))
+   - Generate a new unique SBOM serial number for the next release:
+     ```bash
+     ./.evergreen/earthly.sh +sbom-generate-new-serial-number
+     ```
    - Create a new Snyk reference target. The following instructions use the example branch `rx.y`:
 
      Run `cmake` to ensure generated source files are present:
