@@ -616,7 +616,7 @@ bool mc_FLE2IndexedEncryptedValueV2_parse(mc_FLE2IndexedEncryptedValueV2_t *iev,
     iev->metadata = (mc_FLE2TagAndEncryptedMetadataBlock_t *)bson_malloc0(
         iev->edge_count * sizeof(mc_FLE2TagAndEncryptedMetadataBlock_t));
 
-    // Read each metadata element
+    // Read each metadata element in buff
     for (uint32_t i = 0; i < iev->edge_count; i++) {
         _mongocrypt_buffer_t tmp_buf;
 
