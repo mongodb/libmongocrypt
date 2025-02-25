@@ -278,7 +278,8 @@ DERIVE_TOKEN_IMPL(ESC)
  * Calculates:
  * E?CToken = HMAC(collectionLevel1Token, n)
  * E?CText<T>Token = HMAC(E?CToken, t)
- * E?CText<T>DerivedFromDataTokenAndContentionFactorToken = HMAC(HMAC(E?CText<T>Token, v) cf)
+ * E?CText<T>DerivedFromDataToken = HMAC(E?CText<T>Token, v)
+ * E?CText<T>DerivedFromDataTokenAndContentionFactorToken = HMAC(E?CText<T>DerivedFromDataToken, cf)
  *
  * E?C = EDC|ESC
  * n = 1 for EDC, 2 for ESC
@@ -286,7 +287,9 @@ DERIVE_TOKEN_IMPL(ESC)
  * t = 1 for Exact, 2 for Substring, 3 for Suffix, 4 for Prefix
  * cf = contentionFactor
  *
- * E?CText<T>DerivedFromDataTokenAndContentionFactorToken is saved to out.
+ * If {useContentionFactor} is False, E?CText<T>DerivedFromDataToken is saved to out, and
+ * {contentionFactor} is ignored.
+ * Otherwise, E?CText<T>DerivedFromDataTokenAndContentionFactorToken is saved to out.
  * Note that {out} is initialized even on failure.
  */
 #define DERIVE_TEXT_SEARCH_TOKEN_IMPL(Name, Type)                                                                      \
@@ -294,13 +297,13 @@ DERIVE_TOKEN_IMPL(ESC)
                                                         _mongocrypt_buffer_t *out,                                     \
                                                         const mc_CollectionsLevel1Token_t *level1Token,                \
                                                         const _mongocrypt_buffer_t *value,                             \
+                                                        bool useContentionFactor,                                      \
                                                         int64_t contentionFactor,                                      \
                                                         mongocrypt_status_t *status) {                                 \
         BSON_ASSERT_PARAM(crypto);                                                                                     \
         BSON_ASSERT_PARAM(out);                                                                                        \
         BSON_ASSERT_PARAM(level1Token);                                                                                \
         BSON_ASSERT_PARAM(value);                                                                                      \
-        BSON_ASSERT(contentionFactor >= 0);                                                                            \
                                                                                                                        \
         _mongocrypt_buffer_init(out);                                                                                  \
                                                                                                                        \
@@ -313,13 +316,28 @@ DERIVE_TOKEN_IMPL(ESC)
         if (!textToken) {                                                                                              \
             return false;                                                                                              \
         }                                                                                                              \
+        mc_##Name##Text##Type##DerivedFromDataToken_t *fromDataToken =                                                 \
+            mc_##Name##Text##Type##DerivedFromDataToken_new(crypto, textToken, value, status);                         \
+        mc_##Name##Text##Type##Token_destroy(textToken);                                                               \
+        if (!fromDataToken) {                                                                                          \
+            return false;                                                                                              \
+        }                                                                                                              \
+                                                                                                                       \
+        if (!useContentionFactor) {                                                                                    \
+            /* FindTextPayload uses *fromDataToken */                                                                  \
+            _mongocrypt_buffer_copy_to(mc_##Name##Text##Type##DerivedFromDataToken_get(fromDataToken), out);           \
+            mc_##Name##Text##Type##DerivedFromDataToken_destroy(fromDataToken);                                        \
+            return true;                                                                                               \
+        }                                                                                                              \
+                                                                                                                       \
+        BSON_ASSERT(contentionFactor >= 0);                                                                            \
+        /* InsertUpdatePayload continues through *fromDataTokenAndContentionFactor */                                  \
         mc_##Name##Text##Type##DerivedFromDataTokenAndContentionFactorToken_t *fromDataAndContentionFactor =           \
             mc_##Name##Text##Type##DerivedFromDataTokenAndContentionFactorToken_new(crypto,                            \
-                                                                                    textToken,                         \
-                                                                                    value,                             \
+                                                                                    fromDataToken,                     \
                                                                                     (uint64_t)contentionFactor,        \
                                                                                     status);                           \
-        mc_##Name##Text##Type##Token_destroy(textToken);                                                               \
+        mc_##Name##Text##Type##DerivedFromDataToken_destroy(fromDataToken);                                            \
         if (!fromDataAndContentionFactor) {                                                                            \
             return false;                                                                                              \
         }                                                                                                              \
@@ -1087,6 +1105,7 @@ fail:
                                                 &out->edcDerivedToken,                                                 \
                                                 collLevel1Token,                                                       \
                                                 value,                                                                 \
+                                                true,                                                                  \
                                                 contentionFactor,                                                      \
                                                 status)) {                                                             \
             return false;                                                                                              \
@@ -1095,6 +1114,7 @@ fail:
                                                 &out->escDerivedToken,                                                 \
                                                 collLevel1Token,                                                       \
                                                 value,                                                                 \
+                                                true,                                                                  \
                                                 contentionFactor,                                                      \
                                                 status)) {                                                             \
             return false;                                                                                              \
