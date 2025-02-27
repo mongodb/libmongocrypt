@@ -571,8 +571,6 @@ mongocrypt_t *_mongocrypt_tester_mongocrypt(tester_mongocrypt_flags flags) {
     }
     if (flags & TESTER_MONGOCRYPT_WITH_RANGE_V2) {
         ASSERT(mongocrypt_setopt_use_range_v2(crypt));
-    } else {
-        crypt->opts.use_range_v2 = false;
     }
     if (flags & TESTER_MONGOCRYPT_WITH_SHORT_CACHE) {
         ASSERT(mongocrypt_setopt_key_expiration(crypt, 1));
