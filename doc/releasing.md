@@ -86,7 +86,7 @@ Do the following when releasing:
    - Attach `etc/ssdlc_compliance_report.md` to the release.
 
 - If this is a new minor release (e.g. `x.y.0`):
-   - File a DOCSP ticket to update the installation instructions on [Install libmongocrypt](https://www.mongodb.com/docs/manual/core/csfle/reference/libmongocrypt/). ([Example](https://jira.mongodb.org/browse/DOCSP-36863))
+   - File a DOCSP ticket to update the installation instructions on [Install libmongocrypt](https://www.mongodb.com/docs/manual/core/csfle/reference/libmongocrypt/). ([Example](https://jira.mongodb.org/browse/DOCSP-47954))
    - Generate a new unique SBOM serial number for the next release:
      ```bash
      ./.evergreen/earthly.sh +sbom-generate-new-serial-number
