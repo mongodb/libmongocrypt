@@ -211,8 +211,7 @@ mc_mincover_t *mc_getMincoverDouble(mc_getMincoverDouble_args_t args, mongocrypt
                                                             .max = args.max,
                                                             .precision = args.precision},
                               &a,
-                              status,
-                              use_range_v2)) {
+                              status)) {
         return NULL;
     }
     if (!mc_getTypeInfoDouble((mc_getTypeInfoDouble_args_t){.value = args.upperBound,
@@ -220,8 +219,7 @@ mc_mincover_t *mc_getMincoverDouble(mc_getMincoverDouble_args_t args, mongocrypt
                                                             .max = args.max,
                                                             .precision = args.precision},
                               &b,
-                              status,
-                              use_range_v2)) {
+                              status)) {
         return NULL;
     }
 

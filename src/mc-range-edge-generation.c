@@ -210,8 +210,7 @@ mc_edges_t *mc_getEdgesDouble(mc_getEdgesDouble_args_t args, mongocrypt_status_t
                                                             .max = args.max,
                                                             .precision = args.precision},
                               &got,
-                              status,
-                              use_range_v2)) {
+                              status)) {
         return NULL;
     }
 

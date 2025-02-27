@@ -567,15 +567,13 @@ static void _test_RangeTest_Encode_Double(_mongocrypt_tester_t *tester) {
             TEST_PRINTF("_test_RangeTest_Encode_Double: value=%f\n", test->value);
         }
 
-        const bool use_range_v2 = !test->use_range_v1;
         mc_OSTType_Double got;
         const bool ok = mc_getTypeInfoDouble((mc_getTypeInfoDouble_args_t){.value = test->value,
                                                                            .min = test->min,
                                                                            .max = test->max,
                                                                            .precision = test->precision},
                                              &got,
-                                             status,
-                                             use_range_v2);
+                                             status);
         if (test->expectError) {
             ASSERT_OR_PRINT_MSG(!ok, "expected error, but got none");
             ASSERT_STATUS_CONTAINS(status, test->expectError);

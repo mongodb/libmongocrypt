@@ -97,8 +97,7 @@ bool mc_canUsePrecisionModeDouble(double min,
  * `out`. Returns false and sets `status` on error. */
 bool mc_getTypeInfoDouble(mc_getTypeInfoDouble_args_t args,
                           mc_OSTType_Double *out,
-                          mongocrypt_status_t *status,
-                          bool use_range_v2) MONGOCRYPT_WARN_UNUSED_RESULT;
+                          mongocrypt_status_t *status) MONGOCRYPT_WARN_UNUSED_RESULT;
 
 #if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT()
 /**

@@ -284,10 +284,7 @@ bool mc_canUsePrecisionModeDouble(double min,
     return true;
 }
 
-bool mc_getTypeInfoDouble(mc_getTypeInfoDouble_args_t args,
-                          mc_OSTType_Double *out,
-                          mongocrypt_status_t *status,
-                          bool use_range_v2) {
+bool mc_getTypeInfoDouble(mc_getTypeInfoDouble_args_t args, mc_OSTType_Double *out, mongocrypt_status_t *status) {
     if (args.min.set != args.max.set || args.min.set != args.precision.set) {
         CLIENT_ERR("min, max, and precision must all be set or must all be unset");
         return false;
@@ -350,7 +347,7 @@ bool mc_getTypeInfoDouble(mc_getTypeInfoDouble_args_t args,
         use_precision_mode =
             mc_canUsePrecisionModeDouble(args.min.value, args.max.value, args.precision.value, &bits_range, status);
 
-        if (!use_precision_mode && use_range_v2) {
+        if (!use_precision_mode) {
             if (!mongocrypt_status_ok(status)) {
                 return false;
             }

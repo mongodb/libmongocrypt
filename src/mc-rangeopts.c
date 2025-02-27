@@ -437,7 +437,7 @@ static bool mc_getNumberOfBits(const mc_RangeOpts_t *ro,
         }
         mc_getTypeInfoDouble_args_t args = {value, rmin, rmax, prec};
         mc_OSTType_Double out;
-        if (!mc_getTypeInfoDouble(args, &out, status, use_range_v2)) {
+        if (!mc_getTypeInfoDouble(args, &out, status)) {
             return false;
         }
         *bitsOut = 64 - (uint32_t)mc_count_leading_zeros_u64(out.max);
