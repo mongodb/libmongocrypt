@@ -207,7 +207,7 @@ bson_t *_mongocrypt_tester_file_as_bson(_mongocrypt_tester_t *tester, const char
 }
 
 bson_t *_mongocrypt_tester_bson_from_str(_mongocrypt_tester_t *tester, const char *json) {
-    char *const full_json = bson_strdup (json);
+    char *const full_json = bson_strdup(json);
 
     /* Replace ' with " */
     for (char *c = full_json; *c; c++) {
@@ -223,7 +223,7 @@ bson_t *_mongocrypt_tester_bson_from_str(_mongocrypt_tester_t *tester, const cha
         TEST_STDERR_PRINTF("%s", error.message);
         abort();
     }
-    bson_free (full_json);
+    bson_free(full_json);
     return bson;
 }
 
@@ -288,7 +288,7 @@ bson_t *tmp_bsonf(_mongocrypt_tester_t *tester, const char *fmt, ...) {
 #undef ENSURE_CAPACITY
 
     dst[dst_len] = '\0';
-    bson_t *tmp = TMP_BSON(dst);
+    bson_t *tmp = TMP_BSON_STR(dst);
     va_end(arg);
     bson_free(dst);
     return tmp;
@@ -870,14 +870,14 @@ static void _test_setopt_kms_providers(_mongocrypt_tester_t *tester) {
             mongocrypt_setopt_use_need_kms_credentials_state(crypt);
         }
         if (!test->errmsg) {
-            ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, TEST_BSON(test->value)), crypt);
+            ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, TEST_BSON_STR(test->value)), crypt);
             if (!test->errmsg_init) {
                 ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
             } else {
                 ASSERT_FAILS(_mongocrypt_init_for_test(crypt), crypt, test->errmsg_init);
             }
         } else {
-            ASSERT_FAILS(mongocrypt_setopt_kms_providers(crypt, TEST_BSON(test->value)), crypt, test->errmsg);
+            ASSERT_FAILS(mongocrypt_setopt_kms_providers(crypt, TEST_BSON_STR(test->value)), crypt, test->errmsg);
         }
         mongocrypt_destroy(crypt);
     }
@@ -1048,7 +1048,7 @@ get_os_version_failed:
 
             continue; // No match found.
         }
-    found_match: {}
+    found_match : {}
 
         TEST_PRINTF("  begin %s\n", tester.test_names[i]);
         tester.test_fns[i](&tester);

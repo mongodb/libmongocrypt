@@ -950,7 +950,7 @@ static void get_ciphertext_from_marking_json(_mongocrypt_tester_t *tester,
                                              const char *markingJSON,
                                              _mongocrypt_ciphertext_t *out) {
     get_ciphertext_from_marking_json_with_bufs(crypt,
-                                               TMP_BSON(markingJSON),
+                                               TMP_BSON_STR(markingJSON),
                                                out,
                                                TEST_FILE("./test/example/cmd.json"),
                                                TEST_BIN(16),
@@ -1720,7 +1720,7 @@ static void test_ciphertext_len_steps_fle2_text_search(_mongocrypt_tester_t *tes
         size_t bufsize = snprintf(NULL, 0, MARKING_JSON_FORMAT, v) + 1;
         char *markingJSON = bson_malloc(bufsize);
         sprintf(markingJSON, MARKING_JSON_FORMAT, v);
-        bson_t *marking_bson = TMP_BSON(markingJSON);
+        bson_t *marking_bson = TMP_BSON_STR(markingJSON);
 
         _mongocrypt_ciphertext_t ciphertext;
         _mongocrypt_ciphertext_init(&ciphertext);

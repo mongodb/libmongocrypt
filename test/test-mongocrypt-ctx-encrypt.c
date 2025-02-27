@@ -883,7 +883,7 @@ static void _init_fails(_mongocrypt_tester_t *tester, const char *json, const ch
 
     crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
     ctx = mongocrypt_ctx_new(crypt);
-    ASSERT_FAILS(mongocrypt_ctx_encrypt_init(ctx, "test", -1, TEST_BSON(json)), ctx, msg);
+    ASSERT_FAILS(mongocrypt_ctx_encrypt_init(ctx, "test", -1, TEST_BSON_STR(json)), ctx, msg);
     mongocrypt_ctx_destroy(ctx);
     mongocrypt_destroy(crypt);
 }
@@ -895,7 +895,7 @@ static void _init_ok(_mongocrypt_tester_t *tester, const char *json) {
     crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
     ctx = mongocrypt_ctx_new(crypt);
 
-    ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "test", -1, TEST_BSON(json)), ctx);
+    ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "test", -1, TEST_BSON_STR(json)), ctx);
 
     if (MONGOCRYPT_CTX_NEED_MONGO_COLLINFO == mongocrypt_ctx_state(ctx)) {
         mongocrypt_binary_t *filter;
@@ -923,10 +923,10 @@ static void _init_bypass(_mongocrypt_tester_t *tester, const char *json) {
     bin = mongocrypt_binary_new();
     crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
     ctx = mongocrypt_ctx_new(crypt);
-    ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "test", -1, TEST_BSON(json)), ctx);
+    ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "test", -1, TEST_BSON_STR(json)), ctx);
     BSON_ASSERT(MONGOCRYPT_CTX_READY == mongocrypt_ctx_state(ctx));
     ASSERT_OK(mongocrypt_ctx_finalize(ctx, bin), ctx);
-    ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TEST_BSON(json), (bin));
+    ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TEST_BSON_STR(json), (bin));
 
     mongocrypt_binary_destroy(bin);
     mongocrypt_ctx_destroy(ctx);

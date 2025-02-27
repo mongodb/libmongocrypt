@@ -32,7 +32,7 @@ static void _test_createdatakey_with_credentials(_mongocrypt_tester_t *tester) {
 
     crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
     ctx = mongocrypt_ctx_new(crypt);
-    ASSERT_OK(mongocrypt_ctx_setopt_key_encryption_key(ctx, TEST_BSON(kek)), ctx);
+    ASSERT_OK(mongocrypt_ctx_setopt_key_encryption_key(ctx, TEST_BSON_STR(kek)), ctx);
     ASSERT_OK(mongocrypt_ctx_datakey_init(ctx), ctx);
 
     ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_KMS);
@@ -159,7 +159,7 @@ static void _test_createdatakey_with_accesstoken(_mongocrypt_tester_t *tester) {
     mongocrypt_setopt_use_need_kms_credentials_state(crypt);
     ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
     ctx = mongocrypt_ctx_new(crypt);
-    ASSERT_OK(mongocrypt_ctx_setopt_key_encryption_key(ctx, TEST_BSON(kek)), ctx);
+    ASSERT_OK(mongocrypt_ctx_setopt_key_encryption_key(ctx, TEST_BSON_STR(kek)), ctx);
     ASSERT_OK(mongocrypt_ctx_datakey_init(ctx), ctx);
 
     ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS);
