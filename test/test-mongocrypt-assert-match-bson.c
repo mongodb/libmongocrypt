@@ -849,7 +849,8 @@ bool match_bson_value(const bson_value_t *doc, const bson_value_t *pattern, matc
                       "numeric values may be equal)");
         }
         break;
-    default: match_err(ctx, "unexpected value type %d: %s", doc->value_type, _mongoc_bson_type_to_str(doc->value_type));
+    default:
+        match_err(ctx, "unexpected value type %d: %s", (int)doc->value_type, _mongoc_bson_type_to_str(doc->value_type));
     }
 
     if (!ret) {

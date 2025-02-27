@@ -50,7 +50,7 @@ void _errexit_ctx(mongocrypt_ctx_t *ctx, int line) {
 }
 
 void _errexit_bson(bson_error_t *error, int line) {
-    MONGOC_ERROR("Error at line %d with code %d and msg: %s", line, error->code, error->message);
+    MONGOC_ERROR("Error at line %d with code %" PRIu32 " and msg: %s", line, error->code, error->message);
     exit(1);
 }
 

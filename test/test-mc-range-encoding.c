@@ -201,7 +201,7 @@ static void _test_canUsePrecisionModeDouble(_mongocrypt_tester_t *tester) {
     {                                                                                                                  \
         uint32_t bits_out = 0;                                                                                         \
         mongocrypt_status_t *const status = mongocrypt_status_new();                                                   \
-        TEST_PRINTF("_test_canUsePrecisionModeDecimal, min: %f, max: %f, prc: %" PRIu32, lb, ub, prc);                 \
+        TEST_PRINTF("_test_canUsePrecisionModeDecimal, min: %f, max: %f, prc: %" PRId32, lb, ub, prc);                 \
         bool result = mc_canUsePrecisionModeDouble(lb, ub, prc, &bits_out, status);                                    \
         ASSERT_OK_STATUS(mongocrypt_status_ok(status), status);                                                        \
         ASSERT(result == expected);                                                                                    \
@@ -212,7 +212,7 @@ static void _test_canUsePrecisionModeDouble(_mongocrypt_tester_t *tester) {
 #define CAN_USE_PRECISION_MODE_ERRORS(lb, ub, prc, error)                                                              \
     {                                                                                                                  \
         mongocrypt_status_t *const status = mongocrypt_status_new();                                                   \
-        TEST_PRINTF("_test_canUsePrecisionModeDecimal errors, min: %f, max: %f, prc: %" PRIu32, lb, ub, prc);          \
+        TEST_PRINTF("_test_canUsePrecisionModeDecimal errors, min: %f, max: %f, prc: %" PRId32, lb, ub, prc);          \
         uint32_t bits_out = 0;                                                                                         \
         bool result = mc_canUsePrecisionModeDouble(lb, ub, prc, &bits_out, status);                                    \
         ASSERT_OR_PRINT_MSG(!result, "expected error, but got none");                                                  \
@@ -220,37 +220,43 @@ static void _test_canUsePrecisionModeDouble(_mongocrypt_tester_t *tester) {
         mongocrypt_status_destroy(status);                                                                             \
     }
 
-    CAN_USE_PRECISION_MODE(1.0, 16.0, 0, true, 4);
-    CAN_USE_PRECISION_MODE(0.0, 16.0, 0, true, 5);
+    CAN_USE_PRECISION_MODE(1.0, 16.0, INT32_C(0), true, 4);
+    CAN_USE_PRECISION_MODE(0.0, 16.0, INT32_C(0), true, 5);
     // 2^53 + 1 is where double starts to lose precision, so we need to ensure that we get the
     // correct value for max_bits out.
-    CAN_USE_PRECISION_MODE_ERRORS(1.0, 9007199254740992.0, 0, "Invalid upper bound for double precision. Absolute");
-    CAN_USE_PRECISION_MODE_ERRORS(0.0, 9007199254740992.0, 0, "Invalid upper bound for double precision. Absolute");
+    CAN_USE_PRECISION_MODE_ERRORS(1.0,
+                                  9007199254740992.0,
+                                  INT32_C(0),
+                                  "Invalid upper bound for double precision. Absolute");
+    CAN_USE_PRECISION_MODE_ERRORS(0.0,
+                                  9007199254740992.0,
+                                  INT32_C(0),
+                                  "Invalid upper bound for double precision. Absolute");
 
     CAN_USE_PRECISION_MODE(2.718281, 314.159265, 6, true, 29);
 
     CAN_USE_PRECISION_MODE_ERRORS(-1000000000.0,
                                   9223372036844775424.0,
-                                  0,
+                                  INT32_C(0),
                                   "Invalid upper bound for double precision. Absolute");
 
     CAN_USE_PRECISION_MODE_ERRORS(2.710000,
                                   314.150000,
-                                  2,
+                                  INT32_C(2),
                                   "Invalid upper bound for double precision. Fractional digits");
     CAN_USE_PRECISION_MODE_ERRORS(314.150000, 350.0, 2, "Invalid lower bound for double precision. Fractional digits");
 
     CAN_USE_PRECISION_MODE_ERRORS((double)9007199254740992,
                                   INT_64_MAX_DOUBLE,
-                                  0,
+                                  INT32_C(0),
                                   "Invalid upper bound for double precision. Absolute scaled value");
     CAN_USE_PRECISION_MODE_ERRORS(-1 * INT_64_MAX_DOUBLE,
                                   1.0,
-                                  0,
+                                  INT32_C(0),
                                   "Invalid lower bound for double precision. Absolute scaled value");
     CAN_USE_PRECISION_MODE_ERRORS(-92233720368547.0,
                                   92233720368547.0,
-                                  5,
+                                  INT32_C(5),
                                   "Invalid upper bound for double precision. Absolute");
 
 #undef CAN_USE_PRECISION_MODE

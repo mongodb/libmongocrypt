@@ -314,7 +314,7 @@ static void _test_dump_Double(void *tests, size_t idx, mc_mincover_t *got) {
         TEST_STDERR_PRINTF(" max=%f", test->max.value);
     }
     if (test->precision.set) {
-        TEST_STDERR_PRINTF(" precision=%" PRIu32, test->precision.value);
+        TEST_STDERR_PRINTF(" precision=%" PRId32, test->precision.value);
     }
     TEST_STDERR_PRINTF(" sparsity=%zu\n", test->sparsity);
     TEST_STDERR_PRINTF("mincover expected ... begin\n");
