@@ -596,7 +596,7 @@ bool _mongocrypt_init_for_test(mongocrypt_t *crypt) {
     // Even if the ENABLE_USE_RANGE_V2 compile flag is on, we should have range V2 off by default for testing, as many
     // existing tests are based around range V2 being disabled. To use range V2, use the TESTER_MONGOCRYPT_WITH_RANGE_V2
     // flag with the above function.
-    crypt->opts.use_range_v2 = false;
+    crypt->opts.use_range_v2 = true;
     return mongocrypt_init(crypt);
 }
 
