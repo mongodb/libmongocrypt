@@ -1,5 +1,7 @@
 # ChangeLog
-## 1.13.0 (Not yet released)
+## 1.13.0
+### New features
+- Support automatic encryption for `$lookup` stages in `aggregate` pipelines on MongoDB server 8.1+.
 ### Fixed
 - Restore default behavior to disable extra alignment when importing libbson. This was the default behavior in 1.11. This can be overridden by setting the CMake option `ENABLE_EXTRA_ALIGNMENT=ON`.
 ### Removed
