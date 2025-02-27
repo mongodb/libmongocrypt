@@ -19,7 +19,7 @@ Go to [Snyk](https://app.snyk.io/) and select the `dev-prod` organization. If ac
 
 ##### Update Snyk
 
-Update the Snyk reference target tracking the to-be-released branch. For a patch release (e.g. x.y.z), check-out the `rx.y` branch and update the `rx.y` reference target. For a minor release (e.g. x.y.0), check out the `master` branch update the `master` reference target.
+Update the Snyk reference target tracking the to-be-released branch. For a patch release (e.g. x.y.z), check-out the `rx.y` branch and update the `rx.y` reference target. For a minor release (e.g. x.y.0), check out the `master` branch and update the `master` reference target.
 
 Run `cmake` to ensure generated source files are present:
 ```bash
