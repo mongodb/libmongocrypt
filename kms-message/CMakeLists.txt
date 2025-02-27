@@ -4,7 +4,7 @@ project (kms_message
    LANGUAGES C
 )
 
-set (CMAKE_C_STANDARD 90)
+set (CMAKE_C_STANDARD 99)
 
 include (CheckCCompilerFlag)
 # All targets obey visibility, not just library targets.
