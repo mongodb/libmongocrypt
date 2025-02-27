@@ -87,10 +87,11 @@ Do the following when releasing:
 
 - If this is a new minor release (e.g. `x.y.0`):
    - File a DOCSP ticket to update the installation instructions on [Install libmongocrypt](https://www.mongodb.com/docs/manual/core/csfle/reference/libmongocrypt/). ([Example](https://jira.mongodb.org/browse/DOCSP-47954))
-   - Generate a new unique SBOM serial number for the next release:
+   - Check out the release branch (`rx.y`). Generate a new unique SBOM serial number for the next upcoming patch release (e.g. for `1.13.1` following the release of `1.13.0`):
      ```bash
      ./.evergreen/earthly.sh +sbom-generate-new-serial-number
      ```
+     Commit resulting `etc/cyclonedx.sbom.json` and push to `rx.y`.
    - Create a new Snyk reference target. The following instructions use the example branch `rx.y`:
 
      Run `cmake` to ensure generated source files are present:
@@ -118,7 +119,13 @@ Do the following when releasing:
      - Navigate to the [Webhook Settings](https://github.com/mongodb/libmongocrypt/settings/hooks).
      - Click `Edit` on the hook for `https://githook.mongodb.com/`.
      - Add the new release branch to the `Payload URL`. Remove unmaintained release branches.
-- Make a PR to apply the "Release x.y.z" commit to the `master` branch.
+- Make a PR to to the `master` branch:
+   - Apply changes from the "Release x.y.z" commit.
+   - Generate a new unique SBOM serial number next upcoming non-patch release (e.g. for `1.14.0` following the release of `1.13.0`):
+     ```bash
+     ./.evergreen/earthly.sh +sbom-generate-new-serial-number
+     ```
+     Commit resulting `etc/cyclonedx.sbom.json`.
 - Update the release on the [Jira releases page](https://jira.mongodb.org/projects/MONGOCRYPT/versions).
 - Record the release on [C/C++ Release Info](https://docs.google.com/spreadsheets/d/1yHfGmDnbA5-Qt8FX4tKWC5xk9AhzYZx1SKF4AD36ecY/edit?usp=sharing). This is done to meet SSDLC reporting requirements.
 - Add a link to the Evergreen waterfall for the tagged commit to [libmongocrypt Security Testing Summary](https://docs.google.com/document/d/1dc7uvBzu3okAIsA8LSW5sVQGkYIvwpBVdg5v4wb4c4s/edit#heading=h.5t79jwe4p0ss).
