@@ -456,7 +456,7 @@ static bool mc_getNumberOfBits(const mc_RangeOpts_t *ro,
         }
         mc_getTypeInfoDecimal128_args_t args = {value, rmin, rmax, prec};
         mc_OSTType_Decimal128 out;
-        if (!mc_getTypeInfoDecimal128(args, &out, status, use_range_v2)) {
+        if (!mc_getTypeInfoDecimal128(args, &out, status)) {
             return false;
         }
         *bitsOut = 128 - (uint32_t)mc_count_leading_zeros_u128(out.max);

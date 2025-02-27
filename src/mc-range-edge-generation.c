@@ -237,8 +237,7 @@ mc_edges_t *mc_getEdgesDecimal128(mc_getEdgesDecimal128_args_t args, mongocrypt_
                 .precision = args.precision,
             },
             &got,
-            status,
-            use_range_v2)) {
+            status)) {
         return NULL;
     }
 

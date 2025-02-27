@@ -907,15 +907,7 @@ static void _test_RangeTest_Encode_Decimal128(_mongocrypt_tester_t *tester) {
     }
 
 #define ASSERT_EIBB_ERROR(Val, Max, Min, Precision, Expect, Error)                                                     \
-    (Decimal128Test){                                                                                                  \
-        .value = mc_dec128_from_string(#Val),                                                                          \
-        .min = OPT_MC_DEC128(mc_dec128_from_string(#Min)),                                                             \
-        .max = OPT_MC_DEC128(mc_dec128_from_string(#Max)),                                                             \
-        .precision = OPT_I32(Precision),                                                                               \
-        .expect = Expect,                                                                                              \
-        .use_range_v1 = true,                                                                                          \
-    },                                                                                                                 \
-        (Decimal128Test) {                                                                                             \
+    (Decimal128Test) {                                                                                                 \
         .value = mc_dec128_from_string(#Val), .min = OPT_MC_DEC128(mc_dec128_from_string(#Min)),                       \
         .max = OPT_MC_DEC128(mc_dec128_from_string(#Max)), .precision = OPT_I32(Precision), .expectError = Error       \
     }
@@ -1000,7 +992,6 @@ static void _test_RangeTest_Encode_Decimal128(_mongocrypt_tester_t *tester) {
             TEST_PRINTF("_test_RangeTest_Encode_Decimal128: value=%s\n", mc_dec128_to_string(test->value).str);
         }
         mc_OSTType_Decimal128 got;
-        const bool use_range_v2 = !test->use_range_v1;
         const bool ok = mc_getTypeInfoDecimal128(
             (mc_getTypeInfoDecimal128_args_t){
                 .value = test->value,
@@ -1009,8 +1000,7 @@ static void _test_RangeTest_Encode_Decimal128(_mongocrypt_tester_t *tester) {
                 .precision = test->precision,
             },
             &got,
-            status,
-            use_range_v2);
+            status);
         if (test->expectError) {
             ASSERT_OR_PRINT_MSG(!ok, "expected error, but got none");
             ASSERT_STATUS_CONTAINS(status, test->expectError);

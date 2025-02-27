@@ -130,8 +130,7 @@ bool mc_canUsePrecisionModeDecimal(mc_dec128 min,
  */
 bool mc_getTypeInfoDecimal128(mc_getTypeInfoDecimal128_args_t args,
                               mc_OSTType_Decimal128 *out,
-                              mongocrypt_status_t *status,
-                              bool use_range_v2) MONGOCRYPT_WARN_UNUSED_RESULT;
+                              mongocrypt_status_t *status) MONGOCRYPT_WARN_UNUSED_RESULT;
 #endif // MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
 
 extern const int64_t mc_FLERangeSparsityDefault;

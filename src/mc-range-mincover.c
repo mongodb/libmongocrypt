@@ -254,8 +254,7 @@ mc_getMincoverDecimal128(mc_getMincoverDecimal128_args_t args, mongocrypt_status
                                                                     .max = args.max,
                                                                     .precision = args.precision},
                                   &a,
-                                  status,
-                                  use_range_v2)) {
+                                  status)) {
         return NULL;
     }
     if (!mc_getTypeInfoDecimal128((mc_getTypeInfoDecimal128_args_t){.value = args.upperBound,
@@ -263,8 +262,7 @@ mc_getMincoverDecimal128(mc_getMincoverDecimal128_args_t args, mongocrypt_status
                                                                     .max = args.max,
                                                                     .precision = args.precision},
                                   &b,
-                                  status,
-                                  use_range_v2)) {
+                                  status)) {
         return NULL;
     }
 
