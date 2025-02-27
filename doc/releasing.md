@@ -68,7 +68,7 @@ Do the following when releasing:
 - If this is a new minor release (e.g. `x.y.0`):
    - Update the Linux distribution package installation instructions in [README.md](../README.md) to refer to the new version `x.y`.
    - Update the [libmongocrypt-release](https://spruce.mongodb.com/project/libmongocrypt-release/settings/general) Evergreen project (requires auth) to set `Branch Name` to `rx.y`.
-- Commit the changes on the `rx.y` branch with a message like "Update CHANGELOG.md for x.y.z".
+- Commit the changes on the `rx.y` branch with a message like "Release x.y.z".
 - Tag the commit with `git tag -a <tag>`.
    - Push both the branch ref and tag ref in the same command: `git push origin master 1.8.0-alpha0` or `git push origin r1.8 1.8.4`
    - Pushing the branch ref and the tag ref in the same command eliminates the possibility of a race condition in Evergreen (for building resources based on the presence of a release tag)
@@ -118,7 +118,7 @@ Do the following when releasing:
      - Navigate to the [Webhook Settings](https://github.com/mongodb/libmongocrypt/settings/hooks).
      - Click `Edit` on the hook for `https://githook.mongodb.com/`.
      - Add the new release branch to the `Payload URL`. Remove unmaintained release branches.
-- Make a PR to apply the "Update CHANGELOG.md for x.y.z" commit to the `master` branch.
+- Make a PR to apply the "Release x.y.z" commit to the `master` branch.
 - Update the release on the [Jira releases page](https://jira.mongodb.org/projects/MONGOCRYPT/versions).
 - Record the release on [C/C++ Release Info](https://docs.google.com/spreadsheets/d/1yHfGmDnbA5-Qt8FX4tKWC5xk9AhzYZx1SKF4AD36ecY/edit?usp=sharing). This is done to meet SSDLC reporting requirements.
 - Add a link to the Evergreen waterfall for the tagged commit to [libmongocrypt Security Testing Summary](https://docs.google.com/document/d/1dc7uvBzu3okAIsA8LSW5sVQGkYIvwpBVdg5v4wb4c4s/edit#heading=h.5t79jwe4p0ss).
