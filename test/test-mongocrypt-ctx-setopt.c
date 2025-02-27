@@ -296,11 +296,13 @@ static void _test_setopt_key_alt_name(_mongocrypt_tester_t *tester) {
 }
 
 static void _test_setopt_key_material(_mongocrypt_tester_t *tester) {
+#define KEY_MATERIAL_PATTERN "{'keyMaterial': {'$binary': {'base64': '%s', 'subType': '00'}}%s}"
+
     /* "0123456789abcef", repeated 6 times. */
     const char *const material = "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWYwMTIzNDU2Nzg5YWJjZGVmMDEyMzQ1"
                                  "Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWYwMTIzNDU2Nzg5YWJjZGVm";
-    const char *const pattern = "{'keyMaterial': {'$binary': {'base64': '%s', 'subType': '00'}}%s}";
-    mongocrypt_binary_t *const valid = TEST_BSON(pattern, material, "");
+
+    mongocrypt_binary_t *const valid = TEST_BSON(KEY_MATERIAL_PATTERN, material, "");
 
     mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
     mongocrypt_ctx_t *ctx = NULL;
@@ -320,18 +322,19 @@ static void _test_setopt_key_material(_mongocrypt_tester_t *tester) {
 
     /* Test empty key material. */
     REFRESH;
-    ASSERT_KEY_MATERIAL_FAILS(TEST_BSON(pattern, "", ""), "keyMaterial should have length 96, but has length 0");
+    ASSERT_KEY_MATERIAL_FAILS(TEST_BSON(KEY_MATERIAL_PATTERN, "", ""),
+                              "keyMaterial should have length 96, but has length 0");
 
     /* Test too short key material. */
     REFRESH;
-    ASSERT_KEY_MATERIAL_FAILS(TEST_BSON(pattern,
+    ASSERT_KEY_MATERIAL_FAILS(TEST_BSON(KEY_MATERIAL_PATTERN,
                                         "dG9vc2hvcnQ=", /* "tooshort" */
                                         ""),
                               "keyMaterial should have length 96, but has length 8");
 
     /* Test too long key material. */
     REFRESH;
-    ASSERT_KEY_MATERIAL_FAILS(TEST_BSON(pattern,
+    ASSERT_KEY_MATERIAL_FAILS(TEST_BSON(KEY_MATERIAL_PATTERN,
                                         /* "0123456789abcdef", repeated 6 times, followed by "toolong". */
                                         "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWYwMTIzNDU2Nzg5YWJjZGVmMDEyM"
                                         "zQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWYwMTIzNDU2Nzg5YWJjZGVmdG9vbG9uZw"
@@ -351,7 +354,7 @@ static void _test_setopt_key_material(_mongocrypt_tester_t *tester) {
 
     /* Test extra key. */
     REFRESH;
-    ASSERT_KEY_MATERIAL_FAILS(TEST_BSON(pattern, material, ", 'a': 1"),
+    ASSERT_KEY_MATERIAL_FAILS(TEST_BSON(KEY_MATERIAL_PATTERN, material, ", 'a': 1"),
                               "unrecognized field, only keyMaterial expected");
 
     /* Test error propagation. */
@@ -361,6 +364,8 @@ static void _test_setopt_key_material(_mongocrypt_tester_t *tester) {
 
     mongocrypt_ctx_destroy(ctx);
     mongocrypt_destroy(crypt);
+
+#undef KEY_MATERIAL_PATTERN
 }
 
 static void _test_setopt_algorithm(_mongocrypt_tester_t *tester) {

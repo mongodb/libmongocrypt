@@ -321,15 +321,20 @@ static bool _parse_text_search_spec_from_placeholder(_mongocrypt_tester_t *teste
                                                      const char *spec_json_in,
                                                      mc_FLE2TextSearchInsertSpec_t *spec_out,
                                                      mongocrypt_status_t *status_out) {
-    const char *template = RAW_STRING({
-        "t" : {"$numberInt" : "1"},
-        "a" : {"$numberInt" : "4"},
-        "ki" : {"$binary" : {"base64" : "EjRWeBI0mHYSNBI0VniQEg==", "subType" : "04"}},
-        "ku" : {"$binary" : {"base64" : "q83vqxI0mHYSNBI0VniQEg==", "subType" : "04"}},
-        "v" : % s,
-        "cm" : {"$numberLong" : "7"}
-    });
-    bson_t *const as_bson = TMP_BSON(template, spec_json_in);
+    // Preserve `%s` which gets incorrectly formatted to `% s`.
+    // clang-format off
+#define PLACEHOLDER_TEMPLATE                                                            \
+    RAW_STRING({                                                                        \
+        "t" : {"$numberInt" : "1"},                                                     \
+        "a" : {"$numberInt" : "4"},                                                     \
+        "ki" : {"$binary" : {"base64" : "EjRWeBI0mHYSNBI0VniQEg==", "subType" : "04"}}, \
+        "ku" : {"$binary" : {"base64" : "q83vqxI0mHYSNBI0VniQEg==", "subType" : "04"}}, \
+        "v" : %s,                                                                       \
+        "cm" : {"$numberLong" : "7"}                                                    \
+    })
+    // clang-format on
+
+    bson_t *const as_bson = TMP_BSON(PLACEHOLDER_TEMPLATE, spec_json_in);
 
     mc_FLE2EncryptionPlaceholder_t placeholder;
     mc_FLE2EncryptionPlaceholder_init(&placeholder);
@@ -355,6 +360,8 @@ static bool _parse_text_search_spec_from_placeholder(_mongocrypt_tester_t *teste
 
     mc_FLE2EncryptionPlaceholder_cleanup(&placeholder);
     return res;
+
+#undef PLACEHOLDER_TEMPLATE
 }
 
 static void _test_FLE2EncryptionPlaceholder_textSearch_parse(_mongocrypt_tester_t *tester) {
