@@ -920,19 +920,9 @@ static void _test_setopt_for_explicit_encrypt(_mongocrypt_tester_t *tester) {
                      "'rangePreview' is deprecated");
     }
 
-    /* If query type == algorithm == "range", succeeds for both V2 and V1. */
+    /* If query type == algorithm == "range", succeeds. */
     {
         REFRESH;
-        ASSERT_KEY_ID_OK(uuid);
-        ASSERT_OK(mongocrypt_ctx_setopt_algorithm_range(ctx, rangeopts), ctx);
-        ASSERT_ALGORITHM_OK(MONGOCRYPT_ALGORITHM_RANGE_STR, -1);
-        ASSERT_QUERY_TYPE_OK(MONGOCRYPT_QUERY_TYPE_RANGE_STR, -1);
-        ASSERT_OK(mongocrypt_ctx_setopt_contention_factor(ctx, 0), ctx);
-        ASSERT_EX_ENCRYPT_EXPRESSION_INIT_OK(bson);
-
-        mongocrypt_destroy(crypt);
-        crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_WITH_RANGE_V2);
-        REFRESH_CTX;
         ASSERT_KEY_ID_OK(uuid);
         ASSERT_OK(mongocrypt_ctx_setopt_algorithm_range(ctx, rangeopts), ctx);
         ASSERT_ALGORITHM_OK(MONGOCRYPT_ALGORITHM_RANGE_STR, -1);
