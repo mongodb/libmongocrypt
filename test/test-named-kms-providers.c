@@ -387,7 +387,7 @@ static void test_create_datakey_with_named_kms_provider(_mongocrypt_tester_t *te
     {
         mongocrypt_t *crypt = mongocrypt_new();
         mongocrypt_binary_t *kms_providers =
-            TEST_BSON(BSON_STR({"local" : {}, "local:name1" : {"key" : "%s"}}), LOCAL_KEK1_BASE64, LOCAL_KEK2_BASE64);
+            TEST_BSON(BSON_STR({"local" : {}, "local:name1" : {"key" : "%s"}}), LOCAL_KEK1_BASE64);
         ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, kms_providers), crypt);
         mongocrypt_setopt_use_need_kms_credentials_state(crypt);
         ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
