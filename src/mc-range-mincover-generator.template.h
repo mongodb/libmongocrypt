@@ -123,7 +123,7 @@ static inline DECORATE_NAME(MinCoverGenerator)
         return NULL;
     }
     size_t maxlen = (size_t)BITS - DECORATE_NAME(mc_count_leading_zeros)(max);
-    int32_t trimFactor = trimFactorDefault(maxlen, opt_trimFactor, use_range_v2);
+    int32_t trimFactor = trimFactorDefault(maxlen, opt_trimFactor);
     if (trimFactor != 0 && mc_cmp_greater_equal_su(trimFactor, maxlen)) {
         CLIENT_ERR("Trim factor must be less than the number of bits (%zu) used to represent an element of the domain, "
                    "but got %" PRId32,

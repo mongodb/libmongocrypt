@@ -47,7 +47,7 @@ static mc_edges_t *mc_edges_new(const char *leaf,
     }
 
     const size_t leaf_len = strlen(leaf);
-    const int32_t trimFactor = trimFactorDefault(leaf_len, opt_trimFactor, use_range_v2);
+    const int32_t trimFactor = trimFactorDefault(leaf_len, opt_trimFactor);
     if (trimFactor != 0 && mc_cmp_greater_equal_su(trimFactor, leaf_len)) {
         // We append a total of leaf_len + 1 (for the root) - trimFactor edges. When this number is equal to 1, we
         // degenerate into equality, which is not desired, so trimFactor must be less than leaf_len.

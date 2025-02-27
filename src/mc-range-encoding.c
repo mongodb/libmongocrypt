@@ -854,14 +854,9 @@ bool mc_getTypeInfoDecimal128(mc_getTypeInfoDecimal128_args_t args,
 const int64_t mc_FLERangeSparsityDefault = 2;
 static const int32_t mc_FLERangeTrimFactorDefault = 6;
 
-int32_t trimFactorDefault(size_t maxlen, mc_optional_int32_t trimFactor, bool use_range_v2) {
+int32_t trimFactorDefault(size_t maxlen, mc_optional_int32_t trimFactor) {
     if (trimFactor.set) {
         return trimFactor.value;
-    }
-
-    if (!use_range_v2) {
-        // Preserve old default.
-        return 0;
     }
 
     if (mc_cmp_greater_su(mc_FLERangeTrimFactorDefault, maxlen - 1)) {
