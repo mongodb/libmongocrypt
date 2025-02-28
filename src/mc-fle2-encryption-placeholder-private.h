@@ -111,10 +111,7 @@ typedef struct {
 BSON_STATIC_ASSERT2(alignof_mc_FLE2RangeInsertSpec_t,
                     BSON_ALIGNOF(mc_FLE2RangeInsertSpec_t) >= BSON_ALIGNOF(bson_iter_t));
 
-bool mc_FLE2RangeInsertSpec_parse(mc_FLE2RangeInsertSpec_t *out,
-                                  const bson_iter_t *in,
-                                  bool use_range_v2,
-                                  mongocrypt_status_t *status);
+bool mc_FLE2RangeInsertSpec_parse(mc_FLE2RangeInsertSpec_t *out, const bson_iter_t *in, mongocrypt_status_t *status);
 
 // Note: For the substring/suffix/prefix insert specs, all lengths are in terms of number of UTF-8 codepoints, not
 // number of bytes.

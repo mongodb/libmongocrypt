@@ -963,7 +963,7 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange(_mo
     // Parse the value ("v"), min ("min"), and max ("max") from
     // FLE2EncryptionPlaceholder for range insert.
     mc_FLE2RangeInsertSpec_t insertSpec;
-    if (!mc_FLE2RangeInsertSpec_parse(&insertSpec, &placeholder->v_iter, use_range_v2, status)) {
+    if (!mc_FLE2RangeInsertSpec_parse(&insertSpec, &placeholder->v_iter, status)) {
         goto fail;
     }
 
