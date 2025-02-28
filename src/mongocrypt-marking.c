@@ -1118,7 +1118,7 @@ fail:
         }                                                                                                              \
         return true;                                                                                                   \
     }
-GENERATE_TEXT_SEARCH_TOKEN_SET_FOR_TYPE_IMPL(Exact);
+GENERATE_TEXT_SEARCH_TOKEN_SET_FOR_TYPE_IMPL(Exact)
 GENERATE_TEXT_SEARCH_TOKEN_SET_FOR_TYPE_IMPL(Substring)
 GENERATE_TEXT_SEARCH_TOKEN_SET_FOR_TYPE_IMPL(Suffix)
 GENERATE_TEXT_SEARCH_TOKEN_SET_FOR_TYPE_IMPL(Prefix)
