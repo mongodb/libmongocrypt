@@ -539,7 +539,7 @@ bool mc_FLE2IndexedEncryptedValueV2_parse(mc_FLE2IndexedEncryptedValueV2_t *iev,
     }
 
     mc_reader_t reader;
-    mc_reader_init_from_buffer(&reader, buf, __FUNCTION__);
+    mc_reader_init_from_buffer(&reader, buf, __func__);
 
     CHECK_AND_RETURN(mc_reader_read_u8(&reader, &iev->fle_blob_subtype, status));
 
@@ -655,7 +655,7 @@ bool mc_FLE2IndexedEncryptedValueV2_serialize(const mc_FLE2IndexedEncryptedValue
     uint32_t expected_len = mc_FLE2IndexedEncryptedValueV2_serialized_length(iev);
     mc_writer_t writer;
     _mongocrypt_buffer_resize(buf, expected_len);
-    mc_writer_init_from_buffer(&writer, buf, __FUNCTION__);
+    mc_writer_init_from_buffer(&writer, buf, __func__);
 
     // Serialize fle_blob_subtype
     CHECK_AND_RETURN(mc_writer_write_u8(&writer, iev->fle_blob_subtype, status));
