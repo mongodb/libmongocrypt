@@ -321,20 +321,17 @@ static bool _parse_text_search_spec_from_placeholder(_mongocrypt_tester_t *teste
                                                      const char *spec_json_in,
                                                      mc_FLE2TextSearchInsertSpec_t *spec_out,
                                                      mongocrypt_status_t *status_out) {
-    // Preserve `%s` which gets incorrectly formatted to `% s`.
-    // clang-format off
-#define PLACEHOLDER_TEMPLATE                                                            \
-    RAW_STRING({                                                                        \
-        "t" : {"$numberInt" : "1"},                                                     \
-        "a" : {"$numberInt" : "4"},                                                     \
-        "ki" : {"$binary" : {"base64" : "EjRWeBI0mHYSNBI0VniQEg==", "subType" : "04"}}, \
-        "ku" : {"$binary" : {"base64" : "q83vqxI0mHYSNBI0VniQEg==", "subType" : "04"}}, \
-        "v" : %s,                                                                       \
-        "cm" : {"$numberLong" : "7"}                                                    \
+#define PLACEHOLDER_TEMPLATE                                                                                           \
+    RAW_STRING({                                                                                                       \
+        "t" : {"$numberInt" : "1"},                                                                                    \
+        "a" : {"$numberInt" : "4"},                                                                                    \
+        "ki" : {"$binary" : {"base64" : "EjRWeBI0mHYSNBI0VniQEg==", "subType" : "04"}},                                \
+        "ku" : {"$binary" : {"base64" : "q83vqxI0mHYSNBI0VniQEg==", "subType" : "04"}},                                \
+        "v" : MC_BSON,                                                                                                 \
+        "cm" : {"$numberLong" : "7"}                                                                                   \
     })
-    // clang-format on
 
-    bson_t *const as_bson = TMP_BSON(PLACEHOLDER_TEMPLATE, spec_json_in);
+    bson_t *const as_bson = TMP_BSONF(PLACEHOLDER_TEMPLATE, TMP_BSON_STR(spec_json_in));
 
     mc_FLE2EncryptionPlaceholder_t placeholder;
     mc_FLE2EncryptionPlaceholder_init(&placeholder);
