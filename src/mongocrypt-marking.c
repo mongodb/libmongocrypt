@@ -1816,7 +1816,7 @@ static bool _mongocrypt_fle2_placeholder_to_find_ciphertextForRange(_mongocrypt_
     // Serialize.
     {
         bson_t out = BSON_INITIALIZER;
-        mc_FLE2FindRangePayloadV2_serialize(&payload, &out, use_range_v2);
+        mc_FLE2FindRangePayloadV2_serialize(&payload, &out);
         _mongocrypt_buffer_steal_from_bson(&ciphertext->data, &out);
     }
     _mongocrypt_buffer_steal(&ciphertext->key_id, &placeholder->index_key_id);
