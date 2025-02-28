@@ -44,7 +44,7 @@
         ((void)0)
 
 #define TEST_ERROR(...)                                                                                                \
-    if (1) {                                                                                                           \
+    do {                                                                                                               \
         TEST_STDERR_PRINTF("test error %s:%d %s(): ", __FILE__, __LINE__, __func__);                                   \
         TEST_STDERR_PRINTF(__VA_ARGS__);                                                                               \
         TEST_STDERR_PRINTF("\n");                                                                                      \
