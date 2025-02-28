@@ -100,8 +100,7 @@ static inline DECORATE_NAME(MinCoverGenerator)
                                            UINT_T max,
                                            size_t sparsity,
                                            mc_optional_int32_t opt_trimFactor,
-                                           mongocrypt_status_t *status,
-                                           bool use_range_v2) {
+                                           mongocrypt_status_t *status) {
     BSON_ASSERT_PARAM(status);
 
     if (UINT_COMPARE(rangeMin, rangeMax) > 0) {
