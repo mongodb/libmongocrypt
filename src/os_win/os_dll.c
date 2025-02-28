@@ -50,7 +50,7 @@ mcr_dll_path_result mcr_dll_path(mcr_dll dll) {
     mstr ret_str = MSTR_NULL;
     int ret_error = 0;
     DWORD acc_size = 512;
-    while (!ret_str.data && !ret_error) {
+    while (!ret_str.raw.data && !ret_error) {
         // Loop until we allocate a large enough buffer or get an error
         wchar_t *path = calloc((size_t)acc_size + 1u, sizeof(wchar_t));
         SetLastError(0);

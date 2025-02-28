@@ -65,7 +65,7 @@ _mongocrypt_marking_parse_fle1_placeholder(const bson_t *in, _mongocrypt_marking
         BSON_ASSERT(field);
         if (0 == strcmp("ki", field)) {
             has_ki = true;
-            if (!_mongocrypt_buffer_from_uuid_iter(&out->key_id, &iter)) {
+            if (!_mongocrypt_buffer_from_uuid_iter(&out->u.fle1.key_id, &iter)) {
                 CLIENT_ERR("key id must be a UUID");
                 return false;
             }
@@ -85,14 +85,14 @@ _mongocrypt_marking_parse_fle1_placeholder(const bson_t *in, _mongocrypt_marking
             }
             /* CDRIVER-3100 We must make a copy of this value; the result of
              * bson_iter_value is ephemeral. */
-            bson_value_copy(value, &out->key_alt_name);
+            bson_value_copy(value, &out->u.fle1.key_alt_name);
             out->type = MONGOCRYPT_MARKING_FLE1_BY_ALTNAME;
             continue;
         }
 
         if (0 == strcmp("v", field)) {
             has_v = true;
-            memcpy(&out->v_iter, &iter, sizeof(bson_iter_t));
+            memcpy(&out->u.fle1.v_iter, &iter, sizeof(bson_iter_t));
             continue;
         }
 
@@ -110,7 +110,7 @@ _mongocrypt_marking_parse_fle1_placeholder(const bson_t *in, _mongocrypt_marking
                 CLIENT_ERR("invalid algorithm value: %d", algorithm);
                 return false;
             }
-            out->algorithm = (mongocrypt_encryption_algorithm_t)algorithm;
+            out->u.fle1.algorithm = (mongocrypt_encryption_algorithm_t)algorithm;
             continue;
         }
 
@@ -147,7 +147,7 @@ _mongocrypt_marking_parse_fle2_placeholder(const bson_t *in, _mongocrypt_marking
     BSON_ASSERT_PARAM(out);
 
     out->type = MONGOCRYPT_MARKING_FLE2_ENCRYPTION;
-    return mc_FLE2EncryptionPlaceholder_parse(&out->fle2, in, status);
+    return mc_FLE2EncryptionPlaceholder_parse(&out->u.fle2, in, status);
 }
 
 bool _mongocrypt_marking_parse_unowned(const _mongocrypt_buffer_t *in,
@@ -191,13 +191,13 @@ void _mongocrypt_marking_cleanup(_mongocrypt_marking_t *marking) {
         return;
     }
     if (marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION) {
-        mc_FLE2EncryptionPlaceholder_cleanup(&marking->fle2);
+        mc_FLE2EncryptionPlaceholder_cleanup(&marking->u.fle2);
         return;
     }
 
     // else FLE1
-    _mongocrypt_buffer_cleanup(&marking->key_id);
-    bson_value_destroy(&marking->key_alt_name);
+    _mongocrypt_buffer_cleanup(&marking->u.fle1.key_id);
+    bson_value_destroy(&marking->u.fle1.key_alt_name);
 }
 
 /**
@@ -801,7 +801,7 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_ciphertext(_mongocrypt
     BSON_ASSERT(kb->crypt);
     BSON_ASSERT(marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION);
 
-    mc_FLE2EncryptionPlaceholder_t *placeholder = &marking->fle2;
+    mc_FLE2EncryptionPlaceholder_t *placeholder = &marking->u.fle2;
     _FLE2EncryptedPayloadCommon_t common = {{0}};
     mc_FLE2InsertUpdatePayloadV2_t payload;
     mc_FLE2InsertUpdatePayloadV2_init(&payload);
@@ -938,7 +938,7 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange(_mo
     BSON_ASSERT(marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION);
     const bool use_range_v2 = kb->crypt->opts.use_range_v2;
 
-    mc_FLE2EncryptionPlaceholder_t *placeholder = &marking->fle2;
+    mc_FLE2EncryptionPlaceholder_t *placeholder = &marking->u.fle2;
     _FLE2EncryptedPayloadCommon_t common = {{0}};
     mc_FLE2InsertUpdatePayloadV2_t payload;
     mc_FLE2InsertUpdatePayloadV2_init(&payload);
@@ -955,7 +955,7 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange(_mo
     if (!_mongocrypt_fle2_placeholder_to_insert_update_common(kb,
                                                               &payload,
                                                               &common,
-                                                              &marking->fle2,
+                                                              &marking->u.fle2,
                                                               &insertSpec.v,
                                                               status)) {
         goto fail;
@@ -1335,7 +1335,7 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForTextSearc
     BSON_ASSERT(kb->crypt);
     BSON_ASSERT(marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION);
 
-    mc_FLE2EncryptionPlaceholder_t *placeholder = &marking->fle2;
+    mc_FLE2EncryptionPlaceholder_t *placeholder = &marking->u.fle2;
     BSON_ASSERT(placeholder->type == MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT);
     BSON_ASSERT(placeholder->algorithm == MONGOCRYPT_FLE2_ALGORITHM_TEXT_SEARCH);
 
@@ -1468,7 +1468,7 @@ static bool _mongocrypt_fle2_placeholder_to_find_ciphertext(_mongocrypt_key_brok
 
     _FLE2EncryptedPayloadCommon_t common = {{0}};
     _mongocrypt_buffer_t value = {0};
-    mc_FLE2EncryptionPlaceholder_t *placeholder = &marking->fle2;
+    mc_FLE2EncryptionPlaceholder_t *placeholder = &marking->u.fle2;
     mc_FLE2FindEqualityPayloadV2_t payload;
     bool res = false;
 
@@ -1709,7 +1709,7 @@ static bool _mongocrypt_fle2_placeholder_to_find_ciphertextForRange(_mongocrypt_
     BSON_ASSERT_PARAM(ciphertext);
 
     const bool use_range_v2 = kb->crypt->opts.use_range_v2;
-    mc_FLE2EncryptionPlaceholder_t *placeholder = &marking->fle2;
+    mc_FLE2EncryptionPlaceholder_t *placeholder = &marking->u.fle2;
     mc_FLE2FindRangePayloadV2_t payload;
     bool res = false;
     mc_mincover_t *mincover = NULL;
@@ -1838,7 +1838,7 @@ static bool _mongocrypt_fle2_placeholder_to_FLE2UnindexedEncryptedValue(_mongocr
     BSON_ASSERT_PARAM(ciphertext);
 
     _mongocrypt_buffer_t plaintext = {0};
-    mc_FLE2EncryptionPlaceholder_t *placeholder = &marking->fle2;
+    mc_FLE2EncryptionPlaceholder_t *placeholder = &marking->u.fle2;
     _mongocrypt_buffer_t user_key = {0};
     bool res = false;
 
@@ -1904,12 +1904,13 @@ static bool _mongocrypt_fle1_marking_to_ciphertext(_mongocrypt_key_broker_t *kb,
     _mongocrypt_buffer_init(&key_id);
     _mongocrypt_buffer_init(&key_material);
 
-    /* Get the decrypted key for this marking. */
+    /* Get the decrypted key for this marking.u.fle1. */
     if (marking->type == MONGOCRYPT_MARKING_FLE1_BY_ALTNAME) {
-        key_found = _mongocrypt_key_broker_decrypted_key_by_name(kb, &marking->key_alt_name, &key_material, &key_id);
-    } else if (!_mongocrypt_buffer_empty(&marking->key_id)) {
-        key_found = _mongocrypt_key_broker_decrypted_key_by_id(kb, &marking->key_id, &key_material);
-        _mongocrypt_buffer_copy_to(&marking->key_id, &key_id);
+        key_found =
+            _mongocrypt_key_broker_decrypted_key_by_name(kb, &marking->u.fle1.key_alt_name, &key_material, &key_id);
+    } else if (!_mongocrypt_buffer_empty(&marking->u.fle1.key_id)) {
+        key_found = _mongocrypt_key_broker_decrypted_key_by_id(kb, &marking->u.fle1.key_id, &key_material);
+        _mongocrypt_buffer_copy_to(&marking->u.fle1.key_id, &key_id);
     } else {
         CLIENT_ERR("marking must have either key_id or key_alt_name");
         goto fail;
@@ -1920,11 +1921,11 @@ static bool _mongocrypt_fle1_marking_to_ciphertext(_mongocrypt_key_broker_t *kb,
         goto fail;
     }
 
-    ciphertext->original_bson_type = (uint8_t)bson_iter_type(&marking->v_iter);
-    if (marking->algorithm == MONGOCRYPT_ENCRYPTION_ALGORITHM_DETERMINISTIC) {
+    ciphertext->original_bson_type = (uint8_t)bson_iter_type(&marking->u.fle1.v_iter);
+    if (marking->u.fle1.algorithm == MONGOCRYPT_ENCRYPTION_ALGORITHM_DETERMINISTIC) {
         ciphertext->blob_subtype = MC_SUBTYPE_FLE1DeterministicEncryptedValue;
     } else {
-        BSON_ASSERT(marking->algorithm == MONGOCRYPT_ENCRYPTION_ALGORITHM_RANDOM);
+        BSON_ASSERT(marking->u.fle1.algorithm == MONGOCRYPT_ENCRYPTION_ALGORITHM_RANDOM);
         ciphertext->blob_subtype = MC_SUBTYPE_FLE1RandomEncryptedValue;
     }
     _mongocrypt_buffer_copy_to(&key_id, &ciphertext->key_id);
@@ -1933,7 +1934,7 @@ static bool _mongocrypt_fle1_marking_to_ciphertext(_mongocrypt_key_broker_t *kb,
         goto fail;
     }
 
-    _mongocrypt_buffer_from_iter(&plaintext, &marking->v_iter);
+    _mongocrypt_buffer_from_iter(&plaintext, &marking->u.fle1.v_iter);
     ciphertext->data.len = fle1->get_ciphertext_len(plaintext.len, status);
     if (ciphertext->data.len == 0) {
         goto fail;
@@ -1944,7 +1945,7 @@ static bool _mongocrypt_fle1_marking_to_ciphertext(_mongocrypt_key_broker_t *kb,
     ciphertext->data.owned = true;
 
     BSON_ASSERT(kb->crypt);
-    switch (marking->algorithm) {
+    switch (marking->u.fle1.algorithm) {
     case MONGOCRYPT_ENCRYPTION_ALGORITHM_DETERMINISTIC:
         /* Use deterministic encryption. */
         _mongocrypt_buffer_resize(&iv, MONGOCRYPT_IV_LEN);
@@ -2019,11 +2020,11 @@ bool _mongocrypt_marking_to_ciphertext(void *ctx,
 
     switch (marking->type) {
     case MONGOCRYPT_MARKING_FLE2_ENCRYPTION:
-        switch (marking->fle2.algorithm) {
+        switch (marking->u.fle2.algorithm) {
         case MONGOCRYPT_FLE2_ALGORITHM_UNINDEXED:
             return _mongocrypt_fle2_placeholder_to_FLE2UnindexedEncryptedValue(kb, marking, ciphertext, status);
         case MONGOCRYPT_FLE2_ALGORITHM_RANGE:
-            switch (marking->fle2.type) {
+            switch (marking->u.fle2.type) {
             case MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT:
                 return _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange(kb,
                                                                                         marking,
@@ -2031,18 +2032,18 @@ bool _mongocrypt_marking_to_ciphertext(void *ctx,
                                                                                         status);
             case MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND:
                 return _mongocrypt_fle2_placeholder_to_find_ciphertextForRange(kb, marking, ciphertext, status);
-            default: CLIENT_ERR("unexpected fle2 type: %d", (int)marking->fle2.type); return false;
+            default: CLIENT_ERR("unexpected fle2 type: %d", (int)marking->u.fle2.type); return false;
             }
         case MONGOCRYPT_FLE2_ALGORITHM_EQUALITY:
-            switch (marking->fle2.type) {
+            switch (marking->u.fle2.type) {
             case MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT:
                 return _mongocrypt_fle2_placeholder_to_insert_update_ciphertext(kb, marking, ciphertext, status);
             case MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND:
                 return _mongocrypt_fle2_placeholder_to_find_ciphertext(kb, marking, ciphertext, status);
-            default: CLIENT_ERR("unexpected fle2 type: %d", (int)marking->fle2.type); return false;
+            default: CLIENT_ERR("unexpected fle2 type: %d", (int)marking->u.fle2.type); return false;
             }
         case MONGOCRYPT_FLE2_ALGORITHM_TEXT_SEARCH:
-            switch (marking->fle2.type) {
+            switch (marking->u.fle2.type) {
             case MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT:
                 return _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForTextSearch(kb,
                                                                                              marking,
@@ -2050,9 +2051,9 @@ bool _mongocrypt_marking_to_ciphertext(void *ctx,
                                                                                              status);
             case MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND:
                 return _mongocrypt_fle2_placeholder_to_find_ciphertextForTextSearch(kb, marking, ciphertext, status);
-            default: CLIENT_ERR("unexpected fle2 type: %d", (int)marking->fle2.type); return false;
+            default: CLIENT_ERR("unexpected fle2 type: %d", (int)marking->u.fle2.type); return false;
             }
-        default: CLIENT_ERR("unexpected algorithm: %d", (int)marking->algorithm); return false;
+        default: CLIENT_ERR("unexpected algorithm: %d", (int)marking->u.fle1.algorithm); return false;
         }
     case MONGOCRYPT_MARKING_FLE1_BY_ID:
     case MONGOCRYPT_MARKING_FLE1_BY_ALTNAME:

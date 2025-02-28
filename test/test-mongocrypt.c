@@ -453,8 +453,8 @@ const char *_mongocrypt_tester_plaintext(_mongocrypt_tester_t *tester) {
     status = mongocrypt_status_new();
     ASSERT_OR_PRINT(_mongocrypt_marking_parse_unowned(&buf, &marking, status), status);
     mongocrypt_status_destroy(status);
-    BSON_ASSERT(BSON_ITER_HOLDS_UTF8(&marking.v_iter));
-    return bson_iter_utf8(&marking.v_iter, NULL);
+    BSON_ASSERT(BSON_ITER_HOLDS_UTF8(&marking.u.fle1.v_iter));
+    return bson_iter_utf8(&marking.u.fle1.v_iter, NULL);
 }
 
 mongocrypt_binary_t *_mongocrypt_tester_encrypted_doc(_mongocrypt_tester_t *tester) {

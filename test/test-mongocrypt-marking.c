@@ -68,8 +68,8 @@ static void test_mongocrypt_marking_parse(_mongocrypt_tester_t *tester) {
     marking_bson = TMP_BSON("{'a': 2, 'v': 'abc', 'ka': 'alt'}");
     _make_marking(marking_bson, &marking_buf);
     _parse_ok(&marking_buf, &marking);
-    BSON_ASSERT(marking.algorithm == MONGOCRYPT_ENCRYPTION_ALGORITHM_RANDOM);
-    BSON_ASSERT(0 == strcmp("abc", bson_iter_utf8(&marking.v_iter, NULL)));
+    BSON_ASSERT(marking.u.fle1.algorithm == MONGOCRYPT_ENCRYPTION_ALGORITHM_RANDOM);
+    BSON_ASSERT(0 == strcmp("abc", bson_iter_utf8(&marking.u.fle1.v_iter, NULL)));
     _mongocrypt_buffer_cleanup(&marking_buf);
     _mongocrypt_marking_cleanup(&marking);
 
