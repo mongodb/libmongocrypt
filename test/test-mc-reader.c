@@ -26,7 +26,7 @@ static void _test_mc_reader(_mongocrypt_tester_t *tester) {
     status = mongocrypt_status_new();
 
     mc_reader_t reader;
-    mc_reader_init_from_buffer(&reader, &input_buf, __FUNCTION__);
+    mc_reader_init_from_buffer(&reader, &input_buf, __func__);
 
     uint8_t value;
     ASSERT_OK_STATUS(mc_reader_read_u8(&reader, &value, status), status);
@@ -57,7 +57,7 @@ static void _test_mc_reader_uuid(_mongocrypt_tester_t *tester) {
     status = mongocrypt_status_new();
 
     mc_reader_t reader;
-    mc_reader_init_from_buffer(&reader, &input_buf, __FUNCTION__);
+    mc_reader_init_from_buffer(&reader, &input_buf, __func__);
 
     _mongocrypt_buffer_t value;
     ASSERT_OK_STATUS(mc_reader_read_uuid_buffer(&reader, &value, status), status);
@@ -93,7 +93,7 @@ static void _test_mc_reader_prfblock(_mongocrypt_tester_t *tester) {
     status = mongocrypt_status_new();
 
     mc_reader_t reader;
-    mc_reader_init_from_buffer(&reader, &input_buf, __FUNCTION__);
+    mc_reader_init_from_buffer(&reader, &input_buf, __func__);
 
     _mongocrypt_buffer_t value;
     ASSERT_OK_STATUS(mc_reader_read_prfblock_buffer(&reader, &value, status), status);
@@ -117,7 +117,7 @@ static void _test_mc_reader_ints(_mongocrypt_tester_t *tester) {
     status = mongocrypt_status_new();
 
     mc_reader_t reader;
-    mc_reader_init_from_buffer(&reader, &input_buf, __FUNCTION__);
+    mc_reader_init_from_buffer(&reader, &input_buf, __func__);
 
     uint32_t u32;
     ASSERT_OK_STATUS(mc_reader_read_u32(&reader, &u32, status), status);
@@ -143,7 +143,7 @@ static void _test_mc_reader_bytes(_mongocrypt_tester_t *tester) {
     status = mongocrypt_status_new();
 
     mc_reader_t reader;
-    mc_reader_init_from_buffer(&reader, &input_buf, __FUNCTION__);
+    mc_reader_init_from_buffer(&reader, &input_buf, __func__);
 
     const uint8_t *ptr;
     const uint64_t len = 4;

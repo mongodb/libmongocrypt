@@ -260,7 +260,7 @@ static void test_mc_RangeOpts_to_FLE2RangeInsertSpec(_mongocrypt_tester_t *teste
          .expectError = "Trim factor (64) must be less than the total number of bits (64) used to represent any "
                         "element in the domain."},
 
-#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT()
         {.desc = "tf bound check passes correctly for decimal with min, max, precision set (tf = 9, 2^9 < domain size "
                  "< 2^10)",
          .in = RAW_STRING({

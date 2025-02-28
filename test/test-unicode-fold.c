@@ -49,7 +49,7 @@
                           _both_len,                                                                                   \
                           input,                                                                                       \
                           _input_len,                                                                                  \
-                          kUnicodeFoldToLower | kUnicodeFoldRemoveDiacritics);                                         \
+                          (unicode_fold_options_t)(kUnicodeFoldToLower | kUnicodeFoldRemoveDiacritics));               \
     } while (0)
 
 static void test_unicode_fold(_mongocrypt_tester_t *tester) {
@@ -85,7 +85,11 @@ static void test_unicode_fold(_mongocrypt_tester_t *tester) {
     TEST_UNICODE_FOLD_ALL_CASES("Cafe\xcc\x81", "cafe\xcc\x81", "Cafe", "cafe");
     TEST_UNICODE_FOLD_ALL_CASES("CafE\xcc\x81", "cafe\xcc\x81", "CafE", "cafe");
     // Test string with null bytes
-    TEST_UNICODE_FOLD("fo\0bar", 6, "fo\0bar", 6, kUnicodeFoldToLower | kUnicodeFoldRemoveDiacritics);
+    TEST_UNICODE_FOLD("fo\0bar",
+                      6,
+                      "fo\0bar",
+                      6,
+                      (unicode_fold_options_t)(kUnicodeFoldToLower | kUnicodeFoldRemoveDiacritics));
     // Test strings with folded representations longer in bytes than the input
     TEST_UNICODE_FOLD("\xe2\xb1\xa6", 3, "\xc8\xbe", 2, kUnicodeFoldToLower);
     TEST_UNICODE_FOLD("\xf0\xa4\x8b\xae", 4, "\xef\xa9\xac", 3, kUnicodeFoldRemoveDiacritics);

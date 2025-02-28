@@ -890,7 +890,7 @@ get_edges(mc_FLE2RangeInsertSpec_t *insertSpec, size_t sparsity, mongocrypt_stat
     }
 
     else if (value_type == BSON_TYPE_DECIMAL128) {
-#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT()
         const mc_dec128 value = mc_dec128_from_bson_iter(&insertSpec->v);
         mc_getEdgesDecimal128_args_t args = {
             .value = value,
@@ -1118,7 +1118,7 @@ fail:
         }                                                                                                              \
         return true;                                                                                                   \
     }
-GENERATE_TEXT_SEARCH_TOKEN_SET_FOR_TYPE_IMPL(Exact);
+GENERATE_TEXT_SEARCH_TOKEN_SET_FOR_TYPE_IMPL(Exact)
 GENERATE_TEXT_SEARCH_TOKEN_SET_FOR_TYPE_IMPL(Substring)
 GENERATE_TEXT_SEARCH_TOKEN_SET_FOR_TYPE_IMPL(Suffix)
 GENERATE_TEXT_SEARCH_TOKEN_SET_FOR_TYPE_IMPL(Prefix)
@@ -1648,7 +1648,7 @@ mc_mincover_t *mc_get_mincover_from_FLE2RangeFindSpec(mc_FLE2RangeFindSpec_t *fi
         return mc_getMincoverDouble(args, status, use_range_v2);
     }
     case BSON_TYPE_DECIMAL128: {
-#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT()
         BSON_ASSERT(bson_iter_type(&lowerBound) == BSON_TYPE_DECIMAL128);
         BSON_ASSERT(bson_iter_type(&upperBound) == BSON_TYPE_DECIMAL128);
         BSON_ASSERT(bson_iter_type(&findSpec->edgesInfo.value.indexMin) == BSON_TYPE_DECIMAL128);

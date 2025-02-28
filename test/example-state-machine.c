@@ -135,7 +135,7 @@ static void _print_binary_as_text(mongocrypt_binary_t *binary) {
         continue;                                                                                                      \
     }
 
-void _run_state_machine(mongocrypt_ctx_t *ctx, bson_t *result) {
+static void _run_state_machine(mongocrypt_ctx_t *ctx, bson_t *result) {
     mongocrypt_binary_t *input, *output = NULL;
     bson_t tmp;
     mongocrypt_kms_ctx_t *kms;
@@ -227,11 +227,10 @@ void _run_state_machine(mongocrypt_ctx_t *ctx, bson_t *result) {
             mongocrypt_ctx_status(ctx, status);
             printf("\ngot error: %s\n", mongocrypt_status_message(status, NULL));
             abort();
-            break;
         case MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS:
             // We don't handle KMS credentials
             // fallthrough
-        default: BSON_ASSERT(0); break;
+        default: BSON_ASSERT(0);
         }
     }
 
@@ -247,7 +246,7 @@ static mongocrypt_binary_t *_iter_to_binary(bson_iter_t *iter) {
     return mongocrypt_binary_new_from_data(data, len);
 }
 
-int main() {
+int main(void) {
     bson_iter_t iter;
     bson_t result;
     bson_t key_doc;

@@ -308,7 +308,7 @@ static void _test_getEdgesDouble(_mongocrypt_tester_t *tester) {
     }
 }
 
-#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT()
 #define MAX_DEC128_EDGES 129
 
 typedef struct {
@@ -492,7 +492,7 @@ void _mongocrypt_tester_install_range_edge_generation(_mongocrypt_tester_t *test
     INSTALL_TEST(_test_getEdgesInt32);
     INSTALL_TEST(_test_getEdgesInt64);
     INSTALL_TEST(_test_getEdgesDouble);
-#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT()
     INSTALL_TEST(_test_getEdgesDecimal128);
 #endif
     INSTALL_TEST(_test_count_leading_zeros);

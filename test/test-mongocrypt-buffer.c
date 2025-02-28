@@ -35,7 +35,7 @@ static void _get_bytes(const void *in, char *out, int len) {
     dest[-1] = '\0';
 }
 
-bool assert_excess_bytes_removed(char *key, char *wrapped, char *unwrapped, uint32_t type, bson_value_t *out) {
+static bool assert_excess_bytes_removed(char *key, char *wrapped, char *unwrapped, uint32_t type, bson_value_t *out) {
     _mongocrypt_buffer_t plaintext = {0};
     _mongocrypt_marking_t marking = {0};
     bson_iter_t iter;

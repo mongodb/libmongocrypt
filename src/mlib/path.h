@@ -60,7 +60,7 @@ static inline char mpath_preferred_sep(mpath_format f) {
  * @return mstr A new string which must be freed with mstr_free()
  */
 static inline mstr mpath_current_path(void) {
-#if _WIN32
+#if defined(_WIN32)
     while (1) {
         DWORD len = GetCurrentDirectoryW(0, NULL);
         wchar_t *wstr = calloc(sizeof(wchar_t), len);
