@@ -59,7 +59,7 @@ bool mc_FLE2IndexedEqualityEncryptedValueTokens_init_from_buffer(mc_FLE2IndexedE
     BSON_ASSERT_PARAM(buf);
 
     mc_reader_t reader;
-    mc_reader_init_from_buffer(&reader, buf, __FUNCTION__);
+    mc_reader_init_from_buffer(&reader, buf, __func__);
 
     CHECK_AND_RETURN(mc_reader_read_u64(&reader, &tokens->counter, status));
 
@@ -132,7 +132,7 @@ bool mc_FLE2IndexedEncryptedValue_write(_mongocrypt_crypto_t *crypto,
                                                         &encryption_out,
                                                         status));
     mc_writer_t writer;
-    mc_writer_init_from_buffer(&writer, buf, __FUNCTION__);
+    mc_writer_init_from_buffer(&writer, buf, __func__);
 
     const uint8_t subtype = (uint8_t)MC_SUBTYPE_FLE2IndexedEqualityEncryptedValue;
 
@@ -194,7 +194,7 @@ static bool mc_fle2IndexedEncryptedValue_encrypt(_mongocrypt_crypto_t *crypto,
     _mongocrypt_buffer_resize(out, ciphertext_len);
 
     mc_writer_t writer;
-    mc_writer_init_from_buffer(&writer, &in, __FUNCTION__);
+    mc_writer_init_from_buffer(&writer, &in, __func__);
 
     uint64_t length;
     length = ClientEncryptedValue->len;
@@ -239,7 +239,7 @@ bool mc_FLE2IndexedEncryptedValue_parse(mc_FLE2IndexedEncryptedValue_t *iev,
     }
 
     mc_reader_t reader;
-    mc_reader_init_from_buffer(&reader, buf, __FUNCTION__);
+    mc_reader_init_from_buffer(&reader, buf, __func__);
 
     CHECK_AND_RETURN(mc_reader_read_u8(&reader, &iev->fle_blob_subtype, status));
 
@@ -367,7 +367,7 @@ static bool mc_FLE2IndexedEncryptedValue_decrypt(_mongocrypt_crypto_t *crypto,
     }
 
     mc_reader_t reader;
-    mc_reader_init_from_buffer(&reader, &iev->Inner, __FUNCTION__);
+    mc_reader_init_from_buffer(&reader, &iev->Inner, __func__);
 
     /* Parse Inner for K_KeyId. */
     uint64_t length; /* length is sizeof(K_KeyId) + ClientEncryptedValue_length. */

@@ -16,7 +16,10 @@ static void _test_load_simple_library(_mongocrypt_tester_t *t) {
     mcr_dll lib = mcr_dll_open(dll_path.data);
     BSON_ASSERT(lib.error_string.len == 0);
 
-    int (*say_hello)(void) = mcr_dll_sym(lib, "say_hello");
+    MC_BEGIN_CAST_FUNCTION_TYPE_STRICT_IGNORE
+    int (*say_hello)(void) = (int (*)(void))mcr_dll_sym(lib, "say_hello");
+    MC_END_CAST_FUNCTION_TYPE_STRICT_IGNORE
+
     BSON_ASSERT(say_hello != NULL);
 
     int rval = say_hello();
