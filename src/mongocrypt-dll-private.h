@@ -72,22 +72,13 @@ static inline void mcr_dll_close(mcr_dll dll) {
 #endif
 
 /**
- * @brief Obtain a pointer to an exported object from the given dynamic library.
+ * @brief Obtain a pointer to an exported entity from the given dynamic library.
  *
  * @param dll A library opened with @ref mcr_dll_open
- * @param symbol The name of a variable symbol to open
- * @return void* A pointer to that object symbol, or NULL if not found
+ * @param symbol The name of a symbol to open
+ * @return void* A pointer to that symbol, or NULL if not found
  */
-void *mcr_dll_sym_obj(mcr_dll dll, const char *symbol);
-
-/**
- * @brief Obtain a pointer to an exported function from the given dynamic library.
- *
- * @param dll A library opened with @ref mcr_dll_open
- * @param symbol The name of a function symbol to open
- * @return void* A pointer to that function symbol, or NULL if not found
- */
-void (*mcr_dll_sym_fn(mcr_dll dll, const char *symbol))(void);
+void *mcr_dll_sym(mcr_dll dll, const char *symbol);
 
 /**
  * @brief Determine whether the given DLL is a handle to an open library

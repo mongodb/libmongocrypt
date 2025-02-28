@@ -44,12 +44,8 @@ void mcr_dll_close_handle(mcr_dll dll) {
     }
 }
 
-void *mcr_dll_sym_obj(mcr_dll dll, const char *sym) {
+void *mcr_dll_sym(mcr_dll dll, const char *sym) {
     return GetProcAddress(dll._native_handle, sym);
-}
-
-void (*mcr_dll_sym_fn(mcr_dll dll, const char *sym))(void) {
-    return (void (*)(void))(GetProcAddress(dll._native_handle, sym));
 }
 
 mcr_dll_path_result mcr_dll_path(mcr_dll dll) {

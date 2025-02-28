@@ -17,7 +17,7 @@ static void _test_load_simple_library(_mongocrypt_tester_t *t) {
     BSON_ASSERT(lib.error_string.len == 0);
 
     MC_BEGIN_CAST_FUNCTION_TYPE_STRICT_IGNORE
-    int (*say_hello)(void) = (int (*)(void))mcr_dll_sym_fn(lib, "say_hello");
+    int (*say_hello)(void) = (int (*)(void))mcr_dll_sym(lib, "say_hello");
     MC_END_CAST_FUNCTION_TYPE_STRICT_IGNORE
 
     BSON_ASSERT(say_hello != NULL);

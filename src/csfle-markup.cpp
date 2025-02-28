@@ -109,7 +109,7 @@ int do_main(int argc, const char *const *argv) {
 
 #define LOAD_SYM(Name)                                                                                                 \
     MC_BEGIN_CAST_FUNCTION_TYPE_STRICT_IGNORE                                                                          \
-    auto Name = reinterpret_cast<decltype(&(::Name))>(mcr_dll_sym_fn(csfle, #Name));                                   \
+    auto Name = reinterpret_cast<decltype(&(::Name))>(mcr_dll_sym(csfle, #Name));                                      \
     MC_END_CAST_FUNCTION_TYPE_STRICT_IGNORE                                                                            \
     if (!Name) {                                                                                                       \
         fprintf(stderr, "Failed to load required symbol [%s] from the given csfle library", #Name);                    \
