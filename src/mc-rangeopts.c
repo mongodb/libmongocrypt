@@ -38,7 +38,7 @@
     continue;                                                                                                          \
     }
 
-#define ERROR_PREFIX "Error parsing RangeOpts"
+#define ERROR_PREFIX "Error parsing RangeOpts: "
 
 bool mc_RangeOpts_parse(mc_RangeOpts_t *ro, const bson_t *in, bool use_range_v2, mongocrypt_status_t *status) {
     bson_iter_t iter = {0};
@@ -200,7 +200,7 @@ bool mc_RangeOpts_parse(mc_RangeOpts_t *ro, const bson_t *in, bool use_range_v2,
 }
 
 #undef ERROR_PREFIX
-#define ERROR_PREFIX "Error making FLE2RangeInsertSpec"
+#define ERROR_PREFIX "Error making FLE2RangeInsertSpec: "
 
 bool mc_RangeOpts_to_FLE2RangeInsertSpec(const mc_RangeOpts_t *ro,
                                          const bson_t *v,
@@ -257,7 +257,7 @@ bool mc_RangeOpts_to_FLE2RangeInsertSpec(const mc_RangeOpts_t *ro,
 }
 
 #undef ERROR_PREFIX
-#define ERROR_PREFIX "Error appending min to FLE2RangeInsertSpec"
+#define ERROR_PREFIX "Error appending min to FLE2RangeInsertSpec: "
 
 bool mc_RangeOpts_appendMin(const mc_RangeOpts_t *ro,
                             bson_type_t valueType,
@@ -312,7 +312,7 @@ bool mc_RangeOpts_appendMin(const mc_RangeOpts_t *ro,
 }
 
 #undef ERROR_PREFIX
-#define ERROR_PREFIX "Error appending max to FLE2RangeInsertSpec"
+#define ERROR_PREFIX "Error appending max to FLE2RangeInsertSpec: "
 
 bool mc_RangeOpts_appendMax(const mc_RangeOpts_t *ro,
                             bson_type_t valueType,
@@ -367,7 +367,7 @@ bool mc_RangeOpts_appendMax(const mc_RangeOpts_t *ro,
 }
 
 #undef ERROR_PREFIX
-#define ERROR_PREFIX "Error in getNumberOfBits"
+#define ERROR_PREFIX "Error in getNumberOfBits: "
 
 // Used to calculate max trim factor. Returns the number of bits required to represent any number in
 // the domain.
@@ -473,7 +473,7 @@ static bool mc_getNumberOfBits(const mc_RangeOpts_t *ro,
 }
 
 #undef ERROR_PREFIX
-#define ERROR_PREFIX "Error appending trim factor to FLE2RangeInsertSpec"
+#define ERROR_PREFIX "Error appending trim factor to FLE2RangeInsertSpec: "
 
 bool mc_RangeOpts_appendTrimFactor(const mc_RangeOpts_t *ro,
                                    bson_type_t valueType,
