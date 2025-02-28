@@ -1738,7 +1738,7 @@ static bool _mongocrypt_fle2_placeholder_to_find_ciphertextForRange(_mongocrypt_
     // Parse the query bounds and index bounds from FLE2EncryptionPlaceholder for
     // range find.
     mc_FLE2RangeFindSpec_t findSpec;
-    if (!mc_FLE2RangeFindSpec_parse(&findSpec, &placeholder->v_iter, use_range_v2, status)) {
+    if (!mc_FLE2RangeFindSpec_parse(&findSpec, &placeholder->v_iter, status)) {
         goto fail;
     }
 

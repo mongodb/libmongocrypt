@@ -86,10 +86,7 @@ typedef struct {
 BSON_STATIC_ASSERT2(alignof_mc_FLE2RangeFindSpec_t,
                     BSON_ALIGNOF(mc_FLE2RangeFindSpec_t) >= BSON_ALIGNOF(mc_FLE2RangeFindSpecEdgesInfo_t));
 
-bool mc_FLE2RangeFindSpec_parse(mc_FLE2RangeFindSpec_t *out,
-                                const bson_iter_t *in,
-                                bool use_range_v2,
-                                mongocrypt_status_t *status);
+bool mc_FLE2RangeFindSpec_parse(mc_FLE2RangeFindSpec_t *out, const bson_iter_t *in, mongocrypt_status_t *status);
 
 /** mc_FLE2RangeInsertSpec_t represents the range insert specification that is
  * encoded inside of a FLE2EncryptionPlaceholder. See

@@ -202,18 +202,6 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
     } testcase_t;
 
     testcase_t tests[] = {
-        {.description = "Range V2 disabled w/ trim factor fails",
-         .findSpecJSON = RAW_STRING({
-             "lowerBound" : {"$numberInt" : "7"},
-             "lbIncluded" : true,
-             "upperBound" : {"$numberInt" : "32"},
-             "ubIncluded" : true,
-             "indexMin" : {"$numberInt" : "0"},
-             "indexMax" : {"$numberInt" : "32"},
-             "trimFactor" : 0
-         }),
-         .disableRangeV2 = true,
-         .expectedErrorAtParseTime = "'trimFactor' is not supported for QE range v1"},
         {.description = "Int32 Bounds included",
          .findSpecJSON = RAW_STRING({
              "lowerBound" : {"$numberInt" : "7"},
@@ -861,7 +849,7 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
         ASSERT(bson_iter_init_find(&findSpecIter, findSpecDoc, "findSpec"));
 
         mc_FLE2RangeFindSpec_t findSpec;
-        bool res = mc_FLE2RangeFindSpec_parse(&findSpec, &findSpecIter, !test->disableRangeV2, status);
+        bool res = mc_FLE2RangeFindSpec_parse(&findSpec, &findSpecIter, status);
         if (test->expectedErrorAtParseTime) {
             ASSERT(!res);
             ASSERT_STATUS_CONTAINS(status, test->expectedErrorAtParseTime);

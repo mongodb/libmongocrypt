@@ -153,8 +153,7 @@ static void _test_FLE2EncryptionPlaceholder_range_parse(_mongocrypt_tester_t *te
         {
             mc_FLE2RangeFindSpec_t spec;
 
-            ASSERT_OK_STATUS(mc_FLE2RangeFindSpec_parse(&spec, &placeholder.v_iter, false /* use_range_v2 */, status),
-                             status);
+            ASSERT_OK_STATUS(mc_FLE2RangeFindSpec_parse(&spec, &placeholder.v_iter, status), status);
 
             ASSERT(spec.edgesInfo.set);
 
@@ -225,8 +224,7 @@ static void _test_FLE2EncryptionPlaceholder_range_parse(_mongocrypt_tester_t *te
         {
             mc_FLE2RangeFindSpec_t spec;
 
-            ASSERT_OK_STATUS(mc_FLE2RangeFindSpec_parse(&spec, &placeholder.v_iter, false /* use_range_v2 */, status),
-                             status);
+            ASSERT_OK_STATUS(mc_FLE2RangeFindSpec_parse(&spec, &placeholder.v_iter, status), status);
 
             ASSERT(spec.edgesInfo.set);
 
