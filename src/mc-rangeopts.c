@@ -77,7 +77,8 @@ bool mc_RangeOpts_parse(mc_RangeOpts_t *ro, const bson_t *in, bool use_range_v2,
 
         IF_FIELD(sparsity)
         if (!BSON_ITER_HOLDS_INT64(&iter)) {
-            CLIENT_ERR(ERROR_PREFIX "Expected int64 for sparsity, got: %s", mc_bson_type_to_string(bson_iter_type(&iter)));
+            CLIENT_ERR(ERROR_PREFIX "Expected int64 for sparsity, got: %s",
+                       mc_bson_type_to_string(bson_iter_type(&iter)));
             return false;
         };
         ro->sparsity = bson_iter_int64(&iter);
