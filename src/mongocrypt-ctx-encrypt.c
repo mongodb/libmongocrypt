@@ -2246,7 +2246,6 @@ static bool find_collections_in_pipeline(mc_schema_broker_t *sb,
     BSON_ASSERT_PARAM(sb);
     BSON_ASSERT_PARAM(pipeline_iter_ptr);
     BSON_ASSERT_PARAM(db);
-    BSON_OPTIONAL_PARAM(status);
 
     bson_iter_t pipeline_iter = *pipeline_iter_ptr; // Operate on a copy.
 
