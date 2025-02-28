@@ -81,10 +81,13 @@ void _usleep(int64_t usec) {
 }
 
 #define TEST_DATA_COUNT_INC(var)                                                                                       \
-    (var)++;                                                                                                           \
-    if ((var) >= TEST_DATA_COUNT) {                                                                                    \
-        TEST_ERROR("TEST_DATA_COUNT exceeded for %s. Increment TEST_DATA_COUNT.", #var);                               \
-    }
+    if (1) {                                                                                                           \
+        (var)++;                                                                                                       \
+        if ((var) >= TEST_DATA_COUNT) {                                                                                \
+            TEST_ERROR("TEST_DATA_COUNT exceeded for %s. Increment TEST_DATA_COUNT.", #var);                           \
+        }                                                                                                              \
+    } else                                                                                                             \
+        ((void)0)
 
 static void _load_json(_mongocrypt_tester_t *tester, const char *path) {
     bson_t as_bson;

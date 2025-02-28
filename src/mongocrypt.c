@@ -136,7 +136,7 @@ mongocrypt_t *mongocrypt_new(void) {
 }
 
 #define ASSERT_MONGOCRYPT_PARAM_UNINIT(crypt)                                                                          \
-    {                                                                                                                  \
+    if (1) {                                                                                                           \
         const mongocrypt_t *_crypt = (crypt);                                                                          \
         BSON_ASSERT_PARAM(_crypt);                                                                                     \
         if (_crypt->initialized) {                                                                                     \
@@ -144,7 +144,8 @@ mongocrypt_t *mongocrypt_new(void) {
             CLIENT_ERR("options cannot be set after initialization");                                                  \
             return false;                                                                                              \
         }                                                                                                              \
-    }
+    } else                                                                                                             \
+        ((void)0)
 
 bool mongocrypt_setopt_use_range_v2(mongocrypt_t *crypt) {
     ASSERT_MONGOCRYPT_PARAM_UNINIT(crypt);

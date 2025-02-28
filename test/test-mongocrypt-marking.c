@@ -1157,7 +1157,7 @@ static void validate_range_ciphertext(_mongocrypt_ciphertext_t *ciphertext,
             if (is_leaf == 1) {
                 leaf_count++;
             } else {
-                ASSERT_CMPUINT8(is_leaf, ==, 0)
+                ASSERT_CMPUINT8(is_leaf, ==, 0);
             }
         } else {
             validate_encrypted_token(crypt, &encrypted_token_bin, &esc_token_bin, false, NULL);

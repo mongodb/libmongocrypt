@@ -133,7 +133,8 @@ static void _print_binary_as_text(mongocrypt_binary_t *binary) {
 #define CHECK(stmt)                                                                                                    \
     if (!stmt) {                                                                                                       \
         continue;                                                                                                      \
-    }
+    } else                                                                                                             \
+        ((void)0)
 
 void _run_state_machine(mongocrypt_ctx_t *ctx, bson_t *result) {
     mongocrypt_binary_t *input, *output = NULL;
