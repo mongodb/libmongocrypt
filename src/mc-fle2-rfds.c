@@ -579,6 +579,8 @@ static void payloadId_init_mutex(void) {
     _mongocrypt_mutex_init(&payloadId_mutex);
 }
 
+void mc_reset_payloadId_for_testing(void); // -Wmissing-prototypes: for testing only.
+
 void mc_reset_payloadId_for_testing(void) {
     mlib_call_once(&payloadId_init_flag, payloadId_init_mutex);
     MONGOCRYPT_WITH_MUTEX(payloadId_mutex) {

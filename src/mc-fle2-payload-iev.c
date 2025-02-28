@@ -78,7 +78,7 @@ static bool mc_fle2IndexedEncryptedValue_encrypt(_mongocrypt_crypto_t *crypto,
                                                  _mongocrypt_buffer_t *out,
                                                  mongocrypt_status_t *status);
 
-bool safe_uint32_t_sum(const uint32_t a, const uint32_t b, uint32_t *out, mongocrypt_status_t *status) {
+static bool safe_uint32_t_sum(const uint32_t a, const uint32_t b, uint32_t *out, mongocrypt_status_t *status) {
     if (a > UINT32_MAX - b) {
         CLIENT_ERR("safe_uint32_t_sum overflow, %" PRIu32 ", %" PRIu32, a, b);
         return false;

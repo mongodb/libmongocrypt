@@ -225,7 +225,7 @@ bool match_bson(const bson_t *doc, const bson_t *pattern, bool is_command) {
 
 MLIB_ANNOTATE_PRINTF(2, 3)
 
-void match_err(match_ctx_t *ctx, const char *fmt, ...) {
+static void match_err(match_ctx_t *ctx, const char *fmt, ...) {
     va_list args;
     char *formatted;
 

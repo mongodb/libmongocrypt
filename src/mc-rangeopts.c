@@ -379,11 +379,11 @@ bool mc_RangeOpts_appendMax(const mc_RangeOpts_t *ro,
 
 // Used to calculate max trim factor. Returns the number of bits required to represent any number in
 // the domain.
-bool mc_getNumberOfBits(const mc_RangeOpts_t *ro,
-                        bson_type_t valueType,
-                        uint32_t *bitsOut,
-                        mongocrypt_status_t *status,
-                        bool use_range_v2) {
+static bool mc_getNumberOfBits(const mc_RangeOpts_t *ro,
+                               bson_type_t valueType,
+                               uint32_t *bitsOut,
+                               mongocrypt_status_t *status,
+                               bool use_range_v2) {
     BSON_ASSERT_PARAM(ro);
     BSON_ASSERT_PARAM(bitsOut);
 

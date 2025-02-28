@@ -111,7 +111,7 @@ static void _status_to_error(mongocrypt_status_t *status, bson_error_t *error) {
  * Returns true if ok, and does not modify @error.
  * Returns false if error, and sets @error.
  */
-bool _test_ctx_check_error(mongocrypt_ctx_t *ctx, bson_error_t *error, bool error_expected) {
+static bool _test_ctx_check_error(mongocrypt_ctx_t *ctx, bson_error_t *error, bool error_expected) {
     mongocrypt_status_t *status;
 
     status = mongocrypt_status_new();
@@ -131,7 +131,7 @@ bool _test_ctx_check_error(mongocrypt_ctx_t *ctx, bson_error_t *error, bool erro
     return true;
 }
 
-bool _test_kms_ctx_check_error(mongocrypt_kms_ctx_t *kms_ctx, bson_error_t *error, bool error_expected) {
+static bool _test_kms_ctx_check_error(mongocrypt_kms_ctx_t *kms_ctx, bson_error_t *error, bool error_expected) {
     mongocrypt_status_t *status;
 
     status = mongocrypt_status_new();
@@ -659,7 +659,7 @@ fail:
     return ret;
 }
 
-const char *_state_string(mongocrypt_ctx_state_t state) {
+static const char *_state_string(mongocrypt_ctx_state_t state) {
     switch (state) {
     case MONGOCRYPT_CTX_ERROR: return "MONGOCRYPT_CTX_ERROR";
     case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB: return "MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB";

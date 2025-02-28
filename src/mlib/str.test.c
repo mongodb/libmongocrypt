@@ -5,7 +5,7 @@
 
 #define test_predicate(Bool, Left, Pred, Right) MSTR_ASSERT(Bool, mstrv_lit(Left), Pred, mstrv_lit(Right))
 
-int main() {
+int main(void) {
     // Test the null-initializers:
     mstr str = MSTR_NULL;
     mstr_view null_view = MSTRV_NULL;
