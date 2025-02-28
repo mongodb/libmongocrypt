@@ -47,8 +47,14 @@ void mcr_dll_close_handle(mcr_dll dll) {
     }
 }
 
-void *mcr_dll_sym(mcr_dll dll, const char *sym) {
+void *mcr_dll_sym_obj(mcr_dll dll, const char *sym) {
     return dlsym(dll._native_handle, sym);
+}
+
+void (*mcr_dll_sym_fn(mcr_dll dll, const char *sym))(void) {
+    MC_BEGIN_CAST_FUNCTION_TYPE_STRICT_IGNORE
+    return (void (*)(void))(dlsym(dll._native_handle, sym));
+    MC_END_CAST_FUNCTION_TYPE_STRICT_IGNORE
 }
 
 #endif

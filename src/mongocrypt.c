@@ -414,7 +414,9 @@ static _loaded_csfle _try_load_csfle(const char *filepath, mongocrypt_status_t *
     {                                                                                                                  \
         /* Symbol names are qualified by the lib name and version: */                                                  \
         const char *symname = "mongo_crypt_v1_" #Name;                                                                 \
-        vtable.Name = mcr_dll_sym(lib, symname);                                                                       \
+        MC_BEGIN_CAST_FUNCTION_TYPE_STRICT_IGNORE                                                                      \
+        vtable.Name = (RetType(*)(__VA_ARGS__))mcr_dll_sym_fn(lib, symname);                                           \
+        MC_END_CAST_FUNCTION_TYPE_STRICT_IGNORE                                                                        \
         if (vtable.Name == NULL) {                                                                                     \
             /* The requested symbol is not present */                                                                  \
             _mongocrypt_log(log,                                                                                       \

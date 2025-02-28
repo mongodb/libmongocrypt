@@ -82,7 +82,9 @@ current_module_result current_module_path(void) {
     // Darwin/BSD/glibc define extensions for finding dynamic library info from
     // the address of a symbol.
     Dl_info info = {0};
+    MC_BEGIN_CAST_FUNCTION_TYPE_STRICT_IGNORE
     int rc = dladdr((const void *)current_module_path, &info);
+    MC_END_CAST_FUNCTION_TYPE_STRICT_IGNORE
     if (rc == 0) {
         // Failed to resolve the symbol
         ret_error = ENOENT;
