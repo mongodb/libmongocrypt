@@ -302,10 +302,7 @@ bool mc_FLE2RangeFindDriverSpec_parse(mc_FLE2RangeFindDriverSpec_t *spec,
             spec->upper.included = op.op_type == FLE2RangeOperator_kLte;
             break;
         case FLE2RangeOperator_kNone:
-        default:
-            ERR_WITH_BSON(in, "unsupported operator type %s", op.op_type_str);
-            goto fail;
-            break;
+        default: ERR_WITH_BSON(in, "unsupported operator type %s", op.op_type_str); goto fail;
         }
 
         if (spec->field && 0 != strcmp(spec->field, op.field)) {

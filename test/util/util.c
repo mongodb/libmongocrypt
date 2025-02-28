@@ -732,7 +732,7 @@ bool _csfle_state_machine_run(_state_machine_t *state_machine, bson_t *result, b
                 goto fail;
             }
             break;
-        case MONGOCRYPT_CTX_DONE: goto success; break;
+        case MONGOCRYPT_CTX_DONE: goto success;
         }
     }
 
