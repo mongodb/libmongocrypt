@@ -41,12 +41,6 @@
     continue;                                                                                                          \
     }
 
-#define CHECK_HAS(Name)                                                                                                \
-    if (!has_##Name) {                                                                                                 \
-        CLIENT_ERR_PREFIXED("Missing field '" #Name "'");                                                              \
-        return false;                                                                                                  \
-    }
-
 #define ERROR_PREFIX "Error parsing RangeOpts"
 
 bool mc_RangeOpts_parse(mc_RangeOpts_t *ro, const bson_t *in, bool use_range_v2, mongocrypt_status_t *status) {

@@ -28,7 +28,6 @@
 #include <stdint.h>
 
 #define kMinServerEncryptedValueLen 17U // IV(16) + EncryptCTR(1byte)
-#define kMinSEVAndMetadataLen (kMinServerEncryptedValueLen + kMetadataLen)
 
 #define CHECK_AND_RETURN(x)                                                                                            \
     if (!(x)) {                                                                                                        \

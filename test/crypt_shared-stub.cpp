@@ -7,12 +7,6 @@
  * libmongocrypt.
  */
 
-#ifdef _WIN32
-#define EXPORT_API __declspec(dllexport)
-#else
-#define EXPORT_API __attribute__((visibility("default")))
-#endif
-
 #define MONGO_CRYPT_SUPPORT_COMPILING
 
 #include <mongo_crypt-v1.h>
@@ -21,14 +15,6 @@
 
 #include <cinttypes>
 #include <cstring>
-
-#ifdef _WIN32
-#define MONGO_API_CALL __cdecl
-#define MONGO_API_EXPORT __declspec(dllexport)
-#else
-#define MONGO_API_CALL [[]]
-#define MONGO_API_EXPORT __attribute__((used, visibility("default")))
-#endif
 
 struct mongo_crypt_v1_status {};
 

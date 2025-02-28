@@ -1,8 +1,5 @@
 #include "./path.h"
 
-#define CHECK(Expr)                                                                                                    \
-    ((Expr) ? 0 : ((fprintf(stderr, "%s:%d: Check '%s' failed\n", __FILE__, __LINE__, #Expr), abort()), 0))
-
 #define TEST_DECOMP(Part, Given, Expect)                                                                               \
     MSTR_ASSERT_EQ(mpath_##Part(mstrv_view_cstr(Given), MPATH_NATIVE), mstrv_view_cstr(Expect))
 
