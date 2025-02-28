@@ -301,7 +301,7 @@ bool mc_RangeOpts_appendMin(const mc_RangeOpts_t *ro,
             return false;
         }
     } else if (valueType == BSON_TYPE_DECIMAL128) {
-#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT()
         const bson_decimal128_t min = mc_dec128_to_bson_decimal128(MC_DEC128_LARGEST_NEGATIVE);
         if (!BSON_APPEND_DECIMAL128(out, fieldName, &min)) {
             CLIENT_ERR_PREFIXED("failed to append BSON");
@@ -356,7 +356,7 @@ bool mc_RangeOpts_appendMax(const mc_RangeOpts_t *ro,
             return false;
         }
     } else if (valueType == BSON_TYPE_DECIMAL128) {
-#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT()
         const bson_decimal128_t max = mc_dec128_to_bson_decimal128(MC_DEC128_LARGEST_POSITIVE);
         if (!BSON_APPEND_DECIMAL128(out, fieldName, &max)) {
             CLIENT_ERR_PREFIXED("failed to append BSON");
@@ -456,7 +456,7 @@ static bool mc_getNumberOfBits(const mc_RangeOpts_t *ro,
         *bitsOut = 64 - (uint32_t)mc_count_leading_zeros_u64(out.max);
         return true;
     }
-#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT()
     else if (valueType == BSON_TYPE_DECIMAL128) {
         mc_dec128 value = MC_DEC128_ZERO;
         mc_optional_dec128_t rmin = {false, MC_DEC128_ZERO}, rmax = {false, MC_DEC128_ZERO};

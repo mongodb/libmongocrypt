@@ -17,6 +17,7 @@
 #include "mongocrypt-buffer-private.h"
 #include "mongocrypt-private.h"
 
+#include "mc-dec128.h"
 #include "mc-fle-blob-subtype-private.h"
 #include "mc-fle2-payload-iev-private-v2.h"
 #include "mc-fle2-tag-and-encrypted-metadata-block-private.h"
@@ -721,7 +722,7 @@ static bool is_fle2_range_indexed_supported_type(int bson_type) {
     case BSON_TYPE_INT64:
     case BSON_TYPE_DATE_TIME:
     case BSON_TYPE_DOUBLE:
-#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT()
     case BSON_TYPE_DECIMAL128:
 #endif
         return true;

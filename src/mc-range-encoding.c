@@ -421,7 +421,7 @@ bool mc_getTypeInfoDouble(mc_getTypeInfoDouble_args_t args,
     return true;
 }
 
-#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT()
 /**
  * @brief There is no shipped algorithm for creating a full 128-bit integer from
  * a Decimal128, but it's easy enough to write one of our own.
