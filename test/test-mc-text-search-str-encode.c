@@ -360,21 +360,21 @@ static void test_nofold_substring_case_multiple_mlen(_mongocrypt_tester_t *teste
     test_nofold_substring_case(tester, str, lb, ub, byte_len + 64, casef, diacf, foldable_codepoints);
 }
 
-const char *normal_ascii_strings[] = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f",
-                                      "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v",
-                                      "w", "x", "y", "z", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L",
-                                      "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"};
-const char *ascii_diacritics[] = {"^", "`"};
-const char *normal_unicode_strings[] = {"ぁ", "あ", "ぃ", "い", "ぅ", "う", "ぇ", "え", "ぉ", "お", "か", "が",
-                                        "き", "ぎ", "く", "け", "Ѐ",  "Ё",  "Ђ",  "Ѓ",  "Є",  "Ѕ",  "І",  "Ї",
-                                        "Ј",  "Љ",  "Њ",  "Ћ",  "Ќ",  "Ѝ",  "Ў",  "Џ",  "𓀀",  "𓀁",  "𓀂",  "𓀃",
-                                        "𓀄",  "𓀅",  "𓀆",  "𓀇",  "𓀈",  "𓀉",  "𓀊",  "𓀋",  "𓀌",  "𓀍",  "𓀎",  "𓀏"};
-const char *unicode_diacritics[] = {"̀", "́", "̂", "̃", "̄", "̅",  "̆",  "̇",  "̈",  "̉",  "̊",  "̋",  "̌",  "̍", "̎",
-                                    "̏", "᷄", "᷅", "᷆", "᷇", "᷈",  "᷉",  "᷊",  "᷋",  "᷌",  "᷍",  "᷎",  "᷏",  "︠", "︡",
-                                    "︢", "︣", "︤", "︥", "︦", "︧", "︨", "︩", "︪", "︫", "︬", "︭", "︮", "︯"};
+static const char *normal_ascii_strings[] = {
+    "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k",
+    "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "A", "B", "C", "D", "E", "F",
+    "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"};
+static const char *ascii_diacritics[] = {"^", "`"};
+static const char *normal_unicode_strings[] = {"ぁ", "あ", "ぃ", "い", "ぅ", "う", "ぇ", "え", "ぉ", "お", "か", "が",
+                                               "き", "ぎ", "く", "け", "Ѐ",  "Ё",  "Ђ",  "Ѓ",  "Є",  "Ѕ",  "І",  "Ї",
+                                               "Ј",  "Љ",  "Њ",  "Ћ",  "Ќ",  "Ѝ",  "Ў",  "Џ",  "𓀀",  "𓀁",  "𓀂",  "𓀃",
+                                               "𓀄",  "𓀅",  "𓀆",  "𓀇",  "𓀈",  "𓀉",  "𓀊",  "𓀋",  "𓀌",  "𓀍",  "𓀎",  "𓀏"};
+static const char *unicode_diacritics[] = {"̀", "́", "̂", "̃", "̄", "̅",  "̆",  "̇",  "̈",  "̉",  "̊",  "̋",  "̌",  "̍", "̎",
+                                           "̏", "᷄", "᷅", "᷆", "᷇", "᷈",  "᷉",  "᷊",  "᷋",  "᷌",  "᷍",  "᷎",  "᷏",  "︠", "︡",
+                                           "︢", "︣", "︤", "︥", "︦", "︧", "︨", "︩", "︪", "︫", "︬", "︭", "︮", "︯"};
 
 // Build a random string which has unfolded_len codepoints, but folds to folded_len codepoints after diacritic folding.
-char *build_random_string_to_fold(uint32_t folded_len, uint32_t unfolded_len) {
+static char *build_random_string_to_fold(uint32_t folded_len, uint32_t unfolded_len) {
     // 1/3 to generate all unicode, 1/3 to be half and half, 1/3 to be all ascii.
     int ascii_ratio = rand() % 3;
     ASSERT_CMPUINT32(unfolded_len, >=, folded_len);
@@ -526,11 +526,11 @@ static void suffix_prefix_run_folding_case(_mongocrypt_tester_t *tester,
     test_nofold_suffix_prefix_case(tester, long_s, 32, 49, casef, diacf, foldable_codepoints);
 }
 
-const uint32_t UNFOLDED_CASES[] = {0, 1, 3, 16};
+static const uint32_t UNFOLDED_CASES[] = {0, 1, 3, 16};
 // Predefined lengths to test a variety of cases
-const uint32_t SHORT_LEN = 9;
-const uint32_t MEDIUM_LEN = 16;
-const uint32_t LONG_LEN = 27;
+static const uint32_t SHORT_LEN = 9;
+static const uint32_t MEDIUM_LEN = 16;
+static const uint32_t LONG_LEN = 27;
 
 static void _test_text_search_str_encode_suffix_prefix(_mongocrypt_tester_t *tester) {
     unsigned int seed = (unsigned int)time(0);

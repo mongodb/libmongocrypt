@@ -23,7 +23,7 @@
 
 #include "util.h"
 
-const char *help_text = ""
+static const char *help_text = ""
 #include "HELP.autogen"
     ;
 

@@ -18,7 +18,7 @@
 
 #include "test-mongocrypt.h"
 
-void _test_mongocrypt_endpoint(_mongocrypt_tester_t *tester) {
+static void _test_mongocrypt_endpoint(_mongocrypt_tester_t *tester) {
     _mongocrypt_endpoint_t *endpoint;
     mongocrypt_status_t *status;
     _mongocrypt_endpoint_parse_opts_t opts;

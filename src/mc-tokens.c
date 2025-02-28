@@ -168,7 +168,7 @@ IMPL_TOKEN_NEW_CONST(mc_ServerZerosEncryptionToken, mc_ServerDerivedFromDataToke
 
 // d = 17 bytes of 0, AnchorPaddingTokenRoot = HMAC(ESCToken, d)
 #define ANCHOR_PADDING_TOKEN_D_LENGTH 17
-const uint8_t mc_AnchorPaddingTokenDValue[ANCHOR_PADDING_TOKEN_D_LENGTH] =
+static const uint8_t mc_AnchorPaddingTokenDValue[ANCHOR_PADDING_TOKEN_D_LENGTH] =
     {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 DEF_TOKEN_TYPE(mc_AnchorPaddingTokenRoot, const mc_ESCToken_t *ESCToken) {

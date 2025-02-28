@@ -174,7 +174,7 @@ static inline bool DECORATE_NAME(MinCoverGenerator_isLevelStored)(DECORATE_NAME(
     return 0 == maskedBits || (level >= trimFactor_sz && 0 == (level % mcg->_sparsity));
 }
 
-char *
+static char *
 DECORATE_NAME(MinCoverGenerator_toString)(DECORATE_NAME(MinCoverGenerator) * mcg, UINT_T start, size_t maskedBits) {
     BSON_ASSERT_PARAM(mcg);
     BSON_ASSERT(maskedBits <= mcg->_maxlen);

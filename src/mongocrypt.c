@@ -549,13 +549,13 @@ typedef struct csfle_global_lib_state {
     mongo_crypt_v1_lib *csfle_lib;
 } csfle_global_lib_state;
 
-csfle_global_lib_state g_csfle_state;
+static csfle_global_lib_state g_csfle_state;
 
 static void init_csfle_state(void) {
     _mongocrypt_mutex_init(&g_csfle_state.mtx);
 }
 
-mlib_once_flag g_csfle_init_flag = MLIB_ONCE_INITIALIZER;
+static mlib_once_flag g_csfle_init_flag = MLIB_ONCE_INITIALIZER;
 
 /**
  * @brief Verify that `found` refers to the same library that is globally loaded

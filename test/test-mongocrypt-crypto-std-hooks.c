@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+#include "test-mongocrypt-crypto-std-hooks.h"
+
+//
+
 #include <mongocrypt-buffer-private.h>
 
 #include "test-mongocrypt.h"
