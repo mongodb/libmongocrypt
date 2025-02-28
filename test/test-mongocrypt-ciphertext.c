@@ -91,7 +91,7 @@ static void _test_malformed_ciphertext(_mongocrypt_tester_t *tester) {
     mongocrypt_status_destroy(status);
 }
 
-void _test_ciphertext_algorithm(_mongocrypt_tester_t *tester) {
+static void _test_ciphertext_algorithm(_mongocrypt_tester_t *tester) {
     mongocrypt_t *crypt;
     mongocrypt_ctx_t *ctx;
     mongocrypt_status_t *status;
@@ -184,7 +184,7 @@ void _test_ciphertext_algorithm(_mongocrypt_tester_t *tester) {
     mongocrypt_status_destroy(status);
 }
 
-void _test_ciphertext_serialize_associated_data(_mongocrypt_tester_t *tester) {
+static void _test_ciphertext_serialize_associated_data(_mongocrypt_tester_t *tester) {
     _mongocrypt_ciphertext_t ciphertext;
     _mongocrypt_buffer_t serialized;
     /* Expected associated data is:

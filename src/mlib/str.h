@@ -17,6 +17,12 @@
 #include <strings.h> /* For strncasecmp. */
 #endif
 
+// Deliberately using old-style casts for C and C++ compatibility.
+#if defined(__cplusplus) && defined(__clang__)
+_Pragma("clang diagnostic push");
+_Pragma("clang diagnostic ignored \"-Wold-style-cast\"");
+#endif
+
 MLIB_C_LINKAGE_BEGIN
 
 /**
@@ -905,5 +911,10 @@ static mlib_constexpr_fn size_t mlib_strnmcopy(char *dst, size_t dst_bufsize, co
 }
 
 MLIB_C_LINKAGE_END
+
+// Deliberately using old-style casts for C and C++ compatibility.
+#if defined(__cplusplus) && defined(__clang__)
+_Pragma("clang diagnostic pop");
+#endif
 
 #endif // MONGOCRYPT_STR_PRIVATE_H

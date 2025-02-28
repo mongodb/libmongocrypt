@@ -227,7 +227,7 @@ mc_edges_t *mc_getEdgesDouble(mc_getEdgesDouble_args_t args, mongocrypt_status_t
     return ret;
 }
 
-#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT()
 mc_edges_t *mc_getEdgesDecimal128(mc_getEdgesDecimal128_args_t args, mongocrypt_status_t *status, bool use_range_v2) {
     mc_OSTType_Decimal128 got;
     if (!mc_getTypeInfoDecimal128(

@@ -30,7 +30,7 @@ typedef struct {
 
 /* The JSON spec tests refer to key ids by a shorthand integer.
  * This function maps that integer to a UUID buffer. */
-void lookup_key_id(uint32_t index, _mongocrypt_buffer_t *buf) {
+static void lookup_key_id(uint32_t index, _mongocrypt_buffer_t *buf) {
     const char *key_ids[] = {"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
                              "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
                              "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"};
@@ -44,10 +44,8 @@ void lookup_key_id(uint32_t index, _mongocrypt_buffer_t *buf) {
 /* Generate a realistic key document given a @key_description, which contains an
  * _id
  * and possible keyAltNames. key_out and key_doc_out are NULLable outputs. */
-void gen_key(_mongocrypt_tester_t *tester,
-             bson_t *key_description,
-             bson_t *key_out,
-             _mongocrypt_key_doc_t *key_doc_out) {
+static void
+gen_key(_mongocrypt_tester_t *tester, bson_t *key_description, bson_t *key_out, _mongocrypt_key_doc_t *key_doc_out) {
     bson_iter_t iter;
     _mongocrypt_buffer_t key_material;
     _mongocrypt_buffer_t key_id;

@@ -81,7 +81,7 @@ static void _run_one_test(_mongocrypt_tester_t *tester, bson_t *test) {
     mongocrypt_status_destroy(status);
 }
 
-void test_mongocrypt_kek_parsing(_mongocrypt_tester_t *tester) {
+static void test_mongocrypt_kek_parsing(_mongocrypt_tester_t *tester) {
     bson_t test_file;
     bson_iter_t iter;
 

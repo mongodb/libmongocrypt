@@ -38,12 +38,6 @@
     continue;                                                                                                          \
     }
 
-#define CHECK_HAS(Name)                                                                                                \
-    if (!has_##Name) {                                                                                                 \
-        CLIENT_ERR(ERROR_PREFIX "Missing field '" #Name "'");                                                          \
-        return false;                                                                                                  \
-    }
-
 #define ERROR_PREFIX "Error parsing RangeOpts"
 
 bool mc_RangeOpts_parse(mc_RangeOpts_t *ro, const bson_t *in, bool use_range_v2, mongocrypt_status_t *status) {
@@ -299,7 +293,7 @@ bool mc_RangeOpts_appendMin(const mc_RangeOpts_t *ro,
             return false;
         }
     } else if (valueType == BSON_TYPE_DECIMAL128) {
-#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT()
         const bson_decimal128_t min = mc_dec128_to_bson_decimal128(MC_DEC128_LARGEST_NEGATIVE);
         if (!BSON_APPEND_DECIMAL128(out, fieldName, &min)) {
             CLIENT_ERR(ERROR_PREFIX "failed to append BSON");
@@ -354,7 +348,7 @@ bool mc_RangeOpts_appendMax(const mc_RangeOpts_t *ro,
             return false;
         }
     } else if (valueType == BSON_TYPE_DECIMAL128) {
-#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT()
         const bson_decimal128_t max = mc_dec128_to_bson_decimal128(MC_DEC128_LARGEST_POSITIVE);
         if (!BSON_APPEND_DECIMAL128(out, fieldName, &max)) {
             CLIENT_ERR(ERROR_PREFIX "failed to append BSON");
@@ -377,11 +371,11 @@ bool mc_RangeOpts_appendMax(const mc_RangeOpts_t *ro,
 
 // Used to calculate max trim factor. Returns the number of bits required to represent any number in
 // the domain.
-bool mc_getNumberOfBits(const mc_RangeOpts_t *ro,
-                        bson_type_t valueType,
-                        uint32_t *bitsOut,
-                        mongocrypt_status_t *status,
-                        bool use_range_v2) {
+static bool mc_getNumberOfBits(const mc_RangeOpts_t *ro,
+                               bson_type_t valueType,
+                               uint32_t *bitsOut,
+                               mongocrypt_status_t *status,
+                               bool use_range_v2) {
     BSON_ASSERT_PARAM(ro);
     BSON_ASSERT_PARAM(bitsOut);
 
@@ -454,7 +448,7 @@ bool mc_getNumberOfBits(const mc_RangeOpts_t *ro,
         *bitsOut = 64 - (uint32_t)mc_count_leading_zeros_u64(out.max);
         return true;
     }
-#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT()
     else if (valueType == BSON_TYPE_DECIMAL128) {
         mc_dec128 value = MC_DEC128_ZERO;
         mc_optional_dec128_t rmin = {false, MC_DEC128_ZERO}, rmax = {false, MC_DEC128_ZERO};

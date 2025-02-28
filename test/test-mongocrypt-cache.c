@@ -18,7 +18,7 @@
 #include "mongocrypt-crypto-private.h"
 #include "test-mongocrypt.h"
 
-void _test_cache(_mongocrypt_tester_t *tester) {
+static void _test_cache(_mongocrypt_tester_t *tester) {
     _mongocrypt_cache_t cache;
     mongocrypt_status_t *status;
     bson_t *entry = BCON_NEW("a", "b"), *entry2 = BCON_NEW("c", "d");
