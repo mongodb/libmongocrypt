@@ -283,7 +283,7 @@ typedef struct {
     const char *expect;
 } hmac_sha_256_test_t;
 
-void _test_native_crypto_hmac_sha_256(_mongocrypt_tester_t *tester) {
+static void _test_native_crypto_hmac_sha_256(_mongocrypt_tester_t *tester) {
     /* Test data generated with OpenSSL CLI:
     $ echo -n "test" | openssl dgst -mac hmac -macopt \
     hexkey:6bb2664e8d444377d3cd9566c005593b7ed8a35ab8eac9eb5ffa6e426854e5cc \

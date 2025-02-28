@@ -8,14 +8,20 @@
 
 static std::string global_str;
 
-extern "C"
-#if _MSC_VER
-    __declspec(dllexport)
+#if defined(_MSC_VER)
+#define SAY_HELLO_EXPORT __declspec(dllexport)
 #else
-__attribute__ ((visibility ("default")))
+#define SAY_HELLO_EXPORT __attribute__((visibility("default")))
 #endif
-        int say_hello() {
+
+extern "C" {
+
+SAY_HELLO_EXPORT int say_hello(); // -Wmissing-prototypes: for testing only.
+
+int say_hello() {
     global_str = "Hello, DLL!";
     std::cout << global_str << "\n";
     return 42;
 }
+
+} // extern "C"

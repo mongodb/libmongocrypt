@@ -123,7 +123,7 @@ static void _test_decrypt_ready(_mongocrypt_tester_t *tester) {
 }
 
 /* Test with empty AWS credentials. */
-void _test_decrypt_empty_aws(_mongocrypt_tester_t *tester) {
+static void _test_decrypt_empty_aws(_mongocrypt_tester_t *tester) {
     mongocrypt_t *crypt;
     mongocrypt_ctx_t *ctx;
 

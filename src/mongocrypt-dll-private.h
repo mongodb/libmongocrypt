@@ -6,9 +6,9 @@
 
 #include <stdlib.h>
 
-#if _WIN32
+#if defined(_WIN32)
 #define MCR_DLL_SUFFIX ".dll"
-#elif __APPLE__
+#elif defined(__APPLE__)
 #define MCR_DLL_SUFFIX ".dylib"
 #else
 #define MCR_DLL_SUFFIX ".so"

@@ -117,11 +117,11 @@ static bool _mock_aes_256_xxx_decrypt(void *ctx,
     return true;
 }
 
-bool _hmac_sha_512(void *ctx,
-                   mongocrypt_binary_t *key,
-                   mongocrypt_binary_t *in,
-                   mongocrypt_binary_t *out,
-                   mongocrypt_status_t *status) {
+static bool _hmac_sha_512(void *ctx,
+                          mongocrypt_binary_t *key,
+                          mongocrypt_binary_t *in,
+                          mongocrypt_binary_t *out,
+                          mongocrypt_status_t *status) {
     _mongocrypt_buffer_t tmp;
 
     BSON_ASSERT(0 == strncmp("error_on:", (char *)ctx, strlen("error_on:")));
@@ -141,11 +141,11 @@ bool _hmac_sha_512(void *ctx,
     return true;
 }
 
-bool _hmac_sha_256(void *ctx,
-                   mongocrypt_binary_t *key,
-                   mongocrypt_binary_t *in,
-                   mongocrypt_binary_t *out,
-                   mongocrypt_status_t *status) {
+static bool _hmac_sha_256(void *ctx,
+                          mongocrypt_binary_t *key,
+                          mongocrypt_binary_t *in,
+                          mongocrypt_binary_t *out,
+                          mongocrypt_status_t *status) {
     _mongocrypt_buffer_t tmp;
 
     BSON_ASSERT(0 == strncmp("error_on:", (char *)ctx, strlen("error_on:")));
@@ -165,7 +165,7 @@ bool _hmac_sha_256(void *ctx,
     return true;
 }
 
-bool _sha_256(void *ctx, mongocrypt_binary_t *in, mongocrypt_binary_t *out, mongocrypt_status_t *status) {
+static bool _sha_256(void *ctx, mongocrypt_binary_t *in, mongocrypt_binary_t *out, mongocrypt_status_t *status) {
     _mongocrypt_buffer_t tmp;
 
     BSON_ASSERT(0 == strncmp("error_on:", (char *)ctx, strlen("error_on:")));
@@ -184,7 +184,7 @@ bool _sha_256(void *ctx, mongocrypt_binary_t *in, mongocrypt_binary_t *out, mong
     return true;
 }
 
-bool _random(void *ctx, mongocrypt_binary_t *out, uint32_t count, mongocrypt_status_t *status) {
+static bool _random(void *ctx, mongocrypt_binary_t *out, uint32_t count, mongocrypt_status_t *status) {
     /* only have 32 bytes of random test data. */
     BSON_ASSERT(count <= 96);
 
@@ -204,11 +204,11 @@ bool _random(void *ctx, mongocrypt_binary_t *out, uint32_t count, mongocrypt_sta
     return true;
 }
 
-bool _sign_rsaes_pkcs1_v1_5(void *ctx,
-                            mongocrypt_binary_t *key,
-                            mongocrypt_binary_t *in,
-                            mongocrypt_binary_t *out,
-                            mongocrypt_status_t *status) {
+static bool _sign_rsaes_pkcs1_v1_5(void *ctx,
+                                   mongocrypt_binary_t *key,
+                                   mongocrypt_binary_t *in,
+                                   mongocrypt_binary_t *out,
+                                   mongocrypt_status_t *status) {
     _mongocrypt_buffer_t tmp;
 
     BSON_ASSERT(0 == strncmp("error_on:", (char *)ctx, strlen("error_on:")));
@@ -696,7 +696,7 @@ static bool _aes_256_ecb_encrypt(void *ctx,
     return _native_crypto_aes_256_ecb_encrypt(args);
 }
 
-void _test_fle2_crypto_via_ecb_hook(_mongocrypt_tester_t *tester) {
+static void _test_fle2_crypto_via_ecb_hook(_mongocrypt_tester_t *tester) {
     const _mongocrypt_value_encryption_algorithm_t *fle2alg = _mcFLE2Algorithm();
     bool ret;
     _mongocrypt_buffer_t key;
