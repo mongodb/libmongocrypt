@@ -2239,10 +2239,16 @@ static bool needs_ismaster_check(mongocrypt_ctx_t *ctx) {
 
 // `find_collections_in_pipeline` finds other collection names in an aggregate pipeline that may need schemas.
 static bool find_collections_in_pipeline(mc_schema_broker_t *sb,
-                                         bson_iter_t pipeline_iter,
+                                         bson_iter_t *pipeline_iter_ptr,
                                          const char *db,
                                          mstr_view path,
                                          mongocrypt_status_t *status) {
+    BSON_ASSERT_PARAM(sb);
+    BSON_ASSERT_PARAM(pipeline_iter_ptr);
+    BSON_ASSERT_PARAM(db);
+
+    bson_iter_t pipeline_iter = *pipeline_iter_ptr; // Operate on a copy.
+
     bson_iter_t array_iter;
     if (!BSON_ITER_HOLDS_ARRAY(&pipeline_iter) || !bson_iter_recurse(&pipeline_iter, &array_iter)) {
         CLIENT_ERR("failed to recurse pipeline at path: %s", path.data);
@@ -2288,7 +2294,7 @@ static bool find_collections_in_pipeline(mc_schema_broker_t *sb,
                     mstr subpath = mstr_append(path, mstrv_lit("."));
                     mstr_inplace_append(&subpath, mstrv_view_cstr(stage_key));
                     mstr_inplace_append(&subpath, mstrv_lit(".$lookup.pipeline"));
-                    if (!find_collections_in_pipeline(sb, lookup_iter, db, subpath.view, status)) {
+                    if (!find_collections_in_pipeline(sb, &lookup_iter, db, subpath.view, status)) {
                         mstr_free(subpath);
                         return false;
                     }
@@ -2311,7 +2317,7 @@ static bool find_collections_in_pipeline(mc_schema_broker_t *sb,
                 mstr_inplace_append(&subpath, mstrv_view_cstr(stage_key));
                 mstr_inplace_append(&subpath, mstrv_lit(".$facet."));
                 mstr_inplace_append(&subpath, mstrv_view_cstr(field));
-                if (!find_collections_in_pipeline(sb, facet_iter, db, subpath.view, status)) {
+                if (!find_collections_in_pipeline(sb, &facet_iter, db, subpath.view, status)) {
                     mstr_free(subpath);
                     return false;
                 }
@@ -2347,7 +2353,7 @@ static bool find_collections_in_pipeline(mc_schema_broker_t *sb,
                     mstr subpath = mstr_append(path, mstrv_lit("."));
                     mstr_inplace_append(&subpath, mstrv_view_cstr(stage_key));
                     mstr_inplace_append(&subpath, mstrv_lit(".$unionWith.pipeline"));
-                    if (!find_collections_in_pipeline(sb, unionWith_iter, db, subpath.view, status)) {
+                    if (!find_collections_in_pipeline(sb, &unionWith_iter, db, subpath.view, status)) {
                         mstr_free(subpath);
                         return false;
                     }
@@ -2374,7 +2380,7 @@ find_collections_in_agg(mongocrypt_binary_t *cmd, mc_schema_broker_t *sb, const 
         return true;
     }
 
-    return find_collections_in_pipeline(sb, iter, db, mstrv_lit("aggregate.pipeline"), status);
+    return find_collections_in_pipeline(sb, &iter, db, mstrv_lit("aggregate.pipeline"), status);
 }
 
 bool mongocrypt_ctx_encrypt_init(mongocrypt_ctx_t *ctx, const char *db, int32_t db_len, mongocrypt_binary_t *cmd) {
