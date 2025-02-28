@@ -867,8 +867,7 @@ get_edges(mc_FLE2RangeInsertSpec_t *insertSpec, size_t sparsity, mongocrypt_stat
                                                           .max = OPT_I32(bson_iter_int32(&insertSpec->max)),
                                                           .sparsity = sparsity,
                                                           .trimFactor = insertSpec->trimFactor},
-                                status,
-                                use_range_v2);
+                                status);
     }
 
     else if (value_type == BSON_TYPE_INT64) {
@@ -877,8 +876,7 @@ get_edges(mc_FLE2RangeInsertSpec_t *insertSpec, size_t sparsity, mongocrypt_stat
                                                           .max = OPT_I64(bson_iter_int64(&insertSpec->max)),
                                                           .sparsity = sparsity,
                                                           .trimFactor = insertSpec->trimFactor},
-                                status,
-                                use_range_v2);
+                                status);
     }
 
     else if (value_type == BSON_TYPE_DATE_TIME) {
@@ -887,8 +885,7 @@ get_edges(mc_FLE2RangeInsertSpec_t *insertSpec, size_t sparsity, mongocrypt_stat
                                                           .max = OPT_I64(bson_iter_date_time(&insertSpec->max)),
                                                           .sparsity = sparsity,
                                                           .trimFactor = insertSpec->trimFactor},
-                                status,
-                                use_range_v2);
+                                status);
     }
 
     else if (value_type == BSON_TYPE_DOUBLE) {
@@ -904,7 +901,7 @@ get_edges(mc_FLE2RangeInsertSpec_t *insertSpec, size_t sparsity, mongocrypt_stat
             args.precision = insertSpec->precision;
         }
 
-        return mc_getEdgesDouble(args, status, use_range_v2);
+        return mc_getEdgesDouble(args, status);
     }
 
     else if (value_type == BSON_TYPE_DECIMAL128) {
@@ -922,7 +919,7 @@ get_edges(mc_FLE2RangeInsertSpec_t *insertSpec, size_t sparsity, mongocrypt_stat
             args.max = OPT_MC_DEC128(max);
             args.precision = insertSpec->precision;
         }
-        return mc_getEdgesDecimal128(args, status, use_range_v2);
+        return mc_getEdgesDecimal128(args, status);
 #else // ↑↑↑↑↑↑↑↑ With Decimal128 / Without ↓↓↓↓↓↓↓↓↓↓
         CLIENT_ERR("unsupported BSON type (Decimal128) for range: libmongocrypt "
                    "was built without extended Decimal128 support");
