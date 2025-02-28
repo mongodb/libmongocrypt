@@ -189,7 +189,7 @@ void mc_FLE2EncryptionPlaceholder_cleanup(mc_FLE2EncryptionPlaceholder_t *placeh
 }
 
 #undef ERROR_PREFIX
-#define ERROR_PREFIX "Error validating contention"
+#define ERROR_PREFIX "Error validating contention: "
 
 bool mc_validate_contention(int64_t contention, mongocrypt_status_t *status) {
     if (contention < 0) {
@@ -204,7 +204,7 @@ bool mc_validate_contention(int64_t contention, mongocrypt_status_t *status) {
 }
 
 #undef ERROR_PREFIX
-#define ERROR_PREFIX "Error validating sparsity"
+#define ERROR_PREFIX "Error validating sparsity: "
 
 bool mc_validate_sparsity(int64_t sparsity, mongocrypt_status_t *status) {
     if (sparsity < 0) {
@@ -220,7 +220,7 @@ bool mc_validate_sparsity(int64_t sparsity, mongocrypt_status_t *status) {
 }
 
 #undef ERROR_PREFIX
-#define ERROR_PREFIX "Error parsing FLE2RangeFindSpecEdgesInfo"
+#define ERROR_PREFIX "Error parsing FLE2RangeFindSpecEdgesInfo: "
 
 static bool mc_FLE2RangeFindSpecEdgesInfo_parse(mc_FLE2RangeFindSpecEdgesInfo_t *out,
                                                 const bson_iter_t *in,
@@ -335,7 +335,7 @@ fail:
 }
 
 #undef ERROR_PREFIX
-#define ERROR_PREFIX "Error parsing FLE2RangeFindSpec"
+#define ERROR_PREFIX "Error parsing FLE2RangeFindSpec: "
 
 bool mc_FLE2RangeFindSpec_parse(mc_FLE2RangeFindSpec_t *out,
                                 const bson_iter_t *in,
@@ -420,7 +420,7 @@ fail:
 }
 
 #undef ERROR_PREFIX
-#define ERROR_PREFIX "Error parsing FLE2RangeInsertSpec"
+#define ERROR_PREFIX "Error parsing FLE2RangeInsertSpec: "
 
 bool mc_FLE2RangeInsertSpec_parse(mc_FLE2RangeInsertSpec_t *out,
                                   const bson_iter_t *in,
@@ -507,7 +507,7 @@ fail:
 
 #undef ERROR_PREFIX
 
-#define ERROR_PREFIX "Error parsing FLE2SubstringInsertSpec"
+#define ERROR_PREFIX "Error parsing FLE2SubstringInsertSpec: "
 
 static bool mc_FLE2SubstringInsertSpec_parse(mc_FLE2SubstringInsertSpec_t *out,
                                              const bson_iter_t *in,
@@ -549,7 +549,7 @@ fail:
 
 #undef ERROR_PREFIX
 
-#define ERROR_PREFIX "Error parsing FLE2SuffixInsertSpec"
+#define ERROR_PREFIX "Error parsing FLE2SuffixInsertSpec: "
 
 static bool
 mc_FLE2SuffixInsertSpec_parse(mc_FLE2SuffixInsertSpec_t *out, const bson_iter_t *in, mongocrypt_status_t *status) {
@@ -585,7 +585,7 @@ fail:
 
 #undef ERROR_PREFIX
 
-#define ERROR_PREFIX "Error parsing FLE2PrefixInsertSpec"
+#define ERROR_PREFIX "Error parsing FLE2PrefixInsertSpec: "
 
 static bool
 mc_FLE2PrefixInsertSpec_parse(mc_FLE2PrefixInsertSpec_t *out, const bson_iter_t *in, mongocrypt_status_t *status) {
@@ -620,7 +620,7 @@ fail:
 
 #undef ERROR_PREFIX
 
-#define ERROR_PREFIX "Error parsing FLE2TextSearchInsertSpec"
+#define ERROR_PREFIX "Error parsing FLE2TextSearchInsertSpec: "
 
 bool mc_FLE2TextSearchInsertSpec_parse(mc_FLE2TextSearchInsertSpec_t *out,
                                        const bson_iter_t *in,
