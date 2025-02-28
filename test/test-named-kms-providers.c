@@ -387,7 +387,7 @@ static void test_create_datakey_with_named_kms_provider(_mongocrypt_tester_t *te
     {
         mongocrypt_t *crypt = mongocrypt_new();
         mongocrypt_binary_t *kms_providers =
-            TEST_BSON(BSON_STR({"local" : {}, "local:name1" : {"key" : "%s"}}), LOCAL_KEK1_BASE64, LOCAL_KEK2_BASE64);
+            TEST_BSON(BSON_STR({"local" : {}, "local:name1" : {"key" : "%s"}}), LOCAL_KEK1_BASE64);
         ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, kms_providers), crypt);
         mongocrypt_setopt_use_need_kms_credentials_state(crypt);
         ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
@@ -425,7 +425,7 @@ static void test_create_datakey_with_named_kms_provider(_mongocrypt_tester_t *te
         bson_t out_bson;
         ASSERT(_mongocrypt_binary_to_bson(out, &out_bson));
         char *pattern = BSON_STR({"masterKey" : {"provider" : "local:name1"}});
-        _assert_match_bson(&out_bson, TMP_BSON(pattern));
+        _assert_match_bson(&out_bson, TMP_BSON_STR(pattern));
         bson_destroy(&out_bson);
         mongocrypt_binary_destroy(out);
         mongocrypt_ctx_destroy(ctx);
@@ -491,7 +491,7 @@ static void test_create_datakey_with_named_kms_provider(_mongocrypt_tester_t *te
         bson_t out_bson;
         ASSERT(_mongocrypt_binary_to_bson(out, &out_bson));
         char *pattern = BSON_STR({"masterKey" : {"provider" : "azure:name1"}});
-        _assert_match_bson(&out_bson, TMP_BSON(pattern));
+        _assert_match_bson(&out_bson, TMP_BSON_STR(pattern));
         bson_destroy(&out_bson);
         mongocrypt_binary_destroy(out);
         mongocrypt_ctx_destroy(ctx);
@@ -536,7 +536,7 @@ static void test_create_datakey_with_named_kms_provider(_mongocrypt_tester_t *te
         bson_t out_bson;
         ASSERT(_mongocrypt_binary_to_bson(out, &out_bson));
         char *pattern = BSON_STR({"masterKey" : {"provider" : "azure:name1"}});
-        _assert_match_bson(&out_bson, TMP_BSON(pattern));
+        _assert_match_bson(&out_bson, TMP_BSON_STR(pattern));
         bson_destroy(&out_bson);
         mongocrypt_binary_destroy(out);
         mongocrypt_ctx_destroy(ctx);
@@ -611,7 +611,7 @@ static void test_create_datakey_with_named_kms_provider(_mongocrypt_tester_t *te
             bson_t out_bson;
             ASSERT(_mongocrypt_binary_to_bson(out, &out_bson));
             char *pattern = BSON_STR({"masterKey" : {"provider" : "azure:name1"}});
-            _assert_match_bson(&out_bson, TMP_BSON(pattern));
+            _assert_match_bson(&out_bson, TMP_BSON_STR(pattern));
             bson_destroy(&out_bson);
             mongocrypt_binary_destroy(out);
             mongocrypt_ctx_destroy(ctx);
@@ -664,7 +664,7 @@ static void test_create_datakey_with_named_kms_provider(_mongocrypt_tester_t *te
             bson_t out_bson;
             ASSERT(_mongocrypt_binary_to_bson(out, &out_bson));
             char *pattern = BSON_STR({"masterKey" : {"provider" : "azure:name2"}});
-            _assert_match_bson(&out_bson, TMP_BSON(pattern));
+            _assert_match_bson(&out_bson, TMP_BSON_STR(pattern));
             bson_destroy(&out_bson);
             mongocrypt_binary_destroy(out);
             mongocrypt_ctx_destroy(ctx);
@@ -717,7 +717,7 @@ static void test_create_datakey_with_named_kms_provider(_mongocrypt_tester_t *te
         bson_t out_bson;
         ASSERT(_mongocrypt_binary_to_bson(out, &out_bson));
         char *pattern = BSON_STR({"masterKey" : {"provider" : "kmip:name1"}});
-        _assert_match_bson(&out_bson, TMP_BSON(pattern));
+        _assert_match_bson(&out_bson, TMP_BSON_STR(pattern));
         bson_destroy(&out_bson);
         mongocrypt_binary_destroy(out);
         mongocrypt_ctx_destroy(ctx);
@@ -810,7 +810,7 @@ static void test_create_datakey_with_named_kms_provider(_mongocrypt_tester_t *te
         bson_t out_bson;
         ASSERT(_mongocrypt_binary_to_bson(out, &out_bson));
         char *pattern = BSON_STR({"masterKey" : {"provider" : "kmip:name1"}});
-        _assert_match_bson(&out_bson, TMP_BSON(pattern));
+        _assert_match_bson(&out_bson, TMP_BSON_STR(pattern));
         bson_destroy(&out_bson);
         mongocrypt_binary_destroy(out);
         mongocrypt_ctx_destroy(ctx);
@@ -2119,7 +2119,7 @@ static void test_rewrap_with_named_kms_provider_local2local(_mongocrypt_tester_t
             bson_t bin_bson;
             ASSERT(_mongocrypt_binary_to_bson(bin, &bin_bson));
             char *pattern = BSON_STR({"v" : [ {"masterKey" : {"provider" : "local:name2"}} ]});
-            _assert_match_bson(&bin_bson, TMP_BSON(pattern));
+            _assert_match_bson(&bin_bson, TMP_BSON_STR(pattern));
         }
         mongocrypt_binary_destroy(bin);
         mongocrypt_ctx_destroy(ctx);
@@ -2242,7 +2242,7 @@ static void test_rewrap_with_named_kms_provider_azure2azure(_mongocrypt_tester_t
             bson_t bin_bson;
             ASSERT(_mongocrypt_binary_to_bson(bin, &bin_bson));
             char *pattern = BSON_STR({"v" : [ {"masterKey" : {"provider" : "azure:name2"}} ]});
-            _assert_match_bson(&bin_bson, TMP_BSON(pattern));
+            _assert_match_bson(&bin_bson, TMP_BSON_STR(pattern));
         }
         mongocrypt_binary_destroy(bin);
         mongocrypt_ctx_destroy(ctx);
@@ -2330,7 +2330,7 @@ static void test_rewrap_with_named_kms_provider_azure2local(_mongocrypt_tester_t
             bson_t bin_bson;
             ASSERT(_mongocrypt_binary_to_bson(bin, &bin_bson));
             char *pattern = BSON_STR({"v" : [ {"masterKey" : {"provider" : "local:name1"}} ]});
-            _assert_match_bson(&bin_bson, TMP_BSON(pattern));
+            _assert_match_bson(&bin_bson, TMP_BSON_STR(pattern));
         }
         mongocrypt_binary_destroy(bin);
         mongocrypt_ctx_destroy(ctx);

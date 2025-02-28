@@ -1240,7 +1240,7 @@ main (int argc, char *argv[])
 
    int ret = kms_message_init ();
    if (ret != 0) {
-      TEST_PRINTF ("kms_message_init failed: 0x%x\n", ret);
+      TEST_PRINTF ("kms_message_init failed: 0x%d\n", ret);
       abort ();
    }
 

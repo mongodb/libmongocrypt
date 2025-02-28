@@ -206,29 +206,34 @@ bson_t *_mongocrypt_tester_file_as_bson(_mongocrypt_tester_t *tester, const char
     return bson;
 }
 
-bson_t *_mongocrypt_tester_bson_from_json(_mongocrypt_tester_t *tester, const char *json, ...) {
-    va_list ap;
-    char *full_json;
-    bson_t *bson;
-    bson_error_t error;
-    char *c;
+bson_t *_mongocrypt_tester_bson_from_str(_mongocrypt_tester_t *tester, const char *json) {
+    char *const full_json = bson_strdup(json);
 
-    va_start(ap, json);
-    full_json = bson_strdupv_printf(json, ap);
     /* Replace ' with " */
-    for (c = full_json; *c; c++) {
+    for (char *c = full_json; *c; c++) {
         if (*c == '\'') {
             *c = '"';
         }
     }
 
-    va_end(ap);
-    bson = &tester->test_bson[tester->bson_count];
+    bson_error_t error;
+    bson_t *const bson = &tester->test_bson[tester->bson_count];
     TEST_DATA_COUNT_INC(tester->bson_count);
-    if (!bson_init_from_json(bson, full_json, strlen(full_json), &error)) {
+    if (!bson_init_from_json(bson, full_json, -1, &error)) {
         TEST_STDERR_PRINTF("%s", error.message);
         abort();
     }
+    bson_free(full_json);
+    return bson;
+}
+
+bson_t *_mongocrypt_tester_bson_from_json(_mongocrypt_tester_t *tester, const char *json, ...) {
+    va_list ap;
+    va_start(ap, json);
+    char *const full_json = bson_strdupv_printf(json, ap);
+    va_end(ap);
+
+    bson_t *const bson = _mongocrypt_tester_bson_from_str(tester, full_json);
     bson_free(full_json);
     return bson;
 }
@@ -283,41 +288,30 @@ bson_t *tmp_bsonf(_mongocrypt_tester_t *tester, const char *fmt, ...) {
 #undef ENSURE_CAPACITY
 
     dst[dst_len] = '\0';
-    bson_t *tmp = TMP_BSON(dst);
+    bson_t *tmp = TMP_BSON_STR(dst);
     va_end(arg);
     bson_free(dst);
     return tmp;
 }
 
-mongocrypt_binary_t *_mongocrypt_tester_bin_from_json(_mongocrypt_tester_t *tester, const char *json, ...) {
-    va_list ap;
-    char *full_json;
-    bson_t *bson;
-    mongocrypt_binary_t *bin;
-    bson_error_t error;
-    char *c;
-
-    va_start(ap, json);
-    full_json = bson_strdupv_printf(json, ap);
-    /* Replace ' with " */
-    for (c = full_json; *c; c++) {
-        if (*c == '\'') {
-            *c = '"';
-        }
-    }
-
-    va_end(ap);
-    bson = &tester->test_bson[tester->bson_count];
-    TEST_DATA_COUNT_INC(tester->bson_count);
-    if (!bson_init_from_json(bson, full_json, strlen(full_json), &error)) {
-        TEST_STDERR_PRINTF("failed to parse JSON %s: %s", error.message, json);
-        abort();
-    }
-    bin = mongocrypt_binary_new();
+mongocrypt_binary_t *_mongocrypt_tester_bin_from_str(_mongocrypt_tester_t *tester, const char *json) {
+    mongocrypt_binary_t *const bin = mongocrypt_binary_new();
     tester->test_bin[tester->bin_count] = bin;
     TEST_DATA_COUNT_INC(tester->bin_count);
+
+    bson_t *const bson = _mongocrypt_tester_bson_from_str(tester, json);
     bin->data = (uint8_t *)bson_get_data(bson);
     bin->len = bson->len;
+    return bin;
+}
+
+mongocrypt_binary_t *_mongocrypt_tester_bin_from_json(_mongocrypt_tester_t *tester, const char *json, ...) {
+    va_list ap;
+    va_start(ap, json);
+    char *const full_json = bson_strdupv_printf(json, ap);
+    va_end(ap);
+
+    mongocrypt_binary_t *const bin = _mongocrypt_tester_bin_from_str(tester, full_json);
     bson_free(full_json);
     return bin;
 }
@@ -876,14 +870,14 @@ static void _test_setopt_kms_providers(_mongocrypt_tester_t *tester) {
             mongocrypt_setopt_use_need_kms_credentials_state(crypt);
         }
         if (!test->errmsg) {
-            ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, TEST_BSON(test->value)), crypt);
+            ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, TEST_BSON_STR(test->value)), crypt);
             if (!test->errmsg_init) {
                 ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
             } else {
                 ASSERT_FAILS(_mongocrypt_init_for_test(crypt), crypt, test->errmsg_init);
             }
         } else {
-            ASSERT_FAILS(mongocrypt_setopt_kms_providers(crypt, TEST_BSON(test->value)), crypt, test->errmsg);
+            ASSERT_FAILS(mongocrypt_setopt_kms_providers(crypt, TEST_BSON_STR(test->value)), crypt, test->errmsg);
         }
         mongocrypt_destroy(crypt);
     }

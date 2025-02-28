@@ -1062,7 +1062,7 @@ static bool _fle2_fixup_encryptedFields_strEncodeVersion(const char *cmd_name,
         } else {
             // Check strEncodeVersion for match against EFC
             if (!BSON_ITER_HOLDS_INT32(&sev_iter)) {
-                CLIENT_ERR("expected 'strEncodeVersion' to be type int32, got: %d", bson_iter_type(&sev_iter));
+                CLIENT_ERR("expected 'strEncodeVersion' to be type int32, got: %d", (int)bson_iter_type(&sev_iter));
                 return false;
             }
             int32_t version = bson_iter_int32(&sev_iter);
@@ -1902,7 +1902,7 @@ static bool explicit_encrypt_init(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *ms
             matches = (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_EQUALITY);
             break;
         default:
-            CLIENT_ERR("unsupported value for query_type: %d", ctx->opts.query_type.value);
+            CLIENT_ERR("unsupported value for query_type: %d", (int)ctx->opts.query_type.value);
             return _mongocrypt_ctx_fail(ctx);
         }
 

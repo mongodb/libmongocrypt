@@ -228,6 +228,11 @@ void _mongocrypt_tester_install_mc_schema_broker(_mongocrypt_tester_t *tester);
 /* Conveniences for getting test data. */
 
 /* Get a temporary bson_t from a JSON string. Do not free it. */
+bson_t *_mongocrypt_tester_bson_from_str(_mongocrypt_tester_t *tester, const char *json);
+#define TMP_BSON_STR(...) _mongocrypt_tester_bson_from_str(tester, __VA_ARGS__)
+
+/* Get a temporary bson_t from a formattable JSON string. Do not free it. */
+MLIB_ANNOTATE_PRINTF(2, 3)
 bson_t *_mongocrypt_tester_bson_from_json(_mongocrypt_tester_t *tester, const char *json, ...);
 #define TMP_BSON(...) _mongocrypt_tester_bson_from_json(tester, __VA_ARGS__)
 
@@ -246,6 +251,11 @@ bson_t *_mongocrypt_tester_file_as_bson(_mongocrypt_tester_t *tester, const char
 #define TEST_FILE_AS_BSON(path) _mongocrypt_tester_file_as_bson(tester, path)
 
 /* Get a temporary binary from a JSON string. Do not free it. */
+mongocrypt_binary_t *_mongocrypt_tester_bin_from_str(_mongocrypt_tester_t *tester, const char *json);
+#define TEST_BSON_STR(...) _mongocrypt_tester_bin_from_str(tester, __VA_ARGS__)
+
+/* Get a temporary binary from a formattable JSON string. Do not free it. */
+MLIB_ANNOTATE_PRINTF(2, 3)
 mongocrypt_binary_t *_mongocrypt_tester_bin_from_json(_mongocrypt_tester_t *tester, const char *json, ...);
 #define TEST_BSON(...) _mongocrypt_tester_bin_from_json(tester, __VA_ARGS__)
 

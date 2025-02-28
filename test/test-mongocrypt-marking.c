@@ -950,7 +950,7 @@ static void get_ciphertext_from_marking_json(_mongocrypt_tester_t *tester,
                                              const char *markingJSON,
                                              _mongocrypt_ciphertext_t *out) {
     get_ciphertext_from_marking_json_with_bufs(crypt,
-                                               TMP_BSON(markingJSON),
+                                               TMP_BSON_STR(markingJSON),
                                                out,
                                                TEST_FILE("./test/example/cmd.json"),
                                                TEST_BIN(16),
@@ -1695,17 +1695,19 @@ static void test_mc_marking_to_ciphertext_fle2_text_search(_mongocrypt_tester_t 
 }
 
 static void test_ciphertext_len_steps_fle2_text_search(_mongocrypt_tester_t *tester) {
-    const char *markingJSONFormat = RAW_STRING({
-        't' : 1,
-        'a' : 4,
-        'v' : {
-            'v' : "%s",
-            'casef' : false,
-            'diacf' : false,
-            'suffix' : {'ub' : {'$numberInt' : '2'}, 'lb' : {'$numberInt' : '1'}}
-        },
-        'cm' : {'$numberLong' : '2'}
-    });
+#define MARKING_JSON_FORMAT                                                                                            \
+    RAW_STRING({                                                                                                       \
+        't' : 1,                                                                                                       \
+        'a' : 4,                                                                                                       \
+        'v' : {                                                                                                        \
+            'v' : "%s",                                                                                                \
+            'casef' : false,                                                                                           \
+            'diacf' : false,                                                                                           \
+            'suffix' : {'ub' : {'$numberInt' : '2'}, 'lb' : {'$numberInt' : '1'}}                                      \
+        },                                                                                                             \
+        'cm' : {'$numberLong' : '2'}                                                                                   \
+    })
+
     size_t last_len = 0;
     mongocrypt_binary_t *cmd = TEST_FILE("./test/example/cmd.json");
     mongocrypt_binary_t *key_file = TEST_BIN(16);
@@ -1715,10 +1717,10 @@ static void test_ciphertext_len_steps_fle2_text_search(_mongocrypt_tester_t *tes
     for (size_t str_len = 0; str_len < 256; str_len++) {
         char *v = bson_malloc0(str_len + 1);
         memset(v, 'a', str_len);
-        size_t bufsize = snprintf(NULL, 0, markingJSONFormat, v) + 1;
+        size_t bufsize = snprintf(NULL, 0, MARKING_JSON_FORMAT, v) + 1;
         char *markingJSON = bson_malloc(bufsize);
-        sprintf(markingJSON, markingJSONFormat, v);
-        bson_t *marking_bson = TMP_BSON(markingJSON);
+        sprintf(markingJSON, MARKING_JSON_FORMAT, v);
+        bson_t *marking_bson = TMP_BSON_STR(markingJSON);
 
         _mongocrypt_ciphertext_t ciphertext;
         _mongocrypt_ciphertext_init(&ciphertext);
@@ -1750,6 +1752,8 @@ static void test_ciphertext_len_steps_fle2_text_search(_mongocrypt_tester_t *tes
         bson_destroy(marking_bson);
         tester->bson_count--;
     }
+
+#undef MARKING_JSON_FORMAT
 }
 
 void _mongocrypt_tester_install_marking(_mongocrypt_tester_t *tester) {

@@ -597,7 +597,7 @@ static bool _get_tokenKey(_mongocrypt_key_broker_t *kb,
     }
 
     if (indexKey.len != MONGOCRYPT_KEY_LEN) {
-        CLIENT_ERR("invalid indexKey, expected len=%" PRIu32 ", got len=%" PRIu32, MONGOCRYPT_KEY_LEN, indexKey.len);
+        CLIENT_ERR("invalid indexKey, expected len=%d, got len=%" PRIu32, MONGOCRYPT_KEY_LEN, indexKey.len);
         _mongocrypt_buffer_cleanup(&indexKey);
         return false;
     }

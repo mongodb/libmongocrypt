@@ -135,7 +135,7 @@ bool mc_FLE2IndexedEncryptedValue_write(_mongocrypt_crypto_t *crypto,
     const uint8_t subtype = (uint8_t)MC_SUBTYPE_FLE2IndexedEqualityEncryptedValue;
 
     if (((int)original_bson_type < 0) || ((int)original_bson_type > 0xFF)) {
-        CLIENT_ERR("Field 't' must be a valid BSON type, got: %d", original_bson_type);
+        CLIENT_ERR("Field 't' must be a valid BSON type, got: %d", (int)original_bson_type);
         CHECK_AND_GOTO(false);
     }
 
