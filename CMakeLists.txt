@@ -74,7 +74,6 @@ if (ENABLE_MORE_WARNINGS_AS_ERRORS)
       gnu-like:-Wall gnu-like:-Werror
       gnu-like:-Wswitch-enum gnu-like:-Wswitch-default
       gnu-like:-Wsign-compare
-      gnu-like:-Wvariadic-macro-arguments-omitted
       )
    add_link_options (
       # Enable link-time warnings. VS 2015 sees LNK4099 spuriously, but it is a
