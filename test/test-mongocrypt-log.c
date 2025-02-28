@@ -88,10 +88,10 @@ static void _test_trace_log(_mongocrypt_tester_t *tester) {
 
 #if defined(__GLIBC__) || defined(__APPLE__)
 static void _test_no_log(_mongocrypt_tester_t *tester) {
-    const int buffer_size = BUFSIZ;
     mongocrypt_t *crypt;
     mongocrypt_status_t *status;
-    char captured_logs[buffer_size];
+    char captured_logs[BUFSIZ];
+    const int buffer_size = sizeof(captured_logs);
     int saved_stdout = dup(1);
 
     /* Redirect stdout to /dev/null and capture output in a buffer
