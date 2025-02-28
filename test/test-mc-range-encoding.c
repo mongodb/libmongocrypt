@@ -558,7 +558,7 @@ static void _test_RangeTest_Encode_Double(_mongocrypt_tester_t *tester) {
 
         if (test->min.set && test->max.set && test->precision.set) {
             TEST_PRINTF("_test_RangeTest_Encode_Double: value=%f, min=%f, max=%f, "
-                        "precision=%" PRIu32 "\n",
+                        "precision=%" PRId32 "\n",
                         test->value,
                         test->min.value,
                         test->max.value,
