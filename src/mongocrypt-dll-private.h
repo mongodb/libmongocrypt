@@ -66,6 +66,9 @@ static inline void mcr_dll_close(mcr_dll dll) {
     _Pragma("clang diagnostic push") _Pragma("clang diagnostic ignored \"-Wunknown-warning-option\"")                  \
         _Pragma("clang diagnostic ignored \"-Wcast-function-type-strict\"")
 #define MC_END_CAST_FUNCTION_TYPE_STRICT_IGNORE _Pragma("clang diagnostic pop")
+#else
+#define MC_BEGIN_CAST_FUNCTION_TYPE_STRICT_IGNORE
+#define MC_END_CAST_FUNCTION_TYPE_STRICT_IGNORE
 #endif
 
 /**
