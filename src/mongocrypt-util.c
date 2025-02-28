@@ -32,6 +32,7 @@
 
 #include "mc-check-conversions-private.h"
 #include "mongocrypt-private.h" // CLIENT_ERR
+#include "mongocrypt-dll-private.h"
 #include "mongocrypt-util-private.h"
 
 #include "mlib/thread.h"

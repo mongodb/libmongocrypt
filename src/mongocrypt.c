@@ -28,6 +28,7 @@
 #include "mongocrypt-cache-private.h"
 #include "mongocrypt-config.h"
 #include "mongocrypt-crypto-private.h"
+#include "mongocrypt-dll-private.h"
 #include "mongocrypt-log-private.h"
 #include "mongocrypt-mutex-private.h"
 #include "mongocrypt-opts-private.h"
