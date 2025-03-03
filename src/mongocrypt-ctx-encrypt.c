@@ -2404,7 +2404,6 @@ bool mongocrypt_ctx_encrypt_init(mongocrypt_ctx_t *ctx, const char *db, int32_t 
     ctx->vtable.cleanup = _cleanup;
     ectx->bypass_query_analysis = ctx->crypt->opts.bypass_query_analysis;
     ectx->sb = mc_schema_broker_new();
-    mc_schema_broker_use_rangev2(ectx->sb);
 
     if (!cmd || !cmd->data) {
         return _mongocrypt_ctx_fail_w_msg(ctx, "invalid command");
