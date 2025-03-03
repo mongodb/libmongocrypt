@@ -1542,10 +1542,8 @@ static bool isInfinite(bson_iter_t *iter) {
 
 // mc_get_mincover_from_FLE2RangeFindSpec creates and returns a mincover from an
 // FLE2RangeFindSpec. Returns NULL on error.
-mc_mincover_t *mc_get_mincover_from_FLE2RangeFindSpec(mc_FLE2RangeFindSpec_t *findSpec,
-                                                      size_t sparsity,
-                                                      mongocrypt_status_t *status,
-                                                      bool use_range_v2) {
+mc_mincover_t *
+mc_get_mincover_from_FLE2RangeFindSpec(mc_FLE2RangeFindSpec_t *findSpec, size_t sparsity, mongocrypt_status_t *status) {
     BSON_ASSERT_PARAM(findSpec);
     BSON_ASSERT(findSpec->edgesInfo.set);
 
@@ -1748,8 +1746,7 @@ static bool _mongocrypt_fle2_placeholder_to_find_ciphertextForRange(_mongocrypt_
         // g:= array<EdgeFindTokenSet>
         {
             BSON_ASSERT(placeholder->sparsity >= 0 && (uint64_t)placeholder->sparsity <= (uint64_t)SIZE_MAX);
-            mincover =
-                mc_get_mincover_from_FLE2RangeFindSpec(&findSpec, (size_t)placeholder->sparsity, status, use_range_v2);
+            mincover = mc_get_mincover_from_FLE2RangeFindSpec(&findSpec, (size_t)placeholder->sparsity, status);
             if (!mincover) {
                 goto fail;
             }
