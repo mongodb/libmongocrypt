@@ -198,7 +198,6 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
         mc_optional_int64_t sparsity;
         const char *expectedError;
         const char *expectedErrorAtParseTime;
-        bool disableRangeV2;
     } testcase_t;
 
     testcase_t tests[] = {

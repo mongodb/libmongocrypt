@@ -111,19 +111,12 @@ static void test_mc_RangeOpts_to_FLE2RangeInsertSpec(_mongocrypt_tester_t *teste
         const char *v;
         const char *expectError;
         const char *expect;
-        // Most of the tests are for trim factor, so range V2 is default enabled.
-        bool disableRangeV2;
     } testcase;
 
     testcase tests[] = {
         {.desc = "Works",
          .in = RAW_STRING({"min" : 123, "max" : 456, "sparsity" : {"$numberLong" : "1"}}),
          .v = RAW_STRING({"v" : 789}),
-         .expect = RAW_STRING({"v" : {"v" : 789, "min" : 123, "max" : 456}})},
-        {.desc = "Trim factor not appended if range V2 disabled",
-         .in = RAW_STRING({"min" : 123, "max" : 456, "sparsity" : {"$numberLong" : "1"}}),
-         .v = RAW_STRING({"v" : 789}),
-         .disableRangeV2 = true,
          .expect = RAW_STRING({"v" : {"v" : 789, "min" : 123, "max" : 456}})},
         {.desc = "Works with precision",
          .in = RAW_STRING({"min" : 123.0, "max" : 456.0, "precision" : 2, "sparsity" : {"$numberLong" : "1"}}),
