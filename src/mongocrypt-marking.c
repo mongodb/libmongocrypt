@@ -513,7 +513,7 @@ static bool _fle2_placeholder_aes_aead_encrypt(_mongocrypt_key_broker_t *kb,
 // Range V2: p := EncryptCTR(ECOCToken, ESCDerivedFromDataTokenAndContentionFactor || isLeaf)
 static bool _fle2_derive_encrypted_token(_mongocrypt_crypto_t *crypto,
                                          _mongocrypt_buffer_t *out,
-                                         bool use_range_v2,
+                                         bool concatentate_leaf,
                                          const mc_CollectionsLevel1Token_t *collectionsLevel1Token,
                                          const _mongocrypt_buffer_t *escDerivedToken,
                                          const _mongocrypt_buffer_t *eccDerivedToken,
@@ -530,7 +530,7 @@ static bool _fle2_derive_encrypted_token(_mongocrypt_crypto_t *crypto,
     const _mongocrypt_buffer_t *p = &tmp;
     if (!eccDerivedToken) {
         // FLE2v2
-        if (use_range_v2 && is_leaf.set) {
+        if (concatentate_leaf && is_leaf.set) {
             // Range V2; concat isLeaf
             _mongocrypt_buffer_t isLeafBuf;
             if (!_mongocrypt_buffer_copy_from_data_and_size(&isLeafBuf, (uint8_t[]){is_leaf.value}, 1)) {
