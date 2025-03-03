@@ -20,7 +20,7 @@ static void _test_cleanup_success(_mongocrypt_tester_t *tester) {
     mongocrypt_t *crypt;
     mongocrypt_ctx_t *ctx;
 
-    crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_WITH_RANGE_V2);
+    crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
     ctx = mongocrypt_ctx_new(crypt);
 
     ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_FILE("./test/data/cleanup/success/cmd.json")), ctx);
@@ -67,7 +67,7 @@ static void _test_cleanup_nonlocal_kms(_mongocrypt_tester_t *tester) {
     mongocrypt_t *crypt;
     mongocrypt_ctx_t *ctx;
 
-    crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_WITH_RANGE_V2);
+    crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
     ctx = mongocrypt_ctx_new(crypt);
 
     ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_FILE("./test/data/cleanup/success/cmd.json")), ctx);

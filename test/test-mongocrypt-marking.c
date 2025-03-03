@@ -1149,7 +1149,7 @@ static void test_mc_marking_to_ciphertext_fle2_range(_mongocrypt_tester_t *teste
         });
         _mongocrypt_ciphertext_t ciphertext;
         _mongocrypt_ciphertext_init(&ciphertext);
-        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_WITH_RANGE_V2);
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
 
         get_ciphertext_from_marking_json(tester, crypt, markingJSON, &ciphertext);
 
