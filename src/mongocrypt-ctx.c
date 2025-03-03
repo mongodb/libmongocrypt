@@ -262,12 +262,8 @@ bool mongocrypt_ctx_setopt_algorithm(mongocrypt_ctx_t *ctx, const char *algorith
         ctx->opts.index_type.value = MONGOCRYPT_INDEX_TYPE_RANGE;
         ctx->opts.index_type.set = true;
     } else if (mstr_eq_ignore_case(algo_str, mstrv_lit(MONGOCRYPT_ALGORITHM_RANGEPREVIEW_DEPRECATED_STR))) {
-        if (ctx->crypt->opts.use_range_v2) {
-            _mongocrypt_ctx_fail_w_msg(ctx, "Algorithm 'rangePreview' is deprecated, please use 'range'");
-            return false;
-        }
-        ctx->opts.index_type.value = MONGOCRYPT_INDEX_TYPE_RANGEPREVIEW_DEPRECATED;
-        ctx->opts.index_type.set = true;
+        _mongocrypt_ctx_fail_w_msg(ctx, "Algorithm 'rangePreview' is deprecated, please use 'range'");
+        return false;
     } else {
         char *error = bson_strdup_printf("unsupported algorithm string \"%.*s\"",
                                          algo_str.len <= (size_t)INT_MAX ? (int)algo_str.len : INT_MAX,
@@ -1068,12 +1064,8 @@ bool mongocrypt_ctx_setopt_query_type(mongocrypt_ctx_t *ctx, const char *query_t
         ctx->opts.query_type.value = MONGOCRYPT_QUERY_TYPE_RANGE;
         ctx->opts.query_type.set = true;
     } else if (mstr_eq_ignore_case(qt_str, mstrv_lit(MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_DEPRECATED_STR))) {
-        if (ctx->crypt->opts.use_range_v2) {
-            _mongocrypt_ctx_fail_w_msg(ctx, "Query type 'rangePreview' is deprecated, please use 'range'");
-            return false;
-        }
-        ctx->opts.query_type.value = MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_DEPRECATED;
-        ctx->opts.query_type.set = true;
+        _mongocrypt_ctx_fail_w_msg(ctx, "Query type 'rangePreview' is deprecated, please use 'range'");
+        return false;
     } else {
         /* don't check if qt_str.len fits in int; we want the diagnostic output */
         char *error = bson_strdup_printf("Unsupported query_type \"%.*s\"",

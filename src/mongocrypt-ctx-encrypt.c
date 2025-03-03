@@ -819,7 +819,7 @@ static bool _fle2_append_compactionTokens(mongocrypt_t *crypt,
 
         const _mongocrypt_buffer_t *ecoct_buf = mc_ECOCToken_get(ecoct);
 
-        if (crypt->opts.use_range_v2 && (ptr->supported_queries & SUPPORTS_RANGE_QUERIES)) {
+        if ((ptr->supported_queries & SUPPORTS_RANGE_QUERIES)) {
             // Append the document {ecoc: <ECOCToken>, anchorPaddingToken: <AnchorPaddingTokenRoot>}
             esct = mc_ESCToken_new(crypto, cl1t, status);
             if (!esct) {
@@ -1140,11 +1140,7 @@ static bool _fle2_finalize(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
     const mc_EncryptedFieldConfig_t *target_efc =
         mc_schema_broker_get_encryptedFields(ectx->sb, ectx->target_coll, NULL);
 
-    moe_result result = must_omit_encryptionInformation(command_name,
-                                                        &converted,
-                                                        ctx->crypt->opts.use_range_v2,
-                                                        target_efc,
-                                                        ctx->status);
+    moe_result result = must_omit_encryptionInformation(command_name, &converted, true, target_efc, ctx->status);
     if (!result.ok) {
         bson_destroy(&converted);
         return _mongocrypt_ctx_fail(ctx);
@@ -1312,10 +1308,8 @@ static bool _fle2_finalize_explicit(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *
     if (ctx->opts.query_type.set) {
         switch (ctx->opts.query_type.value) {
         case MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_DEPRECATED:
-            if (ctx->crypt->opts.use_range_v2) {
-                _mongocrypt_ctx_fail_w_msg(ctx, "Cannot use rangePreview query type with Range V2");
-                goto fail;
-            }
+            _mongocrypt_ctx_fail_w_msg(ctx, "Cannot use rangePreview query type with Range V2");
+            goto fail;
         // fallthrough
         case MONGOCRYPT_QUERY_TYPE_RANGE:
         case MONGOCRYPT_QUERY_TYPE_EQUALITY: marking.u.fle2.type = MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND; break;
@@ -1329,10 +1323,8 @@ static bool _fle2_finalize_explicit(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *
     case MONGOCRYPT_INDEX_TYPE_EQUALITY: marking.u.fle2.algorithm = MONGOCRYPT_FLE2_ALGORITHM_EQUALITY; break;
     case MONGOCRYPT_INDEX_TYPE_NONE: marking.u.fle2.algorithm = MONGOCRYPT_FLE2_ALGORITHM_UNINDEXED; break;
     case MONGOCRYPT_INDEX_TYPE_RANGEPREVIEW_DEPRECATED:
-        if (ctx->crypt->opts.use_range_v2) {
-            _mongocrypt_ctx_fail_w_msg(ctx, "Cannot use rangePreview index type with Range V2");
-            goto fail;
-        }
+        _mongocrypt_ctx_fail_w_msg(ctx, "Cannot use rangePreview index type with Range V2");
+        goto fail;
         // fallthrough
     case MONGOCRYPT_INDEX_TYPE_RANGE: marking.u.fle2.algorithm = MONGOCRYPT_FLE2_ALGORITHM_RANGE; break;
     default:
@@ -2412,9 +2404,7 @@ bool mongocrypt_ctx_encrypt_init(mongocrypt_ctx_t *ctx, const char *db, int32_t 
     ctx->vtable.cleanup = _cleanup;
     ectx->bypass_query_analysis = ctx->crypt->opts.bypass_query_analysis;
     ectx->sb = mc_schema_broker_new();
-    if (ctx->crypt->opts.use_range_v2) {
-        mc_schema_broker_use_rangev2(ectx->sb);
-    }
+    mc_schema_broker_use_rangev2(ectx->sb);
 
     if (!cmd || !cmd->data) {
         return _mongocrypt_ctx_fail_w_msg(ctx, "invalid command");

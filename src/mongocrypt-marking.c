@@ -755,7 +755,7 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_common(_mongocrypt_key
     if (!_fle2_derive_encrypted_token(
             crypto,
             &out->encryptedTokens,
-            kb->crypt->opts.use_range_v2,
+            true,
             common->collectionsLevel1Token,
             &out->escDerivedToken,
             NULL, // unused in v2
@@ -978,7 +978,7 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange(_mo
     // g:= array<EdgeTokenSetV2>
     {
         BSON_ASSERT(placeholder->sparsity >= 0 && (uint64_t)placeholder->sparsity <= (uint64_t)SIZE_MAX);
-        edges = get_edges(&insertSpec, (size_t)placeholder->sparsity, status, kb->crypt->opts.use_range_v2);
+        edges = get_edges(&insertSpec, (size_t)placeholder->sparsity, status, true);
         if (!edges) {
             goto fail;
         }
@@ -1021,7 +1021,7 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange(_mo
             // Or in Range V2: p := EncryptCTR(ECOCToken, ESCDerivedFromDataTokenAndContentionFactor || isLeaf)
             if (!_fle2_derive_encrypted_token(kb->crypt->crypto,
                                               &etc.encryptedTokens,
-                                              kb->crypt->opts.use_range_v2,
+                                              true,
                                               edge_tokens.collectionsLevel1Token,
                                               &etc.escDerivedToken,
                                               NULL, // ecc unsed in FLE2v2
@@ -1719,7 +1719,6 @@ static bool _mongocrypt_fle2_placeholder_to_find_ciphertextForRange(_mongocrypt_
     BSON_ASSERT_PARAM(marking);
     BSON_ASSERT_PARAM(ciphertext);
 
-    const bool use_range_v2 = kb->crypt->opts.use_range_v2;
     mc_FLE2EncryptionPlaceholder_t *placeholder = &marking->u.fle2;
     mc_FLE2FindRangePayloadV2_t payload;
     bool res = false;
@@ -1795,14 +1794,12 @@ static bool _mongocrypt_fle2_placeholder_to_find_ciphertextForRange(_mongocrypt_
         }
         payload.payload.set = true;
 
-        if (use_range_v2) {
-            // Include "range" payload fields introduced in SERVER-91889.
-            payload.sparsity = OPT_I64(placeholder->sparsity);
-            payload.precision = findSpec.edgesInfo.value.precision;
-            payload.trimFactor = OPT_I32(mc_mincover_get_used_trimFactor(mincover));
-            bson_value_copy(bson_iter_value(&findSpec.edgesInfo.value.indexMin), &payload.indexMin);
-            bson_value_copy(bson_iter_value(&findSpec.edgesInfo.value.indexMax), &payload.indexMax);
-        }
+        // Include "range" payload fields introduced in SERVER-91889.
+        payload.sparsity = OPT_I64(placeholder->sparsity);
+        payload.precision = findSpec.edgesInfo.value.precision;
+        payload.trimFactor = OPT_I32(mc_mincover_get_used_trimFactor(mincover));
+        bson_value_copy(bson_iter_value(&findSpec.edgesInfo.value.indexMin), &payload.indexMin);
+        bson_value_copy(bson_iter_value(&findSpec.edgesInfo.value.indexMax), &payload.indexMax);
     }
 
     payload.payloadId = findSpec.payloadId;
