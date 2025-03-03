@@ -102,8 +102,8 @@ int do_main(int argc, const char *const *argv) {
 
     mcr_dll csfle = mcr_dll_open(argv[1]);
     auto close_csfle = DEFER({ mcr_dll_close(csfle); });
-    if (csfle.error_string.data) {
-        std::cerr << "Failed to open [" << argv[1] << "] as a dynamic library: " << csfle.error_string.data << '\n';
+    if (csfle.error_string.raw.data) {
+        std::cerr << "Failed to open [" << argv[1] << "] as a dynamic library: " << csfle.error_string.raw.data << '\n';
         return 3;
     }
 

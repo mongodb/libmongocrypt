@@ -61,7 +61,7 @@ current_module_result current_module_path(void) {
     int ret_error = 0;
 #ifdef _WIN32
     DWORD acc_size = 512;
-    while (!ret_str.data && !ret_error) {
+    while (!ret_str.raw.data && !ret_error) {
         // Loop until we allocate a large enough buffer or get an error
         wchar_t *path = calloc(acc_size + 1, sizeof(wchar_t));
         SetLastError(0);

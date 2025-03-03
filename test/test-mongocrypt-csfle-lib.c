@@ -143,7 +143,7 @@ static void _test_csfle_path_override_fail(_mongocrypt_tester_t *tester) {
 static void _test_cur_exe_path(_mongocrypt_tester_t *tester) {
     current_module_result self = current_module_path();
     BSON_ASSERT(self.error == 0);
-    BSON_ASSERT(self.path.len != 0);
+    BSON_ASSERT(self.path.raw.len != 0);
     mstr_free(self.path);
 }
 
