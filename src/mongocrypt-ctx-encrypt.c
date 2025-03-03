@@ -672,7 +672,6 @@ typedef struct {
 // must omit the "encryptionInformation" field when sent to mongod / mongos.
 static moe_result must_omit_encryptionInformation(const char *command_name,
                                                   const bson_t *command,
-                                                  bool use_range_v2,
                                                   const mc_EncryptedFieldConfig_t *efc,
                                                   mongocrypt_status_t *status) {
     // eligible_commands may omit encryptionInformation if the command does not
@@ -697,12 +696,10 @@ static moe_result must_omit_encryptionInformation(const char *command_name,
         // - Server 8.0 requires `encryptionInformation` if "range" fields are referenced. Otherwise ignores.
         // Only send `encryptionInformation` if "range" fields are present to support both server versions.
         bool uses_range_fields = false;
-        if (use_range_v2) {
-            for (const mc_EncryptedField_t *ef = efc->fields; ef != NULL; ef = ef->next) {
-                if (ef->supported_queries & SUPPORTS_RANGE_QUERIES) {
-                    uses_range_fields = true;
-                    break;
-                }
+        for (const mc_EncryptedField_t *ef = efc->fields; ef != NULL; ef = ef->next) {
+            if (ef->supported_queries & SUPPORTS_RANGE_QUERIES) {
+                uses_range_fields = true;
+                break;
             }
         }
         return (moe_result){.ok = true, .must_omit = !uses_range_fields};
@@ -1140,7 +1137,7 @@ static bool _fle2_finalize(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
     const mc_EncryptedFieldConfig_t *target_efc =
         mc_schema_broker_get_encryptedFields(ectx->sb, ectx->target_coll, NULL);
 
-    moe_result result = must_omit_encryptionInformation(command_name, &converted, true, target_efc, ctx->status);
+    moe_result result = must_omit_encryptionInformation(command_name, &converted, target_efc, ctx->status);
     if (!result.ok) {
         bson_destroy(&converted);
         return _mongocrypt_ctx_fail(ctx);
