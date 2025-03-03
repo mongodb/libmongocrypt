@@ -855,8 +855,7 @@ fail:
 
 // get_edges creates and returns edges from an FLE2RangeInsertSpec. Returns NULL
 // on error.
-static mc_edges_t *
-get_edges(mc_FLE2RangeInsertSpec_t *insertSpec, size_t sparsity, mongocrypt_status_t *status, bool use_range_v2) {
+static mc_edges_t *get_edges(mc_FLE2RangeInsertSpec_t *insertSpec, size_t sparsity, mongocrypt_status_t *status) {
     BSON_ASSERT_PARAM(insertSpec);
 
     bson_type_t value_type = bson_iter_type(&insertSpec->v);
@@ -978,7 +977,7 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange(_mo
     // g:= array<EdgeTokenSetV2>
     {
         BSON_ASSERT(placeholder->sparsity >= 0 && (uint64_t)placeholder->sparsity <= (uint64_t)SIZE_MAX);
-        edges = get_edges(&insertSpec, (size_t)placeholder->sparsity, status, true);
+        edges = get_edges(&insertSpec, (size_t)placeholder->sparsity, status);
         if (!edges) {
             goto fail;
         }
