@@ -76,7 +76,6 @@ bool mc_RangeOpts_parse(mc_RangeOpts_t *ro, const bson_t *in, mongocrypt_status_
 bool mc_RangeOpts_to_FLE2RangeInsertSpec(const mc_RangeOpts_t *ro,
                                          const bson_t *v,
                                          bson_t *out,
-                                         bool use_range_v2,
                                          mongocrypt_status_t *status);
 
 /* mc_RangeOpts_appendMin appends the minimum value of the range for a given

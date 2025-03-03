@@ -1355,11 +1355,7 @@ static bool _fle2_finalize_explicit(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *
 
         // RangeOpts with query_type is handled above.
         BSON_ASSERT(!ctx->opts.query_type.set);
-        if (!mc_RangeOpts_to_FLE2RangeInsertSpec(&ctx->opts.rangeopts.value,
-                                                 &old_v,
-                                                 &new_v,
-                                                 ctx->crypt->opts.use_range_v2,
-                                                 ctx->status)) {
+        if (!mc_RangeOpts_to_FLE2RangeInsertSpec(&ctx->opts.rangeopts.value, &old_v, &new_v, ctx->status)) {
             _mongocrypt_ctx_fail(ctx);
             goto fail;
         }
