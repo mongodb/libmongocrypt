@@ -951,7 +951,6 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange(_mo
     BSON_ASSERT_PARAM(ciphertext);
     BSON_ASSERT(kb->crypt);
     BSON_ASSERT(marking->type == MONGOCRYPT_MARKING_FLE2_ENCRYPTION);
-    const bool use_range_v2 = kb->crypt->opts.use_range_v2;
 
     mc_FLE2EncryptionPlaceholder_t *placeholder = &marking->u.fle2;
     _FLE2EncryptedPayloadCommon_t common = {{0}};
@@ -1054,7 +1053,7 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForRange(_mo
     {
         bson_t out;
         bson_init(&out);
-        mc_FLE2InsertUpdatePayloadV2_serializeForRange(&payload, &out, use_range_v2);
+        mc_FLE2InsertUpdatePayloadV2_serializeForRange(&payload, &out);
         _mongocrypt_buffer_steal_from_bson(&ciphertext->data, &out);
     }
     // Do not set ciphertext->original_bson_type and ciphertext->key_id. They are
