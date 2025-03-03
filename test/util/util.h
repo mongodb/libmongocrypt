@@ -20,19 +20,20 @@
 #include <mongoc/mongoc.h>
 
 void _errexit_mongocrypt(mongocrypt_t *crypt, int line);
-#define ERREXIT_MONGOCRYPT(crypt) _errexit_mongocrypt(crypt, __LINE__);
+#define ERREXIT_MONGOCRYPT(crypt) _errexit_mongocrypt(crypt, __LINE__)
 
 void _errexit_ctx(mongocrypt_ctx_t *ctx, int line);
-#define ERREXIT_CTX(ctx) _errexit_ctx(ctx, __LINE__);
+#define ERREXIT_CTX(ctx) _errexit_ctx(ctx, __LINE__)
 
 void _errexit_bson(bson_error_t *error, int line);
-#define ERREXIT_BSON(err) _errexit_bson(err, __LINE__);
+#define ERREXIT_BSON(err) _errexit_bson(err, __LINE__)
 
 #define ERREXIT(...)                                                                                                   \
-    do {                                                                                                               \
+    if (1) {                                                                                                           \
         MONGOC_ERROR(__VA_ARGS__);                                                                                     \
         abort();                                                                                                       \
-    } while (0)
+    } else                                                                                                             \
+        ((void)0)
 
 void _log_to_stdout(mongocrypt_log_level_t level, const char *message, uint32_t message_len, void *ctx);
 

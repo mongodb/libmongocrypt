@@ -53,7 +53,8 @@
 #define ASSERT(stmt)                             \
    if (!(stmt)) {                                \
       TEST_ERROR ("statement failed %s", #stmt); \
-   }
+   } else                                        \
+      ((void)0)
 
 #define ASSERT_CMPSTR_WITH_LEN(_expect, _expect_len, _actual, _actual_len)     \
    do {                                                                        \
@@ -98,7 +99,7 @@
          TEST_ERROR (                                                   \
             "comparison failed: %d %s %d", _a_int, #_operator, _b_int); \
       }                                                                 \
-   } while (0);
+   } while (0)
 
 #define ASSERT_CMPBYTES(                                                \
    expected_bytes, expected_len, actual_bytes, actual_len)              \

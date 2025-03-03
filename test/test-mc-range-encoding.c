@@ -198,7 +198,7 @@ static void _test_RangeTest_Encode_Int64(_mongocrypt_tester_t *tester) {
 
 static void _test_canUsePrecisionModeDouble(_mongocrypt_tester_t *tester) {
 #define CAN_USE_PRECISION_MODE(lb, ub, prc, expected, expected_bits_out)                                               \
-    {                                                                                                                  \
+    if (1) {                                                                                                           \
         uint32_t bits_out = 0;                                                                                         \
         mongocrypt_status_t *const status = mongocrypt_status_new();                                                   \
         TEST_PRINTF("_test_canUsePrecisionModeDecimal, min: %f, max: %f, prc: %" PRId32, lb, ub, prc);                 \
@@ -207,10 +207,11 @@ static void _test_canUsePrecisionModeDouble(_mongocrypt_tester_t *tester) {
         ASSERT(result == expected);                                                                                    \
         ASSERT_CMPINT32(expected_bits_out, ==, bits_out);                                                              \
         mongocrypt_status_destroy(status);                                                                             \
-    }
+    } else                                                                                                             \
+        ((void)0)
 
 #define CAN_USE_PRECISION_MODE_ERRORS(lb, ub, prc, error)                                                              \
-    {                                                                                                                  \
+    if (1) {                                                                                                           \
         mongocrypt_status_t *const status = mongocrypt_status_new();                                                   \
         TEST_PRINTF("_test_canUsePrecisionModeDecimal errors, min: %f, max: %f, prc: %" PRId32, lb, ub, prc);          \
         uint32_t bits_out = 0;                                                                                         \
@@ -218,7 +219,8 @@ static void _test_canUsePrecisionModeDouble(_mongocrypt_tester_t *tester) {
         ASSERT_OR_PRINT_MSG(!result, "expected error, but got none");                                                  \
         ASSERT_STATUS_CONTAINS(status, error);                                                                         \
         mongocrypt_status_destroy(status);                                                                             \
-    }
+    } else                                                                                                             \
+        ((void)0)
 
     CAN_USE_PRECISION_MODE(1.0, 16.0, INT32_C(0), true, 4);
     CAN_USE_PRECISION_MODE(0.0, 16.0, INT32_C(0), true, 5);

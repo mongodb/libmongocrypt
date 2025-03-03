@@ -539,7 +539,7 @@ static void _test_create_datakey_with_retry(_mongocrypt_tester_t *tester) {
             const char *str = (const char *)mongocrypt_binary_data(bin);
             ASSERT_STRCONTAINS(str, "oauth2");
             mongocrypt_binary_destroy(bin);
-        };
+        }
 
         // Feed a successful response.
         ASSERT_OK(mongocrypt_kms_ctx_feed(kms_ctx, TEST_FILE("./test/data/kms-azure/oauth-response.txt")), kms_ctx);

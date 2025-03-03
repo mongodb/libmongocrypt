@@ -1608,10 +1608,11 @@ typedef enum {
 } _test_fle2v2_option;
 
 #define TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, data_path, rng_source, v2_failure)                            \
-    {                                                                                                                  \
+    if (1) {                                                                                                           \
         (rng_source)->pos = 0;                                                                                         \
         _test_encrypt_fle2_encryption_placeholder(tester, data_path, rng_source, NULL);                                \
-    }
+    } else                                                                                                             \
+        ((void)0)
 
 static void _test_encrypt_fle2_encryption_placeholder(_mongocrypt_tester_t *tester,
                                                       const char *data_path,
@@ -1716,28 +1717,28 @@ static void _test_encrypt_fle2_insert_payload(_mongocrypt_tester_t *tester) {
     uint8_t rng_data[] = RNG_DATA;
 
     _test_rng_data_source source = {.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-v2", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-v2", &source, NULL);
 }
 
 static void _test_encrypt_fle2_insert_payload_with_str_encode_version(_mongocrypt_tester_t *tester) {
     uint8_t rng_data[] = RNG_DATA;
 
     _test_rng_data_source source = {.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-v2-with-str-encode-version", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-v2-with-str-encode-version", &source, NULL);
 }
 
 static void _test_encrypt_fle2_insert_text_search_payload(_mongocrypt_tester_t *tester) {
     uint8_t rng_data[] = RNG_DATA;
 
     _test_rng_data_source source = {.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-text-search", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-text-search", &source, NULL);
 }
 
 static void _test_encrypt_fle2_insert_text_search_payload_with_str_encode_version(_mongocrypt_tester_t *tester) {
     uint8_t rng_data[] = RNG_DATA;
 
     _test_rng_data_source source = {.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-text-search-with-str-encode-version", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-text-search-with-str-encode-version", &source, NULL);
 }
 
 #undef RNG_DATA
@@ -1745,7 +1746,7 @@ static void _test_encrypt_fle2_insert_text_search_payload_with_str_encode_versio
 // FLE2FindEqualityPayload only uses deterministic token generation.
 static void _test_encrypt_fle2_find_payload(_mongocrypt_tester_t *tester) {
     _test_rng_data_source source = {{0}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-equality-v2", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-equality-v2", &source, NULL);
 }
 
 /* 16 bytes of random data are used for IV. This IV produces the expected test
@@ -1765,7 +1766,7 @@ static void _test_encrypt_fle2_unindexed_encrypted_payload(_mongocrypt_tester_t 
 static void _test_encrypt_fle2_insert_range_payload_int32(_mongocrypt_tester_t *tester) {
     uint8_t rng_data[] = RNG_DATA;
     _test_rng_data_source source = {.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-range/int32-v2", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-range/int32-v2", &source, NULL);
 }
 
 #undef RNG_DATA
@@ -1775,7 +1776,7 @@ static void _test_encrypt_fle2_insert_range_payload_int32(_mongocrypt_tester_t *
 static void _test_encrypt_fle2_insert_range_payload_int64(_mongocrypt_tester_t *tester) {
     uint8_t rng_data[] = RNG_DATA;
     _test_rng_data_source source = {.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-range/int64-v2", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-range/int64-v2", &source, NULL);
 }
 
 #undef RNG_DATA
@@ -1785,7 +1786,7 @@ static void _test_encrypt_fle2_insert_range_payload_int64(_mongocrypt_tester_t *
 static void _test_encrypt_fle2_insert_range_payload_date(_mongocrypt_tester_t *tester) {
     uint8_t rng_data[] = RNG_DATA;
     _test_rng_data_source source = {.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-range/date-v2", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-range/date-v2", &source, NULL);
 }
 
 #undef RNG_DATA
@@ -1795,7 +1796,7 @@ static void _test_encrypt_fle2_insert_range_payload_date(_mongocrypt_tester_t *t
 static void _test_encrypt_fle2_insert_range_payload_double(_mongocrypt_tester_t *tester) {
     uint8_t rng_data[] = RNG_DATA;
     _test_rng_data_source source = {.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-range/double-v2", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-range/double-v2", &source, NULL);
 }
 
 #undef RNG_DATA
@@ -1805,7 +1806,7 @@ static void _test_encrypt_fle2_insert_range_payload_double(_mongocrypt_tester_t 
 static void _test_encrypt_fle2_insert_range_payload_double_precision(_mongocrypt_tester_t *tester) {
     uint8_t rng_data[] = RNG_DATA;
     _test_rng_data_source source = {.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-range/double-precision-v2", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-range/double-precision-v2", &source, NULL);
 }
 
 #undef RNG_DATA
@@ -1816,7 +1817,7 @@ static void _test_encrypt_fle2_insert_range_payload_double_precision(_mongocrypt
 static void _test_encrypt_fle2_insert_range_payload_decimal128(_mongocrypt_tester_t *tester) {
     uint8_t rng_data[] = RNG_DATA;
     _test_rng_data_source source = {.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-range/decimal128-v2", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-range/decimal128-v2", &source, NULL);
 }
 
 #undef RNG_DATA
@@ -1826,7 +1827,7 @@ static void _test_encrypt_fle2_insert_range_payload_decimal128(_mongocrypt_teste
 static void _test_encrypt_fle2_insert_range_payload_decimal128_precision(_mongocrypt_tester_t *tester) {
     uint8_t rng_data[] = RNG_DATA;
     _test_rng_data_source source = {.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-range/decimal128-precision-v2", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-range/decimal128-precision-v2", &source, NULL);
 }
 
 #undef RNG_DATA
@@ -1835,44 +1836,44 @@ static void _test_encrypt_fle2_insert_range_payload_decimal128_precision(_mongoc
 // FLE2FindRangePayload only uses deterministic token generation.
 static void _test_encrypt_fle2_find_range_payload_int32(_mongocrypt_tester_t *tester) {
     _test_rng_data_source source = {{0}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-range/int32-v2", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-range/int32-v2", &source, NULL);
 }
 
 // FLE2FindRangePayload only uses deterministic token generation.
 static void _test_encrypt_fle2_find_range_payload_int64(_mongocrypt_tester_t *tester) {
     _test_rng_data_source source = {{0}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-range/int64-v2", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-range/int64-v2", &source, NULL);
 }
 
 // FLE2FindRangePayload only uses deterministic token generation.
 static void _test_encrypt_fle2_find_range_payload_date(_mongocrypt_tester_t *tester) {
     _test_rng_data_source source = {{0}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-range/date-v2", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-range/date-v2", &source, NULL);
 }
 
 // FLE2FindRangePayload only uses deterministic token generation.
 static void _test_encrypt_fle2_find_range_payload_double(_mongocrypt_tester_t *tester) {
     _test_rng_data_source source = {{0}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-range/double-v2", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-range/double-v2", &source, NULL);
 }
 
 // FLE2FindRangePayload only uses deterministic token generation.
 static void _test_encrypt_fle2_find_range_payload_double_precision(_mongocrypt_tester_t *tester) {
     _test_rng_data_source source = {{0}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-range/double-precision-v2", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-range/double-precision-v2", &source, NULL);
 }
 
 #if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT()
 // FLE2FindRangePayload only uses deterministic token generation.
 static void _test_encrypt_fle2_find_range_payload_decimal128(_mongocrypt_tester_t *tester) {
     _test_rng_data_source source = {{0}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-range/decimal128-v2", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-range/decimal128-v2", &source, NULL);
 }
 
 // FLE2FindRangePayload only uses deterministic token generation.
 static void _test_encrypt_fle2_find_range_payload_decimal128_precision(_mongocrypt_tester_t *tester) {
     _test_rng_data_source source = {{0}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-range/decimal128-precision-v2", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-range/decimal128-precision-v2", &source, NULL);
 }
 #endif // MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
 

@@ -138,7 +138,7 @@ static void test_nofold_suffix_prefix_case(_mongocrypt_tester_t *tester,
                 ASSERT_CMPPTR((uint8_t *)affix, ==, sets->base_string->buf.data + start_offset);
                 ASSERT_CMPUINT32(affix_len,
                                  ==,
-                                 sets->base_string->codepoint_offsets[folded_codepoint_len] - start_offset)
+                                 sets->base_string->codepoint_offsets[folded_codepoint_len] - start_offset);
             } else {
                 uint32_t end_offset = sets->base_string->codepoint_offsets[lb + idx];
                 ASSERT_CMPPTR((uint8_t *)affix, ==, sets->base_string->buf.data);

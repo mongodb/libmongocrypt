@@ -44,9 +44,10 @@ static bool _test_uses_ctr(const _test_mc_crypto_roundtrip_t *test) {
         /* we just get garbage data. */                                                                                \
         ASSERT(out.len == test->plaintext.len);                                                                        \
         ASSERT(memcmp(out.data, test->plaintext.data, out.len) != 0);                                                  \
-    } else {                                                                                                           \
+    } else if (1) {                                                                                                    \
         ASSERT_FAILS_STATUS(ret, status, "HMAC validation failure");                                                   \
-    }
+    } else                                                                                                             \
+        ((void)0)
 
 static void _test_roundtrip_single(const _test_mc_crypto_roundtrip_t *test) {
     if (!_aes_ctr_is_supported_by_os && _test_uses_ctr(test)) {

@@ -139,7 +139,7 @@ static int64_t _find_date_field(mongocrypt_binary_t *key, const char *dotkey) {
     ASSERT(bson_iter_init(&iter, &bson));
     ASSERT(bson_iter_find_descendant(&iter, dotkey, &iter));
     ASSERT(BSON_ITER_HOLDS_DATE_TIME(&iter));
-    ASSERT((res = bson_iter_date_time(&iter)) != 0)
+    ASSERT((res = bson_iter_date_time(&iter)) != 0);
 
     return res;
 }
