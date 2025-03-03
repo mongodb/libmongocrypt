@@ -2,7 +2,9 @@
 #if defined(__has_include) && !(defined(_GNU_SOURCE) || defined(_DARWIN_C_SOURCE))
 #if __has_include(<features.h>)
 // We're using a glibc-compatible library
+#if !defined(_GNU_SOURCE)
 #define _GNU_SOURCE
+#endif
 #elif __has_include(<Availability.h>)
 // We're on Apple/Darwin
 #define _DARWIN_C_SOURCE
@@ -10,7 +12,9 @@
 #else // No __has_include
 #if __GNUC__ < 5
 // Best guess on older GCC is that we are using glibc
+#if !defined(_GNU_SOURCE)
 #define _GNU_SOURCE
+#endif
 #endif
 #endif
 
