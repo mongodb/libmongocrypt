@@ -131,7 +131,7 @@ Do the following when releasing:
 - Add a link to the Evergreen waterfall for the tagged commit to [libmongocrypt Security Testing Summary](https://docs.google.com/document/d/1dc7uvBzu3okAIsA8LSW5sVQGkYIvwpBVdg5v4wb4c4s/edit#heading=h.5t79jwe4p0ss).
 
 ## Homebrew steps ##
-Submit a PR to update the Homebrew package https://github.com/mongodb/homebrew-brew/blob/master/Formula/libmongocrypt.rb. ([Example](https://github.com/mongodb/homebrew-brew/pull/208)). If not on macOS, request a team member to do this step.
+Submit a PR to update the Homebrew package https://github.com/mongodb/homebrew-brew/blob/master/Formula/libmongocrypt.rb. ([Example](https://github.com/mongodb/homebrew-brew/pull/234)). If not on macOS, request a team member to do this step.
 
 ## Debian steps ##
 If you are not a Debian maintainer on the team, request a team member to do the steps in this section.
