@@ -1876,7 +1876,7 @@ static void _test_encrypt_fle2_find_range_payload_decimal128_precision(_mongocry
 }
 #endif // MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
 
-static mongocrypt_t *_crypt_with_rng(_test_rng_data_source *rng_source, bool use_range_v2) {
+static mongocrypt_t *_crypt_with_rng(_test_rng_data_source *rng_source) {
     mongocrypt_t *crypt;
     mongocrypt_binary_t *localkey;
     /* localkey_data is the KEK used to encrypt the keyMaterial
@@ -1898,12 +1898,7 @@ static mongocrypt_t *_crypt_with_rng(_test_rng_data_source *rng_source, bool use
               crypt);
 
     mongocrypt_binary_destroy(localkey);
-    if (use_range_v2) {
-        ASSERT_OK(mongocrypt_setopt_use_range_v2(crypt), crypt);
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
-    } else {
-        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
-    }
+    ASSERT_OK(mongocrypt_init(crypt), crypt);
     return crypt;
 }
 
@@ -1933,12 +1928,9 @@ static void ee_testcase_run(ee_testcase *tc) {
     if (tc->rng_data.buf.len > 0) {
         // Use fixed data for random number generation to produce deterministic
         // results.
-        crypt = _crypt_with_rng(&tc->rng_data, tc->use_range_v2);
+        crypt = _crypt_with_rng(&tc->rng_data);
     } else {
         tester_mongocrypt_flags flags = TESTER_MONGOCRYPT_DEFAULT;
-        if (tc->use_range_v2) {
-            flags |= TESTER_MONGOCRYPT_WITH_RANGE_V2;
-        }
         crypt = _mongocrypt_tester_mongocrypt(flags);
     }
     mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
