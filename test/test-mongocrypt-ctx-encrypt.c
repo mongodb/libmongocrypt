@@ -1917,7 +1917,6 @@ typedef struct {
     const char *expect_finalize_error;
     const char *expect_init_error;
     bool is_expression;
-    bool use_range_v2;
 } ee_testcase;
 
 static void ee_testcase_run(ee_testcase *tc) {
@@ -4349,7 +4348,6 @@ static void _test_range_sends_cryptoParams(_mongocrypt_tester_t *tester) {
         tc.msg = TEST_BSON("{'v': 123456}");
         tc.keys_to_feed[0] = key123;
         tc.expect = TEST_FILE("./test/data/range-sends-cryptoParams/explicit-insert-int32/expected.json");
-        tc.use_range_v2 = true; // Use RangeV2 protocol.
         ee_testcase_run(&tc);
         // Check the parameters are present in the final payload.
         {
@@ -4374,7 +4372,6 @@ static void _test_range_sends_cryptoParams(_mongocrypt_tester_t *tester) {
         tc.msg = TEST_BSON("{'v': 123456}");
         tc.keys_to_feed[0] = key123;
         tc.expect = TEST_FILE("./test/data/range-sends-cryptoParams/explicit-insert-int32-defaults/expected.json");
-        tc.use_range_v2 = true; // Use RangeV2 protocol.
         ee_testcase_run(&tc);
         // Check the parameters are present in the final payload.
         {
@@ -4400,7 +4397,6 @@ static void _test_range_sends_cryptoParams(_mongocrypt_tester_t *tester) {
         tc.msg = TEST_BSON("{'v': 123456.0}");
         tc.keys_to_feed[0] = key123;
         tc.expect = TEST_FILE("./test/data/range-sends-cryptoParams/explicit-insert-double/expected.json");
-        tc.use_range_v2 = true; // Use RangeV2 protocol.
         ee_testcase_run(&tc);
         // Check the parameters are present in the final payload.
         {
@@ -4425,7 +4421,6 @@ static void _test_range_sends_cryptoParams(_mongocrypt_tester_t *tester) {
         tc.msg = TEST_FILE("./test/data/range-sends-cryptoParams/explicit-find-int32-defaults/to-encrypt.json");
         tc.keys_to_feed[0] = key123;
         tc.expect = TEST_FILE("./test/data/range-sends-cryptoParams/explicit-find-int32-defaults/expected.json");
-        tc.use_range_v2 = true; // Use RangeV2 protocol.
         ee_testcase_run(&tc);
         // Check the parameters are present in the final payload.
         {
@@ -4450,7 +4445,6 @@ static void _test_range_sends_cryptoParams(_mongocrypt_tester_t *tester) {
         tc.msg = TEST_FILE("./test/data/range-sends-cryptoParams/explicit-find-int32/to-encrypt.json");
         tc.keys_to_feed[0] = key123;
         tc.expect = TEST_FILE("./test/data/range-sends-cryptoParams/explicit-find-int32/expected.json");
-        tc.use_range_v2 = true; // Use RangeV2 protocol.
         ee_testcase_run(&tc);
         // Check the parameters are present in the final payload.
         {
