@@ -149,8 +149,8 @@ index 609dc0b..f7530a9 100644
    source:
      Types: deb
      URIs: https://libmongocrypt.s3.amazonaws.com/apt/debian
--    Suites: <SUITE>/libmongocrypt/1.11
-+    Suites: <SUITE>/libmongocrypt/1.12
+-    Suites: <SUITE>/libmongocrypt/1.12
++    Suites: <SUITE>/libmongocrypt/1.13
      Components: main
      Architectures: amd64 arm64
    suites:
