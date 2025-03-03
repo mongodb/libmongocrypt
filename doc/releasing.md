@@ -19,7 +19,7 @@ Go to [Snyk](https://app.snyk.io/) and select the `dev-prod` organization. If ac
 
 ##### Update Snyk
 
-Update the Snyk reference target tracking the to-be-released branch. For a patch release (e.g. x.y.z), check-out the `rx.y` branch and update the `rx.y` reference target. For a minor release (e.g. x.y.0), check out the `master` branch update the `master` reference target.
+Update the Snyk reference target tracking the to-be-released branch. For a patch release (e.g. x.y.z), check-out the `rx.y` branch and update the `rx.y` reference target. For a minor release (e.g. x.y.0), check out the `master` branch and update the `master` reference target.
 
 Run `cmake` to ensure generated source files are present:
 ```bash
@@ -68,7 +68,7 @@ Do the following when releasing:
 - If this is a new minor release (e.g. `x.y.0`):
    - Update the Linux distribution package installation instructions in [README.md](../README.md) to refer to the new version `x.y`.
    - Update the [libmongocrypt-release](https://spruce.mongodb.com/project/libmongocrypt-release/settings/general) Evergreen project (requires auth) to set `Branch Name` to `rx.y`.
-- Commit the changes on the `rx.y` branch with a message like "Update CHANGELOG.md for x.y.z".
+- Commit the changes on the `rx.y` branch with a message like "Release x.y.z".
 - Tag the commit with `git tag -a <tag>`.
    - Push both the branch ref and tag ref in the same command: `git push origin master 1.8.0-alpha0` or `git push origin r1.8 1.8.4`
    - Pushing the branch ref and the tag ref in the same command eliminates the possibility of a race condition in Evergreen (for building resources based on the presence of a release tag)
@@ -77,20 +77,21 @@ Do the following when releasing:
    - `upload-all`
    - `windows-upload-release`
    - All `publish-packages` tasks.
-      - If the `publish-packages` tasks fail with an error like `[curator] 2024/01/02 13:56:17 [p=emergency]: problem submitting repobuilder job: 404 (Not Found)`, this suggests the published path does not yet exist. Barque (the Linux package publishing service) has protection to avoid unintentional publishes. File a DEVPROD ticket ([example](https://jira.mongodb.org/browse/DEVPROD-4053)) and assign to the team called Release Infrastructure to request the path be created. Then re-run the failing `publish-packages` task. Ask in the slack channel `#devprod-release-tools` for further help with `Barque` or `curator`.
+      - If the `publish-packages` tasks fail with an error like `[curator] 2024/01/02 13:56:17 [p=emergency]: problem submitting repobuilder job: 404 (Not Found)`, this suggests the published path does not yet exist. Barque (the Linux package publishing service) has protection to avoid unintentional publishes. File a DEVPROD ticket ([example](https://jira.mongodb.org/browse/DEVPROD-15320)) and assign to the team called Release Infrastructure to request the path be created. Then re-run the failing `publish-packages` task. Ask in the slack channel `#ask-devprod-release-tools` for further help with `Barque` or `curator`.
 - Create the release from the GitHub releases page from the new tag.
-   - Attach the tarball and signature file from the Files tab of the `windows-upload-release` task. [Example](https://github.com/mongodb/libmongocrypt/releases/tag/1.10.0).
+   - Attach the tarball and signature file from the Files tab of the `windows-upload-release` task. [Example](https://github.com/mongodb/libmongocrypt/releases/tag/1.13.0).
    - Attach the Augmented SBOM file to the release as `cyclonedx.augmented.sbom.json`.
      Download the Augmented SBOM from a recent execution of the `sbom` task in an Evergreen patch or commit build.
    - Attach `etc/third_party_vulnerabilities.md` to the release.
    - Attach `etc/ssdlc_compliance_report.md` to the release.
 
 - If this is a new minor release (e.g. `x.y.0`):
-   - File a DOCSP ticket to update the installation instructions on [Install libmongocrypt](https://www.mongodb.com/docs/manual/core/csfle/reference/libmongocrypt/). ([Example](https://jira.mongodb.org/browse/DOCSP-36863))
-   - Generate a new unique SBOM serial number for the next release:
+   - File a DOCSP ticket to update the installation instructions on [Install libmongocrypt](https://www.mongodb.com/docs/manual/core/csfle/reference/libmongocrypt/). ([Example](https://jira.mongodb.org/browse/DOCSP-47954))
+   - Check out the release branch (`rx.y`). Generate a new unique SBOM serial number for the next upcoming patch release (e.g. for `1.13.1` following the release of `1.13.0`):
      ```bash
      ./.evergreen/earthly.sh +sbom-generate-new-serial-number
      ```
+     Commit resulting `etc/cyclonedx.sbom.json` and push to `rx.y`.
    - Create a new Snyk reference target. The following instructions use the example branch `rx.y`:
 
      Run `cmake` to ensure generated source files are present:
@@ -118,13 +119,19 @@ Do the following when releasing:
      - Navigate to the [Webhook Settings](https://github.com/mongodb/libmongocrypt/settings/hooks).
      - Click `Edit` on the hook for `https://githook.mongodb.com/`.
      - Add the new release branch to the `Payload URL`. Remove unmaintained release branches.
-- Make a PR to apply the "Update CHANGELOG.md for x.y.z" commit to the `master` branch.
+- Make a PR to to the `master` branch:
+   - Apply changes from the "Release x.y.z" commit.
+   - Generate a new unique SBOM serial number next upcoming non-patch release (e.g. for `1.14.0` following the release of `1.13.0`):
+     ```bash
+     ./.evergreen/earthly.sh +sbom-generate-new-serial-number
+     ```
+     Commit resulting `etc/cyclonedx.sbom.json`.
 - Update the release on the [Jira releases page](https://jira.mongodb.org/projects/MONGOCRYPT/versions).
 - Record the release on [C/C++ Release Info](https://docs.google.com/spreadsheets/d/1yHfGmDnbA5-Qt8FX4tKWC5xk9AhzYZx1SKF4AD36ecY/edit?usp=sharing). This is done to meet SSDLC reporting requirements.
 - Add a link to the Evergreen waterfall for the tagged commit to [libmongocrypt Security Testing Summary](https://docs.google.com/document/d/1dc7uvBzu3okAIsA8LSW5sVQGkYIvwpBVdg5v4wb4c4s/edit#heading=h.5t79jwe4p0ss).
 
 ## Homebrew steps ##
-Submit a PR to update the Homebrew package https://github.com/mongodb/homebrew-brew/blob/master/Formula/libmongocrypt.rb. ([Example](https://github.com/mongodb/homebrew-brew/pull/208)). If not on macOS, request a team member to do this step.
+Submit a PR to update the Homebrew package https://github.com/mongodb/homebrew-brew/blob/master/Formula/libmongocrypt.rb. ([Example](https://github.com/mongodb/homebrew-brew/pull/234)). If not on macOS, request a team member to do this step.
 
 ## Debian steps ##
 If you are not a Debian maintainer on the team, request a team member to do the steps in this section.
@@ -142,8 +149,8 @@ index 609dc0b..f7530a9 100644
    source:
      Types: deb
      URIs: https://libmongocrypt.s3.amazonaws.com/apt/debian
--    Suites: <SUITE>/libmongocrypt/1.11
-+    Suites: <SUITE>/libmongocrypt/1.12
+-    Suites: <SUITE>/libmongocrypt/1.12
++    Suites: <SUITE>/libmongocrypt/1.13
      Components: main
      Architectures: amd64 arm64
    suites:
