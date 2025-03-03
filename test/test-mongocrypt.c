@@ -569,9 +569,6 @@ mongocrypt_t *_mongocrypt_tester_mongocrypt(tester_mongocrypt_flags flags) {
     if (flags & TESTER_MONGOCRYPT_WITH_CRYPT_SHARED_LIB) {
         mongocrypt_setopt_append_crypt_shared_lib_search_path(crypt, "$ORIGIN");
     }
-    if (flags & TESTER_MONGOCRYPT_WITH_RANGE_V2) {
-        ASSERT(mongocrypt_setopt_use_range_v2(crypt));
-    }
     if (flags & TESTER_MONGOCRYPT_WITH_SHORT_CACHE) {
         ASSERT(mongocrypt_setopt_key_expiration(crypt, 1));
     }
