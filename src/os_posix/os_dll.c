@@ -10,11 +10,9 @@
 #define _DARWIN_C_SOURCE
 #endif
 #else // No __has_include
-#if __GNUC__ < 5
+#if __GNUC__ < 5 && !defined(_GNU_SOURCE)
 // Best guess on older GCC is that we are using glibc
-#if !defined(_GNU_SOURCE)
 #define _GNU_SOURCE
-#endif
 #endif
 #endif
 
