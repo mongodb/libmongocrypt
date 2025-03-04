@@ -198,36 +198,9 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
         mc_optional_int64_t sparsity;
         const char *expectedError;
         const char *expectedErrorAtParseTime;
-        bool disableRangeV2;
     } testcase_t;
 
     testcase_t tests[] = {
-        {.description = "Range V2 disabled w/ trim factor fails",
-         .findSpecJSON = RAW_STRING({
-             "lowerBound" : {"$numberInt" : "7"},
-             "lbIncluded" : true,
-             "upperBound" : {"$numberInt" : "32"},
-             "ubIncluded" : true,
-             "indexMin" : {"$numberInt" : "0"},
-             "indexMax" : {"$numberInt" : "32"},
-             "trimFactor" : 0
-         }),
-         .disableRangeV2 = true,
-         .expectedErrorAtParseTime = "'trimFactor' is not supported for QE range v1"},
-        {.description = "Range V2 disabled w/ no trim factor succeeds",
-         .findSpecJSON = RAW_STRING({
-             "lowerBound" : {"$numberInt" : "7"},
-             "lbIncluded" : true,
-             "upperBound" : {"$numberInt" : "32"},
-             "ubIncluded" : true,
-             "indexMin" : {"$numberInt" : "0"},
-             "indexMax" : {"$numberInt" : "32"}
-         }),
-         .disableRangeV2 = true,
-         .expectedMinCover = "000111\n"
-                             "001\n"
-                             "01\n"
-                             "100000\n"},
         {.description = "Int32 Bounds included",
          .findSpecJSON = RAW_STRING({
              "lowerBound" : {"$numberInt" : "7"},
@@ -875,7 +848,7 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
         ASSERT(bson_iter_init_find(&findSpecIter, findSpecDoc, "findSpec"));
 
         mc_FLE2RangeFindSpec_t findSpec;
-        bool res = mc_FLE2RangeFindSpec_parse(&findSpec, &findSpecIter, !test->disableRangeV2, status);
+        bool res = mc_FLE2RangeFindSpec_parse(&findSpec, &findSpecIter, status);
         if (test->expectedErrorAtParseTime) {
             ASSERT(!res);
             ASSERT_STATUS_CONTAINS(status, test->expectedErrorAtParseTime);
@@ -889,8 +862,7 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
             sparsity = (size_t)test->sparsity.value;
         }
 
-        const bool use_range_v2 = !test->disableRangeV2;
-        mc_mincover_t *mc = mc_get_mincover_from_FLE2RangeFindSpec(&findSpec, sparsity, status, use_range_v2);
+        mc_mincover_t *mc = mc_get_mincover_from_FLE2RangeFindSpec(&findSpec, sparsity, status);
 
         if (test->expectedError) {
             ASSERT(NULL == mc);
@@ -1089,11 +1061,9 @@ static iupv2_fields_common validate_iupv2_common(bson_t *iup_bson) {
 
 // Assert that the encryptedTokens fields in V2 insert/update ciphertext matches our expectations. Specifically, checks
 // that the length of these fields are what we expect, and that the "isLeaf" token is appended when using range V2.
-static void validate_range_ciphertext(_mongocrypt_ciphertext_t *ciphertext,
-                                      mongocrypt_t *crypt,
-                                      bool useRangeV2,
-                                      uint32_t expectedEdges) {
-    uint32_t expectedPLength = useRangeV2 ? (MONGOCRYPT_HMAC_SHA256_LEN + 1) : MONGOCRYPT_HMAC_SHA256_LEN;
+static void
+validate_range_ciphertext(_mongocrypt_ciphertext_t *ciphertext, mongocrypt_t *crypt, uint32_t expectedEdges) {
+    uint32_t expectedPLength = (MONGOCRYPT_HMAC_SHA256_LEN + 1);
 
     bson_t ciphertextBSON;
     bson_iter_t iter;
@@ -1109,14 +1079,10 @@ static void validate_range_ciphertext(_mongocrypt_ciphertext_t *ciphertext,
     ASSERT(res.p.len == 16 + expectedPLength);
 
     // validate crypto of 'p'
-    if (useRangeV2) {
-        uint8_t is_leaf = 255;
-        validate_encrypted_token(crypt, &res.p, &res.s, true, &is_leaf);
-        // isLeaf byte should be 0.
-        ASSERT(is_leaf == 0);
-    } else {
-        validate_encrypted_token(crypt, &res.p, &res.s, false, NULL);
-    }
+    uint8_t is_leaf = 255;
+    validate_encrypted_token(crypt, &res.p, &res.s, true, &is_leaf);
+    // isLeaf byte should be 0.
+    ASSERT(is_leaf == 0);
 
     // 'g' field should be available
     ASSERT(bson_iter_init_find(&iter, &ciphertextBSON, "g"));
@@ -1150,24 +1116,18 @@ static void validate_range_ciphertext(_mongocrypt_ciphertext_t *ciphertext,
         ASSERT_CMPUINT32(encrypted_token_bin.len, ==, 16 + expectedPLength);
         ASSERT_CMPUINT32(esc_token_bin.len, ==, MONGOCRYPT_HMAC_SHA256_LEN);
 
-        if (useRangeV2) {
-            uint8_t is_leaf = 255;
-            validate_encrypted_token(crypt, &encrypted_token_bin, &esc_token_bin, true, &is_leaf);
-            // isLeaf byte should be either 0 or 1.
-            if (is_leaf == 1) {
-                leaf_count++;
-            } else {
-                ASSERT_CMPUINT8(is_leaf, ==, 0)
-            }
+        uint8_t is_leaf = 255;
+        validate_encrypted_token(crypt, &encrypted_token_bin, &esc_token_bin, true, &is_leaf);
+        // isLeaf byte should be either 0 or 1.
+        if (is_leaf == 1) {
+            leaf_count++;
         } else {
-            validate_encrypted_token(crypt, &encrypted_token_bin, &esc_token_bin, false, NULL);
+            ASSERT_CMPUINT8(is_leaf, ==, 0)
         }
     }
     ASSERT_CMPSIZE_T(g_count, ==, expectedEdges);
-    if (useRangeV2) {
-        // There should be exactly one leaf in any insert call.
-        ASSERT_CMPSIZE_T(leaf_count, ==, 1);
-    }
+    // There should be exactly one leaf in any insert call.
+    ASSERT_CMPSIZE_T(leaf_count, ==, 1);
     bson_destroy(&ciphertextBSON);
 }
 
@@ -1177,25 +1137,7 @@ static void test_mc_marking_to_ciphertext_fle2_range(_mongocrypt_tester_t *teste
         return;
     }
 
-    // Test that whether range V2 is enabled or disabled, the ciphertext matches our expectations.
-    {
-        const char markingJSON[] = RAW_STRING({
-            't' : 1,
-            'a' : 3,
-            'v' : {'min' : 0, 'max' : 7, 'v' : 5},
-            's' : {'$numberLong' : '1'},
-            'cm' : {'$numberLong' : '1'}
-        });
-        _mongocrypt_ciphertext_t ciphertext;
-        _mongocrypt_ciphertext_init(&ciphertext);
-        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
-
-        get_ciphertext_from_marking_json(tester, crypt, markingJSON, &ciphertext);
-
-        validate_range_ciphertext(&ciphertext, crypt, false, 4);
-        _mongocrypt_ciphertext_cleanup(&ciphertext);
-        mongocrypt_destroy(crypt);
-    }
+    // Test that ciphertext matches our expectations.
     {
         const char markingJSON[] = RAW_STRING({
             't' : 1,
@@ -1206,11 +1148,11 @@ static void test_mc_marking_to_ciphertext_fle2_range(_mongocrypt_tester_t *teste
         });
         _mongocrypt_ciphertext_t ciphertext;
         _mongocrypt_ciphertext_init(&ciphertext);
-        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_WITH_RANGE_V2);
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
 
         get_ciphertext_from_marking_json(tester, crypt, markingJSON, &ciphertext);
 
-        validate_range_ciphertext(&ciphertext, crypt, true, 4);
+        validate_range_ciphertext(&ciphertext, crypt, 4);
         _mongocrypt_ciphertext_cleanup(&ciphertext);
 
         mongocrypt_destroy(crypt);

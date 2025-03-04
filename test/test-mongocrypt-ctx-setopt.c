@@ -848,7 +848,7 @@ static void _test_setopt_for_explicit_encrypt(_mongocrypt_tester_t *tester) {
     {
         // Create a crypt with rangeV2 enabled.
         mongocrypt_destroy(crypt);
-        crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT | TESTER_MONGOCRYPT_WITH_RANGE_V2);
+        crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT | TESTER_MONGOCRYPT_DEFAULT);
         REFRESH_CTX;
         /* Set key ID to get past the 'either key id or key alt name required'
          * error */
@@ -904,7 +904,7 @@ static void _test_setopt_for_explicit_encrypt(_mongocrypt_tester_t *tester) {
     // Can't use "rangePreview" algorithm or query type with range V2.
     {
         mongocrypt_destroy(crypt);
-        crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_WITH_RANGE_V2);
+        crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
         REFRESH_CTX;
         ASSERT_KEY_ID_OK(uuid);
         ASSERT_FAILS(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_RANGEPREVIEW_DEPRECATED_STR, -1),
@@ -912,7 +912,7 @@ static void _test_setopt_for_explicit_encrypt(_mongocrypt_tester_t *tester) {
                      "'rangePreview' is deprecated");
 
         mongocrypt_destroy(crypt);
-        crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_WITH_RANGE_V2);
+        crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
         REFRESH_CTX;
         ASSERT_KEY_ID_OK(uuid);
         ASSERT_FAILS(mongocrypt_ctx_setopt_query_type(ctx, MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_DEPRECATED_STR, -1),
@@ -920,55 +920,9 @@ static void _test_setopt_for_explicit_encrypt(_mongocrypt_tester_t *tester) {
                      "'rangePreview' is deprecated");
     }
 
-    /* Error if query type == "rangePreview" and algorithm == "range" for range V1. */
-    // Explanation: Algorithm "rangePreview" accepts both query type "rangePreview" (for compatibility) and "range" (new
-    // behavior), but algorithm "range" only accepts query type "range". This is because if we are using the new
-    // algorithm type, we don't need to support the deprecated name for compatibility.
+    /* If query type == algorithm == "range", succeeds. */
     {
         REFRESH;
-        ASSERT_KEY_ID_OK(uuid);
-        ASSERT_OK(mongocrypt_ctx_setopt_algorithm_range(ctx, rangeopts), ctx);
-        ASSERT_ALGORITHM_OK(MONGOCRYPT_ALGORITHM_RANGE_STR, -1);
-        ASSERT_QUERY_TYPE_OK(MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_DEPRECATED_STR, -1);
-        ASSERT_OK(mongocrypt_ctx_setopt_contention_factor(ctx, 0), ctx);
-        ASSERT_EX_ENCRYPT_EXPRESSION_INIT_FAILS(bson, "must match index_type");
-    }
-
-    /* If query type == "range" and algorithm == "rangePreview", succeeds for range V1 */
-    {
-        REFRESH;
-        ASSERT_KEY_ID_OK(uuid);
-        ASSERT_OK(mongocrypt_ctx_setopt_algorithm_range(ctx, rangeopts), ctx);
-        ASSERT_ALGORITHM_OK(MONGOCRYPT_ALGORITHM_RANGEPREVIEW_DEPRECATED_STR, -1);
-        ASSERT_QUERY_TYPE_OK(MONGOCRYPT_QUERY_TYPE_RANGE_STR, -1);
-        ASSERT_OK(mongocrypt_ctx_setopt_contention_factor(ctx, 0), ctx);
-        ASSERT_EX_ENCRYPT_EXPRESSION_INIT_OK(bson);
-    }
-
-    /* If query type == algorithm == "rangePreview", succeeds for range V1. */
-    {
-        REFRESH;
-        ASSERT_KEY_ID_OK(uuid);
-        ASSERT_OK(mongocrypt_ctx_setopt_algorithm_range(ctx, rangeopts), ctx);
-        ASSERT_ALGORITHM_OK(MONGOCRYPT_ALGORITHM_RANGEPREVIEW_DEPRECATED_STR, -1);
-        ASSERT_QUERY_TYPE_OK(MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_DEPRECATED_STR, -1);
-        ASSERT_OK(mongocrypt_ctx_setopt_contention_factor(ctx, 0), ctx);
-        ASSERT_EX_ENCRYPT_EXPRESSION_INIT_OK(bson);
-    }
-
-    /* If query type == algorithm == "range", succeeds for both V2 and V1. */
-    {
-        REFRESH;
-        ASSERT_KEY_ID_OK(uuid);
-        ASSERT_OK(mongocrypt_ctx_setopt_algorithm_range(ctx, rangeopts), ctx);
-        ASSERT_ALGORITHM_OK(MONGOCRYPT_ALGORITHM_RANGE_STR, -1);
-        ASSERT_QUERY_TYPE_OK(MONGOCRYPT_QUERY_TYPE_RANGE_STR, -1);
-        ASSERT_OK(mongocrypt_ctx_setopt_contention_factor(ctx, 0), ctx);
-        ASSERT_EX_ENCRYPT_EXPRESSION_INIT_OK(bson);
-
-        mongocrypt_destroy(crypt);
-        crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_WITH_RANGE_V2);
-        REFRESH_CTX;
         ASSERT_KEY_ID_OK(uuid);
         ASSERT_OK(mongocrypt_ctx_setopt_algorithm_range(ctx, rangeopts), ctx);
         ASSERT_ALGORITHM_OK(MONGOCRYPT_ALGORITHM_RANGE_STR, -1);

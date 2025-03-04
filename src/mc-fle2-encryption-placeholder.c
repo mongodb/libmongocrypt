@@ -224,7 +224,6 @@ bool mc_validate_sparsity(int64_t sparsity, mongocrypt_status_t *status) {
 
 static bool mc_FLE2RangeFindSpecEdgesInfo_parse(mc_FLE2RangeFindSpecEdgesInfo_t *out,
                                                 const bson_iter_t *in,
-                                                bool use_range_v2,
                                                 mongocrypt_status_t *status) {
     bson_iter_t iter;
     bool has_lowerBound = false, has_lbIncluded = false, has_upperBound = false, has_ubIncluded = false,
@@ -323,11 +322,6 @@ static bool mc_FLE2RangeFindSpecEdgesInfo_parse(mc_FLE2RangeFindSpecEdgesInfo_t 
     // Do not error if precision is not present. Precision optional and only
     // applies to double/decimal128.
 
-    if (!use_range_v2 && out->trimFactor.set) {
-        CLIENT_ERR(ERROR_PREFIX "'trimFactor' is not supported for QE range v1");
-        return false;
-    }
-
     return true;
 
 fail:
@@ -337,10 +331,7 @@ fail:
 #undef ERROR_PREFIX
 #define ERROR_PREFIX "Error parsing FLE2RangeFindSpec: "
 
-bool mc_FLE2RangeFindSpec_parse(mc_FLE2RangeFindSpec_t *out,
-                                const bson_iter_t *in,
-                                bool use_range_v2,
-                                mongocrypt_status_t *status) {
+bool mc_FLE2RangeFindSpec_parse(mc_FLE2RangeFindSpec_t *out, const bson_iter_t *in, mongocrypt_status_t *status) {
     BSON_ASSERT_PARAM(out);
     BSON_ASSERT_PARAM(in);
 
@@ -360,7 +351,7 @@ bool mc_FLE2RangeFindSpec_parse(mc_FLE2RangeFindSpec_t *out,
         BSON_ASSERT(field);
 
         IF_FIELD(edgesInfo) {
-            if (!mc_FLE2RangeFindSpecEdgesInfo_parse(&out->edgesInfo.value, &iter, use_range_v2, status)) {
+            if (!mc_FLE2RangeFindSpecEdgesInfo_parse(&out->edgesInfo.value, &iter, status)) {
                 goto fail;
             }
             out->edgesInfo.set = true;
@@ -422,10 +413,7 @@ fail:
 #undef ERROR_PREFIX
 #define ERROR_PREFIX "Error parsing FLE2RangeInsertSpec: "
 
-bool mc_FLE2RangeInsertSpec_parse(mc_FLE2RangeInsertSpec_t *out,
-                                  const bson_iter_t *in,
-                                  bool use_range_v2,
-                                  mongocrypt_status_t *status) {
+bool mc_FLE2RangeInsertSpec_parse(mc_FLE2RangeInsertSpec_t *out, const bson_iter_t *in, mongocrypt_status_t *status) {
     BSON_ASSERT_PARAM(out);
     BSON_ASSERT_PARAM(in);
 
@@ -493,11 +481,6 @@ bool mc_FLE2RangeInsertSpec_parse(mc_FLE2RangeInsertSpec_t *out,
     CHECK_HAS(max)
     // Do not error if precision is not present. Precision optional and only
     // applies to double/decimal128.
-
-    if (!use_range_v2 && out->trimFactor.set) {
-        CLIENT_ERR(ERROR_PREFIX "'trimFactor' is not supported for QE range v1");
-        return false;
-    }
 
     return true;
 

@@ -96,8 +96,7 @@ static void _test_FLE2EncryptionPlaceholder_range_parse(_mongocrypt_tester_t *te
         {
             mc_FLE2RangeInsertSpec_t spec;
 
-            ASSERT_OK_STATUS(mc_FLE2RangeInsertSpec_parse(&spec, &placeholder.v_iter, false /* use_range_v2 */, status),
-                             status);
+            ASSERT_OK_STATUS(mc_FLE2RangeInsertSpec_parse(&spec, &placeholder.v_iter, status), status);
 
             ASSERT(BSON_ITER_HOLDS_INT32(&spec.v));
             ASSERT_CMPINT32(bson_iter_int32(&spec.v), ==, 123456);
@@ -153,8 +152,7 @@ static void _test_FLE2EncryptionPlaceholder_range_parse(_mongocrypt_tester_t *te
         {
             mc_FLE2RangeFindSpec_t spec;
 
-            ASSERT_OK_STATUS(mc_FLE2RangeFindSpec_parse(&spec, &placeholder.v_iter, false /* use_range_v2 */, status),
-                             status);
+            ASSERT_OK_STATUS(mc_FLE2RangeFindSpec_parse(&spec, &placeholder.v_iter, status), status);
 
             ASSERT(spec.edgesInfo.set);
 
@@ -225,8 +223,7 @@ static void _test_FLE2EncryptionPlaceholder_range_parse(_mongocrypt_tester_t *te
         {
             mc_FLE2RangeFindSpec_t spec;
 
-            ASSERT_OK_STATUS(mc_FLE2RangeFindSpec_parse(&spec, &placeholder.v_iter, false /* use_range_v2 */, status),
-                             status);
+            ASSERT_OK_STATUS(mc_FLE2RangeFindSpec_parse(&spec, &placeholder.v_iter, status), status);
 
             ASSERT(spec.edgesInfo.set);
 
@@ -295,8 +292,7 @@ static void _test_FLE2EncryptionPlaceholder_range_parse(_mongocrypt_tester_t *te
         {
             mc_FLE2RangeInsertSpec_t spec;
 
-            ASSERT_OK_STATUS(mc_FLE2RangeInsertSpec_parse(&spec, &placeholder.v_iter, false /* use_range_v2 */, status),
-                             status);
+            ASSERT_OK_STATUS(mc_FLE2RangeInsertSpec_parse(&spec, &placeholder.v_iter, status), status);
 
             ASSERT(BSON_ITER_HOLDS_DOUBLE(&spec.v));
             ASSERT_CMPDOUBLE(bson_iter_double(&spec.v), ==, 123.456);

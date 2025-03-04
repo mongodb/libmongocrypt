@@ -34,7 +34,7 @@
                             "path": "encrypted",
                             "bsonType": "int",
                             "queries": {
-                                "queryType": "rangePreview",
+                                "queryType": "range",
                                 "contention": {
                                     "$numberInt": "0"
                                 },

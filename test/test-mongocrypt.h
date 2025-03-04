@@ -40,8 +40,6 @@ typedef enum tester_mongocrypt_flags {
     /// crypt_shared library must be present in the same directory as the test
     /// executable.
     TESTER_MONGOCRYPT_WITH_CRYPT_SHARED_LIB = 1 << 0,
-    /// Enable range V2
-    TESTER_MONGOCRYPT_WITH_RANGE_V2 = 1 << 2,
     /// Short cache expiration
     TESTER_MONGOCRYPT_WITH_SHORT_CACHE = 1 << 3,
     /// Do not call `mongocrypt_init` yet to allow for further configuration of the resulting `mongocrypt_t`.

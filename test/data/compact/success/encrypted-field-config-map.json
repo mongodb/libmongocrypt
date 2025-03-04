@@ -49,7 +49,12 @@
                     }
                 },
                 "path": "rangeField",
-                "bsonType": "int"
+                "bsonType": "int",
+                "queries": {
+                    "queryType": "range",
+                    "contention": 0,
+                    "sparsity": 1
+                }
             }
         ]
     }
