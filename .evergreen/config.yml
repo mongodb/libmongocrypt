@@ -834,7 +834,7 @@ tasks:
         remote_file: 'libmongocrypt/all/${tag_upload_location}/libmongocrypt-all.tar.gz'
         bucket: mciuploads
         permissions: public-read
-        optional: true
+        optional: true # Do not fail task if `local_file` does not exist. `local_file` only exists for tagged release.
         display_name: 'libmongocrypt-all-${tag_upload_location}.tar.gz'
         local_file: 'libmongocrypt-all-${tag_upload_location}.tar.gz'
         content_type: '${content_type|application/x-gzip}'
