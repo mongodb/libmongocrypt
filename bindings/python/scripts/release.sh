@@ -53,7 +53,7 @@ function build_wheel() {
 function build_manylinux_wheel() {
     python -m pip install unasync
     docker pull $1
-    docker run --rm -v `pwd`:/python $1 /python/build-manylinux-wheel.sh
+    docker run --rm -v `pwd`:/python $1 /python/scripts/build-manylinux-wheel.sh
     # Sudo is needed to remove the files created by docker.
     sudo rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
 }
