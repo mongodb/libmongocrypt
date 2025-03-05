@@ -436,6 +436,13 @@ static _loaded_csfle _try_load_csfle(const char *filepath, mongocrypt_status_t *
 #undef X_FUNC
 
     if (!vtable.okay) {
+        // A common mistake is to pass the path to libmongocrypt instead of than crypt_shared.
+        // Check if the library has a libmongocrypt symbol.
+        if (mcr_dll_sym(lib, "mongocrypt_version")) {
+            CLIENT_ERR("Tried to load crypt_shared dynamic library at path [%s] but detected libmongocrypt", filepath);
+            mcr_dll_close(lib);
+            return (_loaded_csfle){.okay = false};
+        }
         mcr_dll_close(lib);
         _mongocrypt_log(log,
                         MONGOCRYPT_LOG_LEVEL_ERROR,
