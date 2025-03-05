@@ -442,6 +442,9 @@ static _loaded_csfle _try_load_csfle(const char *filepath, mongocrypt_status_t *
                         "One or more required symbols are missing from crypt_shared dynamic library "
                         "[%s], so this dynamic library will not be used.",
                         filepath);
+        CLIENT_ERR("One or more required symbols are missing from crypt_shared dynamic library "
+                   "[%s], so this dynamic library will not be used.",
+                   filepath);
         return (_loaded_csfle){.okay = false};
     }
 
