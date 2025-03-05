@@ -569,11 +569,6 @@ mongocrypt_t *_mongocrypt_tester_mongocrypt(tester_mongocrypt_flags flags) {
     if (flags & TESTER_MONGOCRYPT_WITH_CRYPT_SHARED_LIB) {
         mongocrypt_setopt_append_crypt_shared_lib_search_path(crypt, "$ORIGIN");
     }
-    if (flags & TESTER_MONGOCRYPT_WITH_RANGE_V2) {
-        ASSERT(mongocrypt_setopt_use_range_v2(crypt));
-    } else {
-        crypt->opts.use_range_v2 = false;
-    }
     if (flags & TESTER_MONGOCRYPT_WITH_SHORT_CACHE) {
         ASSERT(mongocrypt_setopt_key_expiration(crypt, 1));
     }
@@ -593,10 +588,6 @@ mongocrypt_t *_mongocrypt_tester_mongocrypt(tester_mongocrypt_flags flags) {
 
 bool _mongocrypt_init_for_test(mongocrypt_t *crypt) {
     BSON_ASSERT_PARAM(crypt);
-    // Even if the ENABLE_USE_RANGE_V2 compile flag is on, we should have range V2 off by default for testing, as many
-    // existing tests are based around range V2 being disabled. To use range V2, use the TESTER_MONGOCRYPT_WITH_RANGE_V2
-    // flag with the above function.
-    crypt->opts.use_range_v2 = false;
     return mongocrypt_init(crypt);
 }
 
