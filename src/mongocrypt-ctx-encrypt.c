@@ -40,7 +40,6 @@ static bool _mongo_op_collinfo(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) 
         _mongocrypt_ctx_fail(ctx);
         return false;
     }
-    CRYPT_TRACEF(&ectx->parent.crypt->log, "constructed: %s\n", tmp_json(&filter));
     _mongocrypt_buffer_steal_from_bson(&ectx->list_collections_filter, &filter);
     out->data = ectx->list_collections_filter.data;
     out->len = ectx->list_collections_filter.len;
