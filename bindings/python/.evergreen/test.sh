@@ -86,7 +86,7 @@ for PYTHON_BINARY in "${PYTHONS[@]}"; do
 done
 
 # Verify the sbom file
-LIBMONGOCRYPT_VERSION=$(cat ./libmongocrypt-version.txt)
+LIBMONGOCRYPT_VERSION=$(cat ./scripts/libmongocrypt-version.txt)
 EXPECTED="pkg:github/mongodb/libmongocrypt@$LIBMONGOCRYPT_VERSION"
 if grep -q $EXPECTED sbom.json; then
   echo "SBOM is up to date!"

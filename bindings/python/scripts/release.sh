@@ -15,13 +15,18 @@
 set -o xtrace   # Write all commands first to stderr
 set -o errexit  # Exit the script with error if any of the commands fail
 
+SCRIPT_DIR=$(dirname ${BASH_SOURCE:-$0})
+
 # The libmongocrypt git revision release to embed in our wheels.
-LIBMONGOCRYPT_VERSION=$(cat ./libmongocrypt-version.txt)
+LIBMONGOCRYPT_VERSION=$(cat $SCRIPT_DIR/libmongocrypt-version.txt)
 REVISION=$(git rev-list -n 1 $LIBMONGOCRYPT_VERSION)
 # The libmongocrypt release branch.
-BRANCH="r1.12"
+MINOR_VERSION=$(echo $LIBMONGOCRYPT_VERSION | cut -d. -f1,2)
+BRANCH="r${MINOR_VERSION}"
 # The python executable to use.
 PYTHON=${PYTHON:-python}
+
+pushd $SCRIPT_DIR/..
 
 # Clean slate.
 rm -rf dist .venv build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
@@ -48,7 +53,7 @@ function build_wheel() {
 function build_manylinux_wheel() {
     python -m pip install unasync
     docker pull $1
-    docker run --rm -v `pwd`:/python $1 /python/build-manylinux-wheel.sh
+    docker run --rm -v `pwd`:/python $1 /python/scripts/build-manylinux-wheel.sh
     # Sudo is needed to remove the files created by docker.
     sudo rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
 }
@@ -126,3 +131,4 @@ if [ $(command -v docker) ]; then
 fi
 
 ls -ltr dist
+popd

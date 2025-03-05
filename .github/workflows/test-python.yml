@@ -40,6 +40,7 @@ jobs:
     if: github.repository_owner == 'mongodb'
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: ["3.8", "3.13"]
@@ -59,6 +60,6 @@ jobs:
           if [ "${{ matrix.python-version }}" == "3.13" ]; then 
             export PIP_PRE=1
           fi
-          export LIBMONGOCRYPT_VERSION=$(cat ./libmongocrypt-version.txt)
+          export LIBMONGOCRYPT_VERSION=$(cat ./scripts/libmongocrypt-version.txt)
           git fetch origin $LIBMONGOCRYPT_VERSION
-          bash ./release.sh
+          bash ./scripts/release.sh
