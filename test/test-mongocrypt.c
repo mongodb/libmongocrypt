@@ -983,6 +983,7 @@ int main(int argc, char **argv) {
     _mongocrypt_tester_install_fle2_payload_iup_v2(&tester);
     _mongocrypt_tester_install_fle2_payload_find_equality_v2(&tester);
     _mongocrypt_tester_install_fle2_payload_find_range_v2(&tester);
+    _mongocrypt_tester_install_fle2_payload_find_text(&tester);
     _mongocrypt_tester_install_fle2_tag_and_encrypted_metadata_block(&tester);
     _mongocrypt_tester_install_range_encoding(&tester);
     _mongocrypt_tester_install_range_edge_generation(&tester);
@@ -1048,7 +1049,7 @@ get_os_version_failed:
 
             continue; // No match found.
         }
-    found_match : {}
+    found_match: {}
 
         TEST_PRINTF("  begin %s\n", tester.test_names[i]);
         tester.test_fns[i](&tester);

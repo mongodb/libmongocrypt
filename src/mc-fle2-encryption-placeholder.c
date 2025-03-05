@@ -509,9 +509,9 @@ fail:
 
 #define ERROR_PREFIX "Error parsing FLE2SubstringInsertSpec: "
 
-static bool mc_FLE2SubstringInsertSpec_parse(mc_FLE2SubstringInsertSpec_t *out,
-                                             const bson_iter_t *in,
-                                             mongocrypt_status_t *status) {
+bool mc_FLE2SubstringInsertSpec_parse(mc_FLE2SubstringInsertSpec_t *out,
+                                      const bson_iter_t *in,
+                                      mongocrypt_status_t *status) {
     bson_iter_t iter;
     bool has_mlen = false, has_ub = false, has_lb = false;
     BSON_ASSERT_PARAM(out);
@@ -551,8 +551,7 @@ fail:
 
 #define ERROR_PREFIX "Error parsing FLE2SuffixInsertSpec: "
 
-static bool
-mc_FLE2SuffixInsertSpec_parse(mc_FLE2SuffixInsertSpec_t *out, const bson_iter_t *in, mongocrypt_status_t *status) {
+bool mc_FLE2SuffixInsertSpec_parse(mc_FLE2SuffixInsertSpec_t *out, const bson_iter_t *in, mongocrypt_status_t *status) {
     bson_iter_t iter;
     bool has_ub = false, has_lb = false;
 
@@ -587,8 +586,7 @@ fail:
 
 #define ERROR_PREFIX "Error parsing FLE2PrefixInsertSpec: "
 
-static bool
-mc_FLE2PrefixInsertSpec_parse(mc_FLE2PrefixInsertSpec_t *out, const bson_iter_t *in, mongocrypt_status_t *status) {
+bool mc_FLE2PrefixInsertSpec_parse(mc_FLE2PrefixInsertSpec_t *out, const bson_iter_t *in, mongocrypt_status_t *status) {
     bson_iter_t iter;
     bool has_ub = false, has_lb = false;
     BSON_ASSERT_PARAM(out);
