@@ -29,7 +29,7 @@ def _parse_version(version):
 
 ffi = cffi.FFI()
 
-# Generated with strip_header.py
+# Start embedding from update_binding.py
 ffi.cdef(
     """/*
  * Copyright 2019-present MongoDB, Inc.
@@ -1468,6 +1468,7 @@ bool mongocrypt_setopt_key_expiration(mongocrypt_t *crypt, uint64_t cache_expira
 // DEPRECATED: Support "rangePreview" has been removed in favor of "range".
 """
 )
+# End embedding from update_binding.py
 
 
 def _to_string(cdata):
