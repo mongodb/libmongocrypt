@@ -49,7 +49,6 @@ typedef enum tester_mongocrypt_flags {
 } tester_mongocrypt_flags;
 
 /* Arbitrary max of 2148 instances of temporary test data. Increase as needed.
- * TODO(MONGOCRYPT-775) increasing further (e.g. 3000+) causes a segfault on Windows test runs. Revise.
  */
 #define TEST_DATA_COUNT 2148
 
