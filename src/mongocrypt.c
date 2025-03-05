@@ -396,10 +396,10 @@ static _loaded_csfle _try_load_csfle(const char *filepath, mongocrypt_status_t *
         // Error opening candidate
         _mongocrypt_log(log,
                         MONGOCRYPT_LOG_LEVEL_WARNING,
-                        "Error while opening candidate for CSFLE dynamic library [%s]: %s",
+                        "Error while opening candidate for crypt_shared dynamic library [%s]: %s",
                         filepath,
                         lib.error_string.raw.data);
-        CLIENT_ERR("Error while opening candidate for CSFLE dynamic library [%s]: %s",
+        CLIENT_ERR("Error while opening candidate for crypt_shared dynamic library [%s]: %s",
                    filepath,
                    lib.error_string.raw.data);
         // Free resources, which will include the error string
@@ -409,7 +409,7 @@ static _loaded_csfle _try_load_csfle(const char *filepath, mongocrypt_status_t *
     }
 
     // Successfully opened DLL
-    _mongocrypt_log(log, MONGOCRYPT_LOG_LEVEL_TRACE, "Loading CSFLE dynamic library [%s]", filepath);
+    _mongocrypt_log(log, MONGOCRYPT_LOG_LEVEL_TRACE, "Loading crypt_shared dynamic library [%s]", filepath);
 
     // Construct the library vtable
     _mongo_crypt_v1_vtable vtable = {.okay = true};
@@ -424,7 +424,7 @@ static _loaded_csfle _try_load_csfle(const char *filepath, mongocrypt_status_t *
             /* The requested symbol is not present */                                                                  \
             _mongocrypt_log(log,                                                                                       \
                             MONGOCRYPT_LOG_LEVEL_ERROR,                                                                \
-                            "Missing required symbol '%s' from CSFLE dynamic library [%s]",                            \
+                            "Missing required symbol '%s' from crypt_shared dynamic library [%s]",                     \
                             symname,                                                                                   \
                             filepath);                                                                                 \
             /* Mark the vtable as broken, but keep trying to load more symbols to                                      \
@@ -439,14 +439,14 @@ static _loaded_csfle _try_load_csfle(const char *filepath, mongocrypt_status_t *
         mcr_dll_close(lib);
         _mongocrypt_log(log,
                         MONGOCRYPT_LOG_LEVEL_ERROR,
-                        "One or more required symbols are missing from CSFLE dynamic library "
+                        "One or more required symbols are missing from crypt_shared dynamic library "
                         "[%s], so this dynamic library will not be used.",
                         filepath);
         return (_loaded_csfle){.okay = false};
     }
 
     // Success!
-    _mongocrypt_log(log, MONGOCRYPT_LOG_LEVEL_INFO, "Opened CSFLE dynamic library [%s]", filepath);
+    _mongocrypt_log(log, MONGOCRYPT_LOG_LEVEL_INFO, "Opened crypt_shared dynamic library [%s]", filepath);
     return (_loaded_csfle){.okay = true, .lib = lib, .vtable = vtable};
 }
 
@@ -480,7 +480,7 @@ static bool _try_replace_dollar_origin(mstr *filepath, _mongocrypt_log_t *log) {
         _mongocrypt_log(log,
                         MONGOCRYPT_LOG_LEVEL_WARNING,
                         "Error while loading the executable module path for "
-                        "substitution of $ORIGIN in CSFLE search path [%s]: %s",
+                        "substitution of $ORIGIN in crypt_shared search path [%s]: %s",
                         filepath->raw.data,
                         error.raw.data);
         mstr_free(error);
@@ -596,7 +596,7 @@ static bool _validate_csfle_singleton(mongocrypt_t *crypt, _loaded_csfle found) 
     bool okay = true;
     if (!found.okay) {
         // There is one loaded, but we failed to find that same library. Error:
-        CLIENT_ERR("An existing CSFLE library is loaded by the application at "
+        CLIENT_ERR("An existing crypt_shared library is loaded by the application at "
                    "[%s], but the current call to mongocrypt_init() failed to "
                    "find that same library.",
                    existing_path.data);
@@ -610,9 +610,9 @@ static bool _validate_csfle_singleton(mongocrypt_t *crypt, _loaded_csfle found) 
         if (!mstr_eq(found_path.path.view, existing_path)) {
             // Our find-result should only ever find the existing same library.
             // Error:
-            CLIENT_ERR("An existing CSFLE library is loaded by the application at [%s], "
+            CLIENT_ERR("An existing crypt_shared library is loaded by the application at [%s], "
                        "but the current call to mongocrypt_init() attempted to load a "
-                       "second CSFLE library from [%s]. This is not allowed.",
+                       "second crypt_shared library from [%s]. This is not allowed.",
                        existing_path.data,
                        found_path.path.raw.data);
             okay = false;

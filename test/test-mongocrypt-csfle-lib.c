@@ -96,7 +96,7 @@ static void _test_csfle_load_twice_fail(_mongocrypt_tester_t *tester) {
     mongocrypt_t *const crypt2 = get_test_mongocrypt(tester);
     mongocrypt_setopt_set_crypt_shared_lib_path_override(crypt2, "$ORIGIN/stubbed-crypt_shared-2.dll");
     // Loading a second different library is an error:
-    ASSERT_FAILS(_mongocrypt_init_for_test(crypt2), crypt2, "attempted to load a second CSFLE library");
+    ASSERT_FAILS(_mongocrypt_init_for_test(crypt2), crypt2, "attempted to load a second crypt_shared library");
 
     mstr_view version = mstrv_view_cstr(mongocrypt_crypt_shared_lib_version_string(crypt1, NULL));
     if (TEST_MONGOCRYPT_HAVE_REAL_CRYPT_SHARED_LIB) {
