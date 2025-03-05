@@ -190,6 +190,15 @@ static void _test_lookup_version_check(_mongocrypt_tester_t *tester) {
     mongocrypt_destroy(crypt);
 }
 
+static void _test_loading_libmongocrypt_fails(_mongocrypt_tester_t *tester) {
+    mongocrypt_t *const crypt = get_test_mongocrypt(tester);
+    const char *path_to_libmongocrypt = TEST_MONGOCRYPT_MONGOCRYPT_SHARED_PATH;
+    mongocrypt_setopt_set_crypt_shared_lib_path_override(crypt, path_to_libmongocrypt);
+    bool ok = mongocrypt_init(crypt);
+    ASSERT_FAILS(ok, crypt, "detected libmongocrypt");
+    mongocrypt_destroy(crypt);
+}
+
 void _mongocrypt_tester_install_csfle_lib(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_csfle_no_paths);
     INSTALL_TEST(_test_csfle_not_found);
@@ -202,4 +211,5 @@ void _mongocrypt_tester_install_csfle_lib(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_csfle_not_loaded_with_bypassqueryanalysis);
     INSTALL_TEST(_test_override_error_includes_reason);
     INSTALL_TEST(_test_lookup_version_check);
+    INSTALL_TEST(_test_loading_libmongocrypt_fails);
 }
