@@ -116,8 +116,7 @@ static void _test_getEdgesInt32(_mongocrypt_tester_t *tester) {
                                         .max = test->max,
                                         .sparsity = test->sparsity,
                                         .trimFactor = OPT_I32(test->trimFactor)};
-        const bool use_range_v2 = true;
-        mc_edges_t *got = mc_getEdgesInt32(args, status, use_range_v2);
+        mc_edges_t *got = mc_getEdgesInt32(args, status);
         if (test->expectError != NULL) {
             ASSERT_OR_PRINT_MSG(NULL == got, "expected error, got success");
             ASSERT_STATUS_CONTAINS(status, test->expectError);
@@ -209,8 +208,7 @@ static void _test_getEdgesInt64(_mongocrypt_tester_t *tester) {
                                         .max = test->max,
                                         .sparsity = test->sparsity,
                                         .trimFactor = OPT_I32(test->trimFactor)};
-        const bool use_range_v2 = true;
-        mc_edges_t *got = mc_getEdgesInt64(args, status, use_range_v2);
+        mc_edges_t *got = mc_getEdgesInt64(args, status);
         if (test->expectError != NULL) {
             ASSERT_OR_PRINT_MSG(NULL == got, "expected error, got success");
             ASSERT_STATUS_CONTAINS(status, test->expectError);
@@ -270,8 +268,7 @@ static void _test_getEdgesDouble(_mongocrypt_tester_t *tester) {
         mc_getEdgesDouble_args_t args = {.value = test->value,
                                          .sparsity = test->sparsity,
                                          .trimFactor = OPT_I32(trimFactor)};
-        const bool use_range_v2 = true;
-        mc_edges_t *got = mc_getEdgesDouble(args, status, use_range_v2);
+        mc_edges_t *got = mc_getEdgesDouble(args, status);
 
         if (test->expectError != NULL) {
             if (NULL != got) {
@@ -338,8 +335,7 @@ static void _test_getEdgesDecimal128(_mongocrypt_tester_t *tester) {
                                              //  .max = test->max,
                                              .sparsity = (size_t)test->sparsity,
                                              .trimFactor = OPT_I32(trimFactor)};
-        const bool use_range_v2 = true;
-        mc_edges_t *got = mc_getEdgesDecimal128(args, status, use_range_v2);
+        mc_edges_t *got = mc_getEdgesDecimal128(args, status);
 
         if (test->expectError != NULL) {
             if (NULL != got) {

@@ -54,9 +54,9 @@ jobs:
 
       - name: Build and test dist files
         run: |
-          export LIBMONGOCRYPT_VERSION=$(cat ./libmongocrypt-version.txt)
+          export LIBMONGOCRYPT_VERSION=$(cat ./scripts/libmongocrypt-version.txt)
           git fetch origin $LIBMONGOCRYPT_VERSION
-          bash ./release.sh
+          bash ./scripts/release.sh
 
       - uses: actions/upload-artifact@v4
         with:

@@ -15,7 +15,9 @@
  */
 
 /* Needed for strptime */
+#if !defined(_GNU_SOURCE)
 #define _GNU_SOURCE
+#endif
 
 #include "kms_message/kms_message.h"
 #include "kms_message_private.h"
