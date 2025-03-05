@@ -924,7 +924,7 @@ static void test_tmp_bsonf(_mongocrypt_tester_t *tester) {
 bool _aes_ctr_is_supported_by_os = true;
 
 int main(int argc, char **argv) {
-    _mongocrypt_tester_t tester = {0};
+    static _mongocrypt_tester_t tester = {0};
     int i;
 
     TEST_PRINTF("Pass a list of patterns to run a subset of tests.\n");
