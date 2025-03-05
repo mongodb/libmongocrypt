@@ -180,7 +180,7 @@ static void _test_lookup_version_check(_mongocrypt_tester_t *tester) {
     mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_WITH_CRYPT_SHARED_LIB);
     uint64_t version = crypt->csfle.get_version();
     mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
-    mongocrypt_binary_t *cmd = TEST_FILE("./test/data/lookup/csfle/01-cmd.json");
+    mongocrypt_binary_t *cmd = TEST_FILE("./test/data/lookup/csfle/cmd.json");
     if (version >= CRYPT_SHARED_8_1) {
         ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, cmd), ctx);
     } else {
