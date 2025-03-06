@@ -149,10 +149,15 @@ class MongoCrypt:
         if any([on_demand_aws, on_demand_gcp, on_demand_azure]):
             lib.mongocrypt_setopt_use_need_kms_credentials_state(self.__crypt)
 
-        # Enable KMS retry when available, libmongocrypt >= 1.12.0,
+        # Enable KMS retry and key_expiration_ms when available, libmongocrypt >= 1.12.0,
         try:
             if not lib.mongocrypt_setopt_retry_kms(self.__crypt, True):
                 self.__raise_from_status()
+            if self.__opts.key_expiration_ms is not None:
+                if not lib.mongocrypt_setopt_key_expiration(
+                    self.__crypt, self.__opts.key_expiration_ms
+                ):
+                    self.__raise_from_status()
         except AttributeError:
             # libmongocrypt < 1.12
             pass
