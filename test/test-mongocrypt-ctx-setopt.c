@@ -28,61 +28,61 @@ static char invalid_utf8[] = {(char)0x80, (char)0x00};
 
 /* Convenience macros for setting options */
 #define ASSERT_MASTERKEY_AWS_OK(region, region_len, cmk, cmk_len)                                                      \
-    ASSERT_OK(mongocrypt_ctx_setopt_masterkey_aws(ctx, region, region_len, cmk, cmk_len), ctx);
+    ASSERT_OK(mongocrypt_ctx_setopt_masterkey_aws(ctx, region, region_len, cmk, cmk_len), ctx)
 #define ASSERT_MASTERKEY_AWS_FAILS(region, region_len, cmk, cmk_len, msg)                                              \
-    ASSERT_FAILS(mongocrypt_ctx_setopt_masterkey_aws(ctx, region, region_len, cmk, cmk_len), ctx, msg);
+    ASSERT_FAILS(mongocrypt_ctx_setopt_masterkey_aws(ctx, region, region_len, cmk, cmk_len), ctx, msg)
 
-#define ASSERT_MASTERKEY_LOCAL_OK ASSERT_OK(mongocrypt_ctx_setopt_masterkey_local(ctx), ctx);
-#define ASSERT_MASTERKEY_LOCAL_FAILS(msg) ASSERT_FAILS(mongocrypt_ctx_setopt_masterkey_local(ctx), ctx, msg);
+#define ASSERT_MASTERKEY_LOCAL_OK ASSERT_OK(mongocrypt_ctx_setopt_masterkey_local(ctx), ctx)
+#define ASSERT_MASTERKEY_LOCAL_FAILS(msg) ASSERT_FAILS(mongocrypt_ctx_setopt_masterkey_local(ctx), ctx, msg)
 
-#define ASSERT_KEY_ENCRYPTION_KEY_OK(bin) ASSERT_OK(mongocrypt_ctx_setopt_key_encryption_key(ctx, bin), ctx);
+#define ASSERT_KEY_ENCRYPTION_KEY_OK(bin) ASSERT_OK(mongocrypt_ctx_setopt_key_encryption_key(ctx, bin), ctx)
 #define ASSERT_KEY_ENCRYPTION_KEY_FAILS(bin, msg)                                                                      \
-    ASSERT_FAILS(mongocrypt_ctx_setopt_key_encryption_key(ctx, bin), ctx, msg);
+    ASSERT_FAILS(mongocrypt_ctx_setopt_key_encryption_key(ctx, bin), ctx, msg)
 
-#define ASSERT_KEY_ID_OK(key_id) ASSERT_OK(mongocrypt_ctx_setopt_key_id(ctx, key_id), ctx);
-#define ASSERT_KEY_ID_FAILS(key_id, msg) ASSERT_FAILS(mongocrypt_ctx_setopt_key_id(ctx, key_id), ctx, msg);
+#define ASSERT_KEY_ID_OK(key_id) ASSERT_OK(mongocrypt_ctx_setopt_key_id(ctx, key_id), ctx)
+#define ASSERT_KEY_ID_FAILS(key_id, msg) ASSERT_FAILS(mongocrypt_ctx_setopt_key_id(ctx, key_id), ctx, msg)
 
-#define ASSERT_KEY_ALT_NAME_OK(key_alt_name) ASSERT_OK(mongocrypt_ctx_setopt_key_alt_name(ctx, key_alt_name), ctx);
+#define ASSERT_KEY_ALT_NAME_OK(key_alt_name) ASSERT_OK(mongocrypt_ctx_setopt_key_alt_name(ctx, key_alt_name), ctx)
 #define ASSERT_KEY_ALT_NAME_FAILS(key_alt_name, msg)                                                                   \
-    ASSERT_FAILS(mongocrypt_ctx_setopt_key_alt_name(ctx, key_alt_name), ctx, msg);
+    ASSERT_FAILS(mongocrypt_ctx_setopt_key_alt_name(ctx, key_alt_name), ctx, msg)
 
-#define ASSERT_KEY_MATERIAL_OK(key_material) ASSERT_OK(mongocrypt_ctx_setopt_key_material(ctx, key_material), ctx);
+#define ASSERT_KEY_MATERIAL_OK(key_material) ASSERT_OK(mongocrypt_ctx_setopt_key_material(ctx, key_material), ctx)
 #define ASSERT_KEY_MATERIAL_FAILS(key_material, msg)                                                                   \
-    ASSERT_FAILS(mongocrypt_ctx_setopt_key_material(ctx, key_material), ctx, msg);
+    ASSERT_FAILS(mongocrypt_ctx_setopt_key_material(ctx, key_material), ctx, msg)
 
-#define ASSERT_ALGORITHM_OK(algo, algo_len) ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, algo, algo_len), ctx);
+#define ASSERT_ALGORITHM_OK(algo, algo_len) ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, algo, algo_len), ctx)
 #define ASSERT_ALGORITHM_FAILS(algo, algo_len, msg)                                                                    \
-    ASSERT_FAILS(mongocrypt_ctx_setopt_algorithm(ctx, algo, algo_len), ctx, msg);
+    ASSERT_FAILS(mongocrypt_ctx_setopt_algorithm(ctx, algo, algo_len), ctx, msg)
 
-#define ASSERT_QUERY_TYPE_OK(qt, qt_len) ASSERT_OK(mongocrypt_ctx_setopt_query_type(ctx, qt, qt_len), ctx);
+#define ASSERT_QUERY_TYPE_OK(qt, qt_len) ASSERT_OK(mongocrypt_ctx_setopt_query_type(ctx, qt, qt_len), ctx)
 #define ASSERT_QUERY_TYPE_FAILS(qt, qt_len, msg)                                                                       \
-    ASSERT_FAILS(mongocrypt_ctx_setopt_query_type(ctx, qt, qt_len), ctx, msg);
+    ASSERT_FAILS(mongocrypt_ctx_setopt_query_type(ctx, qt, qt_len), ctx, msg)
 
 #define ASSERT_ENDPOINT_OK(endpoint, endpoint_len)                                                                     \
-    ASSERT_OK(mongocrypt_ctx_setopt_masterkey_aws_endpoint(ctx, endpoint, endpoint_len), ctx);
+    ASSERT_OK(mongocrypt_ctx_setopt_masterkey_aws_endpoint(ctx, endpoint, endpoint_len), ctx)
 #define ASSERT_ENDPOINT_FAILS(endpoint, endpoint_len, msg)                                                             \
-    ASSERT_FAILS(mongocrypt_ctx_setopt_masterkey_aws_endpoint(ctx, endpoint, endpoint_len), ctx, msg);
+    ASSERT_FAILS(mongocrypt_ctx_setopt_masterkey_aws_endpoint(ctx, endpoint, endpoint_len), ctx, msg)
 
-#define ASSERT_DATAKEY_INIT_OK ASSERT_OK(mongocrypt_ctx_datakey_init(ctx), ctx);
-#define ASSERT_DATAKEY_INIT_FAILS(msg) ASSERT_FAILS(mongocrypt_ctx_datakey_init(ctx), ctx, msg);
+#define ASSERT_DATAKEY_INIT_OK ASSERT_OK(mongocrypt_ctx_datakey_init(ctx), ctx)
+#define ASSERT_DATAKEY_INIT_FAILS(msg) ASSERT_FAILS(mongocrypt_ctx_datakey_init(ctx), ctx, msg)
 
-#define ASSERT_ENCRYPT_INIT_OK(db, db_len, cmd) ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, db, db_len, cmd), ctx);
+#define ASSERT_ENCRYPT_INIT_OK(db, db_len, cmd) ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, db, db_len, cmd), ctx)
 #define ENCRYPT_INIT_FAILS(db, db_len, cmd, msg)                                                                       \
-    ASSERT_FAILS(mongocrypt_ctx_encrypt_init(ctx, db, db_len, cmd), ctx, msg);
+    ASSERT_FAILS(mongocrypt_ctx_encrypt_init(ctx, db, db_len, cmd), ctx, msg)
 
-#define ASSERT_EX_ENCRYPT_INIT_OK(bin) ASSERT_OK(mongocrypt_ctx_explicit_encrypt_init(ctx, bin), ctx);
-#define ASSERT_EX_ENCRYPT_INIT_FAILS(bin, msg) ASSERT_FAILS(mongocrypt_ctx_explicit_encrypt_init(ctx, bin), ctx, msg);
+#define ASSERT_EX_ENCRYPT_INIT_OK(bin) ASSERT_OK(mongocrypt_ctx_explicit_encrypt_init(ctx, bin), ctx)
+#define ASSERT_EX_ENCRYPT_INIT_FAILS(bin, msg) ASSERT_FAILS(mongocrypt_ctx_explicit_encrypt_init(ctx, bin), ctx, msg)
 
 #define ASSERT_EX_ENCRYPT_EXPRESSION_INIT_OK(bin)                                                                      \
-    ASSERT_OK(mongocrypt_ctx_explicit_encrypt_expression_init(ctx, bin), ctx);
+    ASSERT_OK(mongocrypt_ctx_explicit_encrypt_expression_init(ctx, bin), ctx)
 #define ASSERT_EX_ENCRYPT_EXPRESSION_INIT_FAILS(bin, msg)                                                              \
-    ASSERT_FAILS(mongocrypt_ctx_explicit_encrypt_expression_init(ctx, bin), ctx, msg);
+    ASSERT_FAILS(mongocrypt_ctx_explicit_encrypt_expression_init(ctx, bin), ctx, msg)
 
-#define ASSERT_DECRYPT_INIT_OK(bin) ASSERT_OK(mongocrypt_ctx_decrypt_init(ctx, bin), ctx);
-#define ASSERT_DECRYPT_INIT_FAILS(bin, msg) ASSERT_FAILS(mongocrypt_ctx_decrypt_init(ctx, bin), ctx, msg);
+#define ASSERT_DECRYPT_INIT_OK(bin) ASSERT_OK(mongocrypt_ctx_decrypt_init(ctx, bin), ctx)
+#define ASSERT_DECRYPT_INIT_FAILS(bin, msg) ASSERT_FAILS(mongocrypt_ctx_decrypt_init(ctx, bin), ctx, msg)
 
-#define ASSERT_EX_DECRYPT_INIT_OK(bin) ASSERT_OK(mongocrypt_ctx_explicit_decrypt_init(ctx, bin), ctx);
-#define ASSERT_EX_DECRYPT_INIT_FAILS(bin, msg) ASSERT_FAILS(mongocrypt_ctx_explicit_decrypt_init(ctx, bin), ctx, msg);
+#define ASSERT_EX_DECRYPT_INIT_OK(bin) ASSERT_OK(mongocrypt_ctx_explicit_decrypt_init(ctx, bin), ctx)
+#define ASSERT_EX_DECRYPT_INIT_FAILS(bin, msg) ASSERT_FAILS(mongocrypt_ctx_explicit_decrypt_init(ctx, bin), ctx, msg)
 
 #define REFRESH                                                                                                        \
     do {                                                                                                               \
@@ -398,7 +398,7 @@ static void _test_setopt_algorithm(_mongocrypt_tester_t *tester) {
 
     REFRESH;
     _mongocrypt_ctx_fail_w_msg(ctx, "test");
-    ASSERT_ALGORITHM_FAILS(RAND, -1, "test")
+    ASSERT_ALGORITHM_FAILS(RAND, -1, "test");
 
     /* Test case insensitive. */
     REFRESH;
@@ -440,7 +440,7 @@ static void _test_setopt_query_type(_mongocrypt_tester_t *tester) {
     /* Test with failed context. */
     REFRESH;
     _mongocrypt_ctx_fail_w_msg(ctx, "test");
-    ASSERT_QUERY_TYPE_FAILS(MONGOCRYPT_QUERY_TYPE_EQUALITY_STR, -1, "test")
+    ASSERT_QUERY_TYPE_FAILS(MONGOCRYPT_QUERY_TYPE_EQUALITY_STR, -1, "test");
 
     /* Test case insensitive. */
     REFRESH;
@@ -657,7 +657,7 @@ static void _test_setopt_for_explicit_encrypt(_mongocrypt_tester_t *tester) {
 
     REFRESH;
     ASSERT_ALGORITHM_OK(RAND, -1);
-    ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "key id or key alt name required")
+    ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "key id or key alt name required");
 
     REFRESH;
     ASSERT_KEY_ID_OK(uuid);
@@ -1107,7 +1107,7 @@ static void _test_setopt_endpoint(_mongocrypt_tester_t *tester) {
 
     REFRESH;
     _mongocrypt_ctx_fail_w_msg(ctx, "test");
-    ASSERT_ENDPOINT_FAILS(RAND, -1, "test")
+    ASSERT_ENDPOINT_FAILS(RAND, -1, "test");
 
     mongocrypt_ctx_destroy(ctx);
     mongocrypt_destroy(crypt);

@@ -51,7 +51,8 @@ void mc_FLE2FindRangePayloadV2_cleanup(mc_FLE2FindRangePayloadV2_t *payload) {
 #define APPEND_BINDATA(out, name, value)                                                                               \
     if (!_mongocrypt_buffer_append(&(value), out, name, -1)) {                                                         \
         return false;                                                                                                  \
-    }
+    } else                                                                                                             \
+        ((void)0)
 
 bool mc_FLE2FindRangePayloadV2_serialize(const mc_FLE2FindRangePayloadV2_t *payload, bson_t *out) {
     BSON_ASSERT_PARAM(out);

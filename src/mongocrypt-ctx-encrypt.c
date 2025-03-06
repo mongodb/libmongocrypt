@@ -608,7 +608,7 @@ _marking_to_bson_value(void *ctx, _mongocrypt_marking_t *marking, bson_value_t *
     } else if (!_mongocrypt_serialize_ciphertext(&ciphertext, &serialized_ciphertext)) {
         CLIENT_ERR("malformed ciphertext");
         goto fail;
-    };
+    }
 
     /* ownership of serialized_ciphertext is transferred to caller. */
     out->value_type = BSON_TYPE_BINARY;

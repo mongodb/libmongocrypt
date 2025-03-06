@@ -1122,7 +1122,7 @@ validate_range_ciphertext(_mongocrypt_ciphertext_t *ciphertext, mongocrypt_t *cr
         if (is_leaf == 1) {
             leaf_count++;
         } else {
-            ASSERT_CMPUINT8(is_leaf, ==, 0)
+            ASSERT_CMPUINT8(is_leaf, ==, 0);
         }
     }
     ASSERT_CMPSIZE_T(g_count, ==, expectedEdges);
