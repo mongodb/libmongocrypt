@@ -808,6 +808,15 @@ tasks:
             # the "fetch source" step detected a release tag on HEAD, so we
             # prepare a local file for upload to a location based on the tag
             cp -a libmongocrypt-all.tar.gz libmongocrypt-all-${tag_upload_location}.tar.gz
+
+            if [[ "$tag_upload_location" = *-* ]]; then
+              # Unstable release, like 1.1.0-beta1 or 1.0.1-rc0.
+              mkdir unstable
+              cp -a libmongocrypt-all.tar.gz unstable/libmongocrypt-all-${tag_upload_location}.tar.gz
+            else
+              mkdir stable
+              cp -a libmongocrypt-all.tar.gz stable/libmongocrypt-all-${tag_upload_location}.tar.gz
+            fi
           fi
     - command: s3.put
       params:
@@ -834,9 +843,31 @@ tasks:
         remote_file: 'libmongocrypt/all/${tag_upload_location}/libmongocrypt-all.tar.gz'
         bucket: mciuploads
         permissions: public-read
-        optional: true
+        optional: true # Do not fail task if `local_file` does not exist. `local_file` only exists for tagged release.
         display_name: 'libmongocrypt-all-${tag_upload_location}.tar.gz'
         local_file: 'libmongocrypt-all-${tag_upload_location}.tar.gz'
+        content_type: '${content_type|application/x-gzip}'
+    - command: s3.put
+      params:
+        aws_key: '${aws_key}'
+        aws_secret: '${aws_secret}'
+        remote_file: 'libmongocrypt/all/latest/stable/libmongocrypt-all.tar.gz'
+        bucket: mciuploads
+        permissions: public-read
+        optional: true # Do not fail task if `local_file` does not exist. `local_file` only exists for stable release.
+        display_name: 'stable/libmongocrypt-all-${tag_upload_location}.tar.gz'
+        local_file: 'stable/libmongocrypt-all-${tag_upload_location}.tar.gz'
+        content_type: '${content_type|application/x-gzip}'
+    - command: s3.put
+      params:
+        aws_key: '${aws_key}'
+        aws_secret: '${aws_secret}'
+        remote_file: 'libmongocrypt/all/latest/unstable/libmongocrypt-all.tar.gz'
+        bucket: mciuploads
+        permissions: public-read
+        optional: true # Do not fail task if `local_file` does not exist. `local_file` only exists for unstable release.
+        display_name: 'unstable/libmongocrypt-all-${tag_upload_location}.tar.gz'
+        local_file: 'unstable/libmongocrypt-all-${tag_upload_location}.tar.gz'
         content_type: '${content_type|application/x-gzip}'
 
 - name: publish-packages
