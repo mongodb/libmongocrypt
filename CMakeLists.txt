@@ -533,6 +533,8 @@ target_compile_definitions (test-mongocrypt PRIVATE
    "TEST_MONGOCRYPT_OUTPUT_PATH=\"$<TARGET_FILE:test-mongocrypt>\""
    # Tell test-mongocrypt whether we have a real csfle library for testing
    TEST_MONGOCRYPT_HAVE_REAL_CRYPT_SHARED_LIB=$<BOOL:${MONGOCRYPT_TESTING_CRYPT_SHARED_FILE}>
+   # Tell test-mongocrypt the path of the libmongocrypt shared library for testing.
+   "TEST_MONGOCRYPT_MONGOCRYPT_SHARED_PATH=\"$<TARGET_FILE:mongocrypt>\""
    )
 
 add_test (
