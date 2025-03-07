@@ -223,6 +223,7 @@ static void _test_FLE2FindTextPayload_parse_errors(_mongocrypt_tester_t *tester)
         _do_roundtrip_test(tester,
                            &payload,
                            "Error parsing TextSearchFindTokenSets: cannot have multiple optional fields present");
+        mc_FLE2FindTextPayload_cleanup(&payload);
     }
     // Test empty ts object is disallowed when parsing
     {
@@ -231,6 +232,7 @@ static void _test_FLE2FindTextPayload_parse_errors(_mongocrypt_tester_t *tester)
         _do_roundtrip_test(tester,
                            &payload,
                            "Error parsing TextSearchFindTokenSets: exactly one optional field is required");
+        mc_FLE2FindTextPayload_cleanup(&payload);
     }
 
     // Test missing required fields in top-level object

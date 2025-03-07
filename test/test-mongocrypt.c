@@ -1049,7 +1049,7 @@ get_os_version_failed:
 
             continue; // No match found.
         }
-    found_match: {}
+    found_match : {}
 
         TEST_PRINTF("  begin %s\n", tester.test_names[i]);
         tester.test_fns[i](&tester);
