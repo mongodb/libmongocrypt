@@ -193,7 +193,7 @@ DEF_TEXT_SEARCH_FIND_TOKEN_SET_PARSE(Prefix)
 
 void mc_FLE2FindTextPayload_init(mc_FLE2FindTextPayload_t *payload) {
     BSON_ASSERT_PARAM(payload);
-    *payload = (mc_FLE2FindTextPayload_t){{{{0}}}};
+    *payload = (mc_FLE2FindTextPayload_t){0};
 }
 
 void mc_FLE2FindTextPayload_cleanup(mc_FLE2FindTextPayload_t *payload) {
@@ -427,13 +427,13 @@ bool mc_FLE2FindTextPayload_serialize(const mc_FLE2FindTextPayload_t *payload, b
         if (!BSON_APPEND_DOCUMENT_BEGIN(out, "ss", &child)) {
             return false;
         }
-        if (!BSON_APPEND_INT32(&child, "mlen", payload->substringSpec.value.mlen)) {
+        if (!BSON_APPEND_INT32(&child, "mlen", (int32_t)payload->substringSpec.value.mlen)) {
             return false;
         }
-        if (!BSON_APPEND_INT32(&child, "ub", payload->substringSpec.value.ub)) {
+        if (!BSON_APPEND_INT32(&child, "ub", (int32_t)payload->substringSpec.value.ub)) {
             return false;
         }
-        if (!BSON_APPEND_INT32(&child, "lb", payload->substringSpec.value.lb)) {
+        if (!BSON_APPEND_INT32(&child, "lb", (int32_t)payload->substringSpec.value.lb)) {
             return false;
         }
         if (!bson_append_document_end(out, &child)) {
@@ -447,10 +447,10 @@ bool mc_FLE2FindTextPayload_serialize(const mc_FLE2FindTextPayload_t *payload, b
         if (!BSON_APPEND_DOCUMENT_BEGIN(out, "fs", &child)) {
             return false;
         }
-        if (!BSON_APPEND_INT32(&child, "ub", payload->suffixSpec.value.ub)) {
+        if (!BSON_APPEND_INT32(&child, "ub", (int32_t)payload->suffixSpec.value.ub)) {
             return false;
         }
-        if (!BSON_APPEND_INT32(&child, "lb", payload->suffixSpec.value.lb)) {
+        if (!BSON_APPEND_INT32(&child, "lb", (int32_t)payload->suffixSpec.value.lb)) {
             return false;
         }
         if (!bson_append_document_end(out, &child)) {
@@ -464,10 +464,10 @@ bool mc_FLE2FindTextPayload_serialize(const mc_FLE2FindTextPayload_t *payload, b
         if (!BSON_APPEND_DOCUMENT_BEGIN(out, "ps", &child)) {
             return false;
         }
-        if (!BSON_APPEND_INT32(&child, "ub", payload->prefixSpec.value.ub)) {
+        if (!BSON_APPEND_INT32(&child, "ub", (int32_t)payload->prefixSpec.value.ub)) {
             return false;
         }
-        if (!BSON_APPEND_INT32(&child, "lb", payload->prefixSpec.value.lb)) {
+        if (!BSON_APPEND_INT32(&child, "lb", (int32_t)payload->prefixSpec.value.lb)) {
             return false;
         }
         if (!bson_append_document_end(out, &child)) {
