@@ -193,7 +193,7 @@ DEF_TEXT_SEARCH_FIND_TOKEN_SET_PARSE(Prefix)
 
 void mc_FLE2FindTextPayload_init(mc_FLE2FindTextPayload_t *payload) {
     BSON_ASSERT_PARAM(payload);
-    *payload = (mc_FLE2FindTextPayload_t){0};
+    memset(payload, 0, sizeof(*payload));
 }
 
 void mc_FLE2FindTextPayload_cleanup(mc_FLE2FindTextPayload_t *payload) {
