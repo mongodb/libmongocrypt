@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Changes in Version 1.13.0
+-------------------------
+
+- Add support for the key_expiration_ms option to MongoCryptOptions.
+
 Changes in Version 1.12.0
 -------------------------
 
