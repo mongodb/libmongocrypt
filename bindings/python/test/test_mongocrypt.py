@@ -640,6 +640,8 @@ if sys.version_info >= (3, 8, 0):  # noqa: UP036
             os.getenv("TEST_CRYPT_SHARED"), "this test requires TEST_CRYPT_SHARED=1"
         )
         async def test_crypt_shared(self):
+            if sys.platform == "darwin":
+                raise unittest.SkipTest("Skipping due to SERVER-101020")
             kms_providers = {
                 "aws": {"accessKeyId": "example", "secretAccessKey": "example"},
                 "local": {"key": b"\x00" * 96},
