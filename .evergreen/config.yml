@@ -380,7 +380,10 @@ functions:
       params:
         shell: bash
         working_dir: ${working_dir|libmongocrypt}
-        script: bash ${workdir}/libmongocrypt/.evergreen/earthly.sh ${args}
+        script: |
+          # Authenticate to artifactory.
+          echo "${artifactory_password}" | docker login --password-stdin --username "${artifactory_username}" artifactory.corp.mongodb.com
+          bash ${workdir}/libmongocrypt/.evergreen/earthly.sh ${args}
 
   sbom:
     - command: ec2.assume_role
@@ -961,8 +964,6 @@ tasks:
         shell: bash
         script: |-
           set -o errexit
-          # Authenticate to artifactory for signing image.
-          echo "${artifactory_password}" | docker login --password-stdin --username "${artifactory_username}" artifactory.corp.mongodb.com
           # Copy file to sign into `libmongocrypt` directory to be used by Earthly.
           cp libmongocrypt_upload.tar.gz libmongocrypt
     - func: "earthly" # Sign tarball.
