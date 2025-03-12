@@ -383,10 +383,7 @@ functions:
         script: |
           # Authenticate to artifactory.
           echo "${artifactory_password}" | docker login --password-stdin --username "${artifactory_username}" artifactory.corp.mongodb.com
-          # TODO(MONGOCRYPT-747): remove `--persist-build=false`. 
-          # Pass `--persist-build=false` to avoid using Docker Hub.
-          # Earthly hardcodes use of docker/dockerfile-copy:v0.1.9 for the CACHE command.
-          bash ${workdir}/libmongocrypt/.evergreen/earthly.sh ${args} --persist-build=false
+          bash ${workdir}/libmongocrypt/.evergreen/earthly.sh ${args}
 
   sbom:
     - command: ec2.assume_role
@@ -967,8 +964,6 @@ tasks:
         shell: bash
         script: |-
           set -o errexit
-          # Authenticate to artifactory for signing image.
-          echo "${artifactory_password}" | docker login --password-stdin --username "${artifactory_username}" artifactory.corp.mongodb.com
           # Copy file to sign into `libmongocrypt` directory to be used by Earthly.
           cp libmongocrypt_upload.tar.gz libmongocrypt
     - func: "earthly" # Sign tarball.

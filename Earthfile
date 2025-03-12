@@ -50,15 +50,16 @@
     #   • sles15 - OpenSUSE Leap 15.0
     #   • alpine - Alpine Linux 3.18
     #
-    # When adding new environments, always pull from a fully-qualified image ID:
+    # When adding new environments, prefer an unqualified image ID with a version:
     #   • DO NOT: "ubuntu"
     #   • DO NOT: "ubuntu:latest"
-    #   • DO NOT: "ubuntu:22.10"
-    #   • DO: "artifactory.corp.mongodb.com/dockerhub/library/ubuntu:22.10"
+    #   • DO NOT: "docker.io/library/ubuntu:22.10"
+    #   • DO: "ubuntu:22.10"
+    # Use of an unqualified image ID may enable separate registry in CI and local development.
 # ###
 
 VERSION --use-cache-command 0.6
-FROM artifactory.corp.mongodb.com/dockerhub/library/alpine:3.16
+FROM alpine:3.16
 WORKDIR /s
 
 init:
@@ -125,24 +126,24 @@ ALPINE_SETUP:
 
 env.c6:
     # A CentOS 6 environment.
-    FROM +init --base=artifactory.corp.mongodb.com/dockerhub/library/centos:6
+    FROM +init --base=centos:6
     DO +CENTOS6_SETUP
 
 env.c7:
     # A CentOS 7 environment.
-    FROM +init --base=artifactory.corp.mongodb.com/dockerhub/library/centos:7
+    FROM +init --base=centos:7
     DO +REDHAT_SETUP
 
 env.rl8:
     # CentOS 8 is cancelled. Use RockyLinux 8 for our RHEL 8 environment.
-    FROM +init --base=artifactory.corp.mongodb.com/dockerhub/library/rockylinux:8
+    FROM +init --base=rockylinux:8
     DO +REDHAT_SETUP
 
 # Utility command for Ubuntu environments
 ENV_UBUNTU:
     COMMAND
     ARG --required version
-    FROM +init --base=artifactory.corp.mongodb.com/dockerhub/library/ubuntu:$version
+    FROM +init --base=ubuntu:$version
     DO +DEBIAN_SETUP
 
 env.u14:
@@ -167,19 +168,19 @@ env.u22:
 
 env.amzn1:
     # An Amazon "1" environment. (AmazonLinux 2018)
-    FROM +init --base=artifactory.corp.mongodb.com/dockerhub/library/amazonlinux:2018.03
+    FROM +init --base=amazonlinux:2018.03
     DO +AMZ_SETUP
 
 env.amzn2:
     # An AmazonLinux 2 environment
-    FROM +init --base=artifactory.corp.mongodb.com/dockerhub/library/amazonlinux:2
+    FROM +init --base=amazonlinux:2
     DO +AMZ_SETUP
 
 # Utility command for Debian setup
 ENV_DEBIAN:
     COMMAND
     ARG --required version
-    FROM +init --base=artifactory.corp.mongodb.com/dockerhub/library/debian:$version
+    FROM +init --base=debian:$version
     IF [ $version = "9.2" ]
         # Update source list for archived Debian stretch packages.
         # Refer: https://unix.stackexchange.com/a/743865/260858
@@ -208,11 +209,11 @@ env.deb12:
 
 env.sles15:
     # An OpenSUSE Leap 15.0 environment.
-    FROM +init --base=artifactory.corp.mongodb.com/dockerhub/opensuse/leap:15.0
+    FROM +init --base=opensuse/leap:15.0
     DO +SLES_SETUP
 
 env.alpine:
-    FROM +init --base=artifactory.corp.mongodb.com/dockerhub/library/alpine:3.18
+    FROM +init --base=alpine:3.18
     DO +ALPINE_SETUP
 
 # Utility: Warm-up obtaining CMake and Ninja for the build. This is usually
@@ -259,7 +260,7 @@ BUILD_EXAMPLE_STATE_MACHINE:
     RUN cd /s && /s/example-state-machine
 
 rpm-build:
-    FROM +init --base artifactory.corp.mongodb.com/dockerhub/fedora:38
+    FROM +init --base fedora:38
     GIT CLONE https://src.fedoraproject.org/rpms/libmongocrypt.git /R
     # Install the packages listed by "BuildRequires" and rpm-build:
     RUN __install $(awk '/^BuildRequires:/ { print $2 }' /R/libmongocrypt.spec) \
@@ -275,7 +276,7 @@ rpm-build:
 
 rpm-install-runtime:
     # Install the runtime RPM
-    FROM +init --base artifactory.corp.mongodb.com/dockerhub/fedora:38
+    FROM +init --base fedora:38
     COPY +rpm-build/RPMS /tmp/libmongocrypt-rpm/
     RUN dnf makecache
     RUN __install $(find /tmp/libmongocrypt-rpm/ -name 'libmongocrypt-1.*.rpm')
@@ -325,7 +326,7 @@ deb-build:
 
 deb-install-runtime:
     # Install the runtime deb package
-    FROM +init --base=artifactory.corp.mongodb.com/dockerhub/library/debian:unstable
+    FROM +init --base=debian:unstable
     COPY +deb-build/debs/libmongocrypt0*.deb /tmp/lmc.deb
     RUN __install /tmp/lmc.deb
 
@@ -354,7 +355,7 @@ packaging-full-test:
     BUILD +rpm-runtime-test
 
 check-format:
-    FROM +init --base=artifactory.corp.mongodb.com/dockerhub/python:3.11.2-slim-buster
+    FROM +init --base=python:3.11.2-slim-buster
     RUN __install build-essential # To install `make` to install clang-format.
     RUN pip install pipx
     COPY etc/format* /X/etc/
