@@ -142,6 +142,7 @@ static mongocrypt_kms_ctx_t *_next_kms_ctx_encrypt(mongocrypt_ctx_t *ctx) {
         while (it != NULL) {
             _mongocrypt_ctx_datakey_t *dkctx = (_mongocrypt_ctx_datakey_t *)it->dkctx;
             if (dkctx->kms.should_retry) {
+                dkctx->kms.should_retry = false; // Reset retry state.
                 return &dkctx->kms;
             }
             it = it->next;
