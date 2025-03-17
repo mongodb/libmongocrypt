@@ -111,7 +111,6 @@ bool mc_FLE2FindEqualityPayloadV2_parse(mc_FLE2FindEqualityPayloadV2_t *out,
 
     return true;
 fail:
-    mc_FLE2FindEqualityPayloadV2_cleanup(out);
     return false;
 }
 
