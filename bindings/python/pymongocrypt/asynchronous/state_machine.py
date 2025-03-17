@@ -124,11 +124,12 @@ async def run_state_machine(ctx, callback):
         if state == lib.MONGOCRYPT_CTX_NEED_MONGO_COLLINFO:
             list_colls_filter = ctx.mongo_operation()
             coll_info = await callback.collection_info(ctx.database, list_colls_filter)
-            if lib.mongocrypt_setopt_enable_multiple_collinfo(ctx):
-                for i in coll_info:
-                    ctx.add_mongo_operation_result(i)
-            else:
-                ctx.add_mongo_operation_result(coll_info)
+            if coll_info:
+                if isinstance(coll_info, list):
+                    for i in coll_info:
+                        ctx.add_mongo_operation_result(i)
+                else:
+                    ctx.add_mongo_operation_result(coll_info)
             ctx.complete_mongo_operation()
         elif state == lib.MONGOCRYPT_CTX_NEED_MONGO_MARKINGS:
             mongocryptd_cmd = ctx.mongo_operation()

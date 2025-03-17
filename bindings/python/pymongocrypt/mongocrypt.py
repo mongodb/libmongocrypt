@@ -96,6 +96,9 @@ class MongoCrypt:
         if self.__opts.bypass_query_analysis:
             lib.mongocrypt_setopt_bypass_query_analysis(self.__crypt)
 
+        if self.__opts.enable_multiple_collinfo:
+            lib.mongocrypt_setopt_enable_multiple_collinfo(self.__crypt)
+
         # Prefer using the native crypto binding when we know it's available.
         try:
             crypto_available = lib.mongocrypt_is_crypto_available()

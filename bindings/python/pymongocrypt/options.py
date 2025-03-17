@@ -12,6 +12,7 @@ class MongoCryptOptions:
         crypt_shared_lib_required=False,
         bypass_encryption=False,
         key_expiration_ms=None,
+        enable_multiple_collinfo=False,
     ):
         """Options for :class:`MongoCrypt`.
 
@@ -156,6 +157,7 @@ class MongoCryptOptions:
         self.crypt_shared_lib_required = crypt_shared_lib_required
         self.bypass_encryption = bypass_encryption
         self.key_expiration_ms = key_expiration_ms
+        self.enable_multiple_collinfo = enable_multiple_collinfo
 
 
 class ExplicitEncryptOpts:
