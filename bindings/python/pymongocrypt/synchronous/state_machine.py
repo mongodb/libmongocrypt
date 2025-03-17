@@ -46,7 +46,7 @@ class MongoCryptCallback(ABC):
           - `filter`: The filter to pass to listCollections.
 
         :Returns:
-          The first document from the listCollections command response as BSON.
+          The all or the first document from the listCollections command response as BSON.
         """
 
     @abstractmethod

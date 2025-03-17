@@ -1,27 +1,27 @@
 {
   "components": [
     {
-      "bom-ref": "pkg:github/mongodb/libmongocrypt@1.12.0",
+      "bom-ref": "pkg:github/mongodb/libmongocrypt@1.13.0",
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://github.com/mongodb/libmongocrypt/archive/refs/tags/1.12.0.tar.gz"
+          "url": "https://github.com/mongodb/libmongocrypt/archive/refs/tags/1.13.0.tar.gz"
         },
         {
           "type": "website",
-          "url": "https://github.com/mongodb/libmongocrypt/tree/1.12.0"
+          "url": "https://github.com/mongodb/libmongocrypt/tree/1.13.0"
         }
       ],
       "group": "mongodb",
       "name": "libmongocrypt",
-      "purl": "pkg:github/mongodb/libmongocrypt@1.12.0",
+      "purl": "pkg:github/mongodb/libmongocrypt@1.13.0",
       "type": "library",
-      "version": "1.12.0"
+      "version": "1.13.0"
     }
   ],
   "dependencies": [
     {
-      "ref": "pkg:github/mongodb/libmongocrypt@1.12.0"
+      "ref": "pkg:github/mongodb/libmongocrypt@1.13.0"
     }
   ],
   "metadata": {
