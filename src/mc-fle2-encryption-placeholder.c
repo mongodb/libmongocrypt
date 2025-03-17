@@ -184,7 +184,6 @@ bool mc_FLE2EncryptionPlaceholder_parse(mc_FLE2EncryptionPlaceholder_t *out,
     return true;
 
 fail:
-    mc_FLE2EncryptionPlaceholder_cleanup(out);
     return false;
 }
 

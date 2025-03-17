@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include "mc-fle-blob-subtype-private.h"
 #include "mc-fle2-insert-update-payload-private.h"
 #include "test-mongocrypt.h"
 
@@ -160,7 +161,29 @@ static void test_FLE2InsertUpdatePayload_decrypt(_mongocrypt_tester_t *tester) {
 
 #undef TEST_IUP_HEX
 
+static void test_FLE2InsertUpdatePayload_parse_errors(_mongocrypt_tester_t *tester) {
+    bson_t *input_bson = TMP_BSON_STR(BSON_STR({
+        "d" : {"$binary" : {"base64" : "AAAA", "subType" : "00"}}, //
+        "t" : "wrong type!"
+    }));
+    _mongocrypt_buffer_t input_buf;
+    _mongocrypt_buffer_init_size(&input_buf, 1 + input_bson->len);
+    input_buf.data[0] = (uint8_t)MC_SUBTYPE_FLE2InsertUpdatePayload;
+    memcpy(input_buf.data + 1, bson_get_data(input_bson), input_bson->len);
+
+    mc_FLE2InsertUpdatePayload_t payload;
+    mc_FLE2InsertUpdatePayload_init(&payload);
+    mongocrypt_status_t *status = mongocrypt_status_new();
+    ASSERT_FAILS_STATUS(mc_FLE2InsertUpdatePayload_parse(&payload, &input_buf, status),
+                        status,
+                        "Field 't' expected to hold an int32");
+    mc_FLE2InsertUpdatePayload_cleanup(&payload);
+    mongocrypt_status_destroy(status);
+    _mongocrypt_buffer_cleanup(&input_buf);
+}
+
 void _mongocrypt_tester_install_fle2_payload_iup(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(test_FLE2InsertUpdatePayload_parse);
     INSTALL_TEST(test_FLE2InsertUpdatePayload_decrypt);
+    INSTALL_TEST(test_FLE2InsertUpdatePayload_parse_errors);
 }
