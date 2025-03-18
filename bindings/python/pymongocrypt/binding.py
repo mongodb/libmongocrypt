@@ -31,7 +31,8 @@ ffi = cffi.FFI()
 
 # Start embedding from update_binding.py
 ffi.cdef(
-    """/*
+"""
+/*
  * Copyright 2019-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -322,6 +323,16 @@ bool mongocrypt_setopt_log_handler(mongocrypt_t *crypt, mongocrypt_log_fn_t log_
  * Retrieve it with @ref mongocrypt_ctx_status
  */
 bool mongocrypt_setopt_retry_kms(mongocrypt_t *crypt, bool enable);
+
+/**
+ * Enable support for multiple collection schemas. Required to support $lookup.
+ *
+ * @param[in] crypt The @ref mongocrypt_t object.
+ * @pre @ref mongocrypt_init has not been called on @p crypt.
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_ctx_status
+ */
+bool mongocrypt_setopt_enable_multiple_collinfo(mongocrypt_t *crypt);
 
 /**
  * Configure an AWS KMS provider on the @ref mongocrypt_t object.
@@ -1466,6 +1477,10 @@ bool mongocrypt_setopt_key_expiration(mongocrypt_t *crypt, uint64_t cache_expira
 
 /// String constants for setopt_query_type
 // DEPRECATED: Support "rangePreview" has been removed in favor of "range".
+/// NOTE: "substringPreview" is experimental and may be removed in a future non-major release.
+/// NOTE: "suffixPreview" is experimental and may be removed in a future non-major release.
+/// NOTE: "prefixPreview" is experimental and may be removed in a future non-major release.
+
 """
 )
 # End embedding from update_binding.py
