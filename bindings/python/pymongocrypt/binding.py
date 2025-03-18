@@ -31,7 +31,7 @@ ffi = cffi.FFI()
 
 # Start embedding from update_binding.py
 ffi.cdef(
-"""
+    """
 /*
  * Copyright 2019-present MongoDB, Inc.
  *
