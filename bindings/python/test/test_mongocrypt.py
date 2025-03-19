@@ -143,6 +143,11 @@ class TestMongoCryptOptions(unittest.TestCase):
         )
         self.assertEqual(opts.encrypted_fields_map, encrypted_fields_map)
         self.assertTrue(opts.bypass_query_analysis)
+        for expiration in [0, 1, 1000000]:
+            opts = MongoCryptOptions(
+                valid[0][0], schema_map, key_expiration_ms=expiration
+            )
+            self.assertEqual(opts.key_expiration_ms, expiration)
 
     def test_mongocrypt_options_validation(self):
         with self.assertRaisesRegex(
@@ -192,6 +197,12 @@ class TestMongoCryptOptions(unittest.TestCase):
             TypeError, "encrypted_fields_map must be bytes or None"
         ):
             MongoCryptOptions(valid_kms, encrypted_fields_map={})
+        with self.assertRaisesRegex(TypeError, "key_expiration_ms must be int or None"):
+            MongoCryptOptions(valid_kms, key_expiration_ms="123")
+        with self.assertRaisesRegex(
+            ValueError, "key_expiration_ms must be >=0 or None"
+        ):
+            MongoCryptOptions(valid_kms, key_expiration_ms=-1)
 
 
 class TestMongoCrypt(unittest.TestCase):
@@ -507,6 +518,8 @@ class TestMongoCryptCallback(unittest.TestCase):
         os.getenv("TEST_CRYPT_SHARED"), "this test requires TEST_CRYPT_SHARED=1"
     )
     def test_crypt_shared(self):
+        if sys.platform == "darwin":
+            raise unittest.SkipTest("Skipping due to SERVER-101020")
         kms_providers = {
             "aws": {"accessKeyId": "example", "secretAccessKey": "example"},
             "local": {"key": b"\x00" * 96},
@@ -638,6 +651,8 @@ if sys.version_info >= (3, 8, 0):  # noqa: UP036
             os.getenv("TEST_CRYPT_SHARED"), "this test requires TEST_CRYPT_SHARED=1"
         )
         async def test_crypt_shared(self):
+            if sys.platform == "darwin":
+                raise unittest.SkipTest("Skipping due to SERVER-101020")
             kms_providers = {
                 "aws": {"accessKeyId": "example", "secretAccessKey": "example"},
                 "local": {"key": b"\x00" * 96},

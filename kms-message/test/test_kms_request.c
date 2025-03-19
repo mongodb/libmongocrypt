@@ -124,7 +124,7 @@ test_getline (char **lineptr, size_t *n, FILE *stream)
 {
    if (*lineptr == NULL && *n == 0) {
       realloc_buffer (lineptr, n, 128);
-   };
+   }
 
    // Sanity check
    if ((*lineptr == NULL && *n != 0) || (*lineptr != NULL && *n == 0)) {
@@ -760,7 +760,7 @@ kms_response_parser_test (void)
       kms_response_parser_feed (parser, (uint8_t *) "This is a test.", 15));
    ASSERT (0 == kms_response_parser_wants_bytes (parser, 123));
    response = kms_response_parser_get_response (parser);
-   ASSERT (response->status == 200)
+   ASSERT (response->status == 200);
    ASSERT_CMPSTR (response->body->str, "This is a test.");
 
    kms_response_destroy (response);

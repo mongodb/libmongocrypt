@@ -198,7 +198,7 @@ static void _test_RangeTest_Encode_Int64(_mongocrypt_tester_t *tester) {
 
 static void _test_canUsePrecisionModeDouble(_mongocrypt_tester_t *tester) {
 #define CAN_USE_PRECISION_MODE(lb, ub, prc, expected, expected_bits_out)                                               \
-    {                                                                                                                  \
+    if (1) {                                                                                                           \
         uint32_t bits_out = 0;                                                                                         \
         mongocrypt_status_t *const status = mongocrypt_status_new();                                                   \
         TEST_PRINTF("_test_canUsePrecisionModeDecimal, min: %f, max: %f, prc: %" PRId32, lb, ub, prc);                 \
@@ -207,10 +207,11 @@ static void _test_canUsePrecisionModeDouble(_mongocrypt_tester_t *tester) {
         ASSERT(result == expected);                                                                                    \
         ASSERT_CMPINT32(expected_bits_out, ==, bits_out);                                                              \
         mongocrypt_status_destroy(status);                                                                             \
-    }
+    } else                                                                                                             \
+        ((void)0)
 
 #define CAN_USE_PRECISION_MODE_ERRORS(lb, ub, prc, error)                                                              \
-    {                                                                                                                  \
+    if (1) {                                                                                                           \
         mongocrypt_status_t *const status = mongocrypt_status_new();                                                   \
         TEST_PRINTF("_test_canUsePrecisionModeDecimal errors, min: %f, max: %f, prc: %" PRId32, lb, ub, prc);          \
         uint32_t bits_out = 0;                                                                                         \
@@ -218,7 +219,8 @@ static void _test_canUsePrecisionModeDouble(_mongocrypt_tester_t *tester) {
         ASSERT_OR_PRINT_MSG(!result, "expected error, but got none");                                                  \
         ASSERT_STATUS_CONTAINS(status, error);                                                                         \
         mongocrypt_status_destroy(status);                                                                             \
-    }
+    } else                                                                                                             \
+        ((void)0)
 
     CAN_USE_PRECISION_MODE(1.0, 16.0, INT32_C(0), true, 4);
     CAN_USE_PRECISION_MODE(0.0, 16.0, INT32_C(0), true, 5);
@@ -567,15 +569,13 @@ static void _test_RangeTest_Encode_Double(_mongocrypt_tester_t *tester) {
             TEST_PRINTF("_test_RangeTest_Encode_Double: value=%f\n", test->value);
         }
 
-        const bool use_range_v2 = !test->use_range_v1;
         mc_OSTType_Double got;
         const bool ok = mc_getTypeInfoDouble((mc_getTypeInfoDouble_args_t){.value = test->value,
                                                                            .min = test->min,
                                                                            .max = test->max,
                                                                            .precision = test->precision},
                                              &got,
-                                             status,
-                                             use_range_v2);
+                                             status);
         if (test->expectError) {
             ASSERT_OR_PRINT_MSG(!ok, "expected error, but got none");
             ASSERT_STATUS_CONTAINS(status, test->expectError);
@@ -909,15 +909,7 @@ static void _test_RangeTest_Encode_Decimal128(_mongocrypt_tester_t *tester) {
     }
 
 #define ASSERT_EIBB_ERROR(Val, Max, Min, Precision, Expect, Error)                                                     \
-    (Decimal128Test){                                                                                                  \
-        .value = mc_dec128_from_string(#Val),                                                                          \
-        .min = OPT_MC_DEC128(mc_dec128_from_string(#Min)),                                                             \
-        .max = OPT_MC_DEC128(mc_dec128_from_string(#Max)),                                                             \
-        .precision = OPT_I32(Precision),                                                                               \
-        .expect = Expect,                                                                                              \
-        .use_range_v1 = true,                                                                                          \
-    },                                                                                                                 \
-        (Decimal128Test) {                                                                                             \
+    (Decimal128Test) {                                                                                                 \
         .value = mc_dec128_from_string(#Val), .min = OPT_MC_DEC128(mc_dec128_from_string(#Min)),                       \
         .max = OPT_MC_DEC128(mc_dec128_from_string(#Max)), .precision = OPT_I32(Precision), .expectError = Error       \
     }
@@ -1002,7 +994,6 @@ static void _test_RangeTest_Encode_Decimal128(_mongocrypt_tester_t *tester) {
             TEST_PRINTF("_test_RangeTest_Encode_Decimal128: value=%s\n", mc_dec128_to_string(test->value).str);
         }
         mc_OSTType_Decimal128 got;
-        const bool use_range_v2 = !test->use_range_v1;
         const bool ok = mc_getTypeInfoDecimal128(
             (mc_getTypeInfoDecimal128_args_t){
                 .value = test->value,
@@ -1011,8 +1002,7 @@ static void _test_RangeTest_Encode_Decimal128(_mongocrypt_tester_t *tester) {
                 .precision = test->precision,
             },
             &got,
-            status,
-            use_range_v2);
+            status);
         if (test->expectError) {
             ASSERT_OR_PRINT_MSG(!ok, "expected error, but got none");
             ASSERT_STATUS_CONTAINS(status, test->expectError);

@@ -58,7 +58,8 @@ void mc_FLE2FindEqualityPayload_cleanup(mc_FLE2FindEqualityPayload_t *payload) {
     if (!has_##Name) {                                                                                                 \
         CLIENT_ERR("Missing field '" #Name "' in payload");                                                            \
         goto fail;                                                                                                     \
-    }
+    } else                                                                                                             \
+        ((void)0)
 
 bool mc_FLE2FindEqualityPayload_parse(mc_FLE2FindEqualityPayload_t *out,
                                       const bson_t *in,
@@ -101,14 +102,14 @@ bool mc_FLE2FindEqualityPayload_parse(mc_FLE2FindEqualityPayload_t *out,
 
     return true;
 fail:
-    mc_FLE2FindEqualityPayload_cleanup(out);
     return false;
 }
 
 #define PAYLOAD_APPEND_BINDATA(name, value)                                                                            \
     if (!_mongocrypt_buffer_append(&(value), out, name, -1)) {                                                         \
         return false;                                                                                                  \
-    }
+    } else                                                                                                             \
+        ((void)0)
 
 bool mc_FLE2FindEqualityPayload_serialize(const mc_FLE2FindEqualityPayload_t *payload, bson_t *out) {
     BSON_ASSERT_PARAM(payload);

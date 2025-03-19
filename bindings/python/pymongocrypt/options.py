@@ -11,6 +11,7 @@ class MongoCryptOptions:
         crypt_shared_lib_path=None,
         crypt_shared_lib_required=False,
         bypass_encryption=False,
+        key_expiration_ms=None,
     ):
         """Options for :class:`MongoCrypt`.
 
@@ -53,6 +54,11 @@ class MongoCryptOptions:
           - `crypt_shared_lib_required`: Whether to require a crypt_shared
             library.
           - `bypass_encryption`: Whether to bypass encryption.
+          - `key_expiration_ms` (int): The cache expiration time for data
+            encryption keys. Defaults to 60000. 0 means keys never expire.
+
+        .. versionadded:: 1.13
+           Added the ``key_expiration_ms`` parameter.
 
         .. versionremoved:: 1.11
            Removed the ``enable_range_v2`` parameter.
@@ -136,6 +142,11 @@ class MongoCryptOptions:
             encrypted_fields_map, bytes
         ):
             raise TypeError("encrypted_fields_map must be bytes or None")
+        if key_expiration_ms is not None:
+            if not isinstance(key_expiration_ms, int):
+                raise TypeError("key_expiration_ms must be int or None")
+            if key_expiration_ms < 0:
+                raise ValueError("key_expiration_ms must be >=0 or None")
 
         self.kms_providers = kms_providers
         self.schema_map = schema_map
@@ -144,6 +155,7 @@ class MongoCryptOptions:
         self.crypt_shared_lib_path = crypt_shared_lib_path
         self.crypt_shared_lib_required = crypt_shared_lib_required
         self.bypass_encryption = bypass_encryption
+        self.key_expiration_ms = key_expiration_ms
 
 
 class ExplicitEncryptOpts:

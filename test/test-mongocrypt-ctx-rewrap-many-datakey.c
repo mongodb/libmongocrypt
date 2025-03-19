@@ -139,7 +139,7 @@ static int64_t _find_date_field(mongocrypt_binary_t *key, const char *dotkey) {
     ASSERT(bson_iter_init(&iter, &bson));
     ASSERT(bson_iter_find_descendant(&iter, dotkey, &iter));
     ASSERT(BSON_ITER_HOLDS_DATE_TIME(&iter));
-    ASSERT((res = bson_iter_date_time(&iter)) != 0)
+    ASSERT((res = bson_iter_date_time(&iter)) != 0);
 
     return res;
 }
@@ -570,6 +570,33 @@ static void _test_rewrap_many_datakey_need_kms_retry(_mongocrypt_tester_t *teste
     ASSERT(mongocrypt_kms_ctx_bytes_needed(kms) == 0);
     ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
     ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_KMS); // To encrypt.
+    mongocrypt_ctx_destroy(ctx);
+
+    /* Clear key cache. */
+    mongocrypt_destroy(crypt);
+    crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+
+    /* Ensure KMS encrypt requests retry for network errors */
+    ctx = mongocrypt_ctx_new(crypt);
+    ASSERT_OK(mongocrypt_ctx_rewrap_many_datakey_init(ctx, filter), ctx);
+    ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+    ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TEST_FILE("./test/data/rmd/key-document-a.json")), ctx);
+    ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+    ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_KMS); // To decrypt.
+    ASSERT((kms = mongocrypt_ctx_next_kms_ctx(ctx)));
+    ASSERT_OK(mongocrypt_kms_ctx_feed(kms, TEST_FILE("./test/data/rmd/kms-decrypt-reply-a.txt")), kms);
+    ASSERT(mongocrypt_kms_ctx_bytes_needed(kms) == 0);
+    ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
+    ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_KMS); // To encrypt.
+    ASSERT((kms = mongocrypt_ctx_next_kms_ctx(ctx)));
+    ASSERT(mongocrypt_kms_ctx_fail(kms));             // Simulate driver-side network failure for an encrypt request.
+    ASSERT((kms = mongocrypt_ctx_next_kms_ctx(ctx))); // Assert fails. Expected KMS request to retry but did not.
+    ASSERT_OK(mongocrypt_kms_ctx_feed(kms, TEST_FILE("./test/data/rmd/kms-encrypt-reply-a.txt")), kms);
+    ASSERT(mongocrypt_kms_ctx_bytes_needed(kms) == 0);
+    ASSERT_OK(!mongocrypt_ctx_next_kms_ctx(ctx), ctx);
+    ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
+    ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
+
     mongocrypt_ctx_destroy(ctx);
     mongocrypt_destroy(crypt);
 }

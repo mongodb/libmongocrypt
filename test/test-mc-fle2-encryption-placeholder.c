@@ -96,8 +96,7 @@ static void _test_FLE2EncryptionPlaceholder_range_parse(_mongocrypt_tester_t *te
         {
             mc_FLE2RangeInsertSpec_t spec;
 
-            ASSERT_OK_STATUS(mc_FLE2RangeInsertSpec_parse(&spec, &placeholder.v_iter, false /* use_range_v2 */, status),
-                             status);
+            ASSERT_OK_STATUS(mc_FLE2RangeInsertSpec_parse(&spec, &placeholder.v_iter, status), status);
 
             ASSERT(BSON_ITER_HOLDS_INT32(&spec.v));
             ASSERT_CMPINT32(bson_iter_int32(&spec.v), ==, 123456);
@@ -153,8 +152,7 @@ static void _test_FLE2EncryptionPlaceholder_range_parse(_mongocrypt_tester_t *te
         {
             mc_FLE2RangeFindSpec_t spec;
 
-            ASSERT_OK_STATUS(mc_FLE2RangeFindSpec_parse(&spec, &placeholder.v_iter, false /* use_range_v2 */, status),
-                             status);
+            ASSERT_OK_STATUS(mc_FLE2RangeFindSpec_parse(&spec, &placeholder.v_iter, status), status);
 
             ASSERT(spec.edgesInfo.set);
 
@@ -225,8 +223,7 @@ static void _test_FLE2EncryptionPlaceholder_range_parse(_mongocrypt_tester_t *te
         {
             mc_FLE2RangeFindSpec_t spec;
 
-            ASSERT_OK_STATUS(mc_FLE2RangeFindSpec_parse(&spec, &placeholder.v_iter, false /* use_range_v2 */, status),
-                             status);
+            ASSERT_OK_STATUS(mc_FLE2RangeFindSpec_parse(&spec, &placeholder.v_iter, status), status);
 
             ASSERT(spec.edgesInfo.set);
 
@@ -295,8 +292,7 @@ static void _test_FLE2EncryptionPlaceholder_range_parse(_mongocrypt_tester_t *te
         {
             mc_FLE2RangeInsertSpec_t spec;
 
-            ASSERT_OK_STATUS(mc_FLE2RangeInsertSpec_parse(&spec, &placeholder.v_iter, false /* use_range_v2 */, status),
-                             status);
+            ASSERT_OK_STATUS(mc_FLE2RangeInsertSpec_parse(&spec, &placeholder.v_iter, status), status);
 
             ASSERT(BSON_ITER_HOLDS_DOUBLE(&spec.v));
             ASSERT_CMPDOUBLE(bson_iter_double(&spec.v), ==, 123.456);
@@ -444,8 +440,29 @@ static void _test_FLE2EncryptionPlaceholder_textSearch_parse(_mongocrypt_tester_
     }
 }
 
+static void _test_FLE2EncryptionPlaceholder_parse_errors(_mongocrypt_tester_t *tester) {
+    bson_t *input_bson = TMP_BSON_STR(BSON_STR({
+        "t" : {"$numberInt" : "1"},
+        "a" : {"$numberInt" : "1"},
+        "ki" : {"$binary" : {"base64" : "EjRWeBI0mHYSNBI0VniQEg==", "subType" : "04"}},
+        "ku" : {"$binary" : {"base64" : "q83vqxI0mHYSNBI0VniQEg==", "subType" : "04"}},
+        "v" : "foobar",
+        "cm" : "wrong type!"
+    }));
+
+    mc_FLE2EncryptionPlaceholder_t payload;
+    mc_FLE2EncryptionPlaceholder_init(&payload);
+    mongocrypt_status_t *status = mongocrypt_status_new();
+    ASSERT_FAILS_STATUS(mc_FLE2EncryptionPlaceholder_parse(&payload, input_bson, status),
+                        status,
+                        "'cm' must be an int64");
+    mc_FLE2EncryptionPlaceholder_cleanup(&payload);
+    mongocrypt_status_destroy(status);
+}
+
 void _mongocrypt_tester_install_fle2_encryption_placeholder(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_FLE2EncryptionPlaceholder_parse);
     INSTALL_TEST(_test_FLE2EncryptionPlaceholder_range_parse);
     INSTALL_TEST(_test_FLE2EncryptionPlaceholder_textSearch_parse);
+    INSTALL_TEST(_test_FLE2EncryptionPlaceholder_parse_errors);
 }

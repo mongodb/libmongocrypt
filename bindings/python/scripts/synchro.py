@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+import sys
 from os import listdir
 from pathlib import Path
 
@@ -27,12 +29,14 @@ replacements = {
     "aclose": "close",
 }
 
-_base = "pymongocrypt"
+ROOT = Path(__file__).absolute().parent.parent
+
+_base = ROOT / "pymongocrypt"
 
 async_files = [
-    f"./{_base}/asynchronous/{f}"
-    for f in listdir("pymongocrypt/asynchronous")
-    if (Path(_base) / "asynchronous" / f).is_file()
+    f"{_base}/asynchronous/{f}"
+    for f in listdir(f"{_base}/asynchronous")
+    if (_base / "asynchronous" / f).is_file()
 ]
 
 
@@ -40,20 +44,23 @@ unasync_files(
     async_files,
     [
         Rule(
-            fromdir="/pymongocrypt/asynchronous/",
-            todir="/pymongocrypt/synchronous/",
+            fromdir=f"{_base}/asynchronous/",
+            todir=f"{_base}/synchronous/",
             additional_replacements=replacements,
         )
     ],
 )
 
 sync_files = [
-    f"./{_base}/synchronous/{f}"
-    for f in listdir("pymongocrypt/synchronous")
-    if (Path(_base) / "synchronous" / f).is_file()
+    f"{_base}/synchronous/{f}"
+    for f in listdir(f"{_base}/synchronous")
+    if (_base / "synchronous" / f).is_file()
 ]
 
+modified_files = [f"./{f}" for f in sys.argv[1:]]
 for file in sync_files:
+    if file in modified_files and "OVERRIDE_SYNCHRO_CHECK" not in os.environ:
+        raise ValueError(f"Refusing to overwrite {file}")
     with open(file, "r+") as f:
         lines = f.readlines()
         for i in range(len(lines)):

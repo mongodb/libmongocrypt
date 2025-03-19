@@ -82,7 +82,8 @@ void mc_FLE2InsertUpdatePayload_cleanup(mc_FLE2InsertUpdatePayload_t *payload) {
     if (!has_##Name) {                                                                                                 \
         CLIENT_ERR("Missing field '" #Name "' in payload");                                                            \
         goto fail;                                                                                                     \
-    }
+    } else                                                                                                             \
+        ((void)0)
 
 bool mc_FLE2InsertUpdatePayload_parse(mc_FLE2InsertUpdatePayload_t *out,
                                       const _mongocrypt_buffer_t *in,
@@ -154,14 +155,14 @@ bool mc_FLE2InsertUpdatePayload_parse(mc_FLE2InsertUpdatePayload_t *out,
 
     return true;
 fail:
-    mc_FLE2InsertUpdatePayload_cleanup(out);
     return false;
 }
 
 #define IUPS_APPEND_BINDATA(dst, name, subtype, value)                                                                 \
     if (!_mongocrypt_buffer_append(&(value), dst, name, -1)) {                                                         \
         return false;                                                                                                  \
-    }
+    } else                                                                                                             \
+        ((void)0)
 
 bool mc_FLE2InsertUpdatePayload_serialize(const mc_FLE2InsertUpdatePayload_t *payload, bson_t *out) {
     BSON_ASSERT_PARAM(out);

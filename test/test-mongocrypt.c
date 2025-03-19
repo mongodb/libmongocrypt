@@ -81,10 +81,13 @@ void _usleep(int64_t usec) {
 }
 
 #define TEST_DATA_COUNT_INC(var)                                                                                       \
-    (var)++;                                                                                                           \
-    if ((var) >= TEST_DATA_COUNT) {                                                                                    \
-        TEST_ERROR("TEST_DATA_COUNT exceeded for %s. Increment TEST_DATA_COUNT.", #var);                               \
-    }
+    if (1) {                                                                                                           \
+        (var)++;                                                                                                       \
+        if ((var) >= TEST_DATA_COUNT) {                                                                                \
+            TEST_ERROR("TEST_DATA_COUNT exceeded for %s. Increment TEST_DATA_COUNT.", #var);                           \
+        }                                                                                                              \
+    } else                                                                                                             \
+        ((void)0)
 
 static void _load_json(_mongocrypt_tester_t *tester, const char *path) {
     bson_t as_bson;
@@ -569,11 +572,6 @@ mongocrypt_t *_mongocrypt_tester_mongocrypt(tester_mongocrypt_flags flags) {
     if (flags & TESTER_MONGOCRYPT_WITH_CRYPT_SHARED_LIB) {
         mongocrypt_setopt_append_crypt_shared_lib_search_path(crypt, "$ORIGIN");
     }
-    if (flags & TESTER_MONGOCRYPT_WITH_RANGE_V2) {
-        ASSERT(mongocrypt_setopt_use_range_v2(crypt));
-    } else {
-        crypt->opts.use_range_v2 = false;
-    }
     if (flags & TESTER_MONGOCRYPT_WITH_SHORT_CACHE) {
         ASSERT(mongocrypt_setopt_key_expiration(crypt, 1));
     }
@@ -593,10 +591,6 @@ mongocrypt_t *_mongocrypt_tester_mongocrypt(tester_mongocrypt_flags flags) {
 
 bool _mongocrypt_init_for_test(mongocrypt_t *crypt) {
     BSON_ASSERT_PARAM(crypt);
-    // Even if the ENABLE_USE_RANGE_V2 compile flag is on, we should have range V2 off by default for testing, as many
-    // existing tests are based around range V2 being disabled. To use range V2, use the TESTER_MONGOCRYPT_WITH_RANGE_V2
-    // flag with the above function.
-    crypt->opts.use_range_v2 = false;
     return mongocrypt_init(crypt);
 }
 
@@ -924,7 +918,7 @@ static void test_tmp_bsonf(_mongocrypt_tester_t *tester) {
 bool _aes_ctr_is_supported_by_os = true;
 
 int main(int argc, char **argv) {
-    _mongocrypt_tester_t tester = {0};
+    static _mongocrypt_tester_t tester = {0};
     int i;
 
     TEST_PRINTF("Pass a list of patterns to run a subset of tests.\n");
