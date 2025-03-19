@@ -43,7 +43,7 @@
 
 #define PARSE_BINARY(Name, Dest)                                                                                       \
     IF_FIELD(Name) {                                                                                                   \
-        if (!parse_bindata(#Name, BSON_SUBTYPE_BINARY, &iter, Dest, status)) {                                         \
+        if (!parse_bindata(BSON_SUBTYPE_BINARY, &iter, Dest, status)) {                                                \
             goto fail;                                                                                                 \
         }                                                                                                              \
     }                                                                                                                  \
@@ -137,7 +137,6 @@ static bool mc_TextFindTokenSetIndirection_parse(mc_TextFindTokenSetIndirection_
 
     return true;
 fail:
-    mc_TextFindTokenSetIndirection_cleanup(out);
     return false;
 }
 
@@ -371,7 +370,6 @@ bool mc_FLE2FindTextPayload_parse(mc_FLE2FindTextPayload_t *out, const bson_t *i
     CHECK_HAS(df);
     return true;
 fail:
-    mc_FLE2FindTextPayload_cleanup(out);
     return false;
 }
 

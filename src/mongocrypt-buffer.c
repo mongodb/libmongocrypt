@@ -260,7 +260,6 @@ int _mongocrypt_buffer_cmp(const _mongocrypt_buffer_t *a, const _mongocrypt_buff
 void _mongocrypt_buffer_cleanup(_mongocrypt_buffer_t *buf) {
     if (buf && buf->owned) {
         bson_free(buf->data);
-        buf->data = NULL;
     }
 }
 

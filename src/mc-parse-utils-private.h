@@ -22,10 +22,6 @@
 /* Validates that the given bson_iter_t points to bindata element, with
  * the given subtype. If so, it copies the binary data to @out and returns true.
  * If validation fails, then it returns false and sets an error in @status.*/
-bool parse_bindata(const char *field_name,
-                   bson_subtype_t subtype,
-                   bson_iter_t *iter,
-                   _mongocrypt_buffer_t *out,
-                   mongocrypt_status_t *status);
+bool parse_bindata(bson_subtype_t subtype, bson_iter_t *iter, _mongocrypt_buffer_t *out, mongocrypt_status_t *status);
 
 #endif /* MC_PARSE_UTILS_PRIVATE_H */

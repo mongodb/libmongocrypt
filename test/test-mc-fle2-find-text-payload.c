@@ -53,17 +53,17 @@ static void _validate_parsed_payload(_mongocrypt_tester_t *tester,
     }
 
     if (parsed->substringSpec.set) {
-        ASSERT(parsed->substringSpec.value.lb == expected->substringSpec.value.lb);
-        ASSERT(parsed->substringSpec.value.ub == expected->substringSpec.value.ub);
-        ASSERT(parsed->substringSpec.value.mlen == expected->substringSpec.value.mlen);
+        ASSERT_CMPUINT32(parsed->substringSpec.value.lb, ==, expected->substringSpec.value.lb);
+        ASSERT_CMPUINT32(parsed->substringSpec.value.ub, ==, expected->substringSpec.value.ub);
+        ASSERT_CMPUINT32(parsed->substringSpec.value.mlen, ==, expected->substringSpec.value.mlen);
     }
     if (parsed->suffixSpec.set) {
-        ASSERT(parsed->suffixSpec.value.lb == expected->suffixSpec.value.lb);
-        ASSERT(parsed->suffixSpec.value.ub == expected->suffixSpec.value.ub);
+        ASSERT_CMPUINT32(parsed->suffixSpec.value.lb, ==, expected->suffixSpec.value.lb);
+        ASSERT_CMPUINT32(parsed->suffixSpec.value.ub, ==, expected->suffixSpec.value.ub);
     }
     if (parsed->prefixSpec.set) {
-        ASSERT(parsed->prefixSpec.value.lb == expected->prefixSpec.value.lb);
-        ASSERT(parsed->prefixSpec.value.ub == expected->prefixSpec.value.ub);
+        ASSERT_CMPUINT32(parsed->prefixSpec.value.lb, ==, expected->prefixSpec.value.lb);
+        ASSERT_CMPUINT32(parsed->prefixSpec.value.ub, ==, expected->prefixSpec.value.ub);
     }
 }
 
@@ -110,7 +110,7 @@ static const char *k_svrToken = "8773322a2b9e6c08886db6bc65b46ffdd64651e8a49400a
 // Tests mc_FLE2FindTextPayload_serialize() works correctly, and non-error cases
 // for mc_FLE2FindTextPayload_parse().
 static void _test_FLE2FindTextPayload_roundtrip(_mongocrypt_tester_t *tester) {
-    // Test exact token set + no specs present
+    // Test exact token set + prefix spec present
     {
         mc_FLE2FindTextPayload_t payload;
         mc_FLE2FindTextPayload_init(&payload);

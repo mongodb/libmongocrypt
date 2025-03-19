@@ -134,7 +134,7 @@ void mc_FLE2InsertUpdatePayloadV2_cleanup(mc_FLE2InsertUpdatePayloadV2_t *payloa
 
 #define PARSE_BINDATA(Name, Type, Dest)                                                                                \
     IF_FIELD(Name) {                                                                                                   \
-        if (!parse_bindata(#Name, Type, &iter, &out->Dest, status)) {                                                  \
+        if (!parse_bindata(Type, &iter, &out->Dest, status)) {                                                         \
             goto fail;                                                                                                 \
         }                                                                                                              \
     }                                                                                                                  \

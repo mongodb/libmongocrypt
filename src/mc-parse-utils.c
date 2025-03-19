@@ -18,14 +18,14 @@
 #include "mongocrypt-private.h"
 #include "mongocrypt-util-private.h"
 
-bool parse_bindata(const char *field_name,
-                   bson_subtype_t subtype,
-                   bson_iter_t *iter,
-                   _mongocrypt_buffer_t *out,
-                   mongocrypt_status_t *status) {
+bool parse_bindata(bson_subtype_t subtype, bson_iter_t *iter, _mongocrypt_buffer_t *out, mongocrypt_status_t *status) {
+    BSON_ASSERT_PARAM(iter);
+    BSON_ASSERT_PARAM(out);
+
     bson_subtype_t parsed_subtype;
     uint32_t len;
     const uint8_t *data;
+    const char *field_name = bson_iter_key(iter);
     if (bson_iter_type(iter) != BSON_TYPE_BINARY) {
         CLIENT_ERR("Field '%s' expected to be bindata, got: %s",
                    field_name,

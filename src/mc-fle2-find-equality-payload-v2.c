@@ -47,7 +47,7 @@ void mc_FLE2FindEqualityPayloadV2_cleanup(mc_FLE2FindEqualityPayloadV2_t *payloa
 
 #define PARSE_BINARY(Name, Dest)                                                                                       \
     IF_FIELD(Name) {                                                                                                   \
-        if (!parse_bindata(#Name, BSON_SUBTYPE_BINARY, &iter, &out->Dest, status)) {                                   \
+        if (!parse_bindata(BSON_SUBTYPE_BINARY, &iter, &out->Dest, status)) {                                          \
             goto fail;                                                                                                 \
         }                                                                                                              \
     }                                                                                                                  \
