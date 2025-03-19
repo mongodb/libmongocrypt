@@ -6,7 +6,7 @@ Changes in Version 1.13.0
 
 - Bundle libmongocrypt 1.13.0 in release wheels.
 - Add support for the key_expiration_ms option to MongoCryptOptions.
-- Add support for $lookup in CSFLE and QE
+- Add support for $lookup in CSFLE and QE.
 
 Changes in Version 1.12.0
 -------------------------
