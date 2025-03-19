@@ -70,6 +70,8 @@ def update_bindings():
             new_lines.append(")")
             new_lines.append(line)
             skip = False
+    with target.open("w") as f:
+        f.write("\n".join(new_lines))
 
 
 if __name__ == "__main__":

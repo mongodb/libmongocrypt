@@ -46,7 +46,7 @@ class AsyncMongoCryptCallback(ABC):
           - `filter`: The filter to pass to listCollections.
 
         :Returns:
-          The first document from the listCollections command response as BSON.
+          The all or first document from the listCollections command response as BSON.
         """
 
     @abstractmethod
@@ -125,7 +125,11 @@ async def run_state_machine(ctx, callback):
             list_colls_filter = ctx.mongo_operation()
             coll_info = await callback.collection_info(ctx.database, list_colls_filter)
             if coll_info:
-                ctx.add_mongo_operation_result(coll_info)
+                if isinstance(coll_info, list):
+                    for i in coll_info:
+                        ctx.add_mongo_operation_result(i)
+                else:
+                    ctx.add_mongo_operation_result(coll_info)
             ctx.complete_mongo_operation()
         elif state == lib.MONGOCRYPT_CTX_NEED_MONGO_MARKINGS:
             mongocryptd_cmd = ctx.mongo_operation()
