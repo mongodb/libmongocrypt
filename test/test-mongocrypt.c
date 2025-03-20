@@ -977,6 +977,7 @@ int main(int argc, char **argv) {
     _mongocrypt_tester_install_fle2_payload_iup_v2(&tester);
     _mongocrypt_tester_install_fle2_payload_find_equality_v2(&tester);
     _mongocrypt_tester_install_fle2_payload_find_range_v2(&tester);
+    _mongocrypt_tester_install_fle2_payload_find_text(&tester);
     _mongocrypt_tester_install_fle2_tag_and_encrypted_metadata_block(&tester);
     _mongocrypt_tester_install_range_encoding(&tester);
     _mongocrypt_tester_install_range_edge_generation(&tester);

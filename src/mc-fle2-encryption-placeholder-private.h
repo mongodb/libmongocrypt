@@ -125,6 +125,10 @@ typedef struct {
     uint32_t ub;
 } mc_FLE2SubstringInsertSpec_t;
 
+bool mc_FLE2SubstringInsertSpec_parse(mc_FLE2SubstringInsertSpec_t *out,
+                                      const bson_iter_t *in,
+                                      mongocrypt_status_t *status);
+
 /* mc_FLE2SuffixInsertSpec_t holds the parameters used to encode for suffix search. */
 typedef struct {
     // lb is the lower bound on the length of suffixes to be indexed.
@@ -133,6 +137,8 @@ typedef struct {
     uint32_t ub;
 } mc_FLE2SuffixInsertSpec_t;
 
+bool mc_FLE2SuffixInsertSpec_parse(mc_FLE2SuffixInsertSpec_t *out, const bson_iter_t *in, mongocrypt_status_t *status);
+
 /* mc_FLE2PrefixInsertSpec_t holds the parameters used to encode for prefix search. */
 typedef struct {
     // lb is the lower bound on the length of prefixes to be indexed.
@@ -140,6 +146,8 @@ typedef struct {
     // ub is the upper bound on the length of prefixes to be indexed.
     uint32_t ub;
 } mc_FLE2PrefixInsertSpec_t;
+
+bool mc_FLE2PrefixInsertSpec_parse(mc_FLE2PrefixInsertSpec_t *out, const bson_iter_t *in, mongocrypt_status_t *status);
 
 /** mc_FLE2TextSearchInsertSpec_t represents the text search insert specification that is
  * encoded inside of a FLE2EncryptionPlaceholder. See
