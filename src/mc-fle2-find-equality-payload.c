@@ -17,6 +17,7 @@
 #include <bson/bson.h>
 
 #include "mc-fle2-find-equality-payload-private.h"
+#include "mc-parse-utils-private.h"
 #include "mongocrypt-buffer-private.h"
 #include "mongocrypt.h"
 
@@ -47,23 +48,7 @@ void mc_FLE2FindEqualityPayload_cleanup(mc_FLE2FindEqualityPayload_t *payload) {
 
 #define PARSE_BINARY(Name, Dest)                                                                                       \
     IF_FIELD(Name) {                                                                                                   \
-        bson_subtype_t subtype;                                                                                        \
-        uint32_t len;                                                                                                  \
-        const uint8_t *data;                                                                                           \
-        if (bson_iter_type(&iter) != BSON_TYPE_BINARY) {                                                               \
-            CLIENT_ERR("Field '" #Name "' expected to be bindata, got: %d", (int)bson_iter_type(&iter));               \
-            goto fail;                                                                                                 \
-        }                                                                                                              \
-        bson_iter_binary(&iter, &subtype, &len, &data);                                                                \
-        if (subtype != BSON_SUBTYPE_BINARY) {                                                                          \
-            CLIENT_ERR("Field '" #Name "' expected to be bindata subtype %d, got: %d",                                 \
-                       BSON_SUBTYPE_BINARY,                                                                            \
-                       (int)subtype);                                                                                  \
-            goto fail;                                                                                                 \
-        }                                                                                                              \
-        if (!_mongocrypt_buffer_copy_from_binary_iter(&out->Dest, &iter)) {                                            \
-            CLIENT_ERR("Unable to create mongocrypt buffer for BSON binary "                                           \
-                       "field in '" #Name "'");                                                                        \
+        if (!parse_bindata(BSON_SUBTYPE_BINARY, &iter, &out->Dest, status)) {                                          \
             goto fail;                                                                                                 \
         }                                                                                                              \
     }                                                                                                                  \
