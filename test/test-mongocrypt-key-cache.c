@@ -236,7 +236,7 @@ static bool _match_one_cache_entry(_mongocrypt_cache_pair_t *pair, bson_t *expec
     }
 
     if (!_mongocrypt_key_alt_name_unique_list_equal(key_alt_names, attr->alt_names)) {
-        printf("failed to match key alt names\n");
+        TEST_PRINTF("failed to match key alt names\n");
         goto done;
     }
 
@@ -268,7 +268,7 @@ static void _match_cache_entry(_mongocrypt_tester_t *tester, mongocrypt_ctx_t *c
     while (pair) {
         if (_match_one_cache_entry(pair, expected_entry)) {
             if (matched) {
-                printf("double matched entry: %s\n", bson_as_relaxed_extended_json(expected_entry, NULL));
+                TEST_PRINTF("double matched entry: %s\n", bson_as_relaxed_extended_json(expected_entry, NULL));
                 BSON_ASSERT(false);
             }
             matched = true;
@@ -278,7 +278,7 @@ static void _match_cache_entry(_mongocrypt_tester_t *tester, mongocrypt_ctx_t *c
     }
 
     if (!matched) {
-        printf("could not match entry: %s\n", bson_as_relaxed_extended_json(expected_entry, NULL));
+        TEST_PRINTF("could not match entry: %s\n", bson_as_relaxed_extended_json(expected_entry, NULL));
         BSON_ASSERT(false);
     }
 }
@@ -291,11 +291,11 @@ static void _run_one_test(_mongocrypt_tester_t *tester, mongocrypt_ctx_t *ctx, b
     mongocrypt_status_t *status;
 
     if (bson_iter_init_find(&iter, test, "description")) {
-        printf("- %s\n", bson_iter_utf8(&iter, NULL));
+        TEST_PRINTF("- %s\n", bson_iter_utf8(&iter, NULL));
     }
 
     if (bson_iter_init_find(&iter, test, "skipReason")) {
-        printf("  - skipping: %s\n", bson_iter_utf8(&iter, NULL));
+        TEST_PRINTF("  - skipping: %s\n", bson_iter_utf8(&iter, NULL));
         return;
     }
 
@@ -407,7 +407,7 @@ static void _test_key_cache(_mongocrypt_tester_t *tester) {
 
         bson_iter_bson(&iter, &test);
 
-        BSON_ASSERT(mongocrypt_ctx_encrypt_init(ctx, "test", -1, TEST_BSON("{'insert': 'coll'}")));
+        BSON_ASSERT(mongocrypt_ctx_encrypt_init(ctx, "test", -1, TEST_BSON("{'insert': 'test'}")));
         _run_one_test(tester, ctx, &test);
         bson_destroy(&test);
 

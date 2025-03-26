@@ -1,0 +1,66 @@
+name: "CodeQL Python"
+
+on:
+  push:
+    branches: [ "master"]
+    tags: ['*']
+  pull_request:
+    paths:
+      - bindings/python/*
+      - bindings/python/**/*.py
+      - .github/workflows/*python.yml
+  schedule:
+    - cron: '17 10 * * 2'
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      ref:
+        required: true
+        type: string
+
+jobs:
+  analyze-python:
+    name: Analyze Python
+    if: github.repository_owner == 'mongodb' || (github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call')
+    runs-on: "macos-latest"
+    timeout-minutes: 360
+    permissions:
+      # required for all workflows
+      security-events: write
+      # required to fetch internal or private CodeQL packs
+      packages: read
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        ref: ${{ inputs.ref }}
+        persist-credentials: false
+    - uses: actions/setup-python@v5
+      with:
+        python-version: 3.x
+
+    # Initializes the CodeQL tools for scanning.
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: python
+        build-mode: none
+        # For more details on CodeQL's query packs, refer to: https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs
+        queries: security-extended
+        config: |
+          paths:
+            - bindings/python/pymongocrypt
+
+    - name: Install package
+      run: |
+        cd bindings/python
+        export LIBMONGOCRYPT_VERSION=$(cat ./libmongocrypt-version.txt)
+        git fetch origin $LIBMONGOCRYPT_VERSION
+        bash release.sh
+        pip install dist/*.whl
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:python"

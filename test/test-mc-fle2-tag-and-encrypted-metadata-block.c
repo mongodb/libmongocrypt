@@ -49,8 +49,43 @@ static void _test_mc_FLE2TagAndEncryptedMetadataBlock_roundtrip(_mongocrypt_test
     _mongocrypt_buffer_cleanup(&output);
 }
 
+static void _test_mc_FLE2TagAndEncryptedMetadataBlock_validate(_mongocrypt_tester_t *tester) {
+    _mongocrypt_buffer_t input;
+    _mongocrypt_buffer_copy_from_hex(&input, TEST_TAG_AND_ENCRYPTED_METADATA_BLOCK);
+
+    mongocrypt_status_t *status = mongocrypt_status_new();
+
+    mc_FLE2TagAndEncryptedMetadataBlock_t metadata;
+    mc_FLE2TagAndEncryptedMetadataBlock_init(&metadata);
+
+    // Parse into metadata struct.
+    ASSERT_OK_STATUS(mc_FLE2TagAndEncryptedMetadataBlock_parse(&metadata, &input, status), status);
+
+    ASSERT_OK_STATUS(mc_FLE2TagAndEncryptedMetadataBlock_validate(&metadata, status), status);
+
+    // Modify each value on the metadata block to be invalid and assert failure, then change back to valid value.
+    _mongocrypt_buffer_resize(&metadata.encryptedCount, kFieldLen - 1);
+    ASSERT(!mc_FLE2TagAndEncryptedMetadataBlock_validate(&metadata, status));
+    _mongocrypt_buffer_resize(&metadata.encryptedCount, kFieldLen);
+
+    _mongocrypt_buffer_resize(&metadata.tag, kFieldLen - 1);
+    ASSERT(!mc_FLE2TagAndEncryptedMetadataBlock_validate(&metadata, status));
+    _mongocrypt_buffer_resize(&metadata.tag, kFieldLen);
+
+    _mongocrypt_buffer_resize(&metadata.encryptedZeros, kFieldLen - 1);
+    ASSERT(!mc_FLE2TagAndEncryptedMetadataBlock_validate(&metadata, status));
+    _mongocrypt_buffer_resize(&metadata.encryptedZeros, kFieldLen);
+
+    // Metadata block should be valid.
+    ASSERT(mc_FLE2TagAndEncryptedMetadataBlock_validate(&metadata, status));
+    _mongocrypt_buffer_cleanup(&input);
+    mc_FLE2TagAndEncryptedMetadataBlock_cleanup(&metadata);
+    mongocrypt_status_destroy(status);
+}
+
 #undef TEST_TAG_AND_ENCRYPTED_METADATA_BLOCK
 
 void _mongocrypt_tester_install_fle2_tag_and_encrypted_metadata_block(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_mc_FLE2TagAndEncryptedMetadataBlock_roundtrip);
+    INSTALL_TEST(_test_mc_FLE2TagAndEncryptedMetadataBlock_validate);
 }

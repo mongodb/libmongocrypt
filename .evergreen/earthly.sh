@@ -48,4 +48,4 @@ fi
 
 chmod a+x "$exe_path"
 
-"$exe_path" "$@"
+"$exe_path" --buildkit-image "artifactory.corp.mongodb.com/dockerhub/earthly/buildkitd:v${EARTHLY_VERSION}" "$@"

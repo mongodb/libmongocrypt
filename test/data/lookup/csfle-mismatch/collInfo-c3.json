@@ -1,0 +1,39 @@
+{
+    "type": "collection",
+    "name": "c3",
+    "idIndex": {
+        "ns": "db.c3",
+        "name": "_id_",
+        "key": {
+            "_id": {
+                "$numberInt": "1"
+            }
+        },
+        "v": {
+            "$numberInt": "2"
+        }
+    },
+    "options": {
+        "validator": {
+            "$jsonSchema": {
+                "properties": {
+                    "e2": {
+                        "encrypt": {
+                            "keyId": [
+                                {
+                                    "$binary": {
+                                        "base64": "uJ2Njy8YQDuYKbzu2vEKQg==",
+                                        "subType": "04"
+                                    }
+                                }
+                            ],
+                            "bsonType": "string",
+                            "algorithm": "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic"
+                        }
+                    }
+                },
+                "bsonType": "object"
+            }
+        }
+    }
+}

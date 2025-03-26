@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Changes in Version 1.12.0
+-------------------------
+
+- Bundle libmongocrypt 1.12.0 in release wheels.
+- Add support for kms retries.
+
 Changes in Version 1.11.0
 -------------------------
 

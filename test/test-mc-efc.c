@@ -39,6 +39,19 @@ static void _test_efc(_mongocrypt_tester_t *tester) {
     {
         _load_test_file(tester, "./test/data/efc/efc-oneField.json", &efc_bson);
         ASSERT_OK_STATUS(mc_EncryptedFieldConfig_parse(&efc, &efc_bson, status, use_range_v2), status);
+        ASSERT_CMPUINT8(efc.str_encode_version, ==, 0);
+        ptr = efc.fields;
+        ASSERT(ptr);
+        ASSERT_STREQUAL(ptr->path, "firstName");
+        ASSERT_CMPBUF(expect_keyId1, ptr->keyId);
+        ASSERT(ptr->next == NULL);
+        mc_EncryptedFieldConfig_cleanup(&efc);
+    }
+
+    {
+        _load_test_file(tester, "./test/data/efc/efc-oneField-goodVersionSet.json", &efc_bson);
+        ASSERT_OK_STATUS(mc_EncryptedFieldConfig_parse(&efc, &efc_bson, status, use_range_v2), status);
+        ASSERT_CMPUINT8(efc.str_encode_version, ==, 1);
         ptr = efc.fields;
         ASSERT(ptr);
         ASSERT_STREQUAL(ptr->path, "firstName");
@@ -50,6 +63,7 @@ static void _test_efc(_mongocrypt_tester_t *tester) {
     {
         _load_test_file(tester, "./test/data/efc/efc-extraField.json", &efc_bson);
         ASSERT_OK_STATUS(mc_EncryptedFieldConfig_parse(&efc, &efc_bson, status, use_range_v2), status);
+        ASSERT_CMPUINT8(efc.str_encode_version, ==, 0);
         ptr = efc.fields;
         ASSERT(ptr);
         ASSERT_STREQUAL(ptr->path, "firstName");
@@ -61,6 +75,7 @@ static void _test_efc(_mongocrypt_tester_t *tester) {
     {
         _load_test_file(tester, "./test/data/efc/efc-twoFields.json", &efc_bson);
         ASSERT_OK_STATUS(mc_EncryptedFieldConfig_parse(&efc, &efc_bson, status, use_range_v2), status);
+        ASSERT_CMPUINT8(efc.str_encode_version, ==, 0);
         ptr = efc.fields;
         ASSERT(ptr);
         ASSERT_STREQUAL(ptr->path, "lastName");
@@ -79,6 +94,61 @@ static void _test_efc(_mongocrypt_tester_t *tester) {
                             status,
                             "unable to find 'keyId' in 'field' document");
         mc_EncryptedFieldConfig_cleanup(&efc);
+        _mongocrypt_status_reset(status);
+    }
+
+    {
+        _load_test_file(tester, "./test/data/efc/efc-oneField-badVersionSet.json", &efc_bson);
+        ASSERT_FAILS_STATUS(mc_EncryptedFieldConfig_parse(&efc, &efc_bson, status, use_range_v2),
+                            status,
+                            "'strEncodeVersion' of 99 is not supported");
+        mc_EncryptedFieldConfig_cleanup(&efc);
+        _mongocrypt_status_reset(status);
+    }
+
+    {
+        _load_test_file(tester, "./test/data/efc/efc-textSearchFields.json", &efc_bson);
+        ASSERT_OK_STATUS(mc_EncryptedFieldConfig_parse(&efc, &efc_bson, status, use_range_v2), status);
+        ASSERT_CMPUINT8(efc.str_encode_version, ==, LATEST_STR_ENCODE_VERSION);
+        ptr = efc.fields;
+        ASSERT(ptr);
+        ASSERT_STREQUAL(ptr->path, "lastName");
+        ASSERT_CMPBUF(expect_keyId2, ptr->keyId);
+        ASSERT(ptr->supported_queries == (SUPPORTS_SUFFIX_PREVIEW_QUERIES | SUPPORTS_PREFIX_PREVIEW_QUERIES));
+        ASSERT(ptr->next != NULL);
+        ptr = ptr->next;
+        ASSERT_STREQUAL(ptr->path, "firstName");
+        ASSERT_CMPBUF(expect_keyId1, ptr->keyId);
+        ASSERT(ptr->supported_queries == SUPPORTS_SUBSTRING_PREVIEW_QUERIES);
+        ASSERT(ptr->next == NULL);
+        mc_EncryptedFieldConfig_cleanup(&efc);
+    }
+
+    {
+        _load_test_file(tester, "./test/data/efc/efc-textSearchFields-goodVersionSet.json", &efc_bson);
+        ASSERT_OK_STATUS(mc_EncryptedFieldConfig_parse(&efc, &efc_bson, status, use_range_v2), status);
+        ASSERT_CMPUINT8(efc.str_encode_version, ==, 1);
+        ptr = efc.fields;
+        ASSERT(ptr);
+        ASSERT_STREQUAL(ptr->path, "lastName");
+        ASSERT_CMPBUF(expect_keyId2, ptr->keyId);
+        ASSERT(ptr->supported_queries == (SUPPORTS_SUFFIX_PREVIEW_QUERIES | SUPPORTS_PREFIX_PREVIEW_QUERIES));
+        ASSERT(ptr->next != NULL);
+        ptr = ptr->next;
+        ASSERT_STREQUAL(ptr->path, "firstName");
+        ASSERT_CMPBUF(expect_keyId1, ptr->keyId);
+        ASSERT(ptr->supported_queries == SUPPORTS_SUBSTRING_PREVIEW_QUERIES);
+        ASSERT(ptr->next == NULL);
+        mc_EncryptedFieldConfig_cleanup(&efc);
+    }
+
+    {
+        _load_test_file(tester, "./test/data/efc/efc-textSearchFields-badVersionSet.json", &efc_bson);
+        ASSERT_FAILS_STATUS(mc_EncryptedFieldConfig_parse(&efc, &efc_bson, status, use_range_v2),
+                            status,
+                            "'strEncodeVersion' of 99 is not supported");
+        mc_EncryptedFieldConfig_cleanup(&efc);
+        _mongocrypt_status_reset(status);
     }
 
     _mongocrypt_buffer_cleanup(&expect_keyId2);

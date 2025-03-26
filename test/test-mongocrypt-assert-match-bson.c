@@ -167,7 +167,7 @@ bool match_json(const bson_t *doc,
     pattern = bson_new_from_json((const uint8_t *)double_quoted, -1, &error);
 
     if (!pattern) {
-        fprintf(stderr, "couldn't parse JSON: %s\n", error.message);
+        TEST_STDERR_PRINTF("couldn't parse JSON: %s\n", error.message);
         abort();
     }
 
@@ -176,18 +176,17 @@ bool match_json(const bson_t *doc,
 
     if (!matches) {
         char *as_string = doc ? bson_as_canonical_extended_json(doc, NULL) : NULL;
-        fprintf(stderr,
-                "ASSERT_MATCH failed with document:\n\n"
-                "%s\n"
-                "pattern:\n%s\n"
-                "%s\n"
-                "%s:%d %s()\n",
-                as_string ? as_string : "{}",
-                double_quoted,
-                ctx.errmsg,
-                filename,
-                lineno,
-                funcname);
+        TEST_STDERR_PRINTF("ASSERT_MATCH failed with document:\n\n"
+                           "%s\n"
+                           "pattern:\n%s\n"
+                           "%s\n"
+                           "%s:%d %s()\n",
+                           as_string ? as_string : "{}",
+                           double_quoted,
+                           ctx.errmsg,
+                           filename,
+                           lineno,
+                           funcname);
         bson_free(as_string);
     }
 
@@ -580,7 +579,7 @@ static bool get_type_operator(const bson_value_t *value, bson_type_t *out) {
         } else if (0 == strcasecmp("maxKey", value_string)) {
             *out = BSON_TYPE_MAXKEY;
         } else {
-            fprintf(stderr, "unrecognized $$type value: %s\n", value_string);
+            TEST_STDERR_PRINTF("unrecognized $$type value: %s\n", value_string);
             abort();
         }
         return true;

@@ -248,124 +248,116 @@ static const char *const *_test_expectMincoverDecimal128(void *tests, size_t idx
 static void _test_dump_32(void *tests, size_t idx, mc_mincover_t *got) {
     BSON_ASSERT_PARAM(tests);
     Int32Test *const test = (Int32Test *)tests + idx;
-    fflush(stdout); // Avoid incomplete stdout output from prior tests on error
-    fprintf(stderr,
-            "testcase: lowerBound=%" PRId32 " (%s) upperBound=%" PRId32 " (%s)",
-            test->lowerBound,
-            test->includeLowerBound ? "inclusive" : "exclusive",
-            test->upperBound,
-            test->includeUpperBound ? "inclusive" : "exclusive");
+    TEST_STDERR_PRINTF("testcase: lowerBound=%" PRId32 " (%s) upperBound=%" PRId32 " (%s)",
+                       test->lowerBound,
+                       test->includeLowerBound ? "inclusive" : "exclusive",
+                       test->upperBound,
+                       test->includeUpperBound ? "inclusive" : "exclusive");
     if (test->min.set) {
-        fprintf(stderr, " min=%" PRId32, test->min.value);
+        TEST_STDERR_PRINTF(" min=%" PRId32, test->min.value);
     }
     if (test->max.set) {
-        fprintf(stderr, " max=%" PRId32, test->max.value);
+        TEST_STDERR_PRINTF(" max=%" PRId32, test->max.value);
     }
-    fprintf(stderr, " sparsity=%zu\n", test->sparsity);
-    fprintf(stderr, "mincover expected ... begin\n");
+    TEST_STDERR_PRINTF(" sparsity=%zu\n", test->sparsity);
+    TEST_STDERR_PRINTF("mincover expected ... begin\n");
     for (const char **p = test->expectMincoverStrings; *p; ++p) {
-        fprintf(stderr, "  %s\n", *p);
+        TEST_STDERR_PRINTF("  %s\n", *p);
     }
-    fprintf(stderr, "mincover expected ... end\n");
-    fprintf(stderr, "mincover got ... begin\n");
+    TEST_STDERR_PRINTF("mincover expected ... end\n");
+    TEST_STDERR_PRINTF("mincover got ... begin\n");
     for (size_t i = 0; i < mc_mincover_len(got); i++) {
-        fprintf(stderr, "  %s\n", mc_mincover_get(got, i));
+        TEST_STDERR_PRINTF("  %s\n", mc_mincover_get(got, i));
     }
-    fprintf(stderr, "mincover got ... end\n");
+    TEST_STDERR_PRINTF("mincover got ... end\n");
 }
 
 static void _test_dump_64(void *tests, size_t idx, mc_mincover_t *got) {
     BSON_ASSERT_PARAM(tests);
     Int64Test *const test = (Int64Test *)tests + idx;
-    fflush(stdout); // Avoid incomplete stdout output from prior tests on error
-    fprintf(stderr,
-            "testcase: lowerBound=%" PRId64 " (%s) upperBound=%" PRId64 " (%s)",
-            test->lowerBound,
-            test->includeLowerBound ? "inclusive" : "exclusive",
-            test->upperBound,
-            test->includeUpperBound ? "inclusive" : "exclusive");
+    TEST_STDERR_PRINTF("testcase: lowerBound=%" PRId64 " (%s) upperBound=%" PRId64 " (%s)",
+                       test->lowerBound,
+                       test->includeLowerBound ? "inclusive" : "exclusive",
+                       test->upperBound,
+                       test->includeUpperBound ? "inclusive" : "exclusive");
     if (test->min.set) {
-        fprintf(stderr, " min=%" PRId64, test->min.value);
+        TEST_STDERR_PRINTF(" min=%" PRId64, test->min.value);
     }
     if (test->max.set) {
-        fprintf(stderr, " max=%" PRId64, test->max.value);
+        TEST_STDERR_PRINTF(" max=%" PRId64, test->max.value);
     }
-    fprintf(stderr, " sparsity=%zu\n", test->sparsity);
-    fprintf(stderr, "mincover expected ... begin\n");
+    TEST_STDERR_PRINTF(" sparsity=%zu\n", test->sparsity);
+    TEST_STDERR_PRINTF("mincover expected ... begin\n");
     for (const char **p = test->expectMincoverStrings; *p; ++p) {
-        fprintf(stderr, "  %s\n", *p);
+        TEST_STDERR_PRINTF("  %s\n", *p);
     }
-    fprintf(stderr, "mincover expected ... end\n");
-    fprintf(stderr, "mincover got ... begin\n");
+    TEST_STDERR_PRINTF("mincover expected ... end\n");
+    TEST_STDERR_PRINTF("mincover got ... begin\n");
     for (size_t i = 0; i < mc_mincover_len(got); i++) {
-        fprintf(stderr, "  %s\n", mc_mincover_get(got, i));
+        TEST_STDERR_PRINTF("  %s\n", mc_mincover_get(got, i));
     }
-    fprintf(stderr, "mincover got ... end\n");
+    TEST_STDERR_PRINTF("mincover got ... end\n");
 }
 
 static void _test_dump_Double(void *tests, size_t idx, mc_mincover_t *got) {
     BSON_ASSERT_PARAM(tests);
     DoubleTest *const test = (DoubleTest *)tests + idx;
-    fflush(stdout); // Avoid incomplete stdout output from prior tests on error
-    fprintf(stderr,
-            "testcase: lowerBound=%f (%s) upperBound=%f (%s)",
-            test->lowerBound,
-            test->includeLowerBound ? "inclusive" : "exclusive",
-            test->upperBound,
-            test->includeUpperBound ? "inclusive" : "exclusive");
+    TEST_STDERR_PRINTF("testcase: lowerBound=%f (%s) upperBound=%f (%s)",
+                       test->lowerBound,
+                       test->includeLowerBound ? "inclusive" : "exclusive",
+                       test->upperBound,
+                       test->includeUpperBound ? "inclusive" : "exclusive");
     if (test->min.set) {
-        fprintf(stderr, " min=%f", test->min.value);
+        TEST_STDERR_PRINTF(" min=%f", test->min.value);
     }
     if (test->max.set) {
-        fprintf(stderr, " max=%f", test->max.value);
+        TEST_STDERR_PRINTF(" max=%f", test->max.value);
     }
     if (test->precision.set) {
-        fprintf(stderr, " precision=%" PRIu32, test->precision.value);
+        TEST_STDERR_PRINTF(" precision=%" PRIu32, test->precision.value);
     }
-    fprintf(stderr, " sparsity=%zu\n", test->sparsity);
-    fprintf(stderr, "mincover expected ... begin\n");
+    TEST_STDERR_PRINTF(" sparsity=%zu\n", test->sparsity);
+    TEST_STDERR_PRINTF("mincover expected ... begin\n");
     for (const char **p = test->expectMincoverStrings; *p; ++p) {
-        fprintf(stderr, "  %s\n", *p);
+        TEST_STDERR_PRINTF("  %s\n", *p);
     }
-    fprintf(stderr, "mincover expected ... end\n");
-    fprintf(stderr, "mincover got ... begin\n");
+    TEST_STDERR_PRINTF("mincover expected ... end\n");
+    TEST_STDERR_PRINTF("mincover got ... begin\n");
     for (size_t i = 0; i < mc_mincover_len(got); i++) {
-        fprintf(stderr, "  %s\n", mc_mincover_get(got, i));
+        TEST_STDERR_PRINTF("  %s\n", mc_mincover_get(got, i));
     }
-    fprintf(stderr, "mincover got ... end\n");
+    TEST_STDERR_PRINTF("mincover got ... end\n");
 }
 
 #if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
 static void _test_dump_Decimal128(void *tests, size_t idx, mc_mincover_t *got) {
     BSON_ASSERT_PARAM(tests);
     Decimal128Test *const test = (Decimal128Test *)tests + idx;
-    fflush(stdout); // Avoid incomplete stdout output from prior tests on error
-    fprintf(stderr,
-            "testcase: lowerBound=%s (%s) upperBound=%s (%s)",
-            mc_dec128_to_string(test->lowerBound).str,
-            test->includeLowerBound ? "inclusive" : "exclusive",
-            mc_dec128_to_string(test->upperBound).str,
-            test->includeUpperBound ? "inclusive" : "exclusive");
+    TEST_STDERR_PRINTF("testcase: lowerBound=%s (%s) upperBound=%s (%s)",
+                       mc_dec128_to_string(test->lowerBound).str,
+                       test->includeLowerBound ? "inclusive" : "exclusive",
+                       mc_dec128_to_string(test->upperBound).str,
+                       test->includeUpperBound ? "inclusive" : "exclusive");
     if (test->min.set) {
-        fprintf(stderr, " min=%s", mc_dec128_to_string(test->min.value).str);
+        TEST_STDERR_PRINTF(" min=%s", mc_dec128_to_string(test->min.value).str);
     }
     if (test->max.set) {
-        fprintf(stderr, " max=%s", mc_dec128_to_string(test->max.value).str);
+        TEST_STDERR_PRINTF(" max=%s", mc_dec128_to_string(test->max.value).str);
     }
     if (test->precision.set) {
-        fprintf(stderr, " precision=%" PRIu32, test->precision.value);
+        TEST_STDERR_PRINTF(" precision=%" PRIu32, test->precision.value);
     }
-    fprintf(stderr, " sparsity=%zu\n", test->sparsity);
-    fprintf(stderr, "mincover expected ... begin\n");
+    TEST_STDERR_PRINTF(" sparsity=%zu\n", test->sparsity);
+    TEST_STDERR_PRINTF("mincover expected ... begin\n");
     for (const char **p = test->expectMincoverStrings; *p; ++p) {
-        fprintf(stderr, "  %s\n", *p);
+        TEST_STDERR_PRINTF("  %s\n", *p);
     }
-    fprintf(stderr, "mincover expected ... end\n");
-    fprintf(stderr, "mincover got ... begin\n");
+    TEST_STDERR_PRINTF("mincover expected ... end\n");
+    TEST_STDERR_PRINTF("mincover got ... begin\n");
     for (size_t i = 0; i < mc_mincover_len(got); i++) {
-        fprintf(stderr, "  %s\n", mc_mincover_get(got, i));
+        TEST_STDERR_PRINTF("  %s\n", mc_mincover_get(got, i));
     }
-    fprintf(stderr, "mincover got ... end\n");
+    TEST_STDERR_PRINTF("mincover got ... end\n");
 }
 #endif // MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
 

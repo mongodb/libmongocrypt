@@ -1,4 +1,5 @@
 {
+    "name": "test",
     "options": {
         "validator": {
             "$jsonSchema": {

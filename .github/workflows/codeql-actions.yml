@@ -1,0 +1,44 @@
+name: "CodeQL GitHub Actions"
+
+on:
+  push:
+    branches: [ "master"]
+    tags: ['*']
+  pull_request:
+    paths:
+      - .github/workflows/*.yml
+  workflow_dispatch:
+  schedule:
+    - cron: '17 10 * * 2'
+
+jobs:
+  analyze-python:
+    name: Analyze GitHub Actions
+    if: github.repository_owner == 'mongodb' || github.event_name == 'workflow_dispatch'
+    runs-on: "ubuntu-latest"
+    timeout-minutes: 360
+    permissions:
+      # required for all workflows
+      security-events: write
+      # required to fetch internal or private CodeQL packs
+      packages: read
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+
+    # Initializes the CodeQL tools for scanning.
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: actions
+        build-mode: none
+        # For more details on CodeQL's query packs, refer to: https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs
+        queries: security-extended
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:actions"

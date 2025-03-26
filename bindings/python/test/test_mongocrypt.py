@@ -607,7 +607,7 @@ class TestMongoCryptCallback(unittest.TestCase):
         encrypter = AutoEncrypter(callback, opts)
         self.addCleanup(encrypter.close)
 
-        with respx.mock() as router:
+        with respx.mock(using="httpx") as router:
             data = {"access_token": "foo"}
             url = "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token"
             router.add(
@@ -748,7 +748,7 @@ if sys.version_info >= (3, 8, 0):  # noqa: UP036
             encrypter = AsyncAutoEncrypter(callback, opts)
             self.addAsyncCleanup(encrypter.close)
 
-            with respx.mock() as router:
+            with respx.mock(using="httpx") as router:
                 data = {"access_token": "foo"}
                 url = "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token"
                 router.add(
@@ -1019,7 +1019,7 @@ class TestNeedKMSAzureCredentials(unittest.TestCase):
 
     def test_success(self):
         encrypter = self.get_encrypter()
-        with respx.mock() as router:
+        with respx.mock(using="httpx") as router:
             data = {"access_token": "foo", "expires_in": 4000}
             url = "http://169.254.169.254/metadata/identity/oauth2/token"
             router.add(
@@ -1034,7 +1034,7 @@ class TestNeedKMSAzureCredentials(unittest.TestCase):
 
     def test_empty_json(self):
         encrypter = self.get_encrypter()
-        with respx.mock() as router:
+        with respx.mock(using="httpx") as router:
             url = "http://169.254.169.254/metadata/identity/oauth2/token"
             router.add(
                 respx.get(url=url).mock(return_value=httpx.Response(200, json={}))
@@ -1048,7 +1048,7 @@ class TestNeedKMSAzureCredentials(unittest.TestCase):
 
     def test_bad_json(self):
         encrypter = self.get_encrypter()
-        with respx.mock() as router:
+        with respx.mock(using="httpx") as router:
             url = "http://169.254.169.254/metadata/identity/oauth2/token"
             router.add(
                 respx.get(url=url).mock(return_value=httpx.Response(200, text="a'"))
@@ -1062,7 +1062,7 @@ class TestNeedKMSAzureCredentials(unittest.TestCase):
 
     def test_http_404(self):
         encrypter = self.get_encrypter()
-        with respx.mock() as router:
+        with respx.mock(using="httpx") as router:
             url = "http://169.254.169.254/metadata/identity/oauth2/token"
             router.add(respx.get(url=url).mock(return_value=httpx.Response(404)))
             with self.assertRaisesRegex(
@@ -1074,7 +1074,7 @@ class TestNeedKMSAzureCredentials(unittest.TestCase):
 
     def test_http_500(self):
         encrypter = self.get_encrypter()
-        with respx.mock() as router:
+        with respx.mock(using="httpx") as router:
             url = "http://169.254.169.254/metadata/identity/oauth2/token"
             router.add(respx.get(url=url).mock(return_value=httpx.Response(500)))
             with self.assertRaisesRegex(
@@ -1086,7 +1086,7 @@ class TestNeedKMSAzureCredentials(unittest.TestCase):
 
     def test_slow_response(self):
         encrypter = self.get_encrypter()
-        with respx.mock() as router:
+        with respx.mock(using="httpx") as router:
             url = "http://169.254.169.254/metadata/identity/oauth2/token"
             router.add(
                 respx.get(url=url).mock(side_effect=httpx._exceptions.ConnectTimeout)
@@ -1100,7 +1100,7 @@ class TestNeedKMSAzureCredentials(unittest.TestCase):
 
     def test_cache(self):
         encrypter = self.get_encrypter()
-        with respx.mock() as router:
+        with respx.mock(using="httpx") as router:
             data = {"access_token": "foo", "expires_in": 4000}
             url = "http://169.254.169.254/metadata/identity/oauth2/token"
             router.add(
@@ -1121,7 +1121,7 @@ class TestNeedKMSAzureCredentials(unittest.TestCase):
 
     def test_cache_expires_soon(self):
         encrypter = self.get_encrypter()
-        with respx.mock() as router:
+        with respx.mock(using="httpx") as router:
             data = {"access_token": "foo", "expires_in": 10}
             url = "http://169.254.169.254/metadata/identity/oauth2/token"
             router.add(
@@ -1137,7 +1137,7 @@ class TestNeedKMSAzureCredentials(unittest.TestCase):
         # Should not use the cached value.
         encrypter = self.get_encrypter(False)
         self.assertIsNotNone(pymongocrypt.synchronous.credentials._azure_creds_cache)
-        with respx.mock() as router:
+        with respx.mock(using="httpx") as router:
             url = "http://169.254.169.254/metadata/identity/oauth2/token"
             router.add(
                 respx.get(url=url).mock(side_effect=httpx._exceptions.ConnectTimeout)

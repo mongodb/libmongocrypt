@@ -1,0 +1,42 @@
+{
+    "db.coll": {
+        "escCollection": "enxcol_.coll.esc",
+        "ecocCollection": "enxcol_.coll.ecoc",
+        "fields": [
+            {
+                "keyId": {
+                    "$binary": {
+                        "base64": "YWFhYWFhYWFhYWFhYWFhYQ==",
+                        "subType": "04"
+                    }
+                },
+                "path": "encryptedIndexed",
+                "bsonType": "string",
+                "queries": {
+                    "queryType": "equality",
+                    "contention": 8
+                }
+            }
+        ]
+    },
+    "db.coll2": {
+        "escCollection": "enxcol_.coll2.esc",
+        "ecocCollection": "enxcol_.coll2.ecoc",
+        "fields": [
+            {
+                "keyId": {
+                    "$binary": {
+                        "base64": "YWFhYWFhYWFhYWFhYWFhYQ==",
+                        "subType": "04"
+                    }
+                },
+                "path": "encryptedIndexed2",
+                "bsonType": "string",
+                "queries": {
+                    "queryType": "equality",
+                    "contention": 8
+                }
+            }
+        ]
+    }
+}

@@ -120,6 +120,9 @@ set (MONGOCRYPT_SOURCES
    src/mc-range-encoding.c
    src/mc-rangeopts.c
    src/mc-reader.c
+   src/mc-schema-broker.c
+   src/mc-str-encode-string-sets.c
+   src/mc-text-search-str-encode.c
    src/mc-tokens.c
    src/mc-writer.c
    src/mongocrypt-binary.c
@@ -151,6 +154,9 @@ set (MONGOCRYPT_SOURCES
    src/os_posix/os_mutex.c
    src/os_win/os_dll.c
    src/os_posix/os_dll.c
+   src/unicode/case-fold-map.c
+   src/unicode/diacritic-fold-map.c
+   src/unicode/fold.c
    )
 
 # If MONGOCRYPT_CRYPTO is not set, choose a system default.
@@ -460,6 +466,7 @@ set (TEST_MONGOCRYPT_SOURCES
    test/test-gcp-auth.c
    test/test-mc-cmp.c
    test/test-mc-efc.c
+   test/test-mc-fle2-encryption-placeholder.c
    test/test-mc-fle2-find-equality-payload-v2.c
    test/test-mc-fle2-find-range-payload-v2.c
    test/test-mc-fle2-payload-iev.c
@@ -474,6 +481,8 @@ set (TEST_MONGOCRYPT_SOURCES
    test/test-mc-range-mincover.c
    test/test-mc-rangeopts.c
    test/test-mc-reader.c
+   test/test-mc-text-search-str-encode.c
+   test/test-mc-schema-broker.c
    test/test-mc-tokens.c
    test/test-mc-range-encoding.c
    test/test-mc-writer.c
@@ -510,6 +519,7 @@ set (TEST_MONGOCRYPT_SOURCES
    test/test-mongocrypt-util.c
    test/test-mongocrypt.c
    test/test-named-kms-providers.c
+   test/test-unicode-fold.c
    )
 
 # Define test-mongocrypt

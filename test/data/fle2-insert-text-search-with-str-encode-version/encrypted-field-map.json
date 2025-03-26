@@ -1,0 +1,30 @@
+{
+   "db.test": {
+      "escCollection": "fle2.test.esc",
+      "ecocCollection": "fle2.test.ecoc",
+      "fields": [
+         {
+            "keyId": {
+               "$binary": {
+                  "base64": "EjRWeBI0mHYSNBI0VniQEg==",
+                  "subType": "04"
+               }
+            },
+            "path": "ssn",
+            "bsonType": "string",
+            "queries": {
+               "queryType": "substringPreview",
+               "contention": {
+                     "$numberLong": "0"
+               },
+               "strMaxLength": 100,
+               "strMinQueryLength": 5,
+               "strMaxQueryLength": 20,
+               "caseSensitive": false,
+               "diacriticSensitive": true
+            }
+         }
+      ],
+      "strEncodeVersion": 1
+   }
+}

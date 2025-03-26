@@ -222,6 +222,7 @@ run_ctest() {
 
 run_python() {
     pys=(
+        "${MONGOCRYPT_PYTHON:-}"
         py
         python3.14
         python3.13

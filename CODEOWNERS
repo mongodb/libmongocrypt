@@ -2,6 +2,3 @@
 
 # Python Bindings
 bindings/python @mongodb/dbx-python
-
-# Java Bindings
-bindings/java @jyemin @rozza

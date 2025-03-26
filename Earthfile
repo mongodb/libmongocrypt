@@ -54,11 +54,11 @@
     #   • DO NOT: "ubuntu"
     #   • DO NOT: "ubuntu:latest"
     #   • DO NOT: "ubuntu:22.10"
-    #   • DO: "docker.io/library/ubuntu:22.10"
+    #   • DO: "artifactory.corp.mongodb.com/dockerhub/library/ubuntu:22.10"
 # ###
 
 VERSION --use-cache-command 0.6
-FROM docker.io/library/alpine:3.16
+FROM artifactory.corp.mongodb.com/dockerhub/library/alpine:3.16
 WORKDIR /s
 
 init:
@@ -125,24 +125,24 @@ ALPINE_SETUP:
 
 env.c6:
     # A CentOS 6 environment.
-    FROM +init --base=docker.io/library/centos:6
+    FROM +init --base=artifactory.corp.mongodb.com/dockerhub/library/centos:6
     DO +CENTOS6_SETUP
 
 env.c7:
     # A CentOS 7 environment.
-    FROM +init --base=docker.io/library/centos:7
+    FROM +init --base=artifactory.corp.mongodb.com/dockerhub/library/centos:7
     DO +REDHAT_SETUP
 
 env.rl8:
     # CentOS 8 is cancelled. Use RockyLinux 8 for our RHEL 8 environment.
-    FROM +init --base=docker.io/library/rockylinux:8
+    FROM +init --base=artifactory.corp.mongodb.com/dockerhub/library/rockylinux:8
     DO +REDHAT_SETUP
 
 # Utility command for Ubuntu environments
 ENV_UBUNTU:
     COMMAND
     ARG --required version
-    FROM +init --base=docker.io/library/ubuntu:$version
+    FROM +init --base=artifactory.corp.mongodb.com/dockerhub/library/ubuntu:$version
     DO +DEBIAN_SETUP
 
 env.u14:
@@ -167,19 +167,19 @@ env.u22:
 
 env.amzn1:
     # An Amazon "1" environment. (AmazonLinux 2018)
-    FROM +init --base=docker.io/library/amazonlinux:2018.03
+    FROM +init --base=artifactory.corp.mongodb.com/dockerhub/library/amazonlinux:2018.03
     DO +AMZ_SETUP
 
 env.amzn2:
     # An AmazonLinux 2 environment
-    FROM +init --base=docker.io/library/amazonlinux:2
+    FROM +init --base=artifactory.corp.mongodb.com/dockerhub/library/amazonlinux:2
     DO +AMZ_SETUP
 
 # Utility command for Debian setup
 ENV_DEBIAN:
     COMMAND
     ARG --required version
-    FROM +init --base=docker.io/library/debian:$version
+    FROM +init --base=artifactory.corp.mongodb.com/dockerhub/library/debian:$version
     IF [ $version = "9.2" ]
         # Update source list for archived Debian stretch packages.
         # Refer: https://unix.stackexchange.com/a/743865/260858
@@ -208,11 +208,11 @@ env.deb12:
 
 env.sles15:
     # An OpenSUSE Leap 15.0 environment.
-    FROM +init --base=docker.io/opensuse/leap:15.0
+    FROM +init --base=artifactory.corp.mongodb.com/dockerhub/opensuse/leap:15.0
     DO +SLES_SETUP
 
 env.alpine:
-    FROM +init --base=docker.io/library/alpine:3.18
+    FROM +init --base=artifactory.corp.mongodb.com/dockerhub/library/alpine:3.18
     DO +ALPINE_SETUP
 
 # Utility: Warm-up obtaining CMake and Ninja for the build. This is usually
@@ -259,7 +259,7 @@ BUILD_EXAMPLE_STATE_MACHINE:
     RUN cd /s && /s/example-state-machine
 
 rpm-build:
-    FROM +init --base fedora:38
+    FROM +init --base artifactory.corp.mongodb.com/dockerhub/fedora:38
     GIT CLONE https://src.fedoraproject.org/rpms/libmongocrypt.git /R
     # Install the packages listed by "BuildRequires" and rpm-build:
     RUN __install $(awk '/^BuildRequires:/ { print $2 }' /R/libmongocrypt.spec) \
@@ -275,7 +275,7 @@ rpm-build:
 
 rpm-install-runtime:
     # Install the runtime RPM
-    FROM +init --base fedora:38
+    FROM +init --base artifactory.corp.mongodb.com/dockerhub/fedora:38
     COPY +rpm-build/RPMS /tmp/libmongocrypt-rpm/
     RUN dnf makecache
     RUN __install $(find /tmp/libmongocrypt-rpm/ -name 'libmongocrypt-1.*.rpm')
@@ -325,7 +325,7 @@ deb-build:
 
 deb-install-runtime:
     # Install the runtime deb package
-    FROM +init --base=docker.io/library/debian:unstable
+    FROM +init --base=artifactory.corp.mongodb.com/dockerhub/library/debian:unstable
     COPY +deb-build/debs/libmongocrypt0*.deb /tmp/lmc.deb
     RUN __install /tmp/lmc.deb
 
@@ -354,7 +354,8 @@ packaging-full-test:
     BUILD +rpm-runtime-test
 
 check-format:
-    FROM python:3.11.2-slim-buster
+    FROM +init --base=artifactory.corp.mongodb.com/dockerhub/python:3.11.2-slim-buster
+    RUN __install build-essential # To install `make` to install clang-format.
     RUN pip install pipx
     COPY etc/format* /X/etc/
     COPY .evergreen/init.sh /X/.evergreen/
@@ -461,16 +462,15 @@ sign:
 #
 # See https://docs.devprod.prod.corp.mongodb.com/mms/python/src/sbom/silkbomb/ for documentation of silkbomb.
 silkbomb:
-    FROM artifactory.corp.mongodb.com/release-tools-container-registry-public-local/silkbomb:1.0
-    # Alias the silkbom executable to a simpler name:
+    FROM artifactory.corp.mongodb.com/release-tools-container-registry-public-local/silkbomb:2.0
+    # Alias the silkbomb executable to a simpler name:
     RUN ln -s /python/src/sbom/silkbomb/bin /usr/local/bin/silkbomb
 
 # sbom-generate:
 #   Generate/update the etc/cyclonedx.sbom.json file from the etc/purls.txt file.
 #
 # This target will update the existing etc/cyclonedx.sbom.json file in-place based
-# on the content of etc/purls.txt.
-#
+# on the content of etc/purls.txt and etc/cyclonedx.sbom.json.
 sbom-generate:
     FROM +silkbomb
     # Copy in the relevant files:
@@ -478,45 +478,44 @@ sbom-generate:
     COPY etc/purls.txt etc/cyclonedx.sbom.json /s/
     # Update the SBOM file:
     RUN silkbomb update \
+        --refresh \
+        --no-update-sbom-version \
         --purls purls.txt \
         --sbom-in cyclonedx.sbom.json \
         --sbom-out cyclonedx.sbom.json
     # Save the result back to the host:
     SAVE ARTIFACT /s/cyclonedx.sbom.json AS LOCAL etc/cyclonedx.sbom.json
 
-# sbom-download:
-#   Download the Augmented SBOM file from Silk.
+# sbom-generate-new-serial-number:
+#   Equivalent to +sbom-generate but includes the --generate-new-serial-number
+#   flag to generate a new unique serial number and reset the SBOM version to 1.
 #
-# See https://wiki.corp.mongodb.com/display/DRIVERS/Using+AWS+Secrets+Manager+to+Store+Testing+Secrets for instructions to get secrets from AWS Secrets Manager. Secrets are available under `drivers/libmongocrypt`.
-#
-sbom-download:
-    ARG --required out
-    ARG --required branch
+# This target will update the existing etc/cyclonedx.sbom.json file in-place based
+# on the content of etc/purls.txt and etc/cyclonedx.sbom.json.
+sbom-generate-new-serial-number:
     FROM +silkbomb
+    # Copy in the relevant files:
     WORKDIR /s
-    # Download the Augmented SBOM file:
-    RUN --no-cache --secret silk_client_id --secret silk_client_secret \
-        SILK_CLIENT_ID=${silk_client_id} \
-        SILK_CLIENT_SECRET=${silk_client_secret} \
-        silkbomb download \
-        --sbom-out cyclonedx.augmented.sbom.json \
-        --silk-asset-group libmongocrypt-${branch}
+    COPY etc/purls.txt etc/cyclonedx.sbom.json /s/
+    # Update the SBOM file:
+    RUN silkbomb update \
+        --refresh \
+        --generate-new-serial-number \
+        --purls purls.txt \
+        --sbom-in cyclonedx.sbom.json \
+        --sbom-out cyclonedx.sbom.json
     # Save the result back to the host:
-    SAVE ARTIFACT /s/cyclonedx.augmented.sbom.json AS LOCAL ${out}
-    RUN echo "Augmented SBOM saved to ${out}"
+    SAVE ARTIFACT /s/cyclonedx.sbom.json AS LOCAL etc/cyclonedx.sbom.json
 
-# silk-create-asset-group:
-#   Create an asset group for Silk.
-#
-# See https://wiki.corp.mongodb.com/display/DRIVERS/Using+AWS+Secrets+Manager+to+Store+Testing+Secrets for instructions to get secrets from AWS Secrets Manager. Secrets are available under `drivers/libmongocrypt`.
-#
-silk-create-asset-group:
-    ARG --required branch
-    FROM +env.alpine
-    RUN __install curl jq
-    COPY etc/silk-create-asset-group.sh /s/silk-create-asset-group.sh
-    RUN --no-cache --secret silk_client_id --secret silk_client_secret \
-        silk_client_id=${silk_client_id} \
-        silk_client_secret=${silk_client_secret} \
-        branch=${branch} \
-            /s/silk-create-asset-group.sh
+# sbom-validate:
+#   Validate the SBOM Lite for the given branch.
+sbom-validate:
+    FROM +silkbomb
+    # Copy in the relevant files:
+    WORKDIR /s
+    COPY etc/purls.txt etc/cyclonedx.sbom.json /s/
+    # Run the SilkBomb tool to download the artifact that matches the requested branch
+    RUN silkbomb validate \
+        --purls purls.txt \
+        --sbom-in cyclonedx.sbom.json \
+        --exclude jira

@@ -275,7 +275,7 @@ static void _test_decrypt_fle2(_mongocrypt_tester_t *tester) {
     _mongocrypt_buffer_t K_KeyId;
 
     if (!_aes_ctr_is_supported_by_os) {
-        printf("Common Crypto with no CTR support detected. Skipping.");
+        TEST_PRINTF("Common Crypto with no CTR support detected. Skipping.");
         return;
     }
 
@@ -597,70 +597,6 @@ static void _test_decrypt_fle2(_mongocrypt_tester_t *tester) {
 #undef TEST_IEEV_BASE64
 }
 
-static void _test_explicit_decrypt_fle2_ieev(_mongocrypt_tester_t *tester) {
-    _mongocrypt_buffer_t S_KeyId;
-    _mongocrypt_buffer_t K_KeyId;
-
-    if (!_aes_ctr_is_supported_by_os) {
-        printf("Common Crypto with no CTR support detected. Skipping.");
-        return;
-    }
-
-#define TEST_IEEV_BASE64                                                                                               \
-    "BxI0VngSNJh2EjQSNFZ4kBICQ7uhTd9C2oI8M1afRon0ZaYG0s6oTmt0aBZ9kO4S4mm5vId01"                                        \
-    "BsW7tBHytA8pDJ2IiWBCmah3OGH2M4ET7PSqekQD4gkUCo4JeEttx4yj05Ou4D6yZUmYfVKmE"                                        \
-    "ljge16NCxKm7Ir9gvmQsp8x1wqGBzpndA6gkqFxsxfvQ/"                                                                    \
-    "cIqOwMW9dGTTWsfKge+jYkCUIFMfms+XyC/8evQhjjA+qR6eEmV+N/"                                                           \
-    "kwpR7Q7TJe0lwU5kw2kSe3/KiPKRZZTbn8znadvycfJ0cCWGad9SQ=="
-
-    _mongocrypt_buffer_copy_from_hex(&S_KeyId, "12345678123498761234123456789012");
-    _mongocrypt_buffer_copy_from_hex(&K_KeyId, "ABCDEFAB123498761234123456789012");
-
-    /* Test success with an FLE2IndexedEqualityEncryptedValue payload. */
-    {
-        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
-        mongocrypt_ctx_t *ctx;
-        mongocrypt_binary_t *out;
-        bson_t out_bson;
-
-        ctx = mongocrypt_ctx_new(crypt);
-        ASSERT_OK(mongocrypt_ctx_explicit_decrypt_init(
-                      ctx,
-                      TEST_BSON("{'v':{'$binary':{'base64': '" TEST_IEEV_BASE64 "','subType':'6'}}}")),
-                  ctx);
-        /* The first transition to MONGOCRYPT_CTX_NEED_MONGO_KEYS requests S_Key.
-         */
-        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
-        ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx,
-                                            TEST_FILE("./test/data/keys/"
-                                                      "12345678123498761234123456789012-local-"
-                                                      "document.json")),
-                  ctx);
-        ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
-        /* The second transition to MONGOCRYPT_CTX_NEED_MONGO_KEYS requests K_Key.
-         */
-        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
-        ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx,
-                                            TEST_FILE("./test/data/keys/"
-                                                      "ABCDEFAB123498761234123456789012-local-"
-                                                      "document.json")),
-                  ctx);
-        ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
-        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
-        out = mongocrypt_binary_new();
-        ASSERT_OK(mongocrypt_ctx_finalize(ctx, out), ctx);
-        ASSERT(_mongocrypt_binary_to_bson(out, &out_bson));
-        _assert_match_bson(&out_bson, TMP_BSON("{'v': 'value123'}"));
-        mongocrypt_binary_destroy(out);
-        mongocrypt_ctx_destroy(ctx);
-        mongocrypt_destroy(crypt);
-    }
-    _mongocrypt_buffer_cleanup(&K_KeyId);
-    _mongocrypt_buffer_cleanup(&S_KeyId);
-
-#undef TEST_IEEV_BASE64
-}
-
 #define TEST_IUP_BASE64                                                                                                \
     "BHEBAAAFZAAgAAAAAHb62aV7+mqmaGcotPLdG3KP7S8diFwWMLM/"                                                             \
     "5rYtqLrEBXMAIAAAAAAVJ6OWHRv3OtCozHpt3ZzfBhaxZirLv3B+"                                                             \
@@ -675,7 +611,7 @@ static void _test_explicit_decrypt_fle2_ieev(_mongocrypt_tester_t *tester) {
 
 static void _test_decrypt_fle2_iup(_mongocrypt_tester_t *tester) {
     if (!_aes_ctr_is_supported_by_os) {
-        printf("Common Crypto with no CTR support detected. Skipping.");
+        TEST_PRINTF("Common Crypto with no CTR support detected. Skipping.");
         return;
     }
 
@@ -788,7 +724,7 @@ static void _test_decrypt_wrong_binary_subtype(_mongocrypt_tester_t *tester) {
 /* Test decrypting FLE2IndexedRangeEncryptedValue */
 static void _test_decrypt_fle2_irev(_mongocrypt_tester_t *tester) {
     if (!_aes_ctr_is_supported_by_os) {
-        printf("Common Crypto with no CTR support detected. Skipping.");
+        TEST_PRINTF("Common Crypto with no CTR support detected. Skipping.");
         return;
     }
 
@@ -845,99 +781,245 @@ static void _test_decrypt_fle2_irev(_mongocrypt_tester_t *tester) {
     }
 }
 
-// Test explicitly decrypting an FLE2IndexedRangeEncryptedValue.
-static void _test_explicit_decrypt_fle2_irev(_mongocrypt_tester_t *tester) {
-    if (!_aes_ctr_is_supported_by_os) {
-        printf("Common Crypto with no CTR support detected. Skipping.");
-        return;
-    }
-
-    mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
-    mongocrypt_ctx_t *ctx;
-    mongocrypt_binary_t *out;
-    bson_t out_bson;
-
-    ctx = mongocrypt_ctx_new(crypt);
-    ASSERT_OK(mongocrypt_ctx_explicit_decrypt_init(
-                  ctx,
-                  TEST_BSON("{'v': {'$binary':{'base64':'" TEST_IREV_BASE64 "','subType':'6'}}}")),
-              ctx);
-    /* The first transition to MONGOCRYPT_CTX_NEED_MONGO_KEYS requests S_Key.
-     */
-    ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
-    {
-        mongocrypt_binary_t *filter = mongocrypt_binary_new();
-        ASSERT_OK(mongocrypt_ctx_mongo_op(ctx, filter), ctx);
-        ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TEST_FILE("./test/data/fle2-decrypt-ieev/first-filter.json"), filter);
-        mongocrypt_binary_destroy(filter);
-    }
-    ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx,
-                                        TEST_FILE("./test/data/keys/"
-                                                  "12345678123498761234123456789012-local-"
-                                                  "document.json")),
-              ctx);
-    ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
-    /* The second transition to MONGOCRYPT_CTX_NEED_MONGO_KEYS requests K_Key.
-     */
-    ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
-    {
-        mongocrypt_binary_t *filter = mongocrypt_binary_new();
-        ASSERT_OK(mongocrypt_ctx_mongo_op(ctx, filter), ctx);
-        ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TEST_FILE("./test/data/fle2-decrypt-ieev/second-filter.json"), filter);
-        mongocrypt_binary_destroy(filter);
-    }
-    ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx,
-                                        TEST_FILE("./test/data/keys/"
-                                                  "ABCDEFAB123498761234123456789012-local-"
-                                                  "document.json")),
-              ctx);
-    ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
-    ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
-    out = mongocrypt_binary_new();
-    ASSERT_OK(mongocrypt_ctx_finalize(ctx, out), ctx);
-    ASSERT(_mongocrypt_binary_to_bson(out, &out_bson));
-    _assert_match_bson(&out_bson, TMP_BSON("{'v': 123456}"));
-    mongocrypt_binary_destroy(out);
-    mongocrypt_ctx_destroy(ctx);
-    mongocrypt_destroy(crypt);
-}
-
 #undef TEST_IREV_BASE64
 
-// Test explicitly decrypting an FLE2InsertUpdatePayload with edges.
-static void _test_explicit_decrypt_fle2_iup_with_edges(_mongocrypt_tester_t *tester) {
-    if (!_aes_ctr_is_supported_by_os) {
-        printf("Common Crypto with no CTR support detected. Skipping.");
-        return;
+typedef struct {
+    const char *desc;
+    mongocrypt_binary_t *msg;
+    mongocrypt_binary_t *keys_to_feed[3]; // NULL terminated list.
+    mongocrypt_binary_t *expect;
+    bool expect_ignored;
+} ed_testcase;
+
+static void ed_testcase_run(ed_testcase *tc) {
+    printf("  explicit decrypt test: %s ... begin\n", tc->desc);
+    mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+    mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+    ASSERT_OK(mongocrypt_ctx_explicit_decrypt_init(ctx, tc->msg), ctx);
+
+    if (tc->expect_ignored) {
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
+        {
+            mongocrypt_binary_t *got = mongocrypt_binary_new();
+            bool ret = mongocrypt_ctx_finalize(ctx, got);
+            ASSERT_OK(ret, ctx);
+            // Expect input is returned unchanged.
+            ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(tc->msg, got);
+            mongocrypt_binary_destroy(got);
+        }
+        goto cleanup;
     }
 
-    /* Test success with an FLE2IndexedEqualityEncryptedValue payload. */
-    mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
-    mongocrypt_ctx_t *ctx;
-    mongocrypt_binary_t *out;
-    bson_t out_bson;
-
-    ctx = mongocrypt_ctx_new(crypt);
-    ASSERT_OK(mongocrypt_ctx_explicit_decrypt_init(ctx,
-                                                   TEST_FILE("./test/data/fle2-insert-range-explicit/int32/"
-                                                             "encrypted-payload.json")),
-              ctx);
-
     ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
-    ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx,
-                                        TEST_FILE("./test/data/keys/"
-                                                  "ABCDEFAB123498761234123456789012-local-"
-                                                  "document.json")),
-              ctx);
-    ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+    {
+        for (size_t i = 0; i < sizeof(tc->keys_to_feed) / sizeof(tc->keys_to_feed[0]); i++) {
+            mongocrypt_binary_t *key_to_feed = tc->keys_to_feed[i];
+            if (!key_to_feed) {
+                break;
+            }
+            ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, key_to_feed), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+    }
+
     ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
-    out = mongocrypt_binary_new();
-    ASSERT_OK(mongocrypt_ctx_finalize(ctx, out), ctx);
-    ASSERT(_mongocrypt_binary_to_bson(out, &out_bson));
-    _assert_match_bson(&out_bson, TMP_BSON("{'v': 123456}"));
-    mongocrypt_binary_destroy(out);
+    {
+        mongocrypt_binary_t *got = mongocrypt_binary_new();
+
+        bool ret = mongocrypt_ctx_finalize(ctx, got);
+        ASSERT_OK(ret, ctx);
+        ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(tc->expect, got);
+        mongocrypt_binary_destroy(got);
+    }
+
+cleanup:
     mongocrypt_ctx_destroy(ctx);
     mongocrypt_destroy(crypt);
+    printf("  explicit decrypt test: %s ... end\n", tc->desc);
+}
+
+static void _test_explicit_decrypt(_mongocrypt_tester_t *tester) {
+    mongocrypt_binary_t *keyABC = TEST_FILE("./test/data/keys/"
+                                            "ABCDEFAB123498761234123456789012-local-"
+                                            "document.json");
+    mongocrypt_binary_t *key123 = TEST_FILE("./test/data/keys/"
+                                            "12345678123498761234123456789012-local-"
+                                            "document.json");
+
+    // FLE1DeterministicEncryptedValue can be decrypted.
+    {
+        ed_testcase tc = {
+            .desc = "FLE1DeterministicEncryptedValue",
+            .msg = TEST_FILE("./test/data/explicit-decrypt/FLE1DeterministicEncryptedValue.json"),
+            .keys_to_feed = {keyABC},
+            .expect = TEST_BSON(BSON_STR({"v" : "foo"})),
+        };
+        ed_testcase_run(&tc);
+    }
+
+    // FLE1EncryptionPlaceholder is ignored.
+    // Payload is returned by query analysis and consumed by libmongocrypt. Payload is not expected to be given to user.
+    {
+        ed_testcase tc = {.desc = "FLE1EncryptionPlaceholder",
+                          .msg = TEST_FILE("./test/data/explicit-decrypt/FLE1EncryptionPlaceholder.json"),
+                          .expect_ignored = true};
+        ed_testcase_run(&tc);
+    }
+
+    // FLE1RandomEncryptedValue can be decrypted.
+    {
+        ed_testcase tc = {
+            .desc = "FLE1RandomEncryptedValue",
+            .msg = TEST_FILE("./test/data/explicit-decrypt/FLE1RandomEncryptedValue.json"),
+            .keys_to_feed = {keyABC},
+            .expect = TEST_BSON(BSON_STR({"v" : "foo"})),
+        };
+        ed_testcase_run(&tc);
+    }
+
+    // FLE2EncryptionPlaceholder is ignored.
+    // Payload is returned by query analysis and consumed by libmongocrypt. Payload is not expected to be given to user.
+    {
+        ed_testcase tc = {.desc = "FLE2EncryptionPlaceholder",
+                          .msg = TEST_FILE("./test/data/explicit-decrypt/FLE2EncryptionPlaceholder.json"),
+                          .expect_ignored = true};
+        ed_testcase_run(&tc);
+    }
+
+    // FLE2InsertUpdatePayload can be decrypted.
+    // Payload is only used in the QE-V1 protocol removed in MongoDB 7.0. Decrypting is currently still supported.
+    {
+        ed_testcase tc = {
+            .desc = "FLE2InsertUpdatePayload",
+            .msg = TEST_FILE("./test/data/explicit-decrypt/FLE2InsertUpdatePayload.json"),
+            .keys_to_feed = {keyABC},
+            .expect = TEST_BSON(BSON_STR({"v" : "value123"})),
+        };
+        ed_testcase_run(&tc);
+    }
+
+    // FLE2InsertUpdatePayload with edges can be decrypted.
+    // Edges are sent on payloads for range algorithm.
+    {
+        ed_testcase tc = {
+            .desc = "FLE2InsertUpdatePayload with edges",
+            .msg = TEST_FILE("./test/data/explicit-decrypt/FLE2InsertUpdatePayload-with-edges.json"),
+            .keys_to_feed = {keyABC},
+            .expect = TEST_BSON(BSON_STR({"v" : 123456})),
+        };
+        ed_testcase_run(&tc);
+    }
+
+    // FLE2UnindexedEncryptedValue can be decrypted.
+    // Payload is only used in the QE-V1 protocol removed in MongoDB 7.0. Decrypting is currently still supported.
+    {
+        ed_testcase tc = {
+            .desc = "FLE2UnindexedEncryptedValue",
+            .msg = TEST_FILE("./test/data/explicit-decrypt/FLE2UnindexedEncryptedValue.json"),
+            .keys_to_feed = {keyABC},
+            .expect = TEST_BSON(BSON_STR({"v" : "value123"})),
+        };
+        ed_testcase_run(&tc);
+    }
+
+    // FLE2IndexedEqualityEncryptedValue can be decrypted.
+    // Payload is only used in the QE-V1 protocol removed in MongoDB 7.0. Decrypting is currently still supported.
+    {
+        ed_testcase tc = {
+            .desc = "FLE2IndexedEqualityEncryptedValue",
+            .msg = TEST_FILE("./test/data/explicit-decrypt/FLE2IndexedEqualityEncryptedValue.json"),
+            .keys_to_feed = {key123, keyABC},
+            .expect = TEST_BSON(BSON_STR({"v" : "value123"})),
+        };
+        ed_testcase_run(&tc);
+    }
+
+    // FLE2IndexedRangeEncryptedValue can be decrypted.
+    // Payload is only used in the QE-V1 protocol removed in MongoDB 7.0. Decrypting is currently still supported.
+    {
+        ed_testcase tc = {
+            .desc = "FLE2IndexedRangeEncryptedValue",
+            .msg = TEST_FILE("./test/data/explicit-decrypt/FLE2IndexedRangeEncryptedValue.json"),
+            .keys_to_feed = {key123, keyABC},
+            .expect = TEST_BSON(BSON_STR({"v" : 123456})),
+        };
+        ed_testcase_run(&tc);
+    }
+
+    // FLE2FindEqualityPayload is ignored.
+    // Payload does not contain encrypted ciphertext (only lookup tokens).
+    {
+        ed_testcase tc = {.desc = "FLE2FindEqualityPayload",
+                          .msg = TEST_FILE("./test/data/explicit-decrypt/FLE2FindEqualityPayload.json"),
+                          .expect_ignored = true};
+        ed_testcase_run(&tc);
+    }
+
+    // FLE2InsertUpdatePayloadV2 can be decrypted.
+    {
+        ed_testcase tc = {
+            .desc = "FLE2InsertUpdatePayloadV2",
+            .msg = TEST_FILE("./test/data/explicit-decrypt/FLE2InsertUpdatePayloadV2.json"),
+            .keys_to_feed = {keyABC},
+            .expect = TEST_BSON(BSON_STR({"v" : "value123"})),
+        };
+        ed_testcase_run(&tc);
+    }
+
+    // FLE2InsertUpdatePayloadV2 with edges can be decrypted.
+    // Edges are sent on payloads for range algorithm.
+    {
+        ed_testcase tc = {
+            .desc = "FLE2InsertUpdatePayloadV2 with edges",
+            .msg = TEST_FILE("./test/data/explicit-decrypt/FLE2InsertUpdatePayload-with-edges-V2.json"),
+            .keys_to_feed = {keyABC},
+            .expect = TEST_BSON(BSON_STR({"v" : 123456})),
+        };
+        ed_testcase_run(&tc);
+    }
+
+    // FLE2UnindexedEncryptedValueV2 can be decrypted.
+    {
+        ed_testcase tc = {
+            .desc = "FLE2UnindexedEncryptedValueV2",
+            .msg = TEST_FILE("./test/data/explicit-decrypt/FLE2UnindexedEncryptedValueV2.json"),
+            .keys_to_feed = {keyABC},
+            .expect = TEST_BSON(BSON_STR({"v" : "foo"})),
+        };
+        ed_testcase_run(&tc);
+    }
+
+    // FLE2IndexedEqualityEncryptedValueV2 can be decrypted.
+    {
+        ed_testcase tc = {
+            .desc = "FLE2IndexedEqualityEncryptedValueV2",
+            .msg = TEST_FILE("./test/data/explicit-decrypt/FLE2IndexedEqualityEncryptedValueV2.json"),
+            .keys_to_feed = {keyABC},
+            .expect = TEST_BSON(BSON_STR({"v" : "foo"})),
+        };
+        ed_testcase_run(&tc);
+    }
+
+    // FLE2IndexedRangeEncryptedValueV2 can be decrypted.
+    {
+        ed_testcase tc = {
+            .desc = "FLE2IndexedRangeEncryptedValueV2",
+            .msg = TEST_FILE("./test/data/explicit-decrypt/FLE2IndexedRangeEncryptedValueV2.json"),
+            .keys_to_feed = {keyABC},
+            .expect = TEST_BSON(BSON_STR({"v" : 123})),
+        };
+        ed_testcase_run(&tc);
+    }
+
+    // FLE2FindEqualityPayloadV2 is ignored.
+    // Payload does not contain encrypted ciphertext (only lookup tokens).
+    {
+        ed_testcase tc = {.desc = "FLE2FindEqualityPayloadV2",
+                          .msg = TEST_FILE("./test/data/explicit-decrypt/FLE2FindEqualityPayloadV2.json"),
+                          .expect_ignored = true};
+        ed_testcase_run(&tc);
+    }
 }
 
 void _mongocrypt_tester_install_ctx_decrypt(_mongocrypt_tester_t *tester) {
@@ -950,10 +1032,8 @@ void _mongocrypt_tester_install_ctx_decrypt(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_decrypt_per_ctx_credentials);
     INSTALL_TEST(_test_decrypt_per_ctx_credentials_local);
     INSTALL_TEST(_test_decrypt_fle2);
-    INSTALL_TEST(_test_explicit_decrypt_fle2_ieev);
     INSTALL_TEST(_test_decrypt_fle2_iup);
     INSTALL_TEST(_test_decrypt_wrong_binary_subtype);
     INSTALL_TEST(_test_decrypt_fle2_irev);
-    INSTALL_TEST(_test_explicit_decrypt_fle2_irev);
-    INSTALL_TEST(_test_explicit_decrypt_fle2_iup_with_edges);
+    INSTALL_TEST(_test_explicit_decrypt);
 }

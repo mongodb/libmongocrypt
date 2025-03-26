@@ -40,17 +40,18 @@ typedef enum tester_mongocrypt_flags {
     /// crypt_shared library must be present in the same directory as the test
     /// executable.
     TESTER_MONGOCRYPT_WITH_CRYPT_SHARED_LIB = 1 << 0,
-    /// Enable wire protocol version v1
-    TESTER_MONGOCRYPT_WITH_CRYPT_V1 = 1 << 1,
     /// Enable range V2
     TESTER_MONGOCRYPT_WITH_RANGE_V2 = 1 << 2,
     /// Short cache expiration
     TESTER_MONGOCRYPT_WITH_SHORT_CACHE = 1 << 3,
+    /// Do not call `mongocrypt_init` yet to allow for further configuration of the resulting `mongocrypt_t`.
+    TESTER_MONGOCRYPT_SKIP_INIT = 1 << 4,
 } tester_mongocrypt_flags;
 
-/* Arbitrary max of 2048 instances of temporary test data. Increase as needed.
+/* Arbitrary max of 2148 instances of temporary test data. Increase as needed.
+ * TODO(MONGOCRYPT-775) increasing further (e.g. 3000+) causes a segfault on Windows test runs. Revise.
  */
-#define TEST_DATA_COUNT 2048
+#define TEST_DATA_COUNT 2148
 
 typedef struct __mongocrypt_tester_t {
     int test_count;
@@ -180,6 +181,8 @@ void _mongocrypt_tester_install_cleanup(_mongocrypt_tester_t *tester);
 
 void _mongocrypt_tester_install_compact(_mongocrypt_tester_t *tester);
 
+void _mongocrypt_tester_install_fle2_encryption_placeholder(_mongocrypt_tester_t *tester);
+
 void _mongocrypt_tester_install_fle2_payload_uev(_mongocrypt_tester_t *tester);
 
 void _mongocrypt_tester_install_fle2_payload_uev_v2(_mongocrypt_tester_t *tester);
@@ -216,11 +219,31 @@ void _mongocrypt_tester_install_named_kms_providers(_mongocrypt_tester_t *tester
 
 void _mongocrypt_tester_install_mc_cmp(_mongocrypt_tester_t *tester);
 
+void _mongocrypt_tester_install_text_search_str_encode(_mongocrypt_tester_t *tester);
+
+void _mongocrypt_tester_install_unicode_fold(_mongocrypt_tester_t *tester);
+
+void _mongocrypt_tester_install_mc_schema_broker(_mongocrypt_tester_t *tester);
+
 /* Conveniences for getting test data. */
 
 /* Get a temporary bson_t from a JSON string. Do not free it. */
 bson_t *_mongocrypt_tester_bson_from_json(_mongocrypt_tester_t *tester, const char *json, ...);
 #define TMP_BSON(...) _mongocrypt_tester_bson_from_json(tester, __VA_ARGS__)
+
+// TMP_BSONF builds a temporary bson_t from an extended JSON string. Do not free it.
+// Useful with BSON_STR to write JSON in-place.
+// Supports tokens MC_BSON and MC_STR.
+//
+// Examples:
+// bson_t *b = TMP_BSONF(BSON_STR({"foo": MC_STR}), "bar"); // { "foo" : "bar" }
+// bson_t *b2 = TMP_BSONF(BSON_STR({"buzz": MC_BSON }), b); // { "buzz": { "foo": "bar" }}
+bson_t *tmp_bsonf(_mongocrypt_tester_t *tester, const char *fmt, ...);
+#define TMP_BSONF(...) tmp_bsonf(tester, __VA_ARGS__)
+
+/* Get a temporary bson_t from a JSON file. Do not free it. */
+bson_t *_mongocrypt_tester_file_as_bson(_mongocrypt_tester_t *tester, const char *path);
+#define TEST_FILE_AS_BSON(path) _mongocrypt_tester_file_as_bson(tester, path)
 
 /* Get a temporary binary from a JSON string. Do not free it. */
 mongocrypt_binary_t *_mongocrypt_tester_bin_from_json(_mongocrypt_tester_t *tester, const char *json, ...);

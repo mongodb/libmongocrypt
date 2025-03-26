@@ -9,6 +9,24 @@ There are two major parts to integrating libmongocrypt into your driver:
 -   Writing a language-specific binding to libmongocrypt
 -   Using the binding in your driver to support client side encryption
 
+## Design Rationale
+
+### Simple interface
+
+The library interface is intended to be used with multiple languages.
+
+The API tries to be minimal. Most structs are opaque. Global initialization
+is lazy.
+
+Much of the API passes and returns BSON since all drivers can produce and parse
+BSON.
+
+### No I/O
+
+libmongocrypt deliberately does not do I/O to avoid poor behavior with some
+language runtimes. Example: in Go a blocking C call may block an OS thread,
+rather than a goroutine.
+
 ## Part 1: Writing a Language-Specific Binding ##
 
 The binding is the glue between your driver\'s native language and
@@ -30,7 +48,7 @@ in the main public header
 [mongocrypt.h](https://github.com/10gen/libmongocrypt/blob/master/src/mongocrypt.h).
 
 There are many types and functions in mongocrypt.h to bind. Consider as
-a first step binding to only `mongocrypt_version` ([JNA example](https://github.com/10gen/libmongocrypt/blob/fbb9f59bf32019373232dc1a1fd85a00d6ab95de/bindings/java/mongocrypt/src/main/java/com/mongodb/crypt/capi/CAPI.java#L106-L113)).
+a first step binding to only `mongocrypt_version`.
 Once you have that working, proceed to write bindings for the remaining
 API. Here are a few things to keep in mind:
 
@@ -122,6 +140,15 @@ All contexts.
 
 #### State: `MONGOCRYPT_CTX_NEED_MONGO_COLLINFO` ####
 
+> [!IMPORTANT]
+> <a name="multi-collection-commands"></a> **Multi-collection commands**: prior to 1.13.0, drivers were expected to pass _at most one result_ from `listCollections`. In 1.13.0, drivers are expected to pass _all results_ from `listCollections` to support multi-collection commands (e.g. aggregate with `$lookup`).
+>
+> Drivers must call `mongocrypt_setopt_enable_multiple_collinfo` to indicate the new behavior is implemented and opt-in to support for multi-collection commands. This opt-in is to prevent the following bug scenario:
+> > A driver upgrades to 1.13.0, but does not update prior behavior which passes at most one result of a multi-collection command.
+> > A multi-collection command requests schemas for both `db.c1` and `db.c2`.
+> > The driver only passes the result for `db.c1` even though `db.c2` also has a result.
+> > Therefore, libmongocrypt incorrectly believes `db.c2` has no schema.
+
 **libmongocrypt needs**...
 
 A result from a listCollections cursor.
@@ -130,7 +157,7 @@ A result from a listCollections cursor.
 
 1.  Run listCollections on the encrypted MongoClient with the filter
     provided by `mongocrypt_ctx_mongo_op`
-2.  Return the first result (if any) with `mongocrypt_ctx_mongo_feed` or proceed to the next step if nothing was returned.
+2.  Pass all results (if any) with calls to `mongocrypt_ctx_mongo_feed` or proceed to the next step if nothing was returned. Results may be passed in any order.
 3.  Call `mongocrypt_ctx_mongo_done`
 
 **Applies to...**
@@ -138,6 +165,8 @@ A result from a listCollections cursor.
 auto encrypt
 
 #### State: `MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB` ####
+
+See [note](#multi-collection-commands) about multi-collection commands.
 
 **libmongocrypt needs**...
 
@@ -147,7 +176,7 @@ Results from a listCollections cursor from a specified database.
 
 1.  Run listCollections on the encrypted MongoClient with the filter
     provided by `mongocrypt_ctx_mongo_op` on the database provided by `mongocrypt_ctx_mongo_db`.
-2.  Return the first result (if any) with `mongocrypt_ctx_mongo_feed` or proceed to the next step if nothing was returned.
+2.  Pass all results (if any) with calls to `mongocrypt_ctx_mongo_feed` or proceed to the next step if nothing was returned. Results may be passed in any order.
 3.  Call `mongocrypt_ctx_mongo_done`
 
 **Applies to...**
@@ -195,13 +224,13 @@ All contexts except for create data key.
 
 **libmongocrypt needs**...
 
-The responses from one or more HTTP messages to KMS.
+The responses from one or more messages to KMS.
+
+Ensure `mongocrypt_setopt_retry_kms` is called on the `mongocrypt_t` to enable retry.
 
 **Driver needs to...**
 
-1.  Iterate all KMS requests using `mongocrypt_ctx_next_kms_ctx`.
-    (Note, the driver MAY fan out all HTTP requests at the same time).
-2.  For each context:
+1.  For each context returned by `mongocrypt_ctx_next_kms_ctx`:
 
     a.  Delay the message by the time in microseconds indicated by
         `mongocrypt_kms_ctx_usleep` if returned value is greater than 0.
@@ -219,11 +248,13 @@ The responses from one or more HTTP messages to KMS.
     d.  Feed the reply back with `mongocrypt_kms_ctx_feed`. Repeat
         > until `mongocrypt_kms_ctx_bytes_needed` returns 0.
 
-    If any step encounters a network error, continue to the next KMS context if
-    `mongocrypt_kms_ctx_fail` returns true. Otherwise, abort and report an
-    error.
+    If any step encounters a network error, call `mongocrypt_kms_ctx_fail`.
+    If `mongocrypt_kms_ctx_fail` returns true, continue to the next KMS context.
+    If `mongocrypt_kms_ctx_fail` returns false, abort and report an error. Consider wrapping the error reported in `mongocrypt_kms_ctx_status` to include the last network error.
 
-3.  When done feeding all replies, call `mongocrypt_ctx_kms_done`.
+2.  When done feeding all replies, call `mongocrypt_ctx_kms_done`.
+
+Note, the driver MAY fan out KMS requests in parallel. More KMS requests may be added when processing responses to retry.
 
 **Applies to...**
 

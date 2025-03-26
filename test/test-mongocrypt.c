@@ -52,7 +52,7 @@ void _load_json_as_bson(const char *path, bson_t *out) {
 
     reader = bson_json_reader_new_from_file(path, &error);
     if (!reader) {
-        fprintf(stderr, "error reading: %s\n", path);
+        TEST_STDERR_PRINTF("error reading: %s\n", path);
     }
     ASSERT_OR_PRINT_BSON(reader, error);
     bson_init(out);
@@ -118,7 +118,7 @@ static void _load_http(_mongocrypt_tester_t *tester, const char *path) {
     }
 
     if (n_read < 0) {
-        fprintf(stderr, "failed to read %s\n", path);
+        TEST_STDERR_PRINTF("failed to read %s\n", path);
         abort();
     }
 
@@ -158,12 +158,12 @@ void _mongocrypt_tester_install(_mongocrypt_tester_t *tester,
 #endif
 
     if (crypto_spec == CRYPTO_REQUIRED && !crypto_enabled) {
-        printf("Skipping test: %s – requires crypto to be enabled\n", name);
+        TEST_PRINTF("Skipping test: %s – requires crypto to be enabled\n", name);
         return;
     }
 
     if (crypto_spec == CRYPTO_PROHIBITED && crypto_enabled) {
-        printf("Skipping test: %s – requires crypto to be disabled\n", name);
+        TEST_PRINTF("Skipping test: %s – requires crypto to be disabled\n", name);
         return;
     }
 
@@ -198,6 +198,14 @@ mongocrypt_binary_t *_mongocrypt_tester_file(_mongocrypt_tester_t *tester, const
     return to_return;
 }
 
+bson_t *_mongocrypt_tester_file_as_bson(_mongocrypt_tester_t *tester, const char *path) {
+    mongocrypt_binary_t *bin = _mongocrypt_tester_file(tester, path);
+    bson_t *bson = &tester->test_bson[tester->bson_count];
+    TEST_DATA_COUNT_INC(tester->bson_count);
+    ASSERT(_mongocrypt_binary_to_bson(bin, bson));
+    return bson;
+}
+
 bson_t *_mongocrypt_tester_bson_from_json(_mongocrypt_tester_t *tester, const char *json, ...) {
     va_list ap;
     char *full_json;
@@ -218,11 +226,67 @@ bson_t *_mongocrypt_tester_bson_from_json(_mongocrypt_tester_t *tester, const ch
     bson = &tester->test_bson[tester->bson_count];
     TEST_DATA_COUNT_INC(tester->bson_count);
     if (!bson_init_from_json(bson, full_json, strlen(full_json), &error)) {
-        fprintf(stderr, "%s", error.message);
+        TEST_STDERR_PRINTF("%s", error.message);
         abort();
     }
     bson_free(full_json);
     return bson;
+}
+
+bson_t *tmp_bsonf(_mongocrypt_tester_t *tester, const char *fmt, ...) {
+    va_list arg;
+    va_start(arg, fmt);
+
+    size_t dst_capacity = strlen(fmt);
+    char *dst = bson_malloc(dst_capacity);
+    size_t dst_len = 0;
+
+#define ENSURE_CAPACITY(len)                                                                                           \
+    if (1) {                                                                                                           \
+        if ((len) + dst_len >= dst_capacity) {                                                                         \
+            dst_capacity = (len) + dst_len;                                                                            \
+            dst_capacity *= 2;                                                                                         \
+            dst = bson_realloc(dst, dst_capacity);                                                                     \
+        }                                                                                                              \
+    } else                                                                                                             \
+        (void)0
+
+    for (const char *ptr = fmt; *ptr != '\0'; ptr++) {
+        // TODO: consider optimizing this loop to use strstr to find MC_STR or MC_BSON.
+        if (0 == strncmp(ptr, "MC_STR", strlen("MC_STR"))) {
+            const char *src = va_arg(arg, const char *);
+            const size_t src_len = strlen(src);
+            ENSURE_CAPACITY(src_len + 2);
+            dst[dst_len++] = '"';
+            memcpy(dst + dst_len, src, src_len);
+            dst_len += src_len;
+            dst[dst_len++] = '"';
+            ptr += strlen("MC_STR") - 1;
+            continue;
+        }
+
+        if (0 == strncmp(ptr, "MC_BSON", strlen("MC_BSON"))) {
+            const bson_t *src_bson = va_arg(arg, const bson_t *);
+            size_t src_len;
+            char *src = bson_as_canonical_extended_json(src_bson, &src_len);
+            ENSURE_CAPACITY(src_len);
+            strcpy(dst + dst_len, src);
+            dst_len += src_len;
+            bson_free(src);
+            ptr += strlen("MC_BSON") - 1;
+            continue;
+        }
+
+        ENSURE_CAPACITY(1);
+        dst[dst_len++] = *ptr;
+    }
+#undef ENSURE_CAPACITY
+
+    dst[dst_len] = '\0';
+    bson_t *tmp = TMP_BSON(dst);
+    va_end(arg);
+    bson_free(dst);
+    return tmp;
 }
 
 mongocrypt_binary_t *_mongocrypt_tester_bin_from_json(_mongocrypt_tester_t *tester, const char *json, ...) {
@@ -246,7 +310,7 @@ mongocrypt_binary_t *_mongocrypt_tester_bin_from_json(_mongocrypt_tester_t *test
     bson = &tester->test_bson[tester->bson_count];
     TEST_DATA_COUNT_INC(tester->bson_count);
     if (!bson_init_from_json(bson, full_json, strlen(full_json), &error)) {
-        fprintf(stderr, "failed to parse JSON %s: %s", error.message, json);
+        TEST_STDERR_PRINTF("failed to parse JSON %s: %s", error.message, json);
         abort();
     }
     bin = mongocrypt_binary_new();
@@ -363,7 +427,7 @@ void _mongocrypt_tester_run_ctx_to(_mongocrypt_tester_t *tester,
             break;
         case MONGOCRYPT_CTX_ERROR:
             mongocrypt_ctx_status(ctx, status);
-            fprintf(stderr, "Got error: %s\n", mongocrypt_status_message(status, NULL));
+            TEST_STDERR_PRINTF("Got error: %s\n", mongocrypt_status_message(status, NULL));
             ASSERT_STATE_EQUAL(state, stop_state);
             mongocrypt_status_destroy(status);
             return;
@@ -508,9 +572,6 @@ mongocrypt_t *_mongocrypt_tester_mongocrypt(tester_mongocrypt_flags flags) {
     ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, bin), crypt);
     bson_destroy(kms_providers);
     mongocrypt_binary_destroy(bin);
-    if (flags & TESTER_MONGOCRYPT_WITH_CRYPT_V1) {
-        ASSERT(mongocrypt_setopt_fle2v2(crypt, false));
-    }
     if (flags & TESTER_MONGOCRYPT_WITH_CRYPT_SHARED_LIB) {
         mongocrypt_setopt_append_crypt_shared_lib_search_path(crypt, "$ORIGIN");
     }
@@ -522,12 +583,15 @@ mongocrypt_t *_mongocrypt_tester_mongocrypt(tester_mongocrypt_flags flags) {
     if (flags & TESTER_MONGOCRYPT_WITH_SHORT_CACHE) {
         ASSERT(mongocrypt_setopt_key_expiration(crypt, 1));
     }
-    ASSERT_OK(mongocrypt_init(crypt), crypt);
-    if (flags & TESTER_MONGOCRYPT_WITH_CRYPT_SHARED_LIB) {
-        if (mongocrypt_crypt_shared_lib_version(crypt) == 0) {
-            BSON_ASSERT(false
-                        && "tester mongocrypt requested WITH_CRYPT_SHARED_LIB, but "
-                           "no crypt_shared library was loaded by mongocrypt_init");
+    ASSERT_OK(mongocrypt_setopt_enable_multiple_collinfo(crypt), crypt);
+    if (!(flags & TESTER_MONGOCRYPT_SKIP_INIT)) {
+        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        if (flags & TESTER_MONGOCRYPT_WITH_CRYPT_SHARED_LIB) {
+            if (mongocrypt_crypt_shared_lib_version(crypt) == 0) {
+                BSON_ASSERT(false
+                            && "tester mongocrypt requested WITH_CRYPT_SHARED_LIB, but "
+                               "no crypt_shared library was loaded by mongocrypt_init");
+            }
         }
     }
     return crypt;
@@ -856,14 +920,24 @@ static void _test_setopt_kms_providers(_mongocrypt_tester_t *tester) {
     }
 }
 
+static void test_tmp_bsonf(_mongocrypt_tester_t *tester) {
+    bson_t *one = TMP_BSONF("{'foo' : MC_STR}", "bar");
+    ASSERT_EQUAL_BSON(one, TMP_BSONF("{'foo': 'bar'}"));
+    bson_t *two = TMP_BSONF("{'blah': MC_BSON}", one);
+    ASSERT_EQUAL_BSON(two, TMP_BSONF("{'blah': {'foo': 'bar'}}"));
+}
+
 bool _aes_ctr_is_supported_by_os = true;
 
 int main(int argc, char **argv) {
     _mongocrypt_tester_t tester = {0};
     int i;
 
-    printf("Pass a list of test names to run only specific tests. E.g.:\n");
-    printf("test-mongocrypt _mongocrypt_test_mcgrew\n\n");
+    TEST_PRINTF("Pass a list of patterns to run a subset of tests.\n");
+    TEST_PRINTF("Patterns may be exact matches or include a trailing wildcard (*). Examples:\n");
+    TEST_PRINTF("  test-mongocrypt _mongocrypt_test_mcgrew\n");
+    TEST_PRINTF("  test-mongocrypt 'test_mc_*'\n");
+    TEST_PRINTF("  test-mongocrypt test_mc_named_kms_provider_parse test_mc_named_kms_provider_map\n");
 
     /* Install all tests. */
     _mongocrypt_tester_install_crypto(&tester);
@@ -908,6 +982,7 @@ int main(int argc, char **argv) {
     _mongocrypt_tester_install_efc(&tester);
     _mongocrypt_tester_install_cleanup(&tester);
     _mongocrypt_tester_install_compact(&tester);
+    _mongocrypt_tester_install_fle2_encryption_placeholder(&tester);
     _mongocrypt_tester_install_fle2_payload_uev(&tester);
     _mongocrypt_tester_install_fle2_payload_uev_v2(&tester);
     _mongocrypt_tester_install_fle2_payload_iup(&tester);
@@ -926,6 +1001,10 @@ int main(int argc, char **argv) {
     _mongocrypt_tester_install_opts(&tester);
     _mongocrypt_tester_install_named_kms_providers(&tester);
     _mongocrypt_tester_install_mc_cmp(&tester);
+    _mongocrypt_tester_install_text_search_str_encode(&tester);
+    _mongocrypt_tester_install_unicode_fold(&tester);
+    _mongocrypt_tester_install(&tester, "test_tmp_bsonf", test_tmp_bsonf, CRYPTO_OPTIONAL);
+    _mongocrypt_tester_install_mc_schema_broker(&tester);
 
 #ifdef MONGOCRYPT_ENABLE_CRYPTO_COMMON_CRYPTO
     char osversion[32];
@@ -954,32 +1033,39 @@ int main(int argc, char **argv) {
 get_os_version_failed:
 #endif
 
-    printf("Running tests...\n");
+    TEST_PRINTF("Running tests...\n");
     for (i = 0; tester.test_names[i]; i++) {
-        int j;
-        bool found = false;
-
         if (argc > 1) {
-            for (j = 1; j < argc; j++) {
-                found = (0 == strcmp(argv[j], tester.test_names[i]));
-                if (found) {
-                    break;
+            for (int j = 1; j < argc; j++) {
+                char *const pattern = argv[j];
+                const size_t pattern_len = strlen(pattern);
+                const bool match_prefix_only = pattern_len > 0u && pattern[pattern_len - 1u] == '*';
+
+                if (match_prefix_only) {
+                    if (0 == strncmp(pattern, tester.test_names[i], pattern_len - 1u)) {
+                        goto found_match;
+                    }
+                } else {
+                    if (0 == strcmp(pattern, tester.test_names[i])) {
+                        goto found_match;
+                    }
                 }
             }
-            if (!found) {
-                continue;
-            }
+
+            continue; // No match found.
         }
-        printf("  begin %s\n", tester.test_names[i]);
+    found_match : {}
+
+        TEST_PRINTF("  begin %s\n", tester.test_names[i]);
         tester.test_fns[i](&tester);
         /* Clear state. */
         memset(&tester.paths, 0, sizeof(tester.paths));
-        printf("  end %s\n", tester.test_names[i]);
+        TEST_PRINTF("  end %s\n", tester.test_names[i]);
     }
-    printf("... done running tests\n");
+    TEST_PRINTF("... done running tests\n");
 
     if (i == 0) {
-        printf("WARNING - no tests run.\n");
+        TEST_PRINTF("WARNING - no tests run.\n");
     }
 
     /* Clean up tester. */

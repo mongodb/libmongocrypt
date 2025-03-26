@@ -313,6 +313,17 @@ mongocrypt_t *mongocrypt_new(void);
 bool mongocrypt_setopt_log_handler(mongocrypt_t *crypt, mongocrypt_log_fn_t log_fn, void *log_ctx);
 
 /**
+ * Enable or disable KMS retry behavior.
+ *
+ * @param[in] crypt The @ref mongocrypt_t object.
+ * @param[in] enable A boolean indicating whether to retry operations.
+ * @pre @ref mongocrypt_init has not been called on @p crypt.
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_ctx_status
+ */
+bool mongocrypt_setopt_retry_kms(mongocrypt_t *crypt, bool enable);
+
+/**
  * Configure an AWS KMS provider on the @ref mongocrypt_t object.
  *
  * This has been superseded by the more flexible:
@@ -1042,6 +1053,8 @@ typedef struct _mongocrypt_kms_ctx_t mongocrypt_kms_ctx_t;
  * If KMS handles are being handled synchronously, the driver can reuse the same
  * TLS socket to send HTTP requests and receive responses.
  *
+ * The returned KMS handle does not outlive `ctx`.
+ *
  * @param[in] ctx A @ref mongocrypt_ctx_t.
  * @returns a new @ref mongocrypt_kms_ctx_t or NULL.
  */
@@ -1087,6 +1100,14 @@ bool mongocrypt_kms_ctx_endpoint(mongocrypt_kms_ctx_t *kms, const char **endpoin
 uint32_t mongocrypt_kms_ctx_bytes_needed(mongocrypt_kms_ctx_t *kms);
 
 /**
+ * Indicates how long to sleep before sending this request.
+ *
+ * @param[in] kms The @ref mongocrypt_kms_ctx_t.
+ * @returns How long to sleep in microseconds.
+ */
+int64_t mongocrypt_kms_ctx_usleep(mongocrypt_kms_ctx_t *kms);
+
+/**
  * Feed bytes from the HTTP response.
  *
  * Feeding more bytes than what has been returned in @ref
@@ -1099,6 +1120,14 @@ uint32_t mongocrypt_kms_ctx_bytes_needed(mongocrypt_kms_ctx_t *kms);
  * Retrieve it with @ref mongocrypt_kms_ctx_status
  */
 bool mongocrypt_kms_ctx_feed(mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes);
+
+/**
+ * Indicate a network-level failure.
+ *
+ * @param[in] kms The @ref mongocrypt_kms_ctx_t.
+ * @return A boolean indicating whether the failed request may be retried.
+ */
+bool mongocrypt_kms_ctx_fail(mongocrypt_kms_ctx_t *kms);
 
 /**
  * Get the status associated with a @ref mongocrypt_kms_ctx_t object.
@@ -1413,7 +1442,7 @@ bool mongocrypt_ctx_setopt_query_type(mongocrypt_ctx_t *ctx, const char *query_t
  * {
  *    "min": Optional<BSON value>,
  *    "max": Optional<BSON value>,
- *    "sparsity": Int64,
+ *    "sparsity": Optional<Int64>,
  *    "precision": Optional<Int32>,
  *    "trimFactor": Optional<Int32>
  * }
@@ -1425,6 +1454,15 @@ bool mongocrypt_ctx_setopt_query_type(mongocrypt_ctx_t *ctx, const char *query_t
  * Retrieve it with @ref mongocrypt_ctx_status
  */
 bool mongocrypt_ctx_setopt_algorithm_range(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *opts);
+
+/**
+ * Set the expiration time for the data encryption key cache. Defaults to 60 seconds if not set.
+ *
+ * @param[in] ctx The @ref mongocrypt_ctx_t object.
+ * @param[in] cache_expiration_ms The cache expiration time in milliseconds. If zero, the cache
+ * never expires.
+ */
+bool mongocrypt_setopt_key_expiration(mongocrypt_t *crypt, uint64_t cache_expiration_ms);
 
 /// String constants for setopt_query_type
 // DEPRECATED: Support "rangePreview" has been removed in favor of "range".

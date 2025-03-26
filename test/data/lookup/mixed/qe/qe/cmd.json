@@ -1,0 +1,19 @@
+{
+   "aggregate": "c1",
+   "pipeline": [
+      {
+         "$lookup": {
+            "from": "c2",
+            "localField": "joinme",
+            "foreignField": "joinme",
+            "as": "matched"
+         }
+      },
+      {
+         "$match": {
+            "e1": "foo"
+         }
+      }
+   ],
+   "cursor": {}
+}

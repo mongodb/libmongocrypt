@@ -20,6 +20,7 @@
 #include "mongocrypt-crypto-private.h" // MONGOCRYPT_KEY_LEN
 #include "mongocrypt.h"
 #include "test-mongocrypt-assert-match-bson.h"
+#include "test-mongocrypt-assert.h"
 #include "test-mongocrypt-crypto-std-hooks.h"
 #include "test-mongocrypt.h"
 
@@ -508,9 +509,7 @@ static void _test_encrypt_need_markings(_mongocrypt_tester_t *tester) {
 
 static void _test_encrypt_csfle_no_needs_markings(_mongocrypt_tester_t *tester) {
     if (!TEST_MONGOCRYPT_HAVE_REAL_CRYPT_SHARED_LIB) {
-        fputs("No 'real' csfle library is available. The "
-              "_test_encrypt_csfle_no_needs_markings test is a no-op.",
-              stderr);
+        TEST_STDERR_PRINTF("No 'real' csfle library is available. The %s test is a no-op.\n", BSON_FUNC);
         return;
     }
 
@@ -617,7 +616,7 @@ static void _test_view(_mongocrypt_tester_t *tester) {
 
     crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
     ctx = mongocrypt_ctx_new(crypt);
-    ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "test", -1, TEST_FILE("./test/example/cmd.json")), ctx);
+    ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "test", -1, TEST_BSON(BSON_STR({"find" : "v", "filter" : {}}))), ctx);
     _mongocrypt_tester_run_ctx_to(tester, ctx, MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
     ASSERT_FAILS(mongocrypt_ctx_mongo_feed(ctx, TEST_FILE("./test/data/collection-info-view.json")),
                  ctx,
@@ -763,7 +762,9 @@ static void _test_encrypt_cache_expiration(_mongocrypt_tester_t *tester) {
     _mongocrypt_tester_run_ctx_to(tester, ctx, MONGOCRYPT_CTX_DONE);
     mongocrypt_ctx_destroy(ctx);
 
-    _usleep(2000);
+    // Sleep to trigger cache expiration.
+    // Cache entries expire after 1ms, but use 20ms to avoid timing errors observed on Windows distros: CDRIVER-4526
+    _usleep(20 * 1000);
     /* The next context requests keys again
      */
     ctx = mongocrypt_ctx_new(crypt);
@@ -1004,28 +1005,8 @@ static void _test_encrypt_invalid_siblings(_mongocrypt_tester_t *tester) {
     ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
 
     BSON_ASSERT(MONGOCRYPT_CTX_NEED_MONGO_MARKINGS == mongocrypt_ctx_state(ctx));
-    ASSERT_FAILS(mongocrypt_ctx_mongo_feed(ctx, TEST_FILE("./test/example/mongocryptd-reply.json")),
-                 ctx,
-                 "JSON schema validator has siblings");
-
-    mongocrypt_ctx_destroy(ctx);
-    mongocrypt_destroy(crypt);
-}
-
-static void _test_encrypt_dupe_jsonschema(_mongocrypt_tester_t *tester) {
-    mongocrypt_t *crypt;
-    mongocrypt_ctx_t *ctx;
-
-    crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
-    ctx = mongocrypt_ctx_new(crypt);
-    ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "test", -1, TEST_FILE("./test/example/cmd.json")), ctx);
-
-    BSON_ASSERT(MONGOCRYPT_CTX_NEED_MONGO_COLLINFO == mongocrypt_ctx_state(ctx));
-    ASSERT_FAILS(mongocrypt_ctx_mongo_feed(ctx,
-                                           TEST_BSON("{'options': {'validator': { '$jsonSchema': {}, "
-                                                     "'$jsonSchema': {} } } }")),
-                 ctx,
-                 "duplicate $jsonSchema");
+    // MONGOCRYPT-771 removes checks for sibling validators.
+    ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TEST_FILE("./test/example/mongocryptd-reply.json")), ctx);
 
     mongocrypt_ctx_destroy(ctx);
     mongocrypt_destroy(crypt);
@@ -1327,9 +1308,6 @@ static void _test_encrypt_with_encrypted_field_config_map(_mongocrypt_tester_t *
         mongocrypt_setopt_kms_providers(crypt, TEST_BSON("{'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'bar'}}")),
         crypt);
     ASSERT_OK(mongocrypt_setopt_encrypted_field_config_map(crypt, TEST_BSON("{'db.coll': {'fields': []}}")), crypt);
-    // TODO(MONGOCRYPT-572): This test uses the QEv1 protocol. Update this test for QEv2 or remove. Note: decrypting
-    // QEv1 is still supported.
-    ASSERT_OK(mongocrypt_setopt_fle2v2(crypt, false), crypt);
     ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
     /* Test encrypting a command on a collection present in the encrypted field
@@ -1437,9 +1415,6 @@ static void _test_encrypt_remote_encryptedfields(_mongocrypt_tester_t *tester) {
     ASSERT_OK(
         mongocrypt_setopt_kms_providers(crypt, TEST_BSON("{'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'bar'}}")),
         crypt);
-    // TODO(MONGOCRYPT-572): This test uses the QEv1 protocol. Update this test for QEv2 or remove. Note: decrypting
-    // QEv1 is still supported.
-    ASSERT_OK(mongocrypt_setopt_fle2v2(crypt, false), crypt);
     ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
     /* Test success. */
     {
@@ -1502,9 +1477,6 @@ static void _test_encrypt_remote_encryptedfields(_mongocrypt_tester_t *tester) {
             mongocrypt_setopt_kms_providers(crypt,
                                             TEST_BSON("{'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'bar'}}")),
             crypt);
-        // TODO(MONGOCRYPT-572): This test uses the QEv1 protocol. Update this test for QEv2 or remove. Note: decrypting
-        // QEv1 is still supported.
-        ASSERT_OK(mongocrypt_setopt_fle2v2(crypt, false), crypt);
         ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
         ctx = mongocrypt_ctx_new(crypt);
         ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_FILE("./test/data/fle2-find-explicit/cmd.json")),
@@ -1552,9 +1524,6 @@ static void _test_encrypt_with_bypassqueryanalysis(_mongocrypt_tester_t *tester)
             crypt);
         ASSERT_OK(mongocrypt_setopt_encrypted_field_config_map(crypt, TEST_BSON("{'db.coll': {'fields': []}}")), crypt);
         mongocrypt_setopt_bypass_query_analysis(crypt);
-        // TODO(MONGOCRYPT-572): This test uses the QEv1 protocol. Update this test for QEv2 or remove. Note: decrypting
-        // QEv1 is still supported.
-        ASSERT_OK(mongocrypt_setopt_fle2v2(crypt, false), crypt);
         ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
         ctx = mongocrypt_ctx_new(crypt);
@@ -1584,9 +1553,6 @@ static void _test_encrypt_with_bypassqueryanalysis(_mongocrypt_tester_t *tester)
                                             TEST_BSON("{'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'bar'}}")),
             crypt);
         mongocrypt_setopt_bypass_query_analysis(crypt);
-        // TODO(MONGOCRYPT-572): This test uses the QEv1 protocol. Update this test for QEv2 or remove. Note: decrypting
-        // QEv1 is still supported.
-        ASSERT_OK(mongocrypt_setopt_fle2v2(crypt, false), crypt);
         ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
         ctx = mongocrypt_ctx_new(crypt);
@@ -1595,7 +1561,9 @@ static void _test_encrypt_with_bypassqueryanalysis(_mongocrypt_tester_t *tester)
 
         ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
         {
-            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TEST_BSON("{'options': {'encryptedFields': {'fields': []}}}")),
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(
+                          ctx,
+                          TEST_BSON("{'name': 'coll', 'options': {'encryptedFields': {'fields': []}}}")),
                       ctx);
             ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
         }
@@ -1612,301 +1580,6 @@ static void _test_encrypt_with_bypassqueryanalysis(_mongocrypt_tester_t *tester)
 
         mongocrypt_ctx_destroy(ctx);
         mongocrypt_destroy(crypt);
-    }
-}
-
-static void _test_FLE2EncryptionPlaceholder_parse(_mongocrypt_tester_t *tester) {
-    mc_FLE2EncryptionPlaceholder_t placeholder;
-    bson_t as_bson;
-    mongocrypt_status_t *status;
-    _mongocrypt_buffer_t buf;
-
-    status = mongocrypt_status_new();
-    _mongocrypt_buffer_copy_from_hex(&buf,
-                                     "03610000001074000100000010610002000000056b690010000000041234567812349876"
-                                     "1234123456789012056b75001000000004abcdefab123498761234123456789012027600"
-                                     "0900000076616c75653132330012636d00000000000000000000");
-    ASSERT(bson_init_static(&as_bson, buf.data + 1, buf.len - 1));
-    mc_FLE2EncryptionPlaceholder_init(&placeholder);
-    ASSERT_OK_STATUS(mc_FLE2EncryptionPlaceholder_parse(&placeholder, &as_bson, status), status);
-
-    ASSERT(placeholder.type == MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT);
-    ASSERT(placeholder.algorithm == MONGOCRYPT_FLE2_ALGORITHM_EQUALITY);
-    ASSERT(BSON_ITER_HOLDS_UTF8(&placeholder.v_iter));
-    ASSERT_STREQUAL(bson_iter_utf8(&placeholder.v_iter, NULL), "value123");
-
-    _mongocrypt_buffer_t expect_index_key_id;
-    _mongocrypt_buffer_copy_from_hex(&expect_index_key_id, "12345678123498761234123456789012");
-    ASSERT_CMPBUF(placeholder.index_key_id, expect_index_key_id);
-    _mongocrypt_buffer_cleanup(&expect_index_key_id);
-
-    _mongocrypt_buffer_t expect_user_key_id;
-    _mongocrypt_buffer_copy_from_hex(&expect_user_key_id, "abcdefab123498761234123456789012");
-    ASSERT_CMPBUF(placeholder.user_key_id, expect_user_key_id);
-    _mongocrypt_buffer_cleanup(&expect_user_key_id);
-
-    ASSERT(placeholder.maxContentionFactor == 0);
-
-    mc_FLE2EncryptionPlaceholder_cleanup(&placeholder);
-    _mongocrypt_buffer_cleanup(&buf);
-    mongocrypt_status_destroy(status);
-}
-
-static void _test_FLE2EncryptionPlaceholder_range_parse(_mongocrypt_tester_t *tester) {
-    // Test type=MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT.
-    {
-        mc_FLE2EncryptionPlaceholder_t placeholder;
-        bson_t as_bson;
-        mongocrypt_status_t *status;
-        _mongocrypt_buffer_t buf;
-
-        status = mongocrypt_status_new();
-        _mongocrypt_buffer_copy_from_hex(&buf,
-                                         "037d0000001074000100000010610003000000056b690010000000041234567812349"
-                                         "8761234123456789012056b75001000000004abcdefab123498761234123456789012"
-                                         "0376001e00000010760040e20100106d696e0000000000106d61780087d6120000126"
-                                         "36d000000000000000000127300010000000000000000");
-        ASSERT(bson_init_static(&as_bson, buf.data + 1, buf.len - 1));
-        mc_FLE2EncryptionPlaceholder_init(&placeholder);
-        ASSERT_OK_STATUS(mc_FLE2EncryptionPlaceholder_parse(&placeholder, &as_bson, status), status);
-
-        ASSERT(placeholder.type == MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT);
-        ASSERT(placeholder.algorithm == MONGOCRYPT_FLE2_ALGORITHM_RANGE);
-
-        _mongocrypt_buffer_t expect_index_key_id;
-        _mongocrypt_buffer_copy_from_hex(&expect_index_key_id, "12345678123498761234123456789012");
-        ASSERT_CMPBUF(placeholder.index_key_id, expect_index_key_id);
-        _mongocrypt_buffer_cleanup(&expect_index_key_id);
-
-        _mongocrypt_buffer_t expect_user_key_id;
-        _mongocrypt_buffer_copy_from_hex(&expect_user_key_id, "abcdefab123498761234123456789012");
-        ASSERT_CMPBUF(placeholder.user_key_id, expect_user_key_id);
-        _mongocrypt_buffer_cleanup(&expect_user_key_id);
-
-        ASSERT_CMPINT64(placeholder.sparsity, ==, 1);
-
-        // Parse FLE2RangeInsertSpec.
-        {
-            mc_FLE2RangeInsertSpec_t spec;
-
-            ASSERT_OK_STATUS(mc_FLE2RangeInsertSpec_parse(&spec, &placeholder.v_iter, false /* use_range_v2 */, status),
-                             status);
-
-            ASSERT(BSON_ITER_HOLDS_INT32(&spec.v));
-            ASSERT_CMPINT32(bson_iter_int32(&spec.v), ==, 123456);
-
-            ASSERT(BSON_ITER_HOLDS_INT32(&spec.min));
-            ASSERT_CMPINT32(bson_iter_int32(&spec.min), ==, 0);
-
-            ASSERT(BSON_ITER_HOLDS_INT32(&spec.max));
-            ASSERT_CMPINT32(bson_iter_int32(&spec.max), ==, 1234567);
-        }
-
-        mc_FLE2EncryptionPlaceholder_cleanup(&placeholder);
-        _mongocrypt_buffer_cleanup(&buf);
-        mongocrypt_status_destroy(status);
-    }
-
-    // Test type=MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND.
-    {
-        mc_FLE2EncryptionPlaceholder_t placeholder;
-        bson_t as_bson;
-        mongocrypt_status_t *status;
-        _mongocrypt_buffer_t buf;
-
-        status = mongocrypt_status_new();
-        _mongocrypt_buffer_copy_from_hex(&buf,
-                                         "03ec0000001074000200000010610003000000056b690010000000041234567812349"
-                                         "8761234123456789012056b75001000000004abcdefab123498761234123456789012"
-                                         "0376008d000000036564676573496e666f005b000000106c6f776572426f756e64000"
-                                         "0000000086c62496e636c756465640001107570706572426f756e640087d612000875"
-                                         "62496e636c75646564000110696e6465784d696e000000000010696e6465784d61780"
-                                         "087d6120000107061796c6f6164496400d20400001066697273744f70657261746f72"
-                                         "00010000000012636d000000000000000000127300010000000000000000");
-        ASSERT(bson_init_static(&as_bson, buf.data + 1, buf.len - 1));
-        mc_FLE2EncryptionPlaceholder_init(&placeholder);
-        ASSERT_OK_STATUS(mc_FLE2EncryptionPlaceholder_parse(&placeholder, &as_bson, status), status);
-
-        ASSERT(placeholder.type == MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND);
-        ASSERT(placeholder.algorithm == MONGOCRYPT_FLE2_ALGORITHM_RANGE);
-
-        _mongocrypt_buffer_t expect_index_key_id;
-        _mongocrypt_buffer_copy_from_hex(&expect_index_key_id, "12345678123498761234123456789012");
-        ASSERT_CMPBUF(placeholder.index_key_id, expect_index_key_id);
-        _mongocrypt_buffer_cleanup(&expect_index_key_id);
-
-        _mongocrypt_buffer_t expect_user_key_id;
-        _mongocrypt_buffer_copy_from_hex(&expect_user_key_id, "abcdefab123498761234123456789012");
-        ASSERT_CMPBUF(placeholder.user_key_id, expect_user_key_id);
-        _mongocrypt_buffer_cleanup(&expect_user_key_id);
-
-        ASSERT_CMPINT64(placeholder.sparsity, ==, 1);
-
-        // Parse FLE2RangeFindSpec.
-        {
-            mc_FLE2RangeFindSpec_t spec;
-
-            ASSERT_OK_STATUS(mc_FLE2RangeFindSpec_parse(&spec, &placeholder.v_iter, false /* use_range_v2 */, status),
-                             status);
-
-            ASSERT(spec.edgesInfo.set);
-
-            ASSERT(BSON_ITER_HOLDS_INT32(&spec.edgesInfo.value.lowerBound));
-            ASSERT_CMPINT32(bson_iter_int32(&spec.edgesInfo.value.lowerBound), ==, 0);
-            ASSERT(spec.edgesInfo.value.lbIncluded);
-
-            ASSERT(BSON_ITER_HOLDS_INT32(&spec.edgesInfo.value.upperBound));
-            ASSERT_CMPINT32(bson_iter_int32(&spec.edgesInfo.value.upperBound), ==, 1234567);
-            ASSERT(spec.edgesInfo.value.ubIncluded);
-
-            ASSERT(BSON_ITER_HOLDS_INT32(&spec.edgesInfo.value.indexMin));
-            ASSERT_CMPINT32(bson_iter_int32(&spec.edgesInfo.value.indexMin), ==, 0);
-            ASSERT(spec.edgesInfo.value.ubIncluded);
-
-            ASSERT(BSON_ITER_HOLDS_INT32(&spec.edgesInfo.value.indexMax));
-            ASSERT_CMPINT32(bson_iter_int32(&spec.edgesInfo.value.indexMax), ==, 1234567);
-            ASSERT(spec.edgesInfo.value.ubIncluded);
-
-            ASSERT_CMPINT32(spec.payloadId, ==, 1234);
-
-            ASSERT_CMPINT(spec.firstOperator, ==, FLE2RangeOperator_kGt);
-            ASSERT_CMPINT(spec.secondOperator, ==, FLE2RangeOperator_kNone);
-        }
-
-        mc_FLE2EncryptionPlaceholder_cleanup(&placeholder);
-        _mongocrypt_buffer_cleanup(&buf);
-        mongocrypt_status_destroy(status);
-    }
-
-    // Test type=MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND with precision.
-    {
-        mc_FLE2EncryptionPlaceholder_t placeholder;
-        bson_t as_bson;
-        mongocrypt_status_t *status;
-        _mongocrypt_buffer_t buf;
-
-        status = mongocrypt_status_new();
-        _mongocrypt_buffer_copy_from_hex(&buf,
-                                         "030b0100001074000200000010610003000000056b690010000000041234567812349"
-                                         "8761234123456789012056b75001000000004abcdefab123498761234123456789012"
-                                         "037600ac000000036564676573496e666f007a000000016c6f776572426f756e64000"
-                                         "000000000000000086c62496e636c756465640001017570706572426f756e64000000"
-                                         "000000006940087562496e636c75646564000110707265636973696f6e00020000000"
-                                         "1696e6465784d696e00000000000000000001696e6465784d61780000000000000069"
-                                         "4000107061796c6f6164496400d20400001066697273744f70657261746f720001000"
-                                         "0000012636d000000000000000000127300010000000000000000");
-        ASSERT(bson_init_static(&as_bson, buf.data + 1, buf.len - 1));
-        mc_FLE2EncryptionPlaceholder_init(&placeholder);
-        ASSERT_OK_STATUS(mc_FLE2EncryptionPlaceholder_parse(&placeholder, &as_bson, status), status);
-
-        ASSERT(placeholder.type == MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND);
-        ASSERT(placeholder.algorithm == MONGOCRYPT_FLE2_ALGORITHM_RANGE);
-
-        _mongocrypt_buffer_t expect_index_key_id;
-        _mongocrypt_buffer_copy_from_hex(&expect_index_key_id, "12345678123498761234123456789012");
-        ASSERT_CMPBUF(placeholder.index_key_id, expect_index_key_id);
-        _mongocrypt_buffer_cleanup(&expect_index_key_id);
-
-        _mongocrypt_buffer_t expect_user_key_id;
-        _mongocrypt_buffer_copy_from_hex(&expect_user_key_id, "abcdefab123498761234123456789012");
-        ASSERT_CMPBUF(placeholder.user_key_id, expect_user_key_id);
-        _mongocrypt_buffer_cleanup(&expect_user_key_id);
-
-        ASSERT_CMPINT64(placeholder.sparsity, ==, 1);
-
-        // Parse FLE2RangeFindSpec.
-        {
-            mc_FLE2RangeFindSpec_t spec;
-
-            ASSERT_OK_STATUS(mc_FLE2RangeFindSpec_parse(&spec, &placeholder.v_iter, false /* use_range_v2 */, status),
-                             status);
-
-            ASSERT(spec.edgesInfo.set);
-
-            ASSERT(BSON_ITER_HOLDS_DOUBLE(&spec.edgesInfo.value.lowerBound));
-            ASSERT_CMPDOUBLE(bson_iter_double(&spec.edgesInfo.value.lowerBound), ==, 0.0);
-            ASSERT(spec.edgesInfo.value.lbIncluded);
-
-            ASSERT(BSON_ITER_HOLDS_DOUBLE(&spec.edgesInfo.value.upperBound));
-            ASSERT_CMPDOUBLE(bson_iter_double(&spec.edgesInfo.value.upperBound), ==, 200.0);
-            ASSERT(spec.edgesInfo.value.ubIncluded);
-
-            ASSERT(BSON_ITER_HOLDS_DOUBLE(&spec.edgesInfo.value.indexMin));
-            ASSERT_CMPDOUBLE(bson_iter_double(&spec.edgesInfo.value.indexMin), ==, 0);
-            ASSERT(spec.edgesInfo.value.ubIncluded);
-
-            ASSERT(BSON_ITER_HOLDS_DOUBLE(&spec.edgesInfo.value.indexMax));
-            ASSERT_CMPDOUBLE(bson_iter_double(&spec.edgesInfo.value.indexMax), ==, 200.0);
-            ASSERT(spec.edgesInfo.value.ubIncluded);
-
-            ASSERT_CMPDOUBLE(spec.payloadId, ==, 1234);
-
-            ASSERT_CMPINT(spec.firstOperator, ==, FLE2RangeOperator_kGt);
-            ASSERT(spec.edgesInfo.value.precision.set);
-            ASSERT_CMPUINT32(spec.edgesInfo.value.precision.value, ==, 2);
-        }
-
-        mc_FLE2EncryptionPlaceholder_cleanup(&placeholder);
-        _mongocrypt_buffer_cleanup(&buf);
-        mongocrypt_status_destroy(status);
-    }
-
-    // Test type=MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT with precision.
-    {
-        mc_FLE2EncryptionPlaceholder_t placeholder;
-        bson_t as_bson;
-        mongocrypt_status_t *status;
-        _mongocrypt_buffer_t buf;
-
-        status = mongocrypt_status_new();
-        _mongocrypt_buffer_copy_from_hex(&buf,
-                                         "03980000001074000100000010610003000000056b690010000000041234567812349"
-                                         "8761234123456789012056b75001000000004abcdefab123498761234123456789012"
-                                         "0376003900000001760077be9f1a2fdd5e40016d696e000000000000000000016d617"
-                                         "800000000000000694010707265636973696f6e00020000000012636d000000000000"
-                                         "000000127300010000000000000000");
-        ASSERT(bson_init_static(&as_bson, buf.data + 1, buf.len - 1));
-        mc_FLE2EncryptionPlaceholder_init(&placeholder);
-        ASSERT_OK_STATUS(mc_FLE2EncryptionPlaceholder_parse(&placeholder, &as_bson, status), status);
-
-        ASSERT(placeholder.type == MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT);
-        ASSERT(placeholder.algorithm == MONGOCRYPT_FLE2_ALGORITHM_RANGE);
-
-        _mongocrypt_buffer_t expect_index_key_id;
-        _mongocrypt_buffer_copy_from_hex(&expect_index_key_id, "12345678123498761234123456789012");
-        ASSERT_CMPBUF(placeholder.index_key_id, expect_index_key_id);
-        _mongocrypt_buffer_cleanup(&expect_index_key_id);
-
-        _mongocrypt_buffer_t expect_user_key_id;
-        _mongocrypt_buffer_copy_from_hex(&expect_user_key_id, "abcdefab123498761234123456789012");
-        ASSERT_CMPBUF(placeholder.user_key_id, expect_user_key_id);
-        _mongocrypt_buffer_cleanup(&expect_user_key_id);
-
-        ASSERT_CMPINT64(placeholder.sparsity, ==, 1);
-
-        // Parse FLE2RangeInsertSpec.
-        {
-            mc_FLE2RangeInsertSpec_t spec;
-
-            ASSERT_OK_STATUS(mc_FLE2RangeInsertSpec_parse(&spec, &placeholder.v_iter, false /* use_range_v2 */, status),
-                             status);
-
-            ASSERT(BSON_ITER_HOLDS_DOUBLE(&spec.v));
-            ASSERT_CMPDOUBLE(bson_iter_double(&spec.v), ==, 123.456);
-
-            ASSERT(BSON_ITER_HOLDS_DOUBLE(&spec.min));
-            ASSERT_CMPDOUBLE(bson_iter_double(&spec.min), ==, 0.0);
-
-            ASSERT(BSON_ITER_HOLDS_DOUBLE(&spec.max));
-            ASSERT_CMPDOUBLE(bson_iter_double(&spec.max), ==, 200.0);
-
-            ASSERT(spec.precision.set);
-            ASSERT_CMPUINT32(spec.precision.value, ==, 2);
-        }
-
-        mc_FLE2EncryptionPlaceholder_cleanup(&placeholder);
-        _mongocrypt_buffer_cleanup(&buf);
-        mongocrypt_status_destroy(status);
     }
 }
 
@@ -1931,27 +1604,18 @@ static bool _test_rng_source(void *ctx, mongocrypt_binary_t *out, uint32_t count
 
 typedef enum {
     kFLE2v2Default,
-    kFLE2v2Disable,
     kFLE2v2Enable,
 } _test_fle2v2_option;
 
 #define TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, data_path, rng_source, v2_failure)                            \
     {                                                                                                                  \
         (rng_source)->pos = 0;                                                                                         \
-        _test_encrypt_fle2_encryption_placeholder(tester, data_path, rng_source, kFLE2v2Disable, NULL);                \
-        char v2path[4096];                                                                                             \
-        /* transitional: Use v1 data path if expecting failure */                                                      \
-        ASSERT(snprintf(v2path, sizeof(v2path), "%s%s", data_path, v2_failure ? "" : "-v2"));                          \
-        (rng_source)->pos = 0;                                                                                         \
-        _test_encrypt_fle2_encryption_placeholder(tester, v2path, rng_source, kFLE2v2Default, NULL);                   \
-        (rng_source)->pos = 0;                                                                                         \
-        _test_encrypt_fle2_encryption_placeholder(tester, v2path, rng_source, kFLE2v2Enable, v2_failure);              \
+        _test_encrypt_fle2_encryption_placeholder(tester, data_path, rng_source, NULL);                                \
     }
 
 static void _test_encrypt_fle2_encryption_placeholder(_mongocrypt_tester_t *tester,
                                                       const char *data_path,
                                                       _test_rng_data_source *rng_source,
-                                                      _test_fle2v2_option test_fle2v2_option,
                                                       const char *finalize_failure) {
     mongocrypt_t *crypt;
     char pathbuf[2048];
@@ -1964,7 +1628,7 @@ static void _test_encrypt_fle2_encryption_placeholder(_mongocrypt_tester_t *test
         ((void)0)
 
     if (!_aes_ctr_is_supported_by_os) {
-        printf("Common Crypto with no CTR support detected. Skipping.");
+        TEST_PRINTF("Common Crypto with no CTR support detected. Skipping.");
         return;
     }
 
@@ -1976,9 +1640,6 @@ static void _test_encrypt_fle2_encryption_placeholder(_mongocrypt_tester_t *test
         mongocrypt_binary_t *localkey;
 
         crypt = mongocrypt_new();
-        if (test_fle2v2_option == kFLE2v2Disable) {
-            ASSERT(mongocrypt_setopt_fle2v2(crypt, false));
-        }
         mongocrypt_setopt_log_handler(crypt, _mongocrypt_stdout_log_fn, NULL);
         localkey = mongocrypt_binary_new_from_data((uint8_t *)localkey_data, sizeof localkey_data);
         ASSERT_OK(mongocrypt_setopt_kms_provider_local(crypt, localkey), crypt);
@@ -2055,7 +1716,28 @@ static void _test_encrypt_fle2_insert_payload(_mongocrypt_tester_t *tester) {
     uint8_t rng_data[] = RNG_DATA;
 
     _test_rng_data_source source = {.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-v2", &source, NULL)
+}
+
+static void _test_encrypt_fle2_insert_payload_with_str_encode_version(_mongocrypt_tester_t *tester) {
+    uint8_t rng_data[] = RNG_DATA;
+
+    _test_rng_data_source source = {.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-v2-with-str-encode-version", &source, NULL)
+}
+
+static void _test_encrypt_fle2_insert_text_search_payload(_mongocrypt_tester_t *tester) {
+    uint8_t rng_data[] = RNG_DATA;
+
+    _test_rng_data_source source = {.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-text-search", &source, NULL)
+}
+
+static void _test_encrypt_fle2_insert_text_search_payload_with_str_encode_version(_mongocrypt_tester_t *tester) {
+    uint8_t rng_data[] = RNG_DATA;
+
+    _test_rng_data_source source = {.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-text-search-with-str-encode-version", &source, NULL)
 }
 
 #undef RNG_DATA
@@ -2063,7 +1745,7 @@ static void _test_encrypt_fle2_insert_payload(_mongocrypt_tester_t *tester) {
 // FLE2FindEqualityPayload only uses deterministic token generation.
 static void _test_encrypt_fle2_find_payload(_mongocrypt_tester_t *tester) {
     _test_rng_data_source source = {{0}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-equality", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-equality-v2", &source, NULL)
 }
 
 /* 16 bytes of random data are used for IV. This IV produces the expected test
@@ -2073,7 +1755,7 @@ static void _test_encrypt_fle2_find_payload(_mongocrypt_tester_t *tester) {
 static void _test_encrypt_fle2_unindexed_encrypted_payload(_mongocrypt_tester_t *tester) {
     uint8_t rng_data[] = RNG_DATA;
     _test_rng_data_source source = {.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-unindexed", &source, NULL);
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-unindexed-v2", &source, NULL);
 }
 
 #undef RNG_DATA
@@ -2083,7 +1765,7 @@ static void _test_encrypt_fle2_unindexed_encrypted_payload(_mongocrypt_tester_t 
 static void _test_encrypt_fle2_insert_range_payload_int32(_mongocrypt_tester_t *tester) {
     uint8_t rng_data[] = RNG_DATA;
     _test_rng_data_source source = {.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-range/int32", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-range/int32-v2", &source, NULL)
 }
 
 #undef RNG_DATA
@@ -2093,7 +1775,7 @@ static void _test_encrypt_fle2_insert_range_payload_int32(_mongocrypt_tester_t *
 static void _test_encrypt_fle2_insert_range_payload_int64(_mongocrypt_tester_t *tester) {
     uint8_t rng_data[] = RNG_DATA;
     _test_rng_data_source source = {.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-range/int64", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-range/int64-v2", &source, NULL)
 }
 
 #undef RNG_DATA
@@ -2103,7 +1785,7 @@ static void _test_encrypt_fle2_insert_range_payload_int64(_mongocrypt_tester_t *
 static void _test_encrypt_fle2_insert_range_payload_date(_mongocrypt_tester_t *tester) {
     uint8_t rng_data[] = RNG_DATA;
     _test_rng_data_source source = {.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-range/date", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-range/date-v2", &source, NULL)
 }
 
 #undef RNG_DATA
@@ -2113,7 +1795,7 @@ static void _test_encrypt_fle2_insert_range_payload_date(_mongocrypt_tester_t *t
 static void _test_encrypt_fle2_insert_range_payload_double(_mongocrypt_tester_t *tester) {
     uint8_t rng_data[] = RNG_DATA;
     _test_rng_data_source source = {.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-range/double", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-range/double-v2", &source, NULL)
 }
 
 #undef RNG_DATA
@@ -2123,7 +1805,7 @@ static void _test_encrypt_fle2_insert_range_payload_double(_mongocrypt_tester_t 
 static void _test_encrypt_fle2_insert_range_payload_double_precision(_mongocrypt_tester_t *tester) {
     uint8_t rng_data[] = RNG_DATA;
     _test_rng_data_source source = {.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-range/double-precision", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-range/double-precision-v2", &source, NULL)
 }
 
 #undef RNG_DATA
@@ -2134,7 +1816,7 @@ static void _test_encrypt_fle2_insert_range_payload_double_precision(_mongocrypt
 static void _test_encrypt_fle2_insert_range_payload_decimal128(_mongocrypt_tester_t *tester) {
     uint8_t rng_data[] = RNG_DATA;
     _test_rng_data_source source = {.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-range/decimal128", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-range/decimal128-v2", &source, NULL)
 }
 
 #undef RNG_DATA
@@ -2144,7 +1826,7 @@ static void _test_encrypt_fle2_insert_range_payload_decimal128(_mongocrypt_teste
 static void _test_encrypt_fle2_insert_range_payload_decimal128_precision(_mongocrypt_tester_t *tester) {
     uint8_t rng_data[] = RNG_DATA;
     _test_rng_data_source source = {.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-range/decimal128-precision", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-range/decimal128-precision-v2", &source, NULL)
 }
 
 #undef RNG_DATA
@@ -2153,48 +1835,48 @@ static void _test_encrypt_fle2_insert_range_payload_decimal128_precision(_mongoc
 // FLE2FindRangePayload only uses deterministic token generation.
 static void _test_encrypt_fle2_find_range_payload_int32(_mongocrypt_tester_t *tester) {
     _test_rng_data_source source = {{0}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-range/int32", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-range/int32-v2", &source, NULL)
 }
 
 // FLE2FindRangePayload only uses deterministic token generation.
 static void _test_encrypt_fle2_find_range_payload_int64(_mongocrypt_tester_t *tester) {
     _test_rng_data_source source = {{0}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-range/int64", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-range/int64-v2", &source, NULL)
 }
 
 // FLE2FindRangePayload only uses deterministic token generation.
 static void _test_encrypt_fle2_find_range_payload_date(_mongocrypt_tester_t *tester) {
     _test_rng_data_source source = {{0}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-range/date", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-range/date-v2", &source, NULL)
 }
 
 // FLE2FindRangePayload only uses deterministic token generation.
 static void _test_encrypt_fle2_find_range_payload_double(_mongocrypt_tester_t *tester) {
     _test_rng_data_source source = {{0}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-range/double", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-range/double-v2", &source, NULL)
 }
 
 // FLE2FindRangePayload only uses deterministic token generation.
 static void _test_encrypt_fle2_find_range_payload_double_precision(_mongocrypt_tester_t *tester) {
     _test_rng_data_source source = {{0}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-range/double-precision", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-range/double-precision-v2", &source, NULL)
 }
 
 #if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
 // FLE2FindRangePayload only uses deterministic token generation.
 static void _test_encrypt_fle2_find_range_payload_decimal128(_mongocrypt_tester_t *tester) {
     _test_rng_data_source source = {{0}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-range/decimal128", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-range/decimal128-v2", &source, NULL)
 }
 
 // FLE2FindRangePayload only uses deterministic token generation.
 static void _test_encrypt_fle2_find_range_payload_decimal128_precision(_mongocrypt_tester_t *tester) {
     _test_rng_data_source source = {{0}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-range/decimal128-precision", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-range/decimal128-precision-v2", &source, NULL)
 }
 #endif // MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
 
-static mongocrypt_t *_crypt_with_rng(_test_rng_data_source *rng_source, bool use_v2, bool use_range_v2) {
+static mongocrypt_t *_crypt_with_rng(_test_rng_data_source *rng_source, bool use_range_v2) {
     mongocrypt_t *crypt;
     mongocrypt_binary_t *localkey;
     /* localkey_data is the KEK used to encrypt the keyMaterial
@@ -2216,9 +1898,6 @@ static mongocrypt_t *_crypt_with_rng(_test_rng_data_source *rng_source, bool use
               crypt);
 
     mongocrypt_binary_destroy(localkey);
-    // TODO(MONGOCRYPT-572): This test uses the QEv1 protocol. Update this test for QEv2 or remove. Note: decrypting
-    // QEv1 is still supported.
-    ASSERT_OK(mongocrypt_setopt_fle2v2(crypt, use_v2), crypt);
     if (use_range_v2) {
         ASSERT_OK(mongocrypt_setopt_use_range_v2(crypt), crypt);
         ASSERT_OK(mongocrypt_init(crypt), crypt);
@@ -2243,25 +1922,20 @@ typedef struct {
     const char *expect_finalize_error;
     const char *expect_init_error;
     bool is_expression;
-    bool use_v2;
     bool use_range_v2;
 } ee_testcase;
 
 static void ee_testcase_run(ee_testcase *tc) {
-    printf("  explicit_encryption_finalize test case: %s ... begin\n", tc->desc);
+    TEST_PRINTF("  explicit_encryption_finalize test case: %s ... begin\n", tc->desc);
     extern void mc_reset_payloadId_for_testing(void);
     mc_reset_payloadId_for_testing();
     mongocrypt_t *crypt;
     if (tc->rng_data.buf.len > 0) {
         // Use fixed data for random number generation to produce deterministic
         // results.
-        crypt = _crypt_with_rng(&tc->rng_data, tc->use_v2, tc->use_range_v2);
+        crypt = _crypt_with_rng(&tc->rng_data, tc->use_range_v2);
     } else {
         tester_mongocrypt_flags flags = TESTER_MONGOCRYPT_DEFAULT;
-        // TODO(MONGOCRYPT-572): Remove tests cases for QEv1.
-        if (!tc->use_v2) {
-            flags |= TESTER_MONGOCRYPT_WITH_CRYPT_V1;
-        }
         if (tc->use_range_v2) {
             flags |= TESTER_MONGOCRYPT_WITH_RANGE_V2;
         }
@@ -2330,7 +2004,7 @@ static void ee_testcase_run(ee_testcase *tc) {
     }
 
 cleanup:
-    printf("  explicit_encryption_finalize test case: %s ... end\n", tc->desc);
+    TEST_PRINTF("  explicit_encryption_finalize test case: %s ... end\n", tc->desc);
     mongocrypt_ctx_destroy(ctx);
     mongocrypt_destroy(crypt);
 }
@@ -2341,7 +2015,7 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
     _mongocrypt_buffer_t key123_id;
 
     if (!_aes_ctr_is_supported_by_os) {
-        printf("Common Crypto with no CTR support detected. Skipping.");
+        TEST_PRINTF("Common Crypto with no CTR support detected. Skipping.");
         return;
     }
 
@@ -2354,26 +2028,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
     mongocrypt_binary_t *key123 = TEST_FILE("./test/data/keys/"
                                             "12345678123498761234123456789012-local-"
                                             "document.json");
-
-    {
-        ee_testcase tc = {0};
-        tc.desc = "Unindexed";
-#define RNG_DATA "\x4d\x06\x95\x64\xf5\xa0\x5e\x9e\x35\x23\xb9\x8f\x57\x5a\xcb\x15"
-        uint8_t rng_data[] = RNG_DATA;
-        tc.rng_data = (_test_rng_data_source){.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
-#undef RNG_DATA
-        tc.algorithm = MONGOCRYPT_ALGORITHM_UNINDEXED_STR;
-        tc.user_key_id = &keyABC_id;
-        tc.index_key_id = &key123_id;
-        tc.msg = TEST_BSON("{'v': 'value123'}");
-        tc.keys_to_feed[0] = keyABC;
-        tc.keys_to_feed[1] = key123;
-        tc.expect = TEST_BSON("{'v': { '$binary': { 'base64': "
-                              "'BqvN76sSNJh2EjQSNFZ4kBICTQaVZPWgXp41I7mPV1rLFTtw1tXzjc"
-                              "dSEyxpKKqujlko5TeizkB9hHQ009dVY1+fgIiDcefh+eQrm3CkhQ=='"
-                              ", 'subType': '06' } }}");
-        ee_testcase_run(&tc);
-    }
 
     {
         ee_testcase tc = {0};
@@ -2391,27 +2045,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.expect = TEST_BSON("{'v' : {'$binary' : {'base64': "
                               "'EKvN76sSNJh2EjQSNFZ4kBICTQaVZPWgXp41I7mPV1rLFVl3jjP90PgD4T+Mtubn/"
                               "mm4CKsKGaV1yxlic9Dty1Adef4Y+bsLGKhBbCa5eojM/A==','subType' : '06'}}}");
-        tc.use_v2 = true;
-        ee_testcase_run(&tc);
-    }
-
-    {
-        ee_testcase tc = {0};
-        tc.desc = "Indexed";
-#define RNG_DATA                                                                                                       \
-    "\xc7\x43\xd6\x75\x76\x9e\xa7\x88\xd5\xe5\xc4\x40\xdb\x24\x0d\xf9"                                                 \
-    "\x4c\xd9\x64\x10\x43\x81\xe6\x61\xfa\x1f\xa0\x5c\x49\x8e\xad\x21"
-        uint8_t rng_data[] = RNG_DATA;
-        tc.rng_data = (_test_rng_data_source){.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
-#undef RNG_DATA
-        tc.algorithm = MONGOCRYPT_ALGORITHM_INDEXED_STR;
-        tc.user_key_id = &keyABC_id;
-        tc.index_key_id = &key123_id;
-        tc.contention_factor = OPT_I64(0);
-        tc.msg = TEST_BSON("{'v': 'value123'}");
-        tc.keys_to_feed[0] = keyABC;
-        tc.keys_to_feed[1] = key123;
-        tc.expect = TEST_FILE("./test/data/fle2-explicit/insert-indexed.json");
         ee_testcase_run(&tc);
     }
 
@@ -2432,32 +2065,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.keys_to_feed[0] = keyABC;
         tc.keys_to_feed[1] = key123;
         tc.expect = TEST_FILE("./test/data/fle2-explicit/insert-indexed-v2.json");
-        tc.use_v2 = true;
-        ee_testcase_run(&tc);
-    }
-
-    {
-        ee_testcase tc = {0};
-        tc.desc = "Indexed with non-zero ContentionFactor. Random number chosen is 0";
-/* First 8 bytes are for random ContentionFactor.
- * Second 16 bytes are IV for 'p' field in FLE2InsertUpdatePayload
- * Third 16 bytes are IV for 'v' field in FLE2InsertUpdatePayload
- */
-#define RNG_DATA                                                                                                       \
-    "\x00\x00\x00\x00\x00\x00\x00\x00"                                                                                 \
-    "\xc7\x43\xd6\x75\x76\x9e\xa7\x88\xd5\xe5\xc4\x40\xdb\x24\x0d\xf9"                                                 \
-    "\x4c\xd9\x64\x10\x43\x81\xe6\x61\xfa\x1f\xa0\x5c\x49\x8e\xad\x21"
-        uint8_t rng_data[] = RNG_DATA;
-        tc.rng_data = (_test_rng_data_source){.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
-#undef RNG_DATA
-        tc.algorithm = MONGOCRYPT_ALGORITHM_INDEXED_STR;
-        tc.user_key_id = &keyABC_id;
-        tc.index_key_id = &key123_id;
-        tc.contention_factor = OPT_I64(1);
-        tc.msg = TEST_BSON("{'v': 'value123'}");
-        tc.keys_to_feed[0] = keyABC;
-        tc.keys_to_feed[1] = key123;
-        tc.expect = TEST_FILE("./test/data/fle2-explicit/insert-indexed.json");
         ee_testcase_run(&tc);
     }
 
@@ -2483,33 +2090,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.keys_to_feed[0] = keyABC;
         tc.keys_to_feed[1] = key123;
         tc.expect = TEST_FILE("./test/data/fle2-explicit/insert-indexed-v2.json");
-        tc.use_v2 = true;
-        ee_testcase_run(&tc);
-    }
-
-    {
-        ee_testcase tc = {0};
-        tc.desc = "Indexed with non-zero ContentionFactor. Random number chosen is 1";
-/* First 8 bytes are for random ContentionFactor.
- * Second 16 bytes are IV for 'p' field in FLE2InsertUpdatePayload
- * Third 16 bytes are IV for 'v' field in FLE2InsertUpdatePayload
- */
-#define RNG_DATA                                                                                                       \
-    "\x01\x00\x00\x00\x00\x00\x00\x00"                                                                                 \
-    "\xc7\x43\xd6\x75\x76\x9e\xa7\x88\xd5\xe5\xc4\x40\xdb\x24\x0d\xf9"                                                 \
-    "\x4c\xd9\x64\x10\x43\x81\xe6\x61\xfa\x1f\xa0\x5c\x49\x8e\xad\x21"
-        uint8_t rng_data[] = RNG_DATA;
-        tc.rng_data = (_test_rng_data_source){.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
-#undef RNG_DATA
-        tc.algorithm = MONGOCRYPT_ALGORITHM_INDEXED_STR;
-        tc.user_key_id = &keyABC_id;
-        tc.index_key_id = &key123_id;
-        tc.contention_factor = OPT_I64(1);
-        tc.msg = TEST_BSON("{'v': 'value123'}");
-        tc.keys_to_feed[0] = keyABC;
-        tc.keys_to_feed[1] = key123;
-        tc.expect = TEST_FILE("./test/data/fle2-explicit/"
-                              "insert-indexed-contentionFactor1.json");
         ee_testcase_run(&tc);
     }
 
@@ -2536,26 +2116,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.keys_to_feed[1] = key123;
         tc.expect = TEST_FILE("./test/data/fle2-explicit/"
                               "insert-indexed-contentionFactor1-v2.json");
-        tc.use_v2 = true;
-        ee_testcase_run(&tc);
-    }
-
-    {
-        ee_testcase tc = {0};
-        tc.desc = "omitted index_key_id defaults to using user_key_id";
-#define RNG_DATA                                                                                                       \
-    "\xc7\x43\xd6\x75\x76\x9e\xa7\x88\xd5\xe5\xc4\x40\xdb\x24\x0d\xf9"                                                 \
-    "\x4c\xd9\x64\x10\x43\x81\xe6\x61\xfa\x1f\xa0\x5c\x49\x8e\xad\x21"
-        uint8_t rng_data[] = RNG_DATA;
-        tc.rng_data = (_test_rng_data_source){.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
-#undef RNG_DATA
-        tc.algorithm = MONGOCRYPT_ALGORITHM_INDEXED_STR;
-        tc.user_key_id = &keyABC_id;
-        tc.contention_factor = OPT_I64(0);
-        tc.msg = TEST_BSON("{'v': 'value123'}");
-        tc.keys_to_feed[0] = keyABC;
-        tc.expect = TEST_FILE("./test/data/fle2-explicit/"
-                              "insert-indexed-same-user-and-index-key.json");
         ee_testcase_run(&tc);
     }
 
@@ -2575,22 +2135,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.keys_to_feed[0] = keyABC;
         tc.expect = TEST_FILE("./test/data/fle2-explicit/"
                               "insert-indexed-same-user-and-index-key-v2.json");
-        tc.use_v2 = true;
-        ee_testcase_run(&tc);
-    }
-
-    {
-        ee_testcase tc = {0};
-        tc.desc = "algorithm='Indexed' with query type";
-        tc.algorithm = MONGOCRYPT_ALGORITHM_INDEXED_STR;
-        tc.query_type = MONGOCRYPT_QUERY_TYPE_EQUALITY_STR;
-        tc.user_key_id = &keyABC_id;
-        tc.index_key_id = &key123_id;
-        tc.contention_factor = OPT_I64(0);
-        tc.msg = TEST_BSON("{'v': 123456}");
-        tc.keys_to_feed[0] = keyABC;
-        tc.keys_to_feed[1] = key123;
-        tc.expect = TEST_FILE("./test/data/fle2-explicit/find-indexed.json");
         ee_testcase_run(&tc);
     }
 
@@ -2606,22 +2150,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.keys_to_feed[0] = keyABC;
         tc.keys_to_feed[1] = key123;
         tc.expect = TEST_FILE("./test/data/fle2-explicit/find-indexed-v2.json");
-        tc.use_v2 = true;
-        ee_testcase_run(&tc);
-    }
-
-    {
-        ee_testcase tc = {0};
-        tc.desc = "algorithm='Indexed' with query type and non-zero contention factor";
-        tc.algorithm = MONGOCRYPT_ALGORITHM_INDEXED_STR;
-        tc.query_type = MONGOCRYPT_QUERY_TYPE_EQUALITY_STR;
-        tc.user_key_id = &keyABC_id;
-        tc.index_key_id = &key123_id;
-        tc.contention_factor = OPT_I64(1);
-        tc.msg = TEST_BSON("{'v': 123456}");
-        tc.keys_to_feed[0] = keyABC;
-        tc.keys_to_feed[1] = key123;
-        tc.expect = TEST_FILE("./test/data/fle2-explicit/find-indexed-contentionFactor1.json");
         ee_testcase_run(&tc);
     }
 
@@ -2637,18 +2165,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.keys_to_feed[0] = keyABC;
         tc.keys_to_feed[1] = key123;
         tc.expect = TEST_FILE("./test/data/fle2-explicit/find-indexed-contentionFactor1-v2.json");
-        tc.use_v2 = true;
-        ee_testcase_run(&tc);
-    }
-
-    {
-        ee_testcase tc = {0};
-        tc.desc = "Negative contention factor is an error on insert";
-        tc.algorithm = MONGOCRYPT_ALGORITHM_INDEXED_STR;
-        tc.user_key_id = &keyABC_id;
-        tc.contention_factor = OPT_I64(-1);
-        tc.msg = TEST_BSON("{'v': 123456}");
-        tc.expect_init_error = "contention must be non-negative";
         ee_testcase_run(&tc);
     }
 
@@ -2660,18 +2176,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.contention_factor = OPT_I64(-1);
         tc.msg = TEST_BSON("{'v': 123456}");
         tc.expect_init_error = "contention must be non-negative";
-        tc.use_v2 = true;
-        ee_testcase_run(&tc);
-    }
-
-    {
-        ee_testcase tc = {0};
-        tc.desc = "INT64_MAX contention factor is an error on insert";
-        tc.algorithm = MONGOCRYPT_ALGORITHM_INDEXED_STR;
-        tc.user_key_id = &keyABC_id;
-        tc.contention_factor = OPT_I64(INT64_MAX);
-        tc.msg = TEST_BSON("{'v': 123456}");
-        tc.expect_init_error = "contention must be < INT64_MAX";
         ee_testcase_run(&tc);
     }
 
@@ -2683,28 +2187,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.contention_factor = OPT_I64(INT64_MAX);
         tc.msg = TEST_BSON("{'v': 123456}");
         tc.expect_init_error = "contention must be < INT64_MAX";
-        tc.use_v2 = true;
-        ee_testcase_run(&tc);
-    }
-
-    {
-        ee_testcase tc = {0};
-        tc.desc = "algorithm='Range' with int32";
-#include "./data/fle2-insert-range-explicit/int32/RNG_DATA.h"
-        tc.rng_data = (_test_rng_data_source){.buf = {.data = (uint8_t *)RNG_DATA, .len = sizeof(RNG_DATA) - 1}};
-#undef RNG_DATA
-        tc.algorithm = MONGOCRYPT_ALGORITHM_RANGE_STR;
-        tc.user_key_id = &keyABC_id;
-        tc.index_key_id = &key123_id;
-        tc.contention_factor = OPT_I64(0);
-        tc.range_opts = TEST_FILE("./test/data/fle2-insert-range-explicit/"
-                                  "int32/rangeopts.json");
-        tc.msg = TEST_FILE("./test/data/fle2-insert-range-explicit/int32/"
-                           "value-to-encrypt.json");
-        tc.keys_to_feed[0] = keyABC;
-        tc.keys_to_feed[1] = key123;
-        tc.expect = TEST_FILE("./test/data/fle2-insert-range-explicit/int32/"
-                              "encrypted-payload.json");
         ee_testcase_run(&tc);
     }
 
@@ -2726,28 +2208,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.keys_to_feed[1] = key123;
         tc.expect = TEST_FILE("./test/data/fle2-insert-range-explicit/int32/"
                               "encrypted-payload-v2.json");
-        tc.use_v2 = true;
-        ee_testcase_run(&tc);
-    }
-
-    {
-        ee_testcase tc = {0};
-        tc.desc = "algorithm='Range' with sparsity=2 with int32";
-#include "./data/fle2-insert-range-explicit/sparsity-2/RNG_DATA.h"
-        tc.rng_data = (_test_rng_data_source){.buf = {.data = (uint8_t *)RNG_DATA, .len = sizeof(RNG_DATA) - 1}};
-#undef RNG_DATA
-        tc.algorithm = MONGOCRYPT_ALGORITHM_RANGE_STR;
-        tc.user_key_id = &keyABC_id;
-        tc.index_key_id = &key123_id;
-        tc.contention_factor = OPT_I64(0);
-        tc.range_opts = TEST_FILE("./test/data/fle2-insert-range-explicit/"
-                                  "sparsity-2/rangeopts.json");
-        tc.msg = TEST_FILE("./test/data/fle2-insert-range-explicit/sparsity-2/"
-                           "value-to-encrypt.json");
-        tc.keys_to_feed[0] = keyABC;
-        tc.keys_to_feed[1] = key123;
-        tc.expect = TEST_FILE("./test/data/fle2-insert-range-explicit/sparsity-2/"
-                              "encrypted-payload.json");
         ee_testcase_run(&tc);
     }
 
@@ -2769,26 +2229,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.keys_to_feed[1] = key123;
         tc.expect = TEST_FILE("./test/data/fle2-insert-range-explicit/sparsity-2/"
                               "encrypted-payload-v2.json");
-        tc.use_v2 = true;
-        ee_testcase_run(&tc);
-    }
-
-    {
-        ee_testcase tc = {0};
-        tc.desc = "algorithm='Range' with query_type='range' with int32";
-        tc.algorithm = MONGOCRYPT_ALGORITHM_RANGE_STR;
-        tc.user_key_id = &keyABC_id;
-        tc.index_key_id = &keyABC_id;
-        tc.contention_factor = OPT_I64(4);
-        tc.query_type = MONGOCRYPT_QUERY_TYPE_RANGE_STR;
-        tc.range_opts = TEST_FILE("./test/data/fle2-find-range-explicit/"
-                                  "int32/rangeopts.json");
-        tc.msg = TEST_FILE("./test/data/fle2-find-range-explicit/int32/"
-                           "value-to-encrypt.json");
-        tc.keys_to_feed[0] = keyABC;
-        tc.expect = TEST_FILE("./test/data/fle2-find-range-explicit/int32/"
-                              "encrypted-payload.json");
-        tc.is_expression = true;
         ee_testcase_run(&tc);
     }
 
@@ -2808,20 +2248,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.expect = TEST_FILE("./test/data/fle2-find-range-explicit/int32/"
                               "encrypted-payload-v2.json");
         tc.is_expression = true;
-        tc.use_v2 = true;
-        ee_testcase_run(&tc);
-    }
-
-    {
-        ee_testcase tc = {0};
-        tc.desc = "An unsupported range BSON type is an error";
-        tc.algorithm = MONGOCRYPT_ALGORITHM_RANGE_STR;
-        tc.user_key_id = &keyABC_id;
-        tc.contention_factor = OPT_I64(0);
-        tc.range_opts = TEST_BSON("{'min': 0, 'max': 1, 'sparsity': {'$numberLong': '1'}}");
-        tc.msg = TEST_BSON("{'v': 'abc'}");
-        tc.keys_to_feed[0] = keyABC;
-        tc.expect_finalize_error = "expected matching 'min' and value type";
         ee_testcase_run(&tc);
     }
 
@@ -2835,28 +2261,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.msg = TEST_BSON("{'v': 'abc'}");
         tc.keys_to_feed[0] = keyABC;
         tc.expect_finalize_error = "expected matching 'min' and value type";
-        tc.use_v2 = true;
-        ee_testcase_run(&tc);
-    }
-
-    {
-        ee_testcase tc = {0};
-        tc.desc = "algorithm='Range' with query_type='range' with double with "
-                  "precision";
-        tc.algorithm = MONGOCRYPT_ALGORITHM_RANGE_STR;
-        tc.user_key_id = &keyABC_id;
-        tc.index_key_id = &key123_id;
-        tc.contention_factor = OPT_I64(0);
-        tc.query_type = MONGOCRYPT_QUERY_TYPE_RANGE_STR;
-        tc.range_opts = TEST_FILE("./test/data/fle2-find-range-explicit/double-precision/"
-                                  "rangeopts.json");
-        tc.msg = TEST_FILE("./test/data/fle2-find-range-explicit/"
-                           "double-precision/value-to-encrypt.json");
-        tc.keys_to_feed[0] = keyABC;
-        tc.keys_to_feed[1] = key123;
-        tc.expect = TEST_FILE("./test/data/fle2-find-range-explicit/"
-                              "double-precision/encrypted-payload.json");
-        tc.is_expression = true;
         ee_testcase_run(&tc);
     }
 
@@ -2878,28 +2282,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.expect = TEST_FILE("./test/data/fle2-find-range-explicit/"
                               "double-precision/encrypted-payload-v2.json");
         tc.is_expression = true;
-        tc.use_v2 = true;
-        ee_testcase_run(&tc);
-    }
-
-    {
-        ee_testcase tc = {0};
-        tc.desc = "algorithm='Range' with double precision with precision";
-#include "./data/fle2-insert-range-explicit/double-precision/RNG_DATA.h"
-        tc.rng_data = (_test_rng_data_source){.buf = {.data = (uint8_t *)RNG_DATA, .len = sizeof(RNG_DATA) - 1}};
-#undef RNG_DATA
-        tc.algorithm = MONGOCRYPT_ALGORITHM_RANGE_STR;
-        tc.user_key_id = &keyABC_id;
-        tc.index_key_id = &key123_id;
-        tc.contention_factor = OPT_I64(0);
-        tc.range_opts = TEST_FILE("./test/data/fle2-insert-range-explicit/double-precision/"
-                                  "rangeopts.json");
-        tc.msg = TEST_FILE("./test/data/fle2-insert-range-explicit/"
-                           "double-precision/value-to-encrypt.json");
-        tc.keys_to_feed[0] = keyABC;
-        tc.keys_to_feed[1] = key123;
-        tc.expect = TEST_FILE("./test/data/fle2-insert-range-explicit/double-precision/"
-                              "encrypted-payload.json");
         ee_testcase_run(&tc);
     }
 
@@ -2921,26 +2303,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.keys_to_feed[1] = key123;
         tc.expect = TEST_FILE("./test/data/fle2-insert-range-explicit/double-precision/"
                               "encrypted-payload-v2.json");
-        tc.use_v2 = true;
-        ee_testcase_run(&tc);
-    }
-
-    {
-        ee_testcase tc = {0};
-        tc.desc = "algorithm='Range' with query_type='range' with double without "
-                  "precision";
-        tc.algorithm = MONGOCRYPT_ALGORITHM_RANGE_STR;
-        tc.user_key_id = &keyABC_id;
-        tc.index_key_id = &key123_id;
-        tc.contention_factor = OPT_I64(0);
-        tc.query_type = MONGOCRYPT_QUERY_TYPE_RANGE_STR;
-        tc.range_opts = TEST_FILE("./test/data/fle2-find-range-explicit/double/"
-                                  "rangeopts.json");
-        tc.msg = TEST_FILE("./test/data/fle2-find-range-explicit/double/value-to-encrypt.json");
-        tc.keys_to_feed[0] = keyABC;
-        tc.keys_to_feed[1] = key123;
-        tc.expect = TEST_FILE("./test/data/fle2-find-range-explicit/double/encrypted-payload.json");
-        tc.is_expression = true;
         ee_testcase_run(&tc);
     }
 
@@ -2960,27 +2322,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.keys_to_feed[1] = key123;
         tc.expect = TEST_FILE("./test/data/fle2-find-range-explicit/double/encrypted-payload-v2.json");
         tc.is_expression = true;
-        tc.use_v2 = true;
-        ee_testcase_run(&tc);
-    }
-
-    {
-        ee_testcase tc = {0};
-        tc.desc = "algorithm='Range' with double without precision";
-#include "./data/fle2-insert-range-explicit/double/RNG_DATA.h"
-        tc.rng_data = (_test_rng_data_source){.buf = {.data = (uint8_t *)RNG_DATA, .len = sizeof(RNG_DATA) - 1}};
-#undef RNG_DATA
-        tc.algorithm = MONGOCRYPT_ALGORITHM_RANGE_STR;
-        tc.user_key_id = &keyABC_id;
-        tc.index_key_id = &key123_id;
-        tc.contention_factor = OPT_I64(0);
-        tc.range_opts = TEST_FILE("./test/data/fle2-insert-range-explicit/double/"
-                                  "rangeopts.json");
-        tc.msg = TEST_FILE("./test/data/fle2-insert-range-explicit/double/value-to-encrypt.json");
-        tc.keys_to_feed[0] = keyABC;
-        tc.keys_to_feed[1] = key123;
-        tc.expect = TEST_FILE("./test/data/fle2-insert-range-explicit/double/"
-                              "encrypted-payload.json");
         ee_testcase_run(&tc);
     }
 
@@ -3001,20 +2342,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.keys_to_feed[1] = key123;
         tc.expect = TEST_FILE("./test/data/fle2-insert-range-explicit/double/"
                               "encrypted-payload-v2.json");
-        tc.use_v2 = true;
-        ee_testcase_run(&tc);
-    }
-
-    {
-        ee_testcase tc = {0};
-        tc.desc = "min > max for insert";
-        tc.algorithm = MONGOCRYPT_ALGORITHM_RANGE_STR;
-        tc.user_key_id = &keyABC_id;
-        tc.contention_factor = OPT_I64(0);
-        tc.range_opts = TEST_BSON("{'min': 1, 'max': 0, 'sparsity': {'$numberLong': '1'}}");
-        tc.msg = TEST_FILE("./test/data/fle2-insert-range-explicit/int32/value-to-encrypt.json");
-        tc.keys_to_feed[0] = keyABC;
-        tc.expect_finalize_error = "minimum value must be less than the maximum value";
         ee_testcase_run(&tc);
     }
 
@@ -3028,22 +2355,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.msg = TEST_FILE("./test/data/fle2-insert-range-explicit/int32/value-to-encrypt.json");
         tc.keys_to_feed[0] = keyABC;
         tc.expect_finalize_error = "minimum value must be less than the maximum value";
-        tc.use_v2 = true;
-        ee_testcase_run(&tc);
-    }
-
-    {
-        ee_testcase tc = {0};
-        tc.desc = "min > max for find";
-        tc.algorithm = MONGOCRYPT_ALGORITHM_RANGE_STR;
-        tc.query_type = MONGOCRYPT_QUERY_TYPE_RANGE_STR;
-        tc.user_key_id = &keyABC_id;
-        tc.contention_factor = OPT_I64(0);
-        tc.range_opts = TEST_BSON("{'min': 25, 'max': 24, 'sparsity': {'$numberLong': '1'}}");
-        tc.msg = TEST_FILE("./test/data/fle2-find-range-explicit/int32/value-to-encrypt.json");
-        tc.keys_to_feed[0] = keyABC;
-        tc.expect_finalize_error = "minimum value must be less than the maximum value";
-        tc.is_expression = true;
         ee_testcase_run(&tc);
     }
 
@@ -3064,24 +2375,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
 
     {
         ee_testcase tc = {0};
-        tc.desc = "open interval";
-        tc.algorithm = MONGOCRYPT_ALGORITHM_RANGE_STR;
-        tc.query_type = MONGOCRYPT_QUERY_TYPE_RANGE_STR;
-        tc.user_key_id = &keyABC_id;
-        tc.contention_factor = OPT_I64(0);
-        tc.range_opts = TEST_FILE("./test/data/fle2-find-range-explicit/"
-                                  "int32-openinterval/rangeopts.json");
-        tc.msg = TEST_FILE("./test/data/fle2-find-range-explicit/"
-                           "int32-openinterval/value-to-encrypt.json");
-        tc.keys_to_feed[0] = keyABC;
-        tc.expect = TEST_FILE("./test/data/fle2-find-range-explicit/"
-                              "int32-openinterval/encrypted-payload.json");
-        tc.is_expression = true;
-        ee_testcase_run(&tc);
-    }
-
-    {
-        ee_testcase tc = {0};
         tc.desc = "open interval (v2)";
         tc.algorithm = MONGOCRYPT_ALGORITHM_RANGE_STR;
         tc.query_type = MONGOCRYPT_QUERY_TYPE_RANGE_STR;
@@ -3095,7 +2388,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.expect = TEST_FILE("./test/data/fle2-find-range-explicit/"
                               "int32-openinterval/encrypted-payload-v2.json");
         tc.is_expression = true;
-        tc.use_v2 = true;
         ee_testcase_run(&tc);
     }
 
@@ -3179,17 +2471,13 @@ static void _test_encrypt_applies_default_state_collections(_mongocrypt_tester_t
                                             TEST_BSON("{'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'bar'}}")),
             crypt);
         ASSERT_OK(mongocrypt_setopt_encrypted_field_config_map(crypt, TEST_BSON("{'db.coll': {'fields': []}}")), crypt);
-        // TODO(MONGOCRYPT-572): This test uses the QEv1 protocol. Update this test for QEv2 or remove. Note: decrypting
-        // QEv1 is still supported.
-        ASSERT_OK(mongocrypt_setopt_fle2v2(crypt, false), crypt);
         ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
         ctx = mongocrypt_ctx_new(crypt);
         ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_BSON("{'find': 'coll'}")), ctx);
         ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
         {
             const char *expect_schema = "{ 'fields': [], 'escCollection': "
-                                        "'enxcol_.coll.esc', 'eccCollection': "
-                                        "'enxcol_.coll.ecc', 'ecocCollection': "
+                                        "'enxcol_.coll.esc', 'ecocCollection': "
                                         "'enxcol_.coll.ecoc' }";
             mongocrypt_binary_t *cmd_to_mongocryptd;
 
@@ -3214,17 +2502,14 @@ static void _test_encrypt_applies_default_state_collections(_mongocrypt_tester_t
             crypt);
         ASSERT_OK(mongocrypt_setopt_encrypted_field_config_map(
                       crypt,
-                      TEST_BSON("{'db.coll': { 'fields': [], 'escCollection': 'esc', "
-                                "'eccCollection': 'ecc', 'ecocCollection': 'ecoc'}}")),
+                      TEST_BSON("{'db.coll': { 'fields': [], 'escCollection': 'esc', 'ecocCollection': 'ecoc'}}")),
                   crypt);
         ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
         ctx = mongocrypt_ctx_new(crypt);
         ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_BSON("{'find': 'coll'}")), ctx);
         ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
         {
-            const char *expect_schema = "{'fields': [], 'escCollection': 'esc', "
-                                        "'eccCollection': 'ecc', "
-                                        "'ecocCollection': 'ecoc' }";
+            const char *expect_schema = "{'fields': [], 'escCollection': 'esc', 'ecocCollection': 'ecoc' }";
             mongocrypt_binary_t *cmd_to_mongocryptd;
 
             cmd_to_mongocryptd = mongocrypt_binary_new();
@@ -3246,19 +2531,17 @@ static void _test_encrypt_applies_default_state_collections(_mongocrypt_tester_t
             mongocrypt_setopt_kms_providers(crypt,
                                             TEST_BSON("{'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'bar'}}")),
             crypt);
-        ASSERT_OK(
-            mongocrypt_setopt_encrypted_field_config_map(crypt,
-                                                         TEST_BSON("{'fields': [], 'db.coll': {'escCollection': "
-                                                                   "'esc', 'eccCollection': 'ecc', 'fields': []}}")),
-            crypt);
+        ASSERT_OK(mongocrypt_setopt_encrypted_field_config_map(crypt,
+                                                               TEST_BSON("{'fields': [], 'db.coll': {'escCollection': "
+                                                                         "'esc', 'fields': []}}")),
+                  crypt);
         ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
         ctx = mongocrypt_ctx_new(crypt);
         ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_BSON("{'find': 'coll'}")), ctx);
         ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
         {
-            const char *expect_schema = "{'escCollection': 'esc', "
-                                        "'eccCollection': 'ecc', 'fields': [], "
-                                        "'ecocCollection': 'enxcol_.coll.ecoc' }";
+            const char *expect_schema =
+                "{'escCollection': 'esc', 'fields': [], 'ecocCollection': 'enxcol_.coll.ecoc' }";
             mongocrypt_binary_t *cmd_to_mongocryptd;
 
             cmd_to_mongocryptd = mongocrypt_binary_new();
@@ -3270,280 +2553,6 @@ static void _test_encrypt_applies_default_state_collections(_mongocrypt_tester_t
             mongocrypt_binary_destroy(cmd_to_mongocryptd);
             ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
         }
-        mongocrypt_ctx_destroy(ctx);
-        mongocrypt_destroy(crypt);
-    }
-}
-
-/* Test encrypting an empty 'delete' command without values to be encrypted.
- * Expect deleteTokens to be applied. */
-static void _test_encrypt_fle2_delete_v1(_mongocrypt_tester_t *tester) {
-    /* Test success. */
-    {
-        // TODO(MONGOCRYPT-572): This test uses the QEv1 protocol. Update this test for QEv2 or remove. Note: decrypting
-        // QEv1 is still supported.
-        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_WITH_CRYPT_V1);
-        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
-
-        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_FILE("./test/data/fle2-delete/success/cmd.json")),
-                  ctx);
-
-        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
-        {
-            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TEST_FILE("./test/data/fle2-delete/success/collinfo.json")), ctx);
-            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
-        }
-
-        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
-        {
-            ASSERT_OK(
-                mongocrypt_ctx_mongo_feed(ctx, TEST_FILE("./test/data/fle2-delete/success/mongocryptd-reply.json")),
-                ctx);
-            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
-        }
-
-        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
-        {
-            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx,
-                                                TEST_FILE("./test/data/keys/"
-                                                          "ABCDEFAB123498761234123456789012-local-document.json")),
-                      ctx);
-            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx,
-                                                TEST_FILE("./test/data/keys/"
-                                                          "12345678123498761234123456789012-local-document.json")),
-                      ctx);
-            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx,
-                                                TEST_FILE("./test/data/keys/"
-                                                          "12345678123498761234123456789013-local-document.json")),
-                      ctx);
-            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
-        }
-
-        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
-        {
-            mongocrypt_binary_t *out = mongocrypt_binary_new();
-            ASSERT_OK(mongocrypt_ctx_finalize(ctx, out), ctx);
-            ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TEST_FILE("./test/data/fle2-delete/success/encrypted-payload.json"),
-                                                out);
-            mongocrypt_binary_destroy(out);
-        }
-
-        mongocrypt_ctx_destroy(ctx);
-        mongocrypt_destroy(crypt);
-    }
-    /* Test with no encrypted values. */
-    {
-        // TODO(MONGOCRYPT-572): This test uses the QEv1 protocol. Update this test for QEv2 or remove. Note: decrypting
-        // QEv1 is still supported.
-        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_WITH_CRYPT_V1);
-        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
-
-        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_FILE("./test/data/fle2-delete/empty/cmd.json")), ctx);
-
-        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
-        {
-            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TEST_FILE("./test/data/fle2-delete/empty/collinfo.json")), ctx);
-            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
-        }
-
-        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
-        {
-            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TEST_FILE("./test/data/fle2-delete/empty/mongocryptd-reply.json")),
-                      ctx);
-            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
-        }
-
-        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
-        {
-            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx,
-                                                TEST_FILE("./test/data/keys/"
-                                                          "12345678123498761234123456789012-local-document.json")),
-                      ctx);
-            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx,
-                                                TEST_FILE("./test/data/keys/"
-                                                          "12345678123498761234123456789013-local-document.json")),
-                      ctx);
-            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
-        }
-
-        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
-        {
-            mongocrypt_binary_t *out = mongocrypt_binary_new();
-            ASSERT_OK(mongocrypt_ctx_finalize(ctx, out), ctx);
-            ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TEST_FILE("./test/data/fle2-delete/empty/encrypted-payload.json"), out);
-            mongocrypt_binary_destroy(out);
-        }
-
-        mongocrypt_ctx_destroy(ctx);
-        mongocrypt_destroy(crypt);
-    }
-
-    /* deleteTokens are appended when bypassQueryAnalysis is true. */
-    {
-        mongocrypt_t *crypt = mongocrypt_new();
-        /* Configure crypt. */
-        {
-            char localkey_data[MONGOCRYPT_KEY_LEN] = {0};
-            mongocrypt_binary_t *localkey;
-            localkey = mongocrypt_binary_new_from_data((uint8_t *)localkey_data, sizeof localkey_data);
-            ASSERT_OK(mongocrypt_setopt_kms_provider_local(crypt, localkey), crypt);
-            mongocrypt_binary_destroy(localkey);
-            mongocrypt_setopt_bypass_query_analysis(crypt);
-            // TODO(MONGOCRYPT-572): This test uses the QEv1 protocol. Update this test for QEv2 or remove. Note:
-            // decrypting
-            // QEv1 is still supported.
-            ASSERT_OK(mongocrypt_setopt_fle2v2(crypt, false), crypt);
-            ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
-        }
-
-        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
-
-        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_FILE("./test/data/fle2-delete/empty/cmd.json")), ctx);
-
-        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
-        {
-            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TEST_FILE("./test/data/fle2-delete/empty/collinfo.json")), ctx);
-            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
-        }
-
-        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
-        {
-            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx,
-                                                TEST_FILE("./test/data/keys/"
-                                                          "12345678123498761234123456789012-local-document.json")),
-                      ctx);
-            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx,
-                                                TEST_FILE("./test/data/keys/"
-                                                          "12345678123498761234123456789013-local-document.json")),
-                      ctx);
-            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
-        }
-
-        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
-        {
-            mongocrypt_binary_t *out = mongocrypt_binary_new();
-            ASSERT_OK(mongocrypt_ctx_finalize(ctx, out), ctx);
-            ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TEST_FILE("./test/data/fle2-delete/empty/encrypted-payload.json"), out);
-            mongocrypt_binary_destroy(out);
-        }
-
-        mongocrypt_ctx_destroy(ctx);
-        mongocrypt_destroy(crypt);
-    }
-
-    /* Test that deleteTokens are appended when using an
-     * encrypted_field_config_map. */
-    {
-        mongocrypt_t *crypt = mongocrypt_new();
-        /* Configure crypt. */
-        {
-            char localkey_data[MONGOCRYPT_KEY_LEN] = {0};
-            mongocrypt_binary_t *localkey;
-            localkey = mongocrypt_binary_new_from_data((uint8_t *)localkey_data, sizeof localkey_data);
-            ASSERT_OK(mongocrypt_setopt_kms_provider_local(crypt, localkey), crypt);
-            mongocrypt_binary_destroy(localkey);
-            ASSERT_OK(mongocrypt_setopt_encrypted_field_config_map(crypt,
-                                                                   TEST_FILE("./test/data/fle2-delete/success/"
-                                                                             "encrypted-field-config-map.json")),
-                      crypt);
-            // TODO(MONGOCRYPT-572): This test uses the QEv1 protocol. Update this test for QEv2 or remove. Note:
-            // decrypting
-            // QEv1 is still supported.
-            ASSERT_OK(mongocrypt_setopt_fle2v2(crypt, false), crypt);
-            ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
-        }
-
-        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
-
-        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_FILE("./test/data/fle2-delete/success/cmd.json")),
-                  ctx);
-
-        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
-        {
-            ASSERT_OK(
-                mongocrypt_ctx_mongo_feed(ctx, TEST_FILE("./test/data/fle2-delete/success/mongocryptd-reply.json")),
-                ctx);
-            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
-        }
-
-        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
-        {
-            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx,
-                                                TEST_FILE("./test/data/keys/"
-                                                          "ABCDEFAB123498761234123456789012-local-document.json")),
-                      ctx);
-            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx,
-                                                TEST_FILE("./test/data/keys/"
-                                                          "12345678123498761234123456789012-local-document.json")),
-                      ctx);
-            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx,
-                                                TEST_FILE("./test/data/keys/"
-                                                          "12345678123498761234123456789013-local-document.json")),
-                      ctx);
-            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
-        }
-
-        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
-        {
-            mongocrypt_binary_t *out = mongocrypt_binary_new();
-            ASSERT_OK(mongocrypt_ctx_finalize(ctx, out), ctx);
-            ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TEST_FILE("./test/data/fle2-delete/success/encrypted-payload.json"),
-                                                out);
-            mongocrypt_binary_destroy(out);
-        }
-
-        mongocrypt_ctx_destroy(ctx);
-        mongocrypt_destroy(crypt);
-    }
-
-    /* Test that deleteTokens are appended when using an
-     * encrypted_field_config_map and bypass_query_analysis. */
-    {
-        mongocrypt_t *crypt = mongocrypt_new();
-        /* Configure crypt. */
-        {
-            char localkey_data[MONGOCRYPT_KEY_LEN] = {0};
-            mongocrypt_binary_t *localkey;
-            localkey = mongocrypt_binary_new_from_data((uint8_t *)localkey_data, sizeof localkey_data);
-            ASSERT_OK(mongocrypt_setopt_kms_provider_local(crypt, localkey), crypt);
-            mongocrypt_binary_destroy(localkey);
-            ASSERT_OK(mongocrypt_setopt_encrypted_field_config_map(crypt,
-                                                                   TEST_FILE("./test/data/fle2-delete/empty/"
-                                                                             "encrypted-field-config-map.json")),
-                      crypt);
-            mongocrypt_setopt_bypass_query_analysis(crypt);
-            // TODO(MONGOCRYPT-572): This test uses the QEv1 protocol. Update this test for QEv2 or remove. Note:
-            // decrypting
-            // QEv1 is still supported.
-            ASSERT_OK(mongocrypt_setopt_fle2v2(crypt, false), crypt);
-            ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
-        }
-
-        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
-
-        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_FILE("./test/data/fle2-delete/empty/cmd.json")), ctx);
-
-        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
-        {
-            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx,
-                                                TEST_FILE("./test/data/keys/"
-                                                          "12345678123498761234123456789012-local-document.json")),
-                      ctx);
-            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx,
-                                                TEST_FILE("./test/data/keys/"
-                                                          "12345678123498761234123456789013-local-document.json")),
-                      ctx);
-            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
-        }
-
-        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
-        {
-            mongocrypt_binary_t *out = mongocrypt_binary_new();
-            ASSERT_OK(mongocrypt_ctx_finalize(ctx, out), ctx);
-            ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TEST_FILE("./test/data/fle2-delete/empty/encrypted-payload.json"), out);
-            mongocrypt_binary_destroy(out);
-        }
-
         mongocrypt_ctx_destroy(ctx);
         mongocrypt_destroy(crypt);
     }
@@ -3635,7 +2644,7 @@ static void _test_encrypt_fle2_delete_v2(_mongocrypt_tester_t *tester) {
         mongocrypt_destroy(crypt);
     }
 
-    /* Test that deleteTokens are no appended when bypassQueryAnalysis is true in v2. */
+    /* Test that deleteTokens are not appended when bypassQueryAnalysis is true in v2. */
     {
         mongocrypt_t *crypt = mongocrypt_new();
         /* Configure crypt. */
@@ -3646,7 +2655,6 @@ static void _test_encrypt_fle2_delete_v2(_mongocrypt_tester_t *tester) {
             ASSERT_OK(mongocrypt_setopt_kms_provider_local(crypt, localkey), crypt);
             mongocrypt_binary_destroy(localkey);
             mongocrypt_setopt_bypass_query_analysis(crypt);
-            mongocrypt_setopt_fle2v2(crypt, true);
             ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
         }
 
@@ -3689,7 +2697,6 @@ static void _test_encrypt_fle2_delete_v2(_mongocrypt_tester_t *tester) {
                                                                    TEST_FILE("./test/data/fle2-delete/success/"
                                                                              "encrypted-field-config-map.json")),
                       crypt);
-            mongocrypt_setopt_fle2v2(crypt, true);
             ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
         }
 
@@ -3748,7 +2755,6 @@ static void _test_encrypt_fle2_delete_v2(_mongocrypt_tester_t *tester) {
                                                                              "encrypted-field-config-map.json")),
                       crypt);
             mongocrypt_setopt_bypass_query_analysis(crypt);
-            mongocrypt_setopt_fle2v2(crypt, true);
             ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
         }
 
@@ -3771,7 +2777,6 @@ static void _test_encrypt_fle2_delete_v2(_mongocrypt_tester_t *tester) {
 }
 
 static void _test_encrypt_fle2_delete(_mongocrypt_tester_t *tester) {
-    _test_encrypt_fle2_delete_v1(tester);
     _test_encrypt_fle2_delete_v2(tester);
 }
 
@@ -3781,9 +2786,7 @@ static void _test_encrypt_fle2_omits_encryptionInformation(_mongocrypt_tester_t 
     /* 'find' does not include 'encryptionInformation' if no fields are
      * encrypted. */
     {
-        // TODO(MONGOCRYPT-572): This test uses the QEv1 protocol. Update this test for QEv2 or remove. Note: decrypting
-        // QEv1 is still supported.
-        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_WITH_CRYPT_V1);
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
         mongocrypt_ctx_t *ctx;
 
         ctx = mongocrypt_ctx_new(crypt);
@@ -3826,9 +2829,7 @@ static void _test_encrypt_fle2_omits_encryptionInformation(_mongocrypt_tester_t 
     /* 'find' includes encryptionInformation if the initial command includes an
      * explicitly encrypted payload. */
     {
-        // TODO(MONGOCRYPT-572): This test uses the QEv1 protocol. Update this test for QEv2 or remove. Note: decrypting
-        // QEv1 is still supported.
-        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_WITH_CRYPT_V1);
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
         mongocrypt_ctx_t *ctx;
 
         ctx = mongocrypt_ctx_new(crypt);
@@ -3875,9 +2876,7 @@ static void _test_encrypt_fle2_explain_with_mongocryptd(_mongocrypt_tester_t *te
     /* Test with an encrypted value. Otherwise 'encryptionInformation' is not
      * appended. */
     {
-        // TODO(MONGOCRYPT-572): This test uses the QEv1 protocol. Update this test for QEv2 or remove. Note: decrypting
-        // QEv1 is still supported.
-        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_WITH_CRYPT_V1);
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
 
         ASSERT_OK(
@@ -3939,17 +2938,14 @@ static void _test_encrypt_fle2_explain_with_mongocryptd(_mongocrypt_tester_t *te
 
 static void _test_encrypt_fle2_explain_with_csfle(_mongocrypt_tester_t *tester) {
     if (!TEST_MONGOCRYPT_HAVE_REAL_CRYPT_SHARED_LIB) {
-        fputs("No 'real' csfle library is available. The "
-              "_test_encrypt_fle2_explain_with_csfle test is a no-op.",
-              stderr);
+        TEST_STDERR_PRINTF("No 'real' csfle library is available. The %s test is a no-op.\n", BSON_FUNC);
         return;
     }
 
     /* Test with an encrypted value. Otherwise 'encryptionInformation' is not
      * appended. */
     {
-        mongocrypt_t *crypt =
-            _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_WITH_CRYPT_SHARED_LIB | TESTER_MONGOCRYPT_WITH_CRYPT_V1);
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_WITH_CRYPT_SHARED_LIB);
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
 
         ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_FILE("./test/data/fle2-explain/with-csfle/cmd.json")),
@@ -4037,9 +3033,7 @@ static void _test_encrypt_fle1_explain_with_mongocryptd(_mongocrypt_tester_t *te
 
 static void _test_encrypt_fle1_explain_with_csfle(_mongocrypt_tester_t *tester) {
     if (!TEST_MONGOCRYPT_HAVE_REAL_CRYPT_SHARED_LIB) {
-        fputs("No 'real' csfle library is available. The "
-              "_test_encrypt_fle1_explain_with_csfle test is a no-op.",
-              stderr);
+        TEST_STDERR_PRINTF("No 'real' csfle library is available. The %s test is a no-op.\n", BSON_FUNC);
         return;
     }
 
@@ -4075,9 +3069,7 @@ static void _test_encrypt_fle1_explain_with_csfle(_mongocrypt_tester_t *tester) 
 // Test that an input command with $db preserves $db in the output.
 static void _test_dollardb_preserved(_mongocrypt_tester_t *tester) {
     /* Test with an encrypted value. */
-    // TODO(MONGOCRYPT-572): This test uses the QEv1 protocol. Update this test for QEv2 or remove. Note: decrypting
-    // QEv1 is still supported.
-    mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_WITH_CRYPT_V1);
+    mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
     mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
 
     ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_FILE("./test/data/dollardb/preserved/cmd.json")), ctx);
@@ -4180,9 +3172,7 @@ static void _test_dollardb_preserved_empty(_mongocrypt_tester_t *tester) {
 
 // Test that an input command with no $db does not include $db in the output.
 static void _test_dollardb_omitted(_mongocrypt_tester_t *tester) {
-    // TODO(MONGOCRYPT-572): This test uses the QEv1 protocol. Update this test for QEv2 or remove. Note: decrypting
-    // QEv1 is still supported.
-    mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_WITH_CRYPT_V1);
+    mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
     mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
 
     ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_FILE("./test/data/dollardb/omitted/cmd.json")), ctx);
@@ -4291,6 +3281,24 @@ static void _test_dollardb_preserved_fle1(_mongocrypt_tester_t *tester) {
     mongocrypt_destroy(crypt);
 }
 
+#define expect_mongo_op(ctx, expect)                                                                                   \
+    if (1) {                                                                                                           \
+        mongocrypt_binary_t *got = mongocrypt_binary_new();                                                            \
+        ASSERT_OK(mongocrypt_ctx_mongo_op(ctx, got), ctx);                                                             \
+        ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON((expect), got);                                                            \
+        mongocrypt_binary_destroy(got);                                                                                \
+    } else                                                                                                             \
+        ((void)0)
+
+#define expect_and_reply_to_ismaster(ctx)                                                                              \
+    if (1) {                                                                                                           \
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);                             \
+        expect_mongo_op(ctx, TEST_BSON("{'isMaster': 1}"));                                                            \
+        ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TEST_FILE("./test/data/mongocryptd-ismaster-26.json")), ctx);         \
+        ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);                                                                \
+    } else                                                                                                             \
+        ((void)0)
+
 static void _test_fle1_create_without_schema(_mongocrypt_tester_t *tester) {
     mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
     mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
@@ -4298,21 +3306,7 @@ static void _test_fle1_create_without_schema(_mongocrypt_tester_t *tester) {
     ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_FILE("./test/data/fle1-create/without-schema/cmd.json")),
               ctx);
 
-    ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
-    {
-        mongocrypt_binary_t *cmd_to_mongocryptd = mongocrypt_binary_new();
-
-        ASSERT_OK(mongocrypt_ctx_mongo_op(ctx, cmd_to_mongocryptd), ctx);
-        ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TEST_FILE("./test/data/fle1-create/without-schema/"
-                                                      "ismaster-to-mongocryptd.json"),
-                                            cmd_to_mongocryptd);
-        mongocrypt_binary_destroy(cmd_to_mongocryptd);
-        ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx,
-                                            TEST_FILE("./test/data/fle1-create/without-schema/"
-                                                      "mongocryptd-ismaster.json")),
-                  ctx);
-        ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
-    }
+    expect_and_reply_to_ismaster(ctx);
 
     ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
     {
@@ -4356,21 +3350,7 @@ static void _test_fle1_create_with_schema(_mongocrypt_tester_t *tester) {
     ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_FILE("./test/data/fle1-create/with-schema/cmd.json")),
               ctx);
 
-    ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
-    {
-        mongocrypt_binary_t *cmd_to_mongocryptd = mongocrypt_binary_new();
-
-        ASSERT_OK(mongocrypt_ctx_mongo_op(ctx, cmd_to_mongocryptd), ctx);
-        ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TEST_FILE("./test/data/fle1-create/with-schema/"
-                                                      "ismaster-to-mongocryptd.json"),
-                                            cmd_to_mongocryptd);
-        mongocrypt_binary_destroy(cmd_to_mongocryptd);
-        ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx,
-                                            TEST_FILE("./test/data/fle1-create/with-schema/"
-                                                      "mongocryptd-ismaster.json")),
-                  ctx);
-        ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
-    }
+    expect_and_reply_to_ismaster(ctx);
 
     ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
     {
@@ -4409,21 +3389,7 @@ static void _test_fle1_create_with_cmd_schema(_mongocrypt_tester_t *tester) {
     ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_FILE("./test/data/fle1-create/with-cmd-schema/cmd.json")),
               ctx);
 
-    ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
-    {
-        mongocrypt_binary_t *cmd_to_mongocryptd = mongocrypt_binary_new();
-
-        ASSERT_OK(mongocrypt_ctx_mongo_op(ctx, cmd_to_mongocryptd), ctx);
-        ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TEST_FILE("./test/data/fle1-create/with-cmd-schema/"
-                                                      "ismaster-to-mongocryptd.json"),
-                                            cmd_to_mongocryptd);
-        mongocrypt_binary_destroy(cmd_to_mongocryptd);
-        ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx,
-                                            TEST_FILE("./test/data/fle1-create/with-cmd-schema/"
-                                                      "mongocryptd-ismaster.json")),
-                  ctx);
-        ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
-    }
+    expect_and_reply_to_ismaster(ctx);
 
     ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
     {
@@ -4494,9 +3460,7 @@ static void _test_fle1_create_old_mongocryptd(_mongocrypt_tester_t *tester) {
 
 static void _test_fle1_create_with_csfle(_mongocrypt_tester_t *tester) {
     if (!TEST_MONGOCRYPT_HAVE_REAL_CRYPT_SHARED_LIB) {
-        fputs("No 'real' csfle library is available. The "
-              "_test_fle1_create_with_csfle test is a no-op.",
-              stderr);
+        TEST_STDERR_PRINTF("No 'real' csfle library is available. The %s test is a no-op.\n", BSON_FUNC);
         return;
     }
 
@@ -4519,45 +3483,32 @@ static void _test_fle1_create_with_csfle(_mongocrypt_tester_t *tester) {
     mongocrypt_destroy(crypt);
 }
 
-static void _test_fle2_create(_mongocrypt_tester_t *tester) {
+static void test_successful_fle2_create(_mongocrypt_tester_t *tester,
+                                        const char *efc_map_path,
+                                        const char *cmd_path,
+                                        const char *cmd_to_cryptd_path,
+                                        const char *cryptd_reply_path,
+                                        const char *encrypted_payload_path) {
     mongocrypt_t *crypt = mongocrypt_new();
 
     ASSERT_OK(mongocrypt_setopt_kms_provider_aws(crypt, "example", -1, "example", -1), crypt);
-    ASSERT_OK(mongocrypt_setopt_encrypted_field_config_map(
-                  crypt,
-                  TEST_FILE("./test/data/fle2-create/encrypted-field-config-map.json")),
-              crypt);
+    ASSERT_OK(mongocrypt_setopt_encrypted_field_config_map(crypt, TEST_FILE(efc_map_path)), crypt);
     ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
 
     mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
 
-    ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_FILE("./test/data/fle2-create/cmd.json")), ctx);
+    ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_FILE(cmd_path)), ctx);
+
+    expect_and_reply_to_ismaster(ctx);
 
     ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
     {
         mongocrypt_binary_t *cmd_to_mongocryptd = mongocrypt_binary_new();
 
         ASSERT_OK(mongocrypt_ctx_mongo_op(ctx, cmd_to_mongocryptd), ctx);
-        ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TEST_FILE("./test/data/fle1-create/without-schema/"
-                                                      "ismaster-to-mongocryptd.json"),
-                                            cmd_to_mongocryptd);
+        ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TEST_FILE(cmd_to_cryptd_path), cmd_to_mongocryptd);
         mongocrypt_binary_destroy(cmd_to_mongocryptd);
-        ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx,
-                                            TEST_FILE("./test/data/fle1-create/without-schema/"
-                                                      "mongocryptd-ismaster.json")),
-                  ctx);
-        ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
-    }
-
-    ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
-    {
-        mongocrypt_binary_t *cmd_to_mongocryptd = mongocrypt_binary_new();
-
-        ASSERT_OK(mongocrypt_ctx_mongo_op(ctx, cmd_to_mongocryptd), ctx);
-        ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TEST_FILE("./test/data/fle2-create/cmd-to-mongocryptd.json"),
-                                            cmd_to_mongocryptd);
-        mongocrypt_binary_destroy(cmd_to_mongocryptd);
-        ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TEST_FILE("./test/data/fle2-create/mongocryptd-reply.json")), ctx);
+        ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TEST_FILE(cryptd_reply_path)), ctx);
         ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
     }
 
@@ -4565,11 +3516,90 @@ static void _test_fle2_create(_mongocrypt_tester_t *tester) {
     {
         mongocrypt_binary_t *out = mongocrypt_binary_new();
         ASSERT_OK(mongocrypt_ctx_finalize(ctx, out), ctx);
-        ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TEST_FILE("./test/data/fle2-create/encrypted-payload.json"), out);
+        ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TEST_FILE(encrypted_payload_path), out);
         mongocrypt_binary_destroy(out);
     }
 
     mongocrypt_ctx_destroy(ctx);
+    mongocrypt_destroy(crypt);
+}
+
+#define TEST_SUCCESSFUL_FLE2_CREATE(efc_path, cmd_path, cryptd_path, payload_path)                                     \
+    test_successful_fle2_create(tester,                                                                                \
+                                "./test/data/" efc_path "/encrypted-field-config-map.json",                            \
+                                "./test/data/" cmd_path "/cmd.json",                                                   \
+                                "./test/data/" cryptd_path "/cmd-to-mongocryptd.json",                                 \
+                                "./test/data/" cryptd_path "/mongocryptd-reply.json",                                  \
+                                "./test/data/" payload_path "/encrypted-payload.json")
+
+#define TEST_SUCCESSFUL_FLE2_CREATE_ONEDIR(path) TEST_SUCCESSFUL_FLE2_CREATE(path, path, path, path)
+
+static void _test_fle2_create(_mongocrypt_tester_t *tester) {
+    TEST_SUCCESSFUL_FLE2_CREATE_ONEDIR("fle2-create");
+}
+
+static void _test_fle2_create_with_encrypted_fields(_mongocrypt_tester_t *tester) {
+    TEST_SUCCESSFUL_FLE2_CREATE_ONEDIR("fle2-create-encrypted-collection");
+}
+
+static void _test_fle2_create_with_encrypted_fields_and_str_encode_version(_mongocrypt_tester_t *tester) {
+    TEST_SUCCESSFUL_FLE2_CREATE_ONEDIR("fle2-create-encrypted-collection-with-str-encode-version");
+}
+
+static void _test_fle2_create_with_encrypted_fields_unset_str_encode_version(_mongocrypt_tester_t *tester) {
+    TEST_SUCCESSFUL_FLE2_CREATE("fle2-create-encrypted-collection-with-str-encode-version",
+                                "fle2-create-encrypted-collection",
+                                "fle2-create-encrypted-collection-encrypted-fields-unset-str-encode-version",
+                                "fle2-create-encrypted-collection-with-str-encode-version");
+}
+
+static void _test_fle2_text_search_create_with_encrypted_fields(_mongocrypt_tester_t *tester) {
+    TEST_SUCCESSFUL_FLE2_CREATE_ONEDIR("fle2-text-search-create-encrypted-collection");
+}
+
+static void _test_fle2_text_search_create_with_encrypted_fields_and_str_encode_version(_mongocrypt_tester_t *tester) {
+    TEST_SUCCESSFUL_FLE2_CREATE_ONEDIR("fle2-text-search-create-encrypted-collection-with-str-encode-version");
+}
+
+static void _test_fle2_text_search_create_with_encrypted_fields_unset_str_encode_version(_mongocrypt_tester_t *tester) {
+    TEST_SUCCESSFUL_FLE2_CREATE("fle2-text-search-create-encrypted-collection-with-str-encode-version",
+                                "fle2-text-search-create-encrypted-collection",
+                                "fle2-text-search-create-encrypted-collection",
+                                "fle2-text-search-create-encrypted-collection-with-str-encode-version");
+}
+
+static void
+_test_fle2_text_search_create_with_encrypted_fields_unmatching_str_encode_version(_mongocrypt_tester_t *tester) {
+    TEST_SUCCESSFUL_FLE2_CREATE("fle2-text-search-create-encrypted-collection",
+                                "fle2-text-search-create-encrypted-collection-with-str-encode-version",
+                                "fle2-text-search-create-encrypted-collection-with-str-encode-version",
+                                "fle2-text-search-create-encrypted-collection-with-str-encode-version");
+}
+
+// Test that the JSON Schema found from a "create" command is not cached.
+static void _test_fle2_create_does_not_cache_empty_schema(_mongocrypt_tester_t *tester) {
+    mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+    // Auto encrypt a "create" to "db.coll".
+    {
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_FILE("./test/data/fle2-create/cmd.json")), ctx);
+        expect_and_reply_to_ismaster(ctx);
+
+        // Expect MONGOCRYPT_CTX_NEED_MONGO_COLLINFO is skipped since no server-side schema is expected for "create".
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+        mongocrypt_ctx_destroy(ctx);
+    }
+
+    // Auto encrypt "find" to "db.coll". Expect server-side schema is requested.
+    {
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_BSON(BSON_STR({"find" : "coll", "filter" : {}}))),
+                  ctx);
+        // The MONGOCRYPT_CTX_NEED_COLLINFO state is entered to request a server-side schema.
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+        mongocrypt_ctx_destroy(ctx);
+    }
+
     mongocrypt_destroy(crypt);
 }
 
@@ -4607,15 +3637,13 @@ static void _test_encrypt_macos_no_ctr(_mongocrypt_tester_t *tester) {
     _mongocrypt_buffer_t key_id;
 
     if (_aes_ctr_is_supported_by_os) {
-        printf("Common Crypto with CTR support detected. Skipping.");
+        TEST_PRINTF("Common Crypto with CTR support detected. Skipping.");
         return;
     }
 
     _mongocrypt_buffer_copy_from_hex(&key_id, "ABCDEFAB123498761234123456789012");
 
-    // TODO(MONGOCRYPT-572): This test uses the QEv1 protocol. Update this test for QEv2 or remove. Note: decrypting
-    // QEv1 is still supported.
-    mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_WITH_CRYPT_V1);
+    mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
     mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
 
     ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_UNINDEXED_STR, -1), ctx);
@@ -4688,7 +3716,7 @@ static void _test_fle1_collmod_without_jsonSchema(_mongocrypt_tester_t *tester) 
 
 static void _test_bulkWrite(_mongocrypt_tester_t *tester) {
     if (!_aes_ctr_is_supported_by_os) {
-        printf("Common Crypto with no CTR support detected. Required by QEv2 encryption. Skipping.");
+        TEST_PRINTF("Common Crypto with no CTR support detected. Required by QEv2 encryption. Skipping.");
         return;
     }
 
@@ -5160,11 +4188,11 @@ typedef struct {
 
 static void autoencryption_test_run(autoencryption_test *aet) {
     if (!_aes_ctr_is_supported_by_os) {
-        printf("Common Crypto with no CTR support detected. Skipping.");
+        TEST_PRINTF("Common Crypto with no CTR support detected. Skipping.");
         return;
     }
 
-    printf("  auto_encryption test: '%s' ... begin\n", aet->desc);
+    TEST_PRINTF("  auto_encryption test: '%s' ... begin\n", aet->desc);
 
     // Reset global counter for the `payloadId` to produce deterministic payloads.
     extern void mc_reset_payloadId_for_testing(void);
@@ -5231,14 +4259,14 @@ static void autoencryption_test_run(autoencryption_test *aet) {
         mongocrypt_binary_destroy(got);
     }
 
-    printf("  auto_encryption test: '%s' ... end\n", aet->desc);
+    TEST_PRINTF("  auto_encryption test: '%s' ... end\n", aet->desc);
     mongocrypt_ctx_destroy(ctx);
     mongocrypt_destroy(crypt);
 }
 
 static void _test_no_trimFactor(_mongocrypt_tester_t *tester) {
     if (!_aes_ctr_is_supported_by_os) {
-        printf("Common Crypto with no CTR support detected. Skipping.");
+        TEST_PRINTF("Common Crypto with no CTR support detected. Skipping.");
         return;
     }
 
@@ -5306,7 +4334,7 @@ static void lookup_payload_bson(mongocrypt_binary_t *result, char *path, bson_t 
 // Test that the crypto params added in SERVER-91889 are sent for "range" payloads.
 static void _test_range_sends_cryptoParams(_mongocrypt_tester_t *tester) {
     if (!_aes_ctr_is_supported_by_os) {
-        printf("Common Crypto with no CTR support detected. Skipping.");
+        TEST_PRINTF("Common Crypto with no CTR support detected. Skipping.");
         return;
     }
 
@@ -5329,7 +4357,6 @@ static void _test_range_sends_cryptoParams(_mongocrypt_tester_t *tester) {
         tc.msg = TEST_BSON("{'v': 123456}");
         tc.keys_to_feed[0] = key123;
         tc.expect = TEST_FILE("./test/data/range-sends-cryptoParams/explicit-insert-int32/expected.json");
-        tc.use_v2 = true;       // Use QEv2 protocol.
         tc.use_range_v2 = true; // Use RangeV2 protocol.
         ee_testcase_run(&tc);
         // Check the parameters are present in the final payload.
@@ -5355,7 +4382,6 @@ static void _test_range_sends_cryptoParams(_mongocrypt_tester_t *tester) {
         tc.msg = TEST_BSON("{'v': 123456}");
         tc.keys_to_feed[0] = key123;
         tc.expect = TEST_FILE("./test/data/range-sends-cryptoParams/explicit-insert-int32-defaults/expected.json");
-        tc.use_v2 = true;       // Use QEv2 protocol.
         tc.use_range_v2 = true; // Use RangeV2 protocol.
         ee_testcase_run(&tc);
         // Check the parameters are present in the final payload.
@@ -5382,7 +4408,6 @@ static void _test_range_sends_cryptoParams(_mongocrypt_tester_t *tester) {
         tc.msg = TEST_BSON("{'v': 123456.0}");
         tc.keys_to_feed[0] = key123;
         tc.expect = TEST_FILE("./test/data/range-sends-cryptoParams/explicit-insert-double/expected.json");
-        tc.use_v2 = true;       // Use QEv2 protocol.
         tc.use_range_v2 = true; // Use RangeV2 protocol.
         ee_testcase_run(&tc);
         // Check the parameters are present in the final payload.
@@ -5408,7 +4433,6 @@ static void _test_range_sends_cryptoParams(_mongocrypt_tester_t *tester) {
         tc.msg = TEST_FILE("./test/data/range-sends-cryptoParams/explicit-find-int32-defaults/to-encrypt.json");
         tc.keys_to_feed[0] = key123;
         tc.expect = TEST_FILE("./test/data/range-sends-cryptoParams/explicit-find-int32-defaults/expected.json");
-        tc.use_v2 = true;       // Use QEv2 protocol.
         tc.use_range_v2 = true; // Use RangeV2 protocol.
         ee_testcase_run(&tc);
         // Check the parameters are present in the final payload.
@@ -5434,7 +4458,6 @@ static void _test_range_sends_cryptoParams(_mongocrypt_tester_t *tester) {
         tc.msg = TEST_FILE("./test/data/range-sends-cryptoParams/explicit-find-int32/to-encrypt.json");
         tc.keys_to_feed[0] = key123;
         tc.expect = TEST_FILE("./test/data/range-sends-cryptoParams/explicit-find-int32/expected.json");
-        tc.use_v2 = true;       // Use QEv2 protocol.
         tc.use_range_v2 = true; // Use RangeV2 protocol.
         ee_testcase_run(&tc);
         // Check the parameters are present in the final payload.
@@ -5674,6 +4697,1100 @@ static void _test_encrypt_retry(_mongocrypt_tester_t *tester) {
         mongocrypt_ctx_destroy(ctx);
         mongocrypt_destroy(crypt);
     }
+
+    // Test network retry does not occur if not enabled.
+    {
+        mongocrypt_t *crypt = mongocrypt_new();
+        ASSERT_OK(mongocrypt_setopt_kms_providers(
+                      crypt,
+                      TEST_BSON(BSON_STR({"aws" : {"accessKeyId" : "foo", "secretAccessKey" : "bar"}}))),
+                  crypt);
+        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "test", -1, TEST_FILE("./test/example/cmd.json")), ctx);
+        _mongocrypt_tester_run_ctx_to(tester, ctx, MONGOCRYPT_CTX_NEED_KMS);
+        mongocrypt_kms_ctx_t *kms_ctx = mongocrypt_ctx_next_kms_ctx(ctx);
+        ASSERT_OK(kms_ctx, ctx); // Give a retryable network error. Expect error due to retry disabled.
+        ASSERT_FAILS(mongocrypt_kms_ctx_fail(kms_ctx), kms_ctx, "KMS request failed due to network error");
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+}
+
+static void capture_logs(mongocrypt_log_level_t level, const char *message, uint32_t message_len, void *ctx) {
+    mc_array_t *log_msgs = ctx;
+    char *message_copy = bson_strdup(message);
+    _mc_array_append_val(log_msgs, message_copy);
+}
+
+// Regression test for: MONGOCRYPT-770
+static void _test_does_not_warn_for_empty_local_schema(_mongocrypt_tester_t *tester) {
+    mongocrypt_t *crypt = mongocrypt_new();
+    ASSERT_OK(mongocrypt_setopt_kms_providers(
+                  crypt,
+                  TEST_BSON(BSON_STR({"aws" : {"accessKeyId" : "foo", "secretAccessKey" : "bar"}}))),
+              crypt);
+
+    mc_array_t log_msgs; // Array of char *;
+    _mc_array_init(&log_msgs, sizeof(char *));
+    ASSERT_OK(mongocrypt_setopt_log_handler(crypt, capture_logs, &log_msgs), crypt);
+
+    // Configure a local schema for "db.coll":
+    ASSERT_OK(mongocrypt_setopt_schema_map(crypt, TEST_BSON(BSON_STR({"db.coll" : {}}))), crypt);
+
+    ASSERT_OK(mongocrypt_init(crypt), crypt);
+    mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+    ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_BSON(BSON_STR({"find" : "coll", "filter" : {}}))), ctx);
+    ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+
+    // Feed mongocryptd reply indicating `schemaRequiresEncryption: false`.
+    ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TEST_BSON(BSON_STR({
+                                            "hasEncryptionPlaceholders" : false,
+                                            "schemaRequiresEncryption" : false,
+                                            "result" : {"find" : "test", "filter" : {}},
+                                            "ok" : {"$numberDouble" : "1.0"}
+                                        }))),
+              ctx);
+
+    // Expect no warning (passing an empty local schema is a valid use-case).
+    if (log_msgs.len > 0) {
+        TEST_STDERR_PRINTF("Got unexpected log messages:\n");
+        for (size_t i = 0; i < log_msgs.len; i++) {
+            TEST_STDERR_PRINTF("> %s\n", _mc_array_index(&log_msgs, char *, i));
+        }
+        abort();
+    }
+
+    for (size_t i = 0; i < log_msgs.len; i++) {
+        bson_free(_mc_array_index(&log_msgs, char *, i));
+    }
+    _mc_array_destroy(&log_msgs);
+    mongocrypt_ctx_destroy(ctx);
+    mongocrypt_destroy(crypt);
+}
+
+static void _test_fle2_encrypted_field_config_with_bad_str_encode_version(_mongocrypt_tester_t *tester) {
+    mongocrypt_t *crypt = mongocrypt_new();
+
+    ASSERT_OK(mongocrypt_setopt_kms_provider_aws(crypt, "example", -1, "example", -1), crypt);
+    ASSERT_OK(mongocrypt_setopt_encrypted_field_config_map(
+                  crypt,
+                  TEST_FILE("./test/data/fle2-bad-str-encode-version/bad-encrypted-field-config-map.json")),
+              crypt);
+    ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
+
+    mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+    ASSERT_FAILS(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_FILE("./test/data/fle2-insert-v2/cmd.json")),
+                 ctx,
+                 "'strEncodeVersion' of 99 is not supported");
+
+    mongocrypt_ctx_destroy(ctx);
+    mongocrypt_destroy(crypt);
+}
+
+static void _test_fle2_encrypted_fields_with_unmatching_str_encode_version(_mongocrypt_tester_t *tester) {
+    mongocrypt_t *crypt = mongocrypt_new();
+
+    ASSERT_OK(mongocrypt_setopt_kms_provider_aws(crypt, "example", -1, "example", -1), crypt);
+    ASSERT_OK(mongocrypt_setopt_encrypted_field_config_map(crypt,
+                                                           TEST_FILE("./test/data/fle2-create-encrypted-collection/"
+                                                                     "encrypted-field-config-map.json")),
+              crypt);
+    ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
+
+    mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+
+    ASSERT_OK(mongocrypt_ctx_encrypt_init(
+                  ctx,
+                  "db",
+                  -1,
+                  TEST_FILE("./test/data/fle2-create-encrypted-collection-with-str-encode-version/cmd.json")),
+              ctx);
+
+    expect_and_reply_to_ismaster(ctx);
+
+    ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+    {
+        mongocrypt_binary_t *cmd_to_mongocryptd = mongocrypt_binary_new();
+
+        ASSERT_OK(mongocrypt_ctx_mongo_op(ctx, cmd_to_mongocryptd), ctx);
+        ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(
+            TEST_FILE("./test/data/fle2-bad-str-encode-version/bad-create-cmd-to-mongocryptd.json"),
+            cmd_to_mongocryptd);
+        mongocrypt_binary_destroy(cmd_to_mongocryptd);
+        ASSERT_OK(mongocrypt_ctx_mongo_feed(
+                      ctx,
+                      TEST_FILE("./test/data/fle2-bad-str-encode-version/bad-create-cmd-mongocryptd-reply.json")),
+                  ctx);
+        ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+    }
+
+    ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
+    {
+        mongocrypt_binary_t *out = mongocrypt_binary_new();
+        ASSERT_FAILS(mongocrypt_ctx_finalize(ctx, out),
+                     ctx,
+                     "'strEncodeVersion' of 1 does not match efc->str_encode_version of 0");
+        mongocrypt_binary_destroy(out);
+    }
+
+    mongocrypt_ctx_destroy(ctx);
+    mongocrypt_destroy(crypt);
+}
+
+static void _test_fle2_collinfo_with_bad_str_encode_version(_mongocrypt_tester_t *tester) {
+    mongocrypt_t *crypt = mongocrypt_new();
+    ASSERT_OK(mongocrypt_setopt_kms_provider_aws(crypt, "example", -1, "example", -1), crypt);
+    ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
+    mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+
+    ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_FILE("./test/data/fle2-insert-v2/cmd.json")), ctx);
+
+    ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+    ASSERT_FAILS(mongocrypt_ctx_mongo_feed(ctx, TEST_FILE("./test/data/fle2-bad-str-encode-version/bad-collinfo.json")),
+                 ctx,
+                 "'strEncodeVersion' of 99 is not supported");
+
+    mongocrypt_ctx_destroy(ctx);
+    mongocrypt_destroy(crypt);
+}
+
+static void _test_lookup(_mongocrypt_tester_t *tester) {
+    // Test $lookup works.
+#define TF(suffix) TEST_FILE("./test/data/lookup/csfle/" suffix)
+    {
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")), ctx);
+
+        expect_and_reply_to_ismaster(ctx);
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+        {
+            expect_mongo_op(ctx, TEST_BSON(BSON_STR({"name" : {"$in" : [ "c1", "c2" ]}})));
+            // Feed both needed schemas.
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c1.json")), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c2.json")), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+        expect_mongo_op(ctx, TF("cmd-to-mongocryptd.json"));
+
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+#undef TF
+
+    // Test $lookup errors if multiple-collection support is not opted-in.
+#define TF(suffix) TEST_FILE("./test/data/lookup/csfle/" suffix)
+    {
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        crypt->multiple_collinfo_enabled = false;
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+        ASSERT_FAILS(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")),
+                     ctx,
+                     "not configured to support encrypting a command with multiple collections");
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+#undef TF
+
+    // Test $lookup errors if mongocryptd is too old.
+#define TF(suffix) TEST_FILE("./test/data/lookup/csfle/" suffix)
+    {
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")), ctx);
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+        {
+            expect_mongo_op(ctx, TEST_BSON("{'isMaster': 1}"));
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TEST_FILE("./test/data/mongocryptd-ismaster-17.json")), ctx);
+            ASSERT_FAILS(mongocrypt_ctx_mongo_done(ctx), ctx, "Upgrade mongocryptd");
+        }
+
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+#undef TF
+
+    // Test nested $lookup.
+#define TF(suffix) TEST_FILE("./test/data/lookup/csfle-nested/" suffix)
+    {
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")), ctx);
+
+        expect_and_reply_to_ismaster(ctx);
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+        expect_mongo_op(ctx, TEST_BSON(BSON_STR({"name" : {"$in" : [ "c1", "c2", "c3" ]}})));
+
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+#undef TF
+
+    // Test $lookup within $unionWith.
+#define TF(suffix) TEST_FILE("./test/data/lookup/csfle-unionWith/" suffix)
+    {
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")), ctx);
+
+        expect_and_reply_to_ismaster(ctx);
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+        expect_mongo_op(ctx, TEST_BSON(BSON_STR({"name" : {"$in" : [ "c1", "c2", "c3" ]}})));
+
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+#undef TF
+
+    // Test $lookup within $facet.
+#define TF(suffix) TEST_FILE("./test/data/lookup/csfle-facet/" suffix)
+    {
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")), ctx);
+
+        expect_and_reply_to_ismaster(ctx);
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+        expect_mongo_op(ctx, TEST_BSON(BSON_STR({"name" : {"$in" : [ "c1", "c2" ]}})));
+
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+#undef TF
+
+    // Test $lookup when one schema is in the schemaMap.
+#define TF(suffix) TEST_FILE("./test/data/lookup/csfle-schemaMap/" suffix)
+    {
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_SKIP_INIT);
+        ASSERT_OK(mongocrypt_setopt_schema_map(crypt, TF("schemaMap.json")), crypt);
+        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")), ctx);
+
+        expect_and_reply_to_ismaster(ctx);
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+        {
+            expect_mongo_op(ctx, TEST_BSON(BSON_STR({"name" : "c1"})));
+            // Feed remote schema for "c1". "c2" is found in the schemaMap.
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c1.json")), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+        expect_mongo_op(ctx, TF("cmd-to-mongocryptd.json"));
+
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+#undef TF
+
+    // Test $lookup with a self-lookup.
+#define TF(suffix) TEST_FILE("./test/data/lookup/csfle-self/" suffix)
+    {
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")), ctx);
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+        {
+            expect_mongo_op(ctx, TEST_BSON(BSON_STR({"name" : "c1"})));
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c1.json")), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+        expect_mongo_op(ctx, TF("cmd-to-mongocryptd.json"));
+
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+#undef TF
+
+    // Test $lookup when one schema is already cached.
+    {
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+
+        // Do a self-lookup to add only "c1" to the cache.
+#define TF(suffix) TEST_FILE("./test/data/lookup/csfle-self/" suffix)
+        {
+            mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+            ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")), ctx);
+            ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+            {
+                expect_mongo_op(ctx, TEST_BSON(BSON_STR({"name" : "c1"})));
+                ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c1.json")), ctx);
+                ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+            }
+            mongocrypt_ctx_destroy(ctx);
+        }
+#undef TF
+
+#define TF(suffix) TEST_FILE("./test/data/lookup/csfle/" suffix)
+        // Expect "c1" schema is not requested again.
+        {
+            mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+
+            ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")), ctx);
+            expect_and_reply_to_ismaster(ctx);
+            ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+            {
+                expect_mongo_op(ctx, TEST_BSON(BSON_STR({"name" : "c2"})));
+                // Feed remaining needed schema.
+                ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c2.json")), ctx);
+                ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+            }
+
+            ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+            expect_mongo_op(ctx, TF("cmd-to-mongocryptd.json"));
+
+            mongocrypt_ctx_destroy(ctx);
+        }
+        mongocrypt_destroy(crypt);
+    }
+
+#undef TF
+
+    // Test $lookup caches no collinfo results as empty schemas.
+    {
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+
+        // Do a self-lookup to add only "c1" to the cache.
+#define TF(suffix) TEST_FILE("./test/data/lookup/csfle/" suffix)
+        {
+            mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+            ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")), ctx);
+            expect_and_reply_to_ismaster(ctx);
+            ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+            // Feed no collinfo results. Expect "c1" and "c2" to be cached as empty schemas.
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+            mongocrypt_ctx_destroy(ctx);
+        }
+#undef TF
+
+#define TF(suffix) TEST_FILE("./test/data/lookup/csfle/" suffix)
+        // Expect "c1" schema is not requested again.
+        {
+            mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+
+            ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")), ctx);
+            expect_and_reply_to_ismaster(ctx);
+            // Expect no more schemas are needed (both empty).
+            ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+            mongocrypt_ctx_destroy(ctx);
+        }
+        mongocrypt_destroy(crypt);
+    }
+#undef TF
+// Test $lookup from a view.
+#define TF(suffix) TEST_FILE("./test/data/lookup/csfle-view/" suffix)
+    {
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")), ctx);
+        expect_and_reply_to_ismaster(ctx);
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+        {
+            expect_mongo_op(ctx, TEST_BSON(BSON_STR({"name" : {"$in" : [ "c1", "v1" ]}})));
+
+            // Feed both needed schemas.
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c1.json")), ctx);
+            ASSERT_FAILS(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-v1.json")), ctx, "cannot auto encrypt a view");
+        }
+
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+#undef TF
+// Test $lookup with feeding the same schema twice.
+#define TF(suffix) TEST_FILE("./test/data/lookup/csfle/" suffix)
+    {
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")), ctx);
+        expect_and_reply_to_ismaster(ctx);
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+        {
+            // Feed schema for "c2" twice.
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c1.json")), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c2.json")), ctx);
+            ASSERT_FAILS(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c2.json")), ctx, "unexpected duplicate");
+        }
+
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+#undef TF
+
+// Test $lookup with with feeding a non-matching schema.
+#define TF(suffix) TEST_FILE("./test/data/lookup/csfle-mismatch/" suffix)
+    {
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")), ctx);
+        expect_and_reply_to_ismaster(ctx);
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+        {
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c1.json")), ctx);
+            ASSERT_FAILS(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c3.json")), ctx, "got unexpected collinfo");
+        }
+
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+#undef TF
+
+// Test $lookup with only local schemas.
+#define TF(suffix) TEST_FILE("./test/data/lookup/csfle-only-schemaMap/" suffix)
+    {
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_SKIP_INIT);
+        ASSERT_OK(mongocrypt_setopt_schema_map(crypt, TF("schemaMap.json")), crypt);
+        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")), ctx);
+        expect_and_reply_to_ismaster(ctx);
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+        expect_mongo_op(ctx, TF("cmd-to-mongocryptd.json"));
+
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+#undef TF
+
+// Test $lookup from a collection that has no $jsonSchema configured.
+#define TF(suffix) TEST_FILE("./test/data/lookup/csfle-sibling/" suffix)
+    {
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")), ctx);
+        expect_and_reply_to_ismaster(ctx);
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+        {
+            expect_mongo_op(ctx, TEST_BSON(BSON_STR({"name" : {"$in" : [ "c1", "c2" ]}})));
+            // Feed both needed schemas.
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c1.json")), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c2.json")), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+        {
+            expect_mongo_op(ctx, TF("cmd-to-mongocryptd.json"));
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("reply-from-mongocryptd.json")), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+#undef TF
+
+// Test $lookup with QE.
+#define TF(suffix) TEST_FILE("./test/data/lookup/qe/" suffix)
+    {
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")), ctx);
+        expect_and_reply_to_ismaster(ctx);
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+        {
+            expect_mongo_op(ctx, TEST_BSON(BSON_STR({"name" : {"$in" : [ "c1", "c2" ]}})));
+            // Feed both needed schemas.
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c1.json")), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c2.json")), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+        {
+            expect_mongo_op(ctx, TF("cmd-to-mongocryptd.json"));
+            mongocrypt_binary_t *to_feed = TF("reply-from-mongocryptd.json");
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, to_feed), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
+        {
+            // Expect no `encryptionInformation` since no encryption payloads.
+            mongocrypt_binary_t *expect = TF("cmd-to-mongod.json");
+            mongocrypt_binary_t *got = mongocrypt_binary_new();
+            ASSERT_OK(mongocrypt_ctx_finalize(ctx, got), ctx);
+            ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(expect, got);
+            mongocrypt_binary_destroy(got);
+        }
+
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+#undef TF
+
+// Test $lookup with QE with an encrypted payload.
+#define TF(suffix) TEST_FILE("./test/data/lookup/qe-with-payload/" suffix)
+    {
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")), ctx);
+        expect_and_reply_to_ismaster(ctx);
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+        {
+            expect_mongo_op(ctx, TEST_BSON(BSON_STR({"name" : {"$in" : [ "c1", "c2" ]}})));
+            // Feed both needed schemas.
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c1.json")), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c2.json")), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+        {
+            expect_mongo_op(ctx, TF("cmd-to-mongocryptd.json"));
+            mongocrypt_binary_t *to_feed = TF("reply-from-mongocryptd.json");
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, to_feed), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+        {
+            mongocrypt_binary_t *to_feed = TF("key-doc.json");
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, to_feed), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
+        {
+            // Expect `encryptionInformation` since command has encryption payloads.
+            mongocrypt_binary_t *expect = TF("cmd-to-mongod.json");
+            mongocrypt_binary_t *got = mongocrypt_binary_new();
+            ASSERT_OK(mongocrypt_ctx_finalize(ctx, got), ctx);
+            ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(expect, got);
+            mongocrypt_binary_destroy(got);
+        }
+
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+#undef TF
+
+// Test $lookup with QE from encryptedFieldsMap.
+#define TF(suffix) TEST_FILE("./test/data/lookup/qe-encryptedFieldsMap/" suffix)
+    {
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_SKIP_INIT);
+        ASSERT_OK(mongocrypt_setopt_encrypted_field_config_map(crypt, TF("encryptedFieldsMap.json")), crypt);
+        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")), ctx);
+        expect_and_reply_to_ismaster(ctx);
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+        {
+            expect_mongo_op(ctx, TEST_BSON(BSON_STR({"name" : "c1"})));
+            // Only feed collinfo for c1. c2 is included in encryptedFieldsMap.
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c1.json")), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+        {
+            expect_mongo_op(ctx, TF("cmd-to-mongocryptd.json"));
+            mongocrypt_binary_t *to_feed = TF("reply-from-mongocryptd.json");
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, to_feed), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+        {
+            mongocrypt_binary_t *to_feed = TF("key-doc.json");
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, to_feed), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
+        {
+            mongocrypt_binary_t *expect = TF("cmd-to-mongod.json");
+            mongocrypt_binary_t *got = mongocrypt_binary_new();
+            ASSERT_OK(mongocrypt_ctx_finalize(ctx, got), ctx);
+            ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(expect, got);
+            mongocrypt_binary_destroy(got);
+        }
+
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+#undef TF
+
+// Test $lookup with QE with self-lookup.
+#define TF(suffix) TEST_FILE("./test/data/lookup/qe-self/" suffix)
+    {
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")), ctx);
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+        {
+            expect_mongo_op(ctx, TEST_BSON(BSON_STR({"name" : "c1"})));
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c1.json")), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+        {
+            expect_mongo_op(ctx, TF("cmd-to-mongocryptd.json"));
+            mongocrypt_binary_t *to_feed = TF("reply-from-mongocryptd.json");
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, to_feed), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+        {
+            mongocrypt_binary_t *to_feed = TF("key-doc.json");
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, to_feed), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
+        {
+            mongocrypt_binary_t *expect = TF("cmd-to-mongod.json");
+            mongocrypt_binary_t *got = mongocrypt_binary_new();
+            ASSERT_OK(mongocrypt_ctx_finalize(ctx, got), ctx);
+            ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(expect, got);
+            mongocrypt_binary_destroy(got);
+        }
+
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+#undef TF
+
+    // Test $lookup with QE from from cache.
+    {
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+
+        // Do a self-lookup to add only "c1" to the cache.
+#define TF(suffix) TEST_FILE("./test/data/lookup/qe-self/" suffix)
+        {
+            mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+            ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")), ctx);
+            ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+            {
+                expect_mongo_op(ctx, TEST_BSON(BSON_STR({"name" : "c1"})));
+                ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c1.json")), ctx);
+                ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+            }
+            mongocrypt_ctx_destroy(ctx);
+        }
+#undef TF
+
+#define TF(suffix) TEST_FILE("./test/data/lookup/qe-with-payload/" suffix)
+        // Expect "c1" schema is not requested again.
+        {
+            mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+
+            ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")), ctx);
+            expect_and_reply_to_ismaster(ctx);
+            ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+            {
+                expect_mongo_op(ctx, TEST_BSON(BSON_STR({"name" : "c2"})));
+                // Feed remaining needed schema.
+                ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c2.json")), ctx);
+                ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+            }
+
+            ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+            expect_mongo_op(ctx, TF("cmd-to-mongocryptd.json"));
+
+            mongocrypt_ctx_destroy(ctx);
+        }
+        mongocrypt_destroy(crypt);
+    }
+
+#undef TF
+
+// Test $lookup with mixed: QE + CSFLE
+#define TF(suffix) TEST_FILE("./test/data/lookup/mixed/qe/csfle/" suffix)
+    {
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")), ctx);
+        expect_and_reply_to_ismaster(ctx);
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+        {
+            expect_mongo_op(ctx, TEST_BSON(BSON_STR({"name" : {"$in" : [ "c1", "c2" ]}})));
+
+            // Feed both needed schemas.
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c1.json")), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c2.json")), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+        {
+            mongocrypt_binary_t *got = mongocrypt_binary_new();
+            ASSERT_FAILS(mongocrypt_ctx_mongo_op(ctx, got), ctx, "currently not supported");
+            mongocrypt_binary_destroy(got);
+        }
+
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+#undef TF
+
+// Test $lookup with mixed: QE + no-schema
+#define TF(suffix) TEST_FILE("./test/data/lookup/mixed/qe/no-schema/" suffix)
+    {
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")), ctx);
+        expect_and_reply_to_ismaster(ctx);
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+        {
+            expect_mongo_op(ctx, TEST_BSON(BSON_STR({"name" : {"$in" : [ "c1", "c2" ]}})));
+            // Feed both needed schemas.
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c1.json")), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c2.json")), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+        {
+            expect_mongo_op(ctx, TF("cmd-to-mongocryptd.json"));
+            mongocrypt_binary_t *to_feed = TF("reply-from-mongocryptd.json");
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, to_feed), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+        {
+            mongocrypt_binary_t *to_feed = TF("key-doc.json");
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, to_feed), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
+        {
+            mongocrypt_binary_t *expect = TF("cmd-to-mongod.json");
+            mongocrypt_binary_t *got = mongocrypt_binary_new();
+            ASSERT_OK(mongocrypt_ctx_finalize(ctx, got), ctx);
+            ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(expect, got);
+            mongocrypt_binary_destroy(got);
+        }
+
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+#undef TF
+
+// Test $lookup with mixed: QE + QE
+#define TF(suffix) TEST_FILE("./test/data/lookup/mixed/qe/qe/" suffix)
+    {
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")), ctx);
+        expect_and_reply_to_ismaster(ctx);
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+        {
+            expect_mongo_op(ctx, TEST_BSON(BSON_STR({"name" : {"$in" : [ "c1", "c2" ]}})));
+            // Feed both needed schemas.
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c1.json")), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c2.json")), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+        {
+            expect_mongo_op(ctx, TF("cmd-to-mongocryptd.json"));
+            mongocrypt_binary_t *to_feed = TF("reply-from-mongocryptd.json");
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, to_feed), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+        {
+            mongocrypt_binary_t *to_feed = TF("key-doc.json");
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, to_feed), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
+        {
+            mongocrypt_binary_t *expect = TF("cmd-to-mongod.json");
+            mongocrypt_binary_t *got = mongocrypt_binary_new();
+            ASSERT_OK(mongocrypt_ctx_finalize(ctx, got), ctx);
+            ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(expect, got);
+            mongocrypt_binary_destroy(got);
+        }
+
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+#undef TF
+
+// Test $lookup with mixed: CSFLE + CSFLE.
+#define TF(suffix) TEST_FILE("./test/data/lookup/mixed/csfle/csfle/" suffix)
+    {
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")), ctx);
+        expect_and_reply_to_ismaster(ctx);
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+        {
+            expect_mongo_op(ctx, TEST_BSON(BSON_STR({"name" : {"$in" : [ "c1", "c2" ]}})));
+            // Feed both needed schemas.
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c1.json")), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c2.json")), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+        {
+            expect_mongo_op(ctx, TF("cmd-to-mongocryptd.json"));
+            mongocrypt_binary_t *to_feed = TF("reply-from-mongocryptd.json");
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, to_feed), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+        {
+            mongocrypt_binary_t *to_feed = TF("key-doc.json");
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, to_feed), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
+        {
+            mongocrypt_binary_t *expect = TF("cmd-to-mongod.json");
+            mongocrypt_binary_t *got = mongocrypt_binary_new();
+            ASSERT_OK(mongocrypt_ctx_finalize(ctx, got), ctx);
+            ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(expect, got);
+            mongocrypt_binary_destroy(got);
+        }
+
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+#undef TF
+
+#define TF(suffix) TEST_FILE("./test/data/lookup/mixed/csfle/qe/" suffix)
+    {
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")), ctx);
+        expect_and_reply_to_ismaster(ctx);
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+        {
+            expect_mongo_op(ctx, TEST_BSON(BSON_STR({"name" : {"$in" : [ "c1", "c2" ]}})));
+            // Feed both needed schemas.
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c1.json")), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c2.json")), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+        {
+            mongocrypt_binary_t *got = mongocrypt_binary_new();
+            ASSERT_FAILS(mongocrypt_ctx_mongo_op(ctx, got), ctx, "This is currently not supported");
+            mongocrypt_binary_destroy(got);
+        }
+
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+#undef TF
+
+#define TF(suffix) TEST_FILE("./test/data/lookup/mixed/csfle/no-schema/" suffix)
+    {
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")), ctx);
+        expect_and_reply_to_ismaster(ctx);
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+        {
+            expect_mongo_op(ctx, TEST_BSON(BSON_STR({"name" : {"$in" : [ "c1", "c2" ]}})));
+            // Feed both needed schemas.
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c1.json")), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c2.json")), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+        {
+            expect_mongo_op(ctx, TF("cmd-to-mongocryptd.json"));
+            mongocrypt_binary_t *to_feed = TF("reply-from-mongocryptd.json");
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, to_feed), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+        {
+            mongocrypt_binary_t *to_feed = TF("key-doc.json");
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, to_feed), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
+        {
+            mongocrypt_binary_t *expect = TF("cmd-to-mongod.json");
+            mongocrypt_binary_t *got = mongocrypt_binary_new();
+            ASSERT_OK(mongocrypt_ctx_finalize(ctx, got), ctx);
+            ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(expect, got);
+            mongocrypt_binary_destroy(got);
+        }
+
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+#undef TF
+
+#define TF(suffix) TEST_FILE("./test/data/lookup/mixed/no-schema/csfle/" suffix)
+    {
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")), ctx);
+        expect_and_reply_to_ismaster(ctx);
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+        {
+            expect_mongo_op(ctx, TEST_BSON(BSON_STR({"name" : {"$in" : [ "c1", "c2" ]}})));
+            // Feed both needed schemas.
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c1.json")), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c2.json")), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+        {
+            expect_mongo_op(ctx, TF("cmd-to-mongocryptd.json"));
+            mongocrypt_binary_t *to_feed = TF("reply-from-mongocryptd.json");
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, to_feed), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+        {
+            mongocrypt_binary_t *to_feed = TF("key-doc.json");
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, to_feed), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
+        {
+            mongocrypt_binary_t *expect = TF("cmd-to-mongod.json");
+            mongocrypt_binary_t *got = mongocrypt_binary_new();
+            ASSERT_OK(mongocrypt_ctx_finalize(ctx, got), ctx);
+            ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(expect, got);
+            mongocrypt_binary_destroy(got);
+        }
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+#undef TF
+
+#define TF(suffix) TEST_FILE("./test/data/lookup/mixed/no-schema/no-schema/" suffix)
+    {
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")), ctx);
+        expect_and_reply_to_ismaster(ctx);
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+        {
+            expect_mongo_op(ctx, TEST_BSON(BSON_STR({"name" : {"$in" : [ "c1", "c2" ]}})));
+            // Feed both needed schemas.
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c1.json")), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c2.json")), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+        {
+            expect_mongo_op(ctx, TF("cmd-to-mongocryptd.json"));
+            mongocrypt_binary_t *to_feed = TF("reply-from-mongocryptd.json");
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, to_feed), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
+        {
+            mongocrypt_binary_t *expect = TF("cmd-to-mongod.json");
+            mongocrypt_binary_t *got = mongocrypt_binary_new();
+            ASSERT_OK(mongocrypt_ctx_finalize(ctx, got), ctx);
+            ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(expect, got);
+            mongocrypt_binary_destroy(got);
+        }
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+#undef TF
+
+#define TF(suffix) TEST_FILE("./test/data/lookup/mixed/no-schema/qe/" suffix)
+    {
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")), ctx);
+        expect_and_reply_to_ismaster(ctx);
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+        {
+            expect_mongo_op(ctx, TEST_BSON(BSON_STR({"name" : {"$in" : [ "c1", "c2" ]}})));
+            // Feed both needed schemas.
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c1.json")), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c2.json")), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+        {
+            expect_mongo_op(ctx, TF("cmd-to-mongocryptd.json"));
+            mongocrypt_binary_t *to_feed = TF("reply-from-mongocryptd.json");
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, to_feed), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+        {
+            mongocrypt_binary_t *to_feed = TF("key-doc.json");
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, to_feed), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
+        {
+            mongocrypt_binary_t *expect = TF("cmd-to-mongod.json");
+            mongocrypt_binary_t *got = mongocrypt_binary_new();
+            ASSERT_OK(mongocrypt_ctx_finalize(ctx, got), ctx);
+            ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(expect, got);
+            mongocrypt_binary_destroy(got);
+        }
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+#undef TF
 }
 
 void _mongocrypt_tester_install_ctx_encrypt(_mongocrypt_tester_t *tester) {
@@ -5695,7 +5812,6 @@ void _mongocrypt_tester_install_ctx_encrypt(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_encrypt_is_remote_schema);
     INSTALL_TEST(_test_encrypt_init_each_cmd);
     INSTALL_TEST(_test_encrypt_invalid_siblings);
-    INSTALL_TEST(_test_encrypt_dupe_jsonschema);
     INSTALL_TEST(_test_encrypting_with_explicit_encryption);
     INSTALL_TEST(_test_explicit_encryption);
     INSTALL_TEST(_test_encrypt_empty_aws);
@@ -5711,8 +5827,8 @@ void _mongocrypt_tester_install_ctx_encrypt(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_encrypt_no_schema);
     INSTALL_TEST(_test_encrypt_remote_encryptedfields);
     INSTALL_TEST(_test_encrypt_with_bypassqueryanalysis);
-    INSTALL_TEST(_test_FLE2EncryptionPlaceholder_parse);
     INSTALL_TEST(_test_encrypt_fle2_insert_payload);
+    INSTALL_TEST(_test_encrypt_fle2_insert_payload_with_str_encode_version);
     INSTALL_TEST(_test_encrypt_fle2_find_payload);
     INSTALL_TEST(_test_encrypt_fle2_unindexed_encrypted_payload);
     INSTALL_TEST(_test_encrypt_fle2_explicit);
@@ -5733,11 +5849,18 @@ void _mongocrypt_tester_install_ctx_encrypt(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_fle1_create_old_mongocryptd);
     INSTALL_TEST(_test_fle1_create_with_csfle);
     INSTALL_TEST(_test_fle2_create);
+    INSTALL_TEST(_test_fle2_create_with_encrypted_fields);
+    INSTALL_TEST(_test_fle2_create_with_encrypted_fields_and_str_encode_version);
+    INSTALL_TEST(_test_fle2_create_with_encrypted_fields_unset_str_encode_version);
+    INSTALL_TEST(_test_fle2_text_search_create_with_encrypted_fields);
+    INSTALL_TEST(_test_fle2_text_search_create_with_encrypted_fields_and_str_encode_version);
+    INSTALL_TEST(_test_fle2_text_search_create_with_encrypted_fields_unset_str_encode_version);
+    INSTALL_TEST(_test_fle2_text_search_create_with_encrypted_fields_unmatching_str_encode_version);
+    INSTALL_TEST(_test_fle2_create_does_not_cache_empty_schema);
     INSTALL_TEST(_test_fle2_create_bypass_query_analysis);
     INSTALL_TEST(_test_encrypt_macos_no_ctr);
     INSTALL_TEST(_test_fle1_collmod_with_jsonSchema);
     INSTALL_TEST(_test_fle1_collmod_without_jsonSchema);
-    INSTALL_TEST(_test_FLE2EncryptionPlaceholder_range_parse);
     INSTALL_TEST(_test_encrypt_fle2_insert_range_payload_int32);
     INSTALL_TEST(_test_encrypt_fle2_insert_range_payload_int64);
     INSTALL_TEST(_test_encrypt_fle2_insert_range_payload_date);
@@ -5756,9 +5879,16 @@ void _mongocrypt_tester_install_ctx_encrypt(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_encrypt_fle2_find_range_payload_decimal128);
     INSTALL_TEST(_test_encrypt_fle2_find_range_payload_decimal128_precision);
 #endif
+    INSTALL_TEST(_test_encrypt_fle2_insert_text_search_payload);
+    INSTALL_TEST(_test_encrypt_fle2_insert_text_search_payload_with_str_encode_version);
     INSTALL_TEST(_test_bulkWrite);
     INSTALL_TEST(_test_rangePreview_fails);
     INSTALL_TEST(_test_no_trimFactor);
     INSTALL_TEST(_test_range_sends_cryptoParams);
     INSTALL_TEST(_test_encrypt_retry);
+    INSTALL_TEST(_test_does_not_warn_for_empty_local_schema);
+    INSTALL_TEST(_test_fle2_encrypted_field_config_with_bad_str_encode_version);
+    INSTALL_TEST(_test_fle2_encrypted_fields_with_unmatching_str_encode_version);
+    INSTALL_TEST(_test_fle2_collinfo_with_bad_str_encode_version);
+    INSTALL_TEST(_test_lookup);
 }

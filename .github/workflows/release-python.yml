@@ -8,18 +8,23 @@ on:
         required: true
       following_version:
         description: "The post (dev) version to set"
-        required: true
       dry_run:
         description: "Dry Run?"
         default: false
         type: boolean
+  schedule:
+    - cron:  '30 5 * * *'
 
 env:
   # Changes per repo
   PRODUCT_NAME: PyMongoCrypt
-  # Changes per branch
-  SILK_ASSET_GROUP: pymongocrypt
   EVERGREEN_PROJECT: libmongocrypt
+  # Constant
+  # inputs will be empty on a scheduled run.  so, we only set dry_run
+  # to 'false' when the input is set to 'false'.
+  DRY_RUN: ${{ ! contains(inputs.dry_run, 'false') }}
+  FOLLOWING_VERSION: ${{ inputs.following_version || '' }}
+  VERSION: ${{ inputs.version || '10.10.10.10' }}
 
 defaults:
   run:
@@ -28,6 +33,7 @@ defaults:
 jobs:
   pre-publish:
     environment: release-python
+    if: github.repository_owner == 'mongodb' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -48,9 +54,9 @@ jobs:
       - uses: mongodb-labs/drivers-github-tools/python/pre-publish@v2
         id: pre-publish
         with:
-          version: ${{ inputs.version }}
+          version: ${{ env.VERSION }}
           working_directory: ./bindings/python
-          dry_run: ${{ inputs.dry_run }}
+          dry_run: ${{ env.DRY_RUN }}
           tag_template: "pymongocrypt-${VERSION}"
           tag_message_template:  "Release PyMongoCrypt ${VERSION}"
 
@@ -58,17 +64,39 @@ jobs:
     needs: [pre-publish]
     uses: ./.github/workflows/dist-python.yml
     with:
-      force: true
       ref: ${{ needs.pre-publish.outputs.version }}
 
   static-scan:
     needs: [pre-publish]
-    uses: ./.github/workflows/codeql.yml
+    uses: ./.github/workflows/codeql-python.yml
     with:
       ref: ${{ needs.pre-publish.outputs.version }}
 
   publish:
     needs: [build-dist, static-scan]
+    name: Upload release to PyPI
+    runs-on: ubuntu-latest
+    environment: release-python
+    permissions:
+      id-token: write
+    steps:
+      - name: Download all the dists
+        uses: actions/download-artifact@v4
+        with:
+          name: all-dist-${{ github.run_id }}
+          path: dist/
+      - name: Publish package distributions to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          skip-existing: true
+          attestations: ${{ env.DRY_RUN }}
+      - name: Publish package distributions to PyPI
+        if: startsWith(env.DRY_RUN, 'false')
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+  post-publish:
+    needs: [publish]
     runs-on: ubuntu-latest
     environment: release-python
     permissions:
@@ -87,14 +115,15 @@ jobs:
           aws_region_name: ${{ vars.AWS_REGION_NAME }}
           aws_secret_id: ${{ secrets.AWS_SECRET_ID }}
           artifactory_username: ${{ vars.ARTIFACTORY_USERNAME }}
-      - uses: mongodb-labs/drivers-github-tools/python/publish@v2
+      - uses: mongodb-labs/drivers-github-tools/python/post-publish@v2
         with:
-          version: ${{ inputs.version }}
-          following_version: ${{ inputs.following_version }}
+          version: ${{ env.VERSION }}
+          following_version: ${{ env.FOLLOWING_VERSION }}
           working_directory: ./bindings/python
           product_name: ${{ env.PRODUCT_NAME }}
-          silk_asset_group: ${{ env.SILK_ASSET_GROUP }}
+          sbom_in_path: bindings/python/sbom.json
+          kondukto_sub_project: pymongocrypt
           evergreen_project: ${{ env.EVERGREEN_PROJECT }}
           tag_template: "pymongocrypt-${VERSION}"
           token: ${{ github.token }}
-          dry_run: ${{ inputs.dry_run }}
+          dry_run: ${{ env.DRY_RUN }}

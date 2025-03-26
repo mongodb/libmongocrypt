@@ -17,6 +17,7 @@
 #include <mongocrypt-crypto-private.h>
 #include <mongocrypt.h>
 
+#include "test-mongocrypt-assert.h"
 #include "test-mongocrypt.h"
 
 typedef struct {
@@ -49,11 +50,11 @@ static bool _test_uses_ctr(const _test_mc_crypto_roundtrip_t *test) {
 
 static void _test_roundtrip_single(const _test_mc_crypto_roundtrip_t *test) {
     if (!_aes_ctr_is_supported_by_os && _test_uses_ctr(test)) {
-        printf("Common Crypto with no CTR support detected. Skipping %s", test->name);
+        TEST_PRINTF("Common Crypto with no CTR support detected. Skipping %s", test->name);
         return;
     }
 
-    printf("Begin %s...\n", test->name);
+    TEST_PRINTF("Begin %s...\n", test->name);
 
     mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
     mongocrypt_status_t *const status = mongocrypt_status_new();
@@ -125,7 +126,7 @@ done:
     mongocrypt_status_destroy(status);
     mongocrypt_destroy(crypt);
 
-    printf("End %s...\n", test->name);
+    TEST_PRINTF("End %s...\n", test->name);
 }
 
 static const _mongocrypt_value_encryption_algorithm_t *get_algo_by_name(const char *name) {
@@ -233,7 +234,7 @@ static void _test_mc_crypto_roundtrip_destroy(_test_mc_crypto_roundtrip_t *test)
 }
 
 static void _test_roundtrip_set(_mongocrypt_tester_t *tester, const char *path) {
-    printf("Loading tests from %s...\n", path);
+    TEST_PRINTF("Loading tests from %s...\n", path);
 
     mongocrypt_binary_t *test_bin = TEST_FILE(path);
     if (!test_bin) {
@@ -259,7 +260,7 @@ static void _test_roundtrip_set(_mongocrypt_tester_t *tester, const char *path) 
         _test_mc_crypto_roundtrip_destroy(&test);
     }
 
-    printf("Finished tests in %s\n", path);
+    TEST_PRINTF("Finished tests in %s\n", path);
 }
 
 static void _test_roundtrip(_mongocrypt_tester_t *tester) {
@@ -324,7 +325,7 @@ void _test_native_crypto_hmac_sha_256(_mongocrypt_tester_t *tester) {
         _mongocrypt_buffer_t got;
         mongocrypt_status_t *status;
 
-        printf("Begin test '%s'.\n", test->testname);
+        TEST_PRINTF("Begin test '%s'.\n", test->testname);
 
         _mongocrypt_buffer_copy_from_hex(&key, test->key);
         _mongocrypt_buffer_copy_from_hex(&input, test->input);
@@ -347,7 +348,7 @@ void _test_native_crypto_hmac_sha_256(_mongocrypt_tester_t *tester) {
         _mongocrypt_buffer_cleanup(&input);
         _mongocrypt_buffer_cleanup(&key);
 
-        printf("End test '%s'.\n", test->testname);
+        TEST_PRINTF("End test '%s'.\n", test->testname);
     }
 
     mongocrypt_destroy(crypt);
@@ -432,9 +433,38 @@ static void _test_random_int64(_mongocrypt_tester_t *tester) {
     mongocrypt_destroy(crypt);
 }
 
+static void _test_aes_256_aead_steps_consistent(_mongocrypt_tester_t *tester) {
+    mongocrypt_status_t *status = mongocrypt_status_new();
+    // Tests a key assumption we make that if 16k <= a <= b <= 16k + 15 (a, b, k integers), a plaintext of length a and
+    // a plaintext of length b produce a ciphertext of the same length, and a plaintext of length 16k produces a
+    // ciphertext 16 bytes longer than one of length 16(k-1). This is very important for the leakage profile of QE text
+    // search.
+    const _mongocrypt_value_encryption_algorithm_t *alg = _mcFLE2v2AEADAlgorithm();
+    size_t ciphertext_len = 0;
+    for (int i = 0; i <= 16; i++) {
+        size_t new_ct_len = alg->get_ciphertext_len(i * 16, status);
+        if (new_ct_len == 0) {
+            TEST_ERROR("get_ciphertext_len failed");
+        }
+        if (i != 0) {
+            ASSERT_CMPSIZE_T(new_ct_len, ==, ciphertext_len + 16);
+        }
+        ciphertext_len = new_ct_len;
+        for (int j = 1; j < 16; j++) {
+            size_t ct_len = alg->get_ciphertext_len(i * 16 + j, status);
+            if (ct_len == 0) {
+                TEST_ERROR("get_ciphertext_len failed");
+            }
+            ASSERT_CMPSIZE_T(ct_len, ==, ciphertext_len);
+        }
+    }
+    mongocrypt_status_destroy(status);
+}
+
 void _mongocrypt_tester_install_crypto(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_roundtrip);
     INSTALL_TEST(_test_native_crypto_hmac_sha_256);
     INSTALL_TEST_CRYPTO(_test_mongocrypt_hmac_sha_256_hook, CRYPTO_OPTIONAL);
     INSTALL_TEST(_test_random_int64);
+    INSTALL_TEST(_test_aes_256_aead_steps_consistent);
 }

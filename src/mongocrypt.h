@@ -323,6 +323,17 @@ MONGOCRYPT_EXPORT
 bool mongocrypt_setopt_retry_kms(mongocrypt_t *crypt, bool enable);
 
 /**
+ * Enable support for multiple collection schemas. Required to support $lookup.
+ *
+ * @param[in] crypt The @ref mongocrypt_t object.
+ * @pre @ref mongocrypt_init has not been called on @p crypt.
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_ctx_status
+ */
+MONGOCRYPT_EXPORT
+bool mongocrypt_setopt_enable_multiple_collinfo(mongocrypt_t *crypt);
+
+/**
  * Configure an AWS KMS provider on the @ref mongocrypt_t object.
  *
  * This has been superseded by the more flexible:
@@ -1534,5 +1545,11 @@ bool mongocrypt_setopt_key_expiration(mongocrypt_t *crypt, uint64_t cache_expira
 // DEPRECATED: Support "rangePreview" has been removed in favor of "range".
 #define MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_DEPRECATED_STR "rangePreview"
 #define MONGOCRYPT_QUERY_TYPE_RANGE_STR "range"
+/// NOTE: "substringPreview" is experimental and may be removed in a future non-major release.
+#define MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW_STR "substringPreview"
+/// NOTE: "suffixPreview" is experimental and may be removed in a future non-major release.
+#define MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW_STR "suffixPreview"
+/// NOTE: "prefixPreview" is experimental and may be removed in a future non-major release.
+#define MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW_STR "prefixPreview"
 
 #endif /* MONGOCRYPT_H */

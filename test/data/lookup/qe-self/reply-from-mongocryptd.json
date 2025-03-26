@@ -1,0 +1,58 @@
+{
+    "hasEncryptionPlaceholders": false,
+    "schemaRequiresEncryption": true,
+    "result": {
+        "aggregate": "c1",
+        "pipeline": [
+            {
+                "$lookup": {
+                    "from": "c1",
+                    "as": "matched",
+                    "localField": "joinme",
+                    "foreignField": "joinme"
+                }
+            },
+            {
+                "$match": {
+                    "e1": {
+                        "$binary": {
+                            "base64": "A1wAAAAQdAACAAAAEGEAAgAAAAVraQAQAAAABLidjY8vGEA7mCm87trxCkIFa3UAEAAAAAS4nY2PLxhAO5gpvO7a8QpCAnYABAAAAGZvbwASY20AAAAAAAAAAAAA",
+                            "subType": "06"
+                        }
+                    }
+                }
+            }
+        ],
+        "cursor": {},
+        "encryptionInformation": {
+            "type": {
+                "$numberInt": "1"
+            },
+            "schema": {
+                "db.c1": {
+                    "escCollection": "enxcol_.c1.esc",
+                    "ecocCollection": "enxcol_.c1.ecoc",
+                    "fields": [
+                        {
+                            "keyId": {
+                                "$binary": {
+                                    "base64": "uJ2Njy8YQDuYKbzu2vEKQg==",
+                                    "subType": "04"
+                                }
+                            },
+                            "path": "e1",
+                            "bsonType": "string",
+                            "queries": {
+                                "queryType": "equality",
+                                "contention": 0
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    },
+    "ok": {
+        "$numberDouble": "1.0"
+    }
+}

@@ -15,9 +15,6 @@ on:
   workflow_dispatch:
   workflow_call:
     inputs:
-      force:
-        required: true
-        type: boolean
       ref:
         required: true
         type: string
@@ -33,7 +30,7 @@ defaults:
 
 jobs:
   build_dist:
-    if: github.repository_owner == 'mongodb' || inputs.force == true
+    if: github.repository_owner == 'mongodb' || (github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call')
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -46,6 +43,7 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ inputs.ref }}
+          persist-credentials: false
 
       - uses: actions/setup-python@v5
         with:

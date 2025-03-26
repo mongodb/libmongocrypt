@@ -1,0 +1,43 @@
+{
+    "name": "coll",
+    "type": "collection",
+    "options": {
+        "validator": {
+            "$jsonSchema": {
+                "properties": {
+                    "encrypted": {
+                        "encrypt": {
+                            "keyId": [
+                                {
+                                    "$binary": {
+                                        "base64": "YWFhYWFhYWFhYWFhYWFhYQ==",
+                                        "subType": "04"
+                                    }
+                                }
+                            ],
+                            "bsonType": "string",
+                            "algorithm": "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic"
+                        }
+                    }
+                },
+                "bsonType": "object"
+            }
+        }
+    },
+    "info": {
+        "readOnly": false,
+        "uuid": {
+            "$binary": {
+                "base64": "KFfLQpZgQPiyhXHLIiHwDg==",
+                "subType": "04"
+            }
+        }
+    },
+    "idIndex": {
+        "v": 2,
+        "key": {
+            "_id": 1
+        },
+        "name": "_id_"
+    }
+}

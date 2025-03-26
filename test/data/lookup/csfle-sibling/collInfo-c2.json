@@ -1,0 +1,29 @@
+{
+    "type": "collection",
+    "name": "c2",
+    "idIndex": {
+        "ns": "db.c2",
+        "name": "_id_",
+        "key": {
+            "_id": {
+                "$numberInt": "1"
+            }
+        },
+        "v": {
+            "$numberInt": "2"
+        }
+    },
+    "options": {
+        "validator": {
+            "$jsonSchema": {
+                "properties": {
+                    "unencrypted": {
+                        "bsonType": "string"
+                    }
+                },
+                "bsonType": "object"
+            },
+            "foo": "bar"
+        }
+    }
+}

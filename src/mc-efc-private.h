@@ -28,6 +28,10 @@ typedef enum _supported_query_type_flags {
     SUPPORTS_RANGE_QUERIES = 1 << 1,
     // Range preview query supported
     SUPPORTS_RANGE_PREVIEW_DEPRECATED_QUERIES = 1 << 2,
+    // Text search preview query supported
+    SUPPORTS_SUBSTRING_PREVIEW_QUERIES = 1 << 3,
+    SUPPORTS_SUFFIX_PREVIEW_QUERIES = 1 << 4,
+    SUPPORTS_PREFIX_PREVIEW_QUERIES = 1 << 5,
 } supported_query_type_flags;
 
 typedef struct _mc_EncryptedField_t {
@@ -42,6 +46,7 @@ typedef struct _mc_EncryptedField_t {
  * for the server IDL definition of EncryptedFieldConfig. */
 typedef struct {
     mc_EncryptedField_t *fields;
+    uint8_t str_encode_version;
 } mc_EncryptedFieldConfig_t;
 
 /* mc_EncryptedFieldConfig_parse parses a subset of the fields from @efc_bson

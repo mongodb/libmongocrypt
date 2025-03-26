@@ -1,10 +1,20 @@
 # ChangeLog
+## 1.13.0
+### New features
+- Support automatic encryption for `$lookup` stages in `aggregate` pipelines on MongoDB server 8.1+.
+### Fixed
+- Restore default behavior to disable extra alignment when importing libbson. This was the default behavior in 1.11. This can be overridden by setting the CMake option `ENABLE_EXTRA_ALIGNMENT=ON`.
+### Removed
+- Support for macOS versions older than 11. libmongocrypt is supported and tested with macOS 11+.
+
 ## 1.12.0
 ### New features
 - Add option to configure Data Encryption Key cache lifetime (`mongocrypt_setopt_key_expiration`)
 - Add opt-in retry behavior for KMS operations (`mongocrypt_setopt_retry_kms`)
 ### Removed
 - libmongocrypt is no longer published in the MongoDB package repository for RHEL 6. libmongocrypt may instead be built from source on RHEL 6, but support for RHEL 6 will be dropped in a future release.
+### Notes
+- This release unintentionally changes the default behavior of extra alignment with importing libbson. See 1.13.0 release notes.
 
 ## 1.11.0
 ### New features
