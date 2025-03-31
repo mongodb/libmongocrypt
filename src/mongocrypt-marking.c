@@ -1499,6 +1499,12 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForTextSearc
         goto fail;
     }
 
+    // One of substr/suffix/prefix must be set for inserts
+    if (!(insertSpec.substr.set || insertSpec.suffix.set || insertSpec.prefix.set)) {
+        CLIENT_ERR("FLE2TextSearchInsertSpec is missing a substring, suffix, or prefix index specification");
+        goto fail;
+    }
+
     // t
     payload.valueType = BSON_TYPE_UTF8;
 

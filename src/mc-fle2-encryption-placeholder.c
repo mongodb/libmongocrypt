@@ -698,11 +698,7 @@ bool mc_FLE2TextSearchInsertSpec_parse(mc_FLE2TextSearchInsertSpec_t *out,
     CHECK_HAS(v)
     CHECK_HAS(casef)
     CHECK_HAS(diacf)
-    // one of substr/suffix/prefix must be set
-    if (!(has_substr || has_suffix || has_prefix)) {
-        CLIENT_ERR(ERROR_PREFIX "Must have a substring, suffix, or prefix index specification");
-        goto fail;
-    }
+
     return true;
 
 fail:
