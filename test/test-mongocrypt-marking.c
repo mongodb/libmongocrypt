@@ -1361,6 +1361,7 @@ static void validate_text_search_ciphertext(_mongocrypt_tester_t *tester,
             ASSERT_CMPUINT32(parsed.substringSpec.value.ub, ==, spec->substr.value.ub);
         }
         mongocrypt_status_destroy(status);
+        mc_FLE2FindTextPayload_cleanup(&parsed);
     }
 
     mc_ServerDataEncryptionLevel1Token_destroy(sdel1Token);

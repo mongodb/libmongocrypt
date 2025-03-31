@@ -1382,6 +1382,7 @@ static bool _fle2_generate_TextSearchFindTokenSets(_mongocrypt_key_broker_t *kb,
 
     _mongocrypt_crypto_t *crypto = kb->crypt->crypto;
     _FLE2EncryptedPayloadCommon_t common = {{0}};
+    _mongocrypt_buffer_t asBsonValue = {0};
     bool res = false;
 
     int operator_count = (int)spec->substr.set + (int)spec->suffix.set + (int)spec->prefix.set;
@@ -1390,7 +1391,6 @@ static bool _fle2_generate_TextSearchFindTokenSets(_mongocrypt_key_broker_t *kb,
         goto fail;
     }
 
-    _mongocrypt_buffer_t asBsonValue;
     if (!mc_text_search_str_query(spec, &asBsonValue, status)) {
         goto fail;
     }

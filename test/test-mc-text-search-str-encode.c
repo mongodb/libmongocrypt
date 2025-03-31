@@ -1207,6 +1207,7 @@ static void _test_text_search_str_query_bad_string(_mongocrypt_tester_t *tester)
 
     bool res = mc_text_search_str_query(&spec, &out, status);
     ASSERT_FAILS_STATUS(res, status, "not valid UTF-8");
+    mongocrypt_status_destroy(status);
 }
 
 // Tests mc_text_search_str_query() checks the input string codepoint length against lb and ub
