@@ -255,6 +255,13 @@ bool mc_text_search_str_query(const mc_FLE2TextSearchInsertSpec_t *spec,
     BSON_ASSERT_PARAM(spec);
     BSON_ASSERT_PARAM(out);
 
+    if (spec->len > MAX_ENCODE_BYTE_LEN) {
+        CLIENT_ERR("StrQuery: String passed in was too long: String was %" PRIu32 " bytes, but max is %d bytes",
+                   spec->len,
+                   MAX_ENCODE_BYTE_LEN);
+        return false;
+    }
+
     _mongocrypt_buffer_init(out);
     if (!bson_utf8_validate(spec->v, spec->len, false /* allow_null */)) {
         CLIENT_ERR("StrQuery: String passed in was not valid UTF-8");
@@ -274,11 +281,11 @@ bool mc_text_search_str_query(const mc_FLE2TextSearchInsertSpec_t *spec,
                           status)) {
             return false;
         }
-        _mongocrypt_buffer_copy_from_string_as_bson_value(out, folded_str, folded_str_bytes_len);
-        folded_codepoint_len = mc_get_utf8_codepoint_length(folded_str, folded_str_bytes_len);
+        _mongocrypt_buffer_copy_from_string_as_bson_value(out, folded_str, (int)folded_str_bytes_len);
+        folded_codepoint_len = mc_get_utf8_codepoint_length(folded_str, (uint32_t)folded_str_bytes_len);
         bson_free(folded_str);
     } else {
-        _mongocrypt_buffer_copy_from_string_as_bson_value(out, spec->v, spec->len);
+        _mongocrypt_buffer_copy_from_string_as_bson_value(out, spec->v, (int)spec->len);
         folded_codepoint_len = mc_get_utf8_codepoint_length(spec->v, spec->len);
     }
 
