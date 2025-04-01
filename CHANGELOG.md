@@ -1,4 +1,10 @@
 # ChangeLog
+## 1.13.1
+### Fixed
+- Fix possible double free on parse error of malformed payload.
+- Fix build failure when configuring with `ENABLE_TRACE=ON`.
+- Fix possible redefinition of `_GNU_SOURCE`.
+
 ## 1.13.0
 ### New features
 - Support automatic encryption for `$lookup` stages in `aggregate` pipelines on MongoDB server 8.1+.
