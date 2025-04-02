@@ -11,7 +11,7 @@ fi
 
 LIBMONGOCRYPT_VERSION=$1
 
-echo $LIBMONGOCRYPT_VERSION > libmongocrypt-version.txt
+echo $LIBMONGOCRYPT_VERSION > $SCRIPT_DIR/libmongocrypt-version.txt
 
 pushd $SCRIPT_DIR/..
 if [ $(command -v podman) ]; then
