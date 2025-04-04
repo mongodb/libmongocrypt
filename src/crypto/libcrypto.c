@@ -121,7 +121,7 @@ static bool _decrypt_with_cipher(const EVP_CIPHER *cipher, const char *cipher_de
 
     mongocrypt_status_t *status = args.status;
     if (!cipher) {
-        BSON_ASSERT(cipher_description);
+        BSON_ASSERT_PARAM(cipher_description);
         CLIENT_ERR("failed to initialize cipher %s", cipher_description);
         return false;
     }
@@ -219,7 +219,9 @@ EVP_MAC_CTX *_build_hmac_ctx_prototype(const char *digest_name) {
     }
 }
 
-/* _hmac_with_ctx_prototype computes an HMAC of @in using an OpenSSL context duplicated from @ctx.
+/* _hmac_with_ctx_prototype computes an HMAC of @in using an OpenSSL context duplicated from @ctx_prototype.
+ * @ctx_description is a human-readable description used when reporting deferred errors from initialization, required
+ * if @ctx_prototype might be NULL.
  * @key is the input key.
  * @out is the output. @out must be allocated by the caller with
  * the exact length for the output. E.g. for HMAC 256, @out->len must be 32.
@@ -236,6 +238,7 @@ static bool _hmac_with_ctx_prototype(const EVP_MAC_CTX *ctx_prototype,
     BSON_ASSERT(key->len <= INT_MAX);
 
     if (!ctx_prototype) {
+        BSON_ASSERT_PARAM(ctx_description);
         CLIENT_ERR("failed to initialize algorithm %s", ctx_description);
         return false;
     }
