@@ -40,9 +40,8 @@
 
 bool _native_crypto_initialized = false;
 
-/* _encrypt_with_cipher encrypts @in with the OpenSSL cipher specified by
- * @cipher.
- * @cipher is an explicitly fetched cipher, or NULL if early initialization failed.
+/* _encrypt_with_cipher encrypts @in with the specified OpenSSL cipher.
+ * @cipher is a usable EVP_CIPHER, or NULL if early initialization failed.
  * @cipher_description is a human-readable description used when reporting deferred errors from initialization, required
  * if @cipher might be NULL.
  * @key is the input key. @iv is the input IV.
@@ -104,9 +103,8 @@ done:
     return ret;
 }
 
-/* _decrypt_with_cipher decrypts @in with the OpenSSL cipher specified by
- * @cipher.
- * @cipher is an explicitly fetched cipher, or NULL if early initialization failed.
+/* _decrypt_with_cipher decrypts @in with the specified OpenSSL cipher.
+ * @cipher is a usable EVP_CIPHER, or NULL if early initialization failed.
  * @cipher_description is a human-readable description used when reporting deferred errors from initialization, required
  * if @cipher might be NULL.
  * @key is the input key. @iv is the input IV.
