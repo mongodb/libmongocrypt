@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include "mongocrypt.h"
 #include "test-mongocrypt-assert.h"
 #include "test-mongocrypt.h"
 
@@ -1198,10 +1199,138 @@ static void _test_text_search_str_encode_empty_string(_mongocrypt_tester_t *test
     }
 }
 
+// Tests mc_text_search_str_query() fails on invalid utf-8.
+static void _test_text_search_str_query_bad_string(_mongocrypt_tester_t *tester) {
+    mongocrypt_status_t *status = mongocrypt_status_new();
+    _mongocrypt_buffer_t out;
+    mc_FLE2TextSearchInsertSpec_t spec = {.v = "\xff\xff\xff\xff\xff\xff\xff\xff\xff", .len = 9};
+
+    bool res = mc_text_search_str_query(&spec, &out, status);
+    ASSERT_FAILS_STATUS(res, status, "not valid UTF-8");
+    mongocrypt_status_destroy(status);
+}
+
+// Tests mc_text_search_str_query() checks the input string codepoint length against lb and ub
+// for substring, suffix, and prefix queries, and not for exact queres.
+static void _test_text_search_str_query_bounds_checking(_mongocrypt_tester_t *tester) {
+    mc_FLE2TextSearchInsertSpec_t substrSpec = {.substr = {{.mlen = 20, .lb = 4, .ub = 7}, .set = true}};
+    mc_FLE2TextSearchInsertSpec_t suffixSpec = {.suffix = {{.lb = 4, .ub = 7}, .set = true}};
+    mc_FLE2TextSearchInsertSpec_t prefixSpec = {.prefix = {{.lb = 4, .ub = 7}, .set = true}};
+    mc_FLE2TextSearchInsertSpec_t *specs[3] = {&substrSpec, &suffixSpec, &prefixSpec};
+
+    char *short_str = build_random_string_to_fold(3, 5);
+    char *long_str = build_random_string_to_fold(8, 10);
+
+    mongocrypt_status_t *status = mongocrypt_status_new();
+    _mongocrypt_buffer_t out;
+
+    for (int i = 0; i < 3; i++) {
+        // long_str always fails regardless of folding
+        for (int d = 0; d < 2; d++) {
+            specs[i]->v = long_str;
+            specs[i]->len = (uint32_t)strlen(specs[i]->v);
+            specs[i]->diacf = d;
+            ASSERT_FAILS_STATUS(mc_text_search_str_query(specs[i], &out, status),
+                                status,
+                                "longer than the maximum query length");
+            _mongocrypt_buffer_cleanup(&out);
+            _mongocrypt_status_reset(status);
+        }
+        // short_str only fails if diacritic folding is on
+        specs[i]->v = short_str;
+        specs[i]->len = (uint32_t)strlen(specs[i]->v);
+        specs[i]->diacf = true;
+        ASSERT_FAILS_STATUS(mc_text_search_str_query(specs[i], &out, status),
+                            status,
+                            "shorter than the minimum query length");
+        _mongocrypt_buffer_cleanup(&out);
+        _mongocrypt_status_reset(status);
+
+        specs[i]->diacf = false;
+        ASSERT_OK_STATUS(mc_text_search_str_query(specs[i], &out, status), status);
+        _mongocrypt_buffer_cleanup(&out);
+        _mongocrypt_status_reset(status);
+    }
+
+    // test no bounds checking performed if no substr/suffix/prefix specs
+    mc_FLE2TextSearchInsertSpec_t exactSpecShort = {.diacf = true, .v = short_str, .len = (uint32_t)strlen(short_str)};
+    mc_FLE2TextSearchInsertSpec_t exactSpecLong = {.diacf = true, .v = long_str, .len = (uint32_t)strlen(long_str)};
+    ASSERT_OK_STATUS(mc_text_search_str_query(&exactSpecShort, &out, status), status);
+    _mongocrypt_buffer_cleanup(&out);
+    _mongocrypt_status_reset(status);
+    ASSERT_OK_STATUS(mc_text_search_str_query(&exactSpecLong, &out, status), status);
+
+    _mongocrypt_buffer_cleanup(&out);
+    mongocrypt_status_destroy(status);
+    bson_free(short_str);
+    bson_free(long_str);
+}
+
+// Tests mc_text_search_str_query() rejects empty string input for substr/suffix/prefix queries,
+// but not for exact match queries.
+static void _test_text_search_str_query_empty_string(_mongocrypt_tester_t *tester) {
+    mc_FLE2TextSearchInsertSpec_t substrSpec = {.substr = {{20, 4, 7}, true}, .v = "", .len = 0};
+    mc_FLE2TextSearchInsertSpec_t suffixSpec = {.suffix = {{4, 7}, true}, .v = "", .len = 0};
+    mc_FLE2TextSearchInsertSpec_t prefixSpec = {.prefix = {{4, 7}, true}, .v = "", .len = 0};
+    mc_FLE2TextSearchInsertSpec_t exactSpec = {.v = "", .len = 0};
+    mc_FLE2TextSearchInsertSpec_t *specs[3] = {&substrSpec, &suffixSpec, &prefixSpec};
+    mongocrypt_status_t *status = mongocrypt_status_new();
+    _mongocrypt_buffer_t out;
+    for (int i = 0; i < 3; i++) {
+        ASSERT_FAILS_STATUS(mc_text_search_str_query(specs[i], &out, status), status, "string value cannot be empty");
+        _mongocrypt_buffer_cleanup(&out);
+        _mongocrypt_status_reset(status);
+    }
+
+    ASSERT_OK_STATUS(mc_text_search_str_query(&exactSpec, &out, status), status);
+    _mongocrypt_buffer_cleanup(&out);
+    mongocrypt_status_destroy(status);
+}
+
+// Tests mc_text_search_str_query() performs folding per the diacf and casef parameters.
+static void _test_text_search_str_query_folding(_mongocrypt_tester_t *tester) {
+    const char *testStr = "Düsseldorf";
+    const char *diacFoldStr = "Dusseldorf";
+    const char *caseFoldStr = "düsseldorf";
+    const char *bothFoldStr = "dusseldorf";
+    mc_FLE2TextSearchInsertSpec_t spec = {.v = testStr, .len = (uint32_t)strlen(testStr)};
+    mongocrypt_status_t *status = mongocrypt_status_new();
+    _mongocrypt_buffer_t out;
+
+    spec.diacf = true;
+    ASSERT_OK_STATUS(mc_text_search_str_query(&spec, &out, status), status);
+    ASSERT_CMPUINT32((uint32_t)strlen(diacFoldStr) + 5, ==, out.len); // +5 for BSON overhead
+    ASSERT_STREQUAL(diacFoldStr, (const char *)(out.data + 4));       // +4 skips past 32-bit size field
+
+    _mongocrypt_buffer_cleanup(&out);
+    _mongocrypt_status_reset(status);
+
+    spec.casef = true;
+    spec.diacf = false;
+    ASSERT_OK_STATUS(mc_text_search_str_query(&spec, &out, status), status);
+    ASSERT_CMPUINT32((uint32_t)strlen(caseFoldStr) + 5, ==, out.len);
+    ASSERT_STREQUAL(caseFoldStr, (const char *)(out.data + 4));
+
+    _mongocrypt_buffer_cleanup(&out);
+    _mongocrypt_status_reset(status);
+
+    spec.diacf = true;
+    ASSERT_OK_STATUS(mc_text_search_str_query(&spec, &out, status), status);
+    ASSERT_CMPUINT32((uint32_t)strlen(bothFoldStr) + 5, ==, out.len);
+    ASSERT_STREQUAL(bothFoldStr, (const char *)(out.data + 4));
+
+    _mongocrypt_buffer_cleanup(&out);
+    mongocrypt_status_destroy(status);
+}
+
 void _mongocrypt_tester_install_text_search_str_encode(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_text_search_str_encode_suffix_prefix);
     INSTALL_TEST(_test_text_search_str_encode_substring);
     INSTALL_TEST(_test_text_search_str_encode_multiple);
     INSTALL_TEST(_test_text_search_str_encode_bad_string);
     INSTALL_TEST(_test_text_search_str_encode_empty_string);
+    INSTALL_TEST(_test_text_search_str_query_bad_string);
+    INSTALL_TEST(_test_text_search_str_query_bounds_checking);
+    INSTALL_TEST(_test_text_search_str_query_empty_string);
+    INSTALL_TEST(_test_text_search_str_query_folding);
 }

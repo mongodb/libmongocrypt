@@ -15,6 +15,7 @@
  */
 
 #include "mc-efc-private.h"
+#include "mc-fle-blob-subtype-private.h"
 #include "mc-fle2-rfds-private.h"
 #include "mc-tokens-private.h"
 #include "mongocrypt-ciphertext-private.h"
@@ -574,7 +575,8 @@ fail_create_cmd:
 static bool _mongocrypt_fle2_insert_update_find(mc_fle_blob_subtype_t subtype) {
     return (subtype == MC_SUBTYPE_FLE2InsertUpdatePayload) || (subtype == MC_SUBTYPE_FLE2InsertUpdatePayloadV2)
         || (subtype == MC_SUBTYPE_FLE2FindEqualityPayload) || (subtype == MC_SUBTYPE_FLE2FindEqualityPayloadV2)
-        || (subtype == MC_SUBTYPE_FLE2FindRangePayload) || (subtype == MC_SUBTYPE_FLE2FindRangePayloadV2);
+        || (subtype == MC_SUBTYPE_FLE2FindRangePayload) || (subtype == MC_SUBTYPE_FLE2FindRangePayloadV2)
+        || (subtype == MC_SUBTYPE_FLE2FindTextPayload);
 }
 
 static bool

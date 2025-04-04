@@ -390,17 +390,6 @@ static void _test_FLE2EncryptionPlaceholder_textSearch_parse(_mongocrypt_tester_
         mongocrypt_status_destroy(status);
     }
 
-    // Test type=MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT without substring, suffix, or prefix specs
-    {
-        const char *input = RAW_STRING({"v" : "foobar", "casef" : false, "diacf" : true});
-        mongocrypt_status_t *status = mongocrypt_status_new();
-        mc_FLE2TextSearchInsertSpec_t spec;
-        ASSERT_FAILS_STATUS(_parse_text_search_spec_from_placeholder(tester, input, &spec, status),
-                            status,
-                            "Must have a substring, suffix, or prefix index specification");
-        mongocrypt_status_destroy(status);
-    }
-
     // Test type=MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT with lb > ub
 #define LB_GT_UB_TEST(Type)                                                                                            \
     do {                                                                                                               \
