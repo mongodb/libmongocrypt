@@ -300,7 +300,6 @@ bool mc_FLE2InsertUpdatePayloadV2_parse(mc_FLE2InsertUpdatePayloadV2_t *out,
 
     return true;
 fail:
-    mc_FLE2InsertUpdatePayloadV2_cleanup(out);
     return false;
 }
 
