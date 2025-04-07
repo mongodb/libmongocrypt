@@ -18,6 +18,8 @@ make_patch_command (patch_command
     DISABLED "${patch_disabled}"
     PATCHES
         ${PROJECT_SOURCE_DIR}/etc/libbson-remove-GCC-diagnostic-pragma.patch
+        # Fix old GCC error: "#pragma GCC diagnostic not allowed inside functions". Remove patch after libbson 2.0.0:
+        ${PROJECT_SOURCE_DIR}/etc/libbson-remove-GCC-diagnostic-in-functions.patch
     )
 
 # Fetch the source archive for the requested tag from GitHub

@@ -1,0 +1,158 @@
+diff --git a/src/libmongoc/src/mongoc/mongoc-collection.c b/src/libmongoc/src/mongoc/mongoc-collection.c
+index d21a043788..ac0194e477 100644
+--- a/src/libmongoc/src/mongoc/mongoc-collection.c
++++ b/src/libmongoc/src/mongoc/mongoc-collection.c
+@@ -681,6 +681,7 @@ mongoc_collection_command_simple (mongoc_collection_t *collection,
+  *--------------------------------------------------------------------------
+  */
+ 
++BEGIN_IGNORE_DEPRECATIONS
+ int64_t
+ mongoc_collection_count (mongoc_collection_t *collection,       /* IN */
+                          mongoc_query_flags_t flags,            /* IN */
+@@ -705,13 +706,12 @@ mongoc_collection_count (mongoc_collection_t *collection,       /* IN */
+    /* Server Selection Spec: "may-use-secondary" commands SHOULD take a read
+     * preference argument and otherwise MUST use the default read preference
+     * from client, database or collection configuration. */
+-   BEGIN_IGNORE_DEPRECATIONS
+    ret = mongoc_collection_count_with_opts (collection, flags, query, skip, limit, &opts, read_prefs, error);
+-   END_IGNORE_DEPRECATIONS
+ 
+    bson_destroy (&opts);
+    return ret;
+ }
++END_IGNORE_DEPRECATIONS
+ 
+ 
+ int64_t
+@@ -1231,6 +1231,7 @@ mongoc_collection_keys_to_index_string (const bson_t *keys)
+ }
+ 
+ 
++BEGIN_IGNORE_DEPRECATIONS
+ bool
+ mongoc_collection_create_index (mongoc_collection_t *collection,
+                                 const bson_t *keys,
+@@ -1240,15 +1241,14 @@ mongoc_collection_create_index (mongoc_collection_t *collection,
+    bson_t reply;
+    bool ret;
+ 
+-   BEGIN_IGNORE_DEPRECATIONS
+ 
+    ret = mongoc_collection_create_index_with_opts (collection, keys, opt, NULL, &reply, error);
+ 
+-   END_IGNORE_DEPRECATIONS
+ 
+    bson_destroy (&reply);
+    return ret;
+ }
++END_IGNORE_DEPRECATIONS
+ 
+ static bool
+ _mongoc_collection_index_keys_equal (const bson_t *expected, const bson_t *actual)
+@@ -1578,16 +1578,16 @@ done:
+ }
+ 
+ 
++BEGIN_IGNORE_DEPRECATIONS
+ bool
+ mongoc_collection_ensure_index (mongoc_collection_t *collection,
+                                 const bson_t *keys,
+                                 const mongoc_index_opt_t *opt,
+                                 bson_error_t *error)
+ {
+-   BEGIN_IGNORE_DEPRECATIONS
+    return mongoc_collection_create_index (collection, keys, opt, error);
+-   END_IGNORE_DEPRECATIONS
+ }
++END_IGNORE_DEPRECATIONS
+ 
+ 
+ mongoc_cursor_t *
+@@ -2317,6 +2317,7 @@ mongoc_collection_replace_one (mongoc_collection_t *collection,
+  *--------------------------------------------------------------------------
+  */
+ 
++BEGIN_IGNORE_DEPRECATIONS
+ bool
+ mongoc_collection_save (mongoc_collection_t *collection,
+                         const bson_t *document,
+@@ -2330,7 +2331,6 @@ mongoc_collection_save (mongoc_collection_t *collection,
+    BSON_ASSERT_PARAM (collection);
+    BSON_ASSERT_PARAM (document);
+ 
+-   BEGIN_IGNORE_DEPRECATIONS
+    if (!bson_iter_init_find (&iter, document, "_id")) {
+       return mongoc_collection_insert (collection, MONGOC_INSERT_NONE, document, write_concern, error);
+    }
+@@ -2350,12 +2350,12 @@ mongoc_collection_save (mongoc_collection_t *collection,
+ 
+    ret = mongoc_collection_update (
+       collection, MONGOC_UPDATE_UPSERT | MONGOC_UPDATE_NO_VALIDATE, &selector, document, write_concern, error);
+-   END_IGNORE_DEPRECATIONS
+ 
+    bson_destroy (&selector);
+ 
+    return ret;
+ }
++END_IGNORE_DEPRECATIONS
+ 
+ 
+ bool
+diff --git a/src/libmongoc/src/mongoc/mongoc-stream-tls.c b/src/libmongoc/src/mongoc/mongoc-stream-tls.c
+index 744fdc4089..252d6209f3 100644
+--- a/src/libmongoc/src/mongoc/mongoc-stream-tls.c
++++ b/src/libmongoc/src/mongoc/mongoc-stream-tls.c
+@@ -187,6 +187,7 @@ mongoc_stream_tls_check_cert (mongoc_stream_t *stream, const char *host)
+  *--------------------------------------------------------------------------
+  */
+ 
++BEGIN_IGNORE_DEPRECATIONS
+ mongoc_stream_t *
+ mongoc_stream_tls_new_with_hostname (mongoc_stream_t *base_stream, const char *host, mongoc_ssl_opt_t *opt, int client)
+ {
+@@ -208,9 +209,7 @@ mongoc_stream_tls_new_with_hostname (mongoc_stream_t *base_stream, const char *h
+ #if defined(MONGOC_ENABLE_SSL_OPENSSL)
+    return mongoc_stream_tls_openssl_new (base_stream, host, opt, client);
+ #elif defined(MONGOC_ENABLE_SSL_LIBRESSL)
+-   BEGIN_IGNORE_DEPRECATIONS
+    return mongoc_stream_tls_libressl_new (base_stream, host, opt, client);
+-   END_IGNORE_DEPRECATIONS
+ #elif defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
+    return mongoc_stream_tls_secure_transport_new (base_stream, host, opt, client);
+ #elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
+@@ -219,6 +218,7 @@ mongoc_stream_tls_new_with_hostname (mongoc_stream_t *base_stream, const char *h
+ #error "Don't know how to create TLS stream"
+ #endif
+ }
++END_IGNORE_DEPRECATIONS
+ 
+ #if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
+ /*
+diff --git a/src/libmongoc/src/mongoc/mongoc-write-concern.c b/src/libmongoc/src/mongoc/mongoc-write-concern.c
+index 82ac8d3c32..10b8585c1c 100644
+--- a/src/libmongoc/src/mongoc/mongoc-write-concern.c
++++ b/src/libmongoc/src/mongoc/mongoc-write-concern.c
+@@ -492,6 +492,7 @@ mongoc_write_concern_append (mongoc_write_concern_t *write_concern, bson_t *comm
+  * Returns: A newly allocated mongoc_write_concern_t. This should be freed
+  *    with mongoc_write_concern_destroy().
+  */
++BEGIN_IGNORE_DEPRECATIONS
+ mongoc_write_concern_t *
+ _mongoc_write_concern_new_from_iter (const bson_iter_t *iter, bson_error_t *error)
+ {
+@@ -532,9 +533,7 @@ _mongoc_write_concern_new_from_iter (const bson_iter_t *iter, bson_error_t *erro
+          if (!BSON_ITER_HOLDS_BOOL (&inner)) {
+             goto fail;
+          }
+-         BEGIN_IGNORE_DEPRECATIONS
+          mongoc_write_concern_set_fsync (write_concern, bson_iter_bool (&inner));
+-         END_IGNORE_DEPRECATIONS
+       } else if (BSON_ITER_IS_KEY (&inner, "j")) {
+          if (!BSON_ITER_HOLDS_BOOL (&inner)) {
+             goto fail;
+@@ -560,3 +559,4 @@ fail:
+    mongoc_write_concern_destroy (write_concern);
+    return NULL;
+ }
++END_IGNORE_DEPRECATIONS
