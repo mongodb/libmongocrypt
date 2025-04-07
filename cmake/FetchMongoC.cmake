@@ -1,7 +1,7 @@
 include (FetchContent)
 
 # Set the tag that we will fetch.
-# When updating the version of libbson, also update the version in etc/purls.txt
+# When updating the version of libbson, also update the version in etc/purls.txt and .evergreen/prep_c_driver_source.sh
 set (MONGOC_FETCH_TAG_FOR_LIBBSON "1.30.2" CACHE STRING "The Git tag of mongo-c-driver that will be fetched to obtain libbson")
 
 # Add an option to disable patching if a patch command is unavailable.
