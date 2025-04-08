@@ -84,14 +84,13 @@ Do the following when releasing:
      Download the Augmented SBOM from a recent execution of the `sbom` task in an Evergreen patch or commit build.
    - Attach `etc/third_party_vulnerabilities.md` to the release.
    - Attach `etc/ssdlc_compliance_report.md` to the release.
-
+- Check out the release branch (`rx.y`). Generate a new unique SBOM serial number for the next upcoming patch release (e.g. for `1.13.1` following the release of `1.13.0`):
+   ```bash
+   ./.evergreen/earthly.sh +sbom-generate-new-serial-number
+   ```
+   Commit resulting `etc/cyclonedx.sbom.json` and push to `rx.y`.
 - If this is a new minor release (e.g. `x.y.0`):
    - File a DOCSP ticket to update the installation instructions on [Install libmongocrypt](https://www.mongodb.com/docs/manual/core/csfle/reference/libmongocrypt/). ([Example](https://jira.mongodb.org/browse/DOCSP-47954))
-   - Check out the release branch (`rx.y`). Generate a new unique SBOM serial number for the next upcoming patch release (e.g. for `1.13.1` following the release of `1.13.0`):
-     ```bash
-     ./.evergreen/earthly.sh +sbom-generate-new-serial-number
-     ```
-     Commit resulting `etc/cyclonedx.sbom.json` and push to `rx.y`.
    - Create a new Snyk reference target. The following instructions use the example branch `rx.y`:
 
      Run `cmake` to ensure generated source files are present:
