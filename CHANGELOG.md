@@ -1,4 +1,7 @@
 # ChangeLog
+## 1.13.2
+### Notes
+- Bump downloaded libbson version from 1.28.1 to 1.30.3. Fixes a CMake configure error on macOS with CMake 4.
 ## 1.13.1
 ### Fixed
 - Fix possible double free on parse error of malformed payload.
