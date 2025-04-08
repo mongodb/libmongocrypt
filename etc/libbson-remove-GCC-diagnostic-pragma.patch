@@ -1,7 +1,7 @@
-diff --git a/src/common/bson-dsl.h b/src/common/bson-dsl.h
+diff --git a/src/common/src/common-bson-dsl-private.h b/src/common/src/common-bson-dsl-private.h
 index 58a14e28e..3341e603f 100644
---- a/src/common/bson-dsl.h
-+++ b/src/common/bson-dsl.h
+--- a/src/common/src/common-bson-dsl-private.h
++++ b/src/common/src/common-bson-dsl-private.h
 @@ -29,6 +29,13 @@ enum {
     BSON_IF_WINDOWS (__declspec (selectany)) \
     BSON_IF_POSIX (__attribute__ ((weak)))
