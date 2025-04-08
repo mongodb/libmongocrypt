@@ -131,6 +131,7 @@ Do the following when releasing:
 
 ## Homebrew steps ##
 Submit a PR to update the Homebrew package https://github.com/mongodb/homebrew-brew/blob/master/Formula/libmongocrypt.rb. ([Example](https://github.com/mongodb/homebrew-brew/pull/234)). If not on macOS, request a team member to do this step.
+Request review by posting in #ask-devprod-build.
 
 ## Debian steps ##
 If you are not a Debian maintainer on the team, request a team member to do the steps in this section.
