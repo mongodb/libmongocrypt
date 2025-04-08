@@ -120,7 +120,7 @@ Do the following when releasing:
      - Add the new release branch to the `Payload URL`. Remove unmaintained release branches.
 - Make a PR to to the `master` branch:
    - Apply changes from the "Release x.y.z" commit.
-   - Generate a new unique SBOM serial number next upcoming non-patch release (e.g. for `1.14.0` following the release of `1.13.0`):
+   - If this was a non-patch release (e.g. `x.y.0`), generate a new unique SBOM serial number for the next upcoming non-patch release (e.g. for `1.14.0` following the release of `1.13.0`):
      ```bash
      ./.evergreen/earthly.sh +sbom-generate-new-serial-number
      ```
