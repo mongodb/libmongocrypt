@@ -19,7 +19,7 @@ Go to [Snyk](https://app.snyk.io/) and select the `dev-prod` organization. If ac
 
 ##### Update Snyk
 
-Update the Snyk reference target tracking the to-be-released branch. For a patch release (e.g. x.y.z), check-out the `rx.y` branch and update the `rx.y` reference target. For a minor release (e.g. x.y.0), check out the `master` branch and update the `master` reference target.
+Update the Snyk reference target tracking the to-be-released branch. For a patch release (e.g. x.y.z), check-out the `rx.y` branch and update the `rx.y` reference target. For a non-patch release (e.g. x.y.0), check out the `master` branch and update the `master` reference target.
 
 Run `cmake` to ensure generated source files are present:
 ```bash
@@ -61,11 +61,11 @@ Check the contents of the "vulnerabilities" field (if present) in the Augmented 
 
 Do the following when releasing:
 - If this is a feature release (e.g. `x.y.0` or `x.0.0`), follow these steps: [Creating SSDLC static analysis reports](https://docs.google.com/document/d/1rkFL8ymbkc0k8Apky9w5pTPbvKRm68wj17mPJt2_0yo/edit).
-- Check out the release branch. For a release `x.y.z`, the release branch is `rx.y`. If this is a new minor release (`x.y.0`), create the release branch.
+- Check out the release branch. For a release `x.y.z`, the release branch is `rx.y`. If this is a new non-patch release (`x.y.0`), create the release branch.
 - Update CHANGELOG.md with the version being released.
 - Ensure `etc/purls.txt` is up-to-date.
 - Update `etc/third_party_vulnerabilities.md` with any updates to new or known vulnerabilities for third party dependencies that must be reported.
-- If this is a new minor release (e.g. `x.y.0`):
+- If this is a new non-patch release (e.g. `x.y.0`):
    - Update the Linux distribution package installation instructions in [README.md](../README.md) to refer to the new version `x.y`.
    - Update the [libmongocrypt-release](https://spruce.mongodb.com/project/libmongocrypt-release/settings/general) Evergreen project (requires auth) to set `Branch Name` to `rx.y`.
 - Commit the changes on the `rx.y` branch with a message like "Release x.y.z".
@@ -84,14 +84,13 @@ Do the following when releasing:
      Download the Augmented SBOM from a recent execution of the `sbom` task in an Evergreen patch or commit build.
    - Attach `etc/third_party_vulnerabilities.md` to the release.
    - Attach `etc/ssdlc_compliance_report.md` to the release.
-
-- If this is a new minor release (e.g. `x.y.0`):
+- Check out the release branch (`rx.y`). Generate a new unique SBOM serial number for the next upcoming patch release (e.g. for `1.13.1` following the release of `1.13.0`):
+   ```bash
+   ./.evergreen/earthly.sh +sbom-generate-new-serial-number
+   ```
+   Commit resulting `etc/cyclonedx.sbom.json` and push to `rx.y`.
+- If this is a new non-patch release (e.g. `x.y.0`):
    - File a DOCSP ticket to update the installation instructions on [Install libmongocrypt](https://www.mongodb.com/docs/manual/core/csfle/reference/libmongocrypt/). ([Example](https://jira.mongodb.org/browse/DOCSP-47954))
-   - Check out the release branch (`rx.y`). Generate a new unique SBOM serial number for the next upcoming patch release (e.g. for `1.13.1` following the release of `1.13.0`):
-     ```bash
-     ./.evergreen/earthly.sh +sbom-generate-new-serial-number
-     ```
-     Commit resulting `etc/cyclonedx.sbom.json` and push to `rx.y`.
    - Create a new Snyk reference target. The following instructions use the example branch `rx.y`:
 
      Run `cmake` to ensure generated source files are present:
@@ -121,7 +120,7 @@ Do the following when releasing:
      - Add the new release branch to the `Payload URL`. Remove unmaintained release branches.
 - Make a PR to to the `master` branch:
    - Apply changes from the "Release x.y.z" commit.
-   - Generate a new unique SBOM serial number next upcoming non-patch release (e.g. for `1.14.0` following the release of `1.13.0`):
+   - If this was a non-patch release (e.g. `x.y.0`), generate a new unique SBOM serial number for the next upcoming non-patch release (e.g. for `1.14.0` following the release of `1.13.0`):
      ```bash
      ./.evergreen/earthly.sh +sbom-generate-new-serial-number
      ```
@@ -132,13 +131,14 @@ Do the following when releasing:
 
 ## Homebrew steps ##
 Submit a PR to update the Homebrew package https://github.com/mongodb/homebrew-brew/blob/master/Formula/libmongocrypt.rb. ([Example](https://github.com/mongodb/homebrew-brew/pull/234)). If not on macOS, request a team member to do this step.
+Request review by posting in #ask-devprod-build.
 
 ## Debian steps ##
 If you are not a Debian maintainer on the team, request a team member to do the steps in this section.
 
 Refer to the [Debian](https://github.com/mongodb/mongo-c-driver/blob/master/docs/dev/debian.rst) steps.
 
-For a minor release (e.g. x.y.0), submit a merge request to the [extrepo-data](https://salsa.debian.org/extrepo-team/extrepo-data) project in Debian to update the PPA. The change would look something like this:
+For a non-patch release (e.g. x.y.0), submit a merge request to the [extrepo-data](https://salsa.debian.org/extrepo-team/extrepo-data) project in Debian to update the PPA. The change would look something like this:
 
 ```
 diff --git a/repos/debian/libmongocrypt.yaml b/repos/debian/libmongocrypt.yaml
