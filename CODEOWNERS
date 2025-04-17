@@ -1,4 +1,7 @@
 # Code Owners will automatically be added as reviewers on PRs
 
+# Listing code owners is required by DRIVERS-3098
+* @mongodb/dbx-c-cxx
+
 # Python Bindings
 bindings/python @mongodb/dbx-python
