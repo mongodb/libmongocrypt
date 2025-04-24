@@ -74,7 +74,7 @@ jobs:
       ref: ${{ needs.pre-publish.outputs.version }}
 
   publish:
-    needs: [build-dist, static-python]
+    needs: [build-dist, static-python, static-actions]
     name: Upload release to PyPI
     runs-on: ubuntu-latest
     environment: release-python
