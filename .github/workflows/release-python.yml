@@ -61,14 +61,20 @@ jobs:
     with:
       ref: ${{ needs.pre-publish.outputs.version }}
 
-  static-scan:
+  static-python:
     needs: [pre-publish]
     uses: ./.github/workflows/codeql-python.yml
     with:
       ref: ${{ needs.pre-publish.outputs.version }}
 
+  static-actions:
+    needs: [pre-publish]
+    uses: ./.github/workflows/codeql-actions.yml
+    with:
+      ref: ${{ needs.pre-publish.outputs.version }}
+
   publish:
-    needs: [build-dist, static-scan]
+    needs: [build-dist, static-python, static-actions]
     name: Upload release to PyPI
     runs-on: ubuntu-latest
     environment: release-python
