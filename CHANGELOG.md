@@ -1,4 +1,12 @@
 # ChangeLog
+## 1.14.0
+### Fixed
+- Fix building against libbson with extra alignment enabled (`ENABLE_EXTRA_ALIGNMENT=ON`).
+- Retry KMS encrypt request for context created by `mongocrypt_ctx_rewrap_many_datakey_init`.
+### Improvements
+- Improve performance of OpenSSL crypto operations.
+- Improve error for incorrect path to crypt_shared library.
+
 ## 1.13.2
 ### Notes
 - Bump downloaded libbson version from 1.28.1 to 1.30.3. Fixes a CMake configure error on macOS with CMake 4.
