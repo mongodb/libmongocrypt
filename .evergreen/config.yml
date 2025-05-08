@@ -1075,7 +1075,7 @@ tasks:
             is_mainline=false
           fi
 
-          # We parse the username out of the order_id as patches append that in and SPS does not need that information
+          # Parse the username out of the order_id. Patches append the username. The Signal Processing Service (SPS) endpoint does not need the other information.
           parsed_order_id=$(echo "${revision_order_id}" | awk -F'_' '{print $NF}')
 
           # Submit the performance data to the SPS endpoint
