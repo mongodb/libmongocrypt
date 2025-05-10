@@ -164,12 +164,18 @@ functions:
           cd ./libmongocrypt/bindings/python && ${test_env|} ./.evergreen/test.sh
 
   "test python integ":
+    - command: ec2.assume_role
+      params:
+        role_arn: ${drivers_test_secrets_role}
     - command: subprocess.exec
       params:
         binary: bash
         include_expansions_in_env:
           - project_directory
           - variant_name
+          - AWS_SECRET_ACCESS_KEY
+          - AWS_ACCESS_KEY_ID
+          - AWS_SESSION_TOKEN
         args:
           - ./libmongocrypt/bindings/python/.evergreen/integ-setup.sh
     - command: expansions.update
