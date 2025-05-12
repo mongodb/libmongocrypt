@@ -164,6 +164,7 @@ sudo apt-get install -y libmongocrypt-dev
 
 ### .rpm Packages (RedHat, Suse, and Amazon) ###
 
+RPMs are available for supported systems running on both x86_64 and AArch64 (also called ARM64) processors. The sections below use `x86_64` in the example repository URLs. Substituting `aarch64` in the place of `x86_64` will permit installation of libmongocrypt packages on systems running on AArch64 processors.
 
 #### RedHat Enterprise Linux ####
 
