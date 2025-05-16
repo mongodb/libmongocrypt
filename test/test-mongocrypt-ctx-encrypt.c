@@ -1988,6 +1988,7 @@ static void ee_testcase_run(ee_testcase *tc) {
         bool ret = mongocrypt_ctx_finalize(ctx, got);
         if (tc->expect_finalize_error) {
             ASSERT_FAILS(ret, ctx, tc->expect_finalize_error);
+            ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_ERROR);
         } else {
             ASSERT_OK(ret, ctx);
             ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(tc->expect, got);
@@ -2443,6 +2444,24 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         }));
         tc.keys_to_feed[0] = keyABC;
         tc.expect_finalize_error = "Range option 'max' is required";
+        tc.is_expression = true;
+        ee_testcase_run(&tc);
+    }
+
+    {
+        ee_testcase tc = {0};
+        tc.desc = "crossed bounds fails";
+        tc.algorithm = MONGOCRYPT_ALGORITHM_RANGE_STR;
+        tc.query_type = MONGOCRYPT_QUERY_TYPE_RANGE_STR;
+        tc.user_key_id = &keyABC_id;
+        tc.contention_factor = OPT_I64(0);
+        tc.range_opts = TEST_BSON(RAW_STRING({"min" : {"$numberInt" : "0"}, "max" : {"$numberInt" : "100"}}));
+        tc.msg = TEST_BSON(RAW_STRING({
+            "v" :
+                {"$and" : [ {"age" : {"$gt" : {"$numberInt" : "25"}}}, {"age" : {"$lt" : {"$numberInt" : "15"}}} ]}
+        }));
+        tc.keys_to_feed[0] = keyABC;
+        tc.expect_finalize_error = "must be less than or equal to range max";
         tc.is_expression = true;
         ee_testcase_run(&tc);
     }

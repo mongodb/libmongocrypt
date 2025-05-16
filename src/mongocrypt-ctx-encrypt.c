@@ -1259,6 +1259,7 @@ static bool FLE2RangeFindDriverSpec_to_ciphertexts(mongocrypt_ctx_t *ctx, mongoc
                                                   &iter,
                                                   &with_ciphertexts,
                                                   ctx->status)) {
+            _mongocrypt_ctx_fail(ctx);
             goto fail;
         }
     }
