@@ -1120,6 +1120,35 @@ done:
     return ret;
 }
 
+static bool _is_retryable_req(_kms_request_type_t req_type) {
+    // Check if request type is retryable. Some requests are non-idempotent and cannot be safely retried.
+    _kms_request_type_t retryable_types[] = {MONGOCRYPT_KMS_AZURE_OAUTH,
+                                             MONGOCRYPT_KMS_GCP_OAUTH,
+                                             MONGOCRYPT_KMS_AWS_ENCRYPT,
+                                             MONGOCRYPT_KMS_AWS_DECRYPT,
+                                             MONGOCRYPT_KMS_AZURE_WRAPKEY,
+                                             MONGOCRYPT_KMS_AZURE_UNWRAPKEY,
+                                             MONGOCRYPT_KMS_GCP_ENCRYPT,
+                                             MONGOCRYPT_KMS_GCP_DECRYPT};
+    for (size_t i = 0; i < sizeof(retryable_types) / sizeof(retryable_types[0]); i++) {
+        if (retryable_types[i] == req_type) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool mongocrypt_kms_ctx_should_retry_http(mongocrypt_kms_ctx_t *kms) {
+    return kms && kms->should_retry;
+}
+
+void mongocrypt_kms_ctx_reset(mongocrypt_kms_ctx_t *kms) {
+    if (kms->parser) {
+        kms_response_parser_reset(kms->parser);
+    }
+    kms->should_retry = false;
+}
+
 bool mongocrypt_kms_ctx_fail(mongocrypt_kms_ctx_t *kms) {
     if (!kms) {
         return false;
@@ -1138,23 +1167,7 @@ bool mongocrypt_kms_ctx_fail(mongocrypt_kms_ctx_t *kms) {
         return false;
     }
 
-    // Check if request type is retryable. Some requests are non-idempotent and cannot be safely retried.
-    _kms_request_type_t retryable_types[] = {MONGOCRYPT_KMS_AZURE_OAUTH,
-                                             MONGOCRYPT_KMS_GCP_OAUTH,
-                                             MONGOCRYPT_KMS_AWS_ENCRYPT,
-                                             MONGOCRYPT_KMS_AWS_DECRYPT,
-                                             MONGOCRYPT_KMS_AZURE_WRAPKEY,
-                                             MONGOCRYPT_KMS_AZURE_UNWRAPKEY,
-                                             MONGOCRYPT_KMS_GCP_ENCRYPT,
-                                             MONGOCRYPT_KMS_GCP_DECRYPT};
-    bool is_retryable = false;
-    for (size_t i = 0; i < sizeof(retryable_types) / sizeof(retryable_types[0]); i++) {
-        if (retryable_types[i] == kms->req_type) {
-            is_retryable = true;
-            break;
-        }
-    }
-    if (!is_retryable) {
+    if (!_is_retryable_req(kms->req_type)) {
         CLIENT_ERR("KMS request failed due to network error");
         return false;
     }
