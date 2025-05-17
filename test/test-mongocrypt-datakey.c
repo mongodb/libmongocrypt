@@ -496,7 +496,8 @@ static void _test_create_datakey_with_retry(_mongocrypt_tester_t *tester) {
         // Expect no sleep is requested before any error.
         ASSERT_CMPINT64(mongocrypt_kms_ctx_usleep(kms_ctx), ==, 0);
         // Feed part of a response
-        ASSERT_OK(mongocrypt_kms_ctx_feed(kms_ctx, TEST_FILE("./test/data/kms-aws/encrypt-response-partial.txt")), kms_ctx);
+        ASSERT_OK(mongocrypt_kms_ctx_feed(kms_ctx, TEST_FILE("./test/data/kms-aws/encrypt-response-partial.txt")),
+                  kms_ctx);
         // Assume a network error and reset the context.
         mongocrypt_kms_ctx_reset(kms_ctx);
         // Feed a successful response.

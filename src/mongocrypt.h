@@ -1197,7 +1197,7 @@ MONGOCRYPT_EXPORT
 void mongocrypt_kms_ctx_reset(mongocrypt_kms_ctx_t *kms);
 
 /**
- * Indicate if a KMS is completed but should be retried due to an HTTP error.
+ * Indicate if a KMS context is completed but should be retried due to an HTTP error.
  *
  * @param[in] kms The @ref mongocrypt_kms_ctx_t.
  * @return A boolean indicating whether the failed request is complete but should be retried.
