@@ -1,4 +1,8 @@
 # ChangeLog
+## 1.15.0 (Unreleased)
+### Removed
+- Support for building with Visual Studio 2015. Use Visual Studio 2017 or newer.
+
 ## 1.14.0
 ### Fixed
 - Fix building against libbson with extra alignment enabled (`ENABLE_EXTRA_ALIGNMENT=ON`).
