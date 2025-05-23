@@ -1,5 +1,8 @@
 # libmongocrypt #
+
 The companion C library for client side encryption in drivers.
+
+This project uses [Semantic Versioning](https://semver.org/).
 
 # Bugs / Feature Requests #
 
