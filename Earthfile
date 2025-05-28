@@ -185,6 +185,9 @@ ENV_DEBIAN:
         # Update source list for archived Debian stretch packages.
         # Refer: https://unix.stackexchange.com/a/743865/260858
         RUN echo "deb http://archive.debian.org/debian stretch main" > /etc/apt/sources.list
+        # Trust newer Debian signing keys to avoid "unauthenticated packages" error:
+        COPY +get-deb-signing-keys/keys/deb10-archive-signing-key.gpg /etc/apt/trusted.gpg.d
+        COPY +get-deb-signing-keys/keys/deb11-archive-signing-key.gpg /etc/apt/trusted.gpg.d
     END
     DO +DEBIAN_SETUP
 
@@ -363,6 +366,19 @@ check-format:
     RUN /X/etc/format.sh  # Does nothing, but warms the cache
     COPY --dir .clang-format src test /X/
     RUN /X/etc/format-all.sh --dry-run -Werror --verbose
+
+get-deb-signing-keys:
+    FROM +env.deb12
+    RUN __install gpg
+    # Get "Debian 10/buster archive signing key"
+    RUN gpg --keyserver keyserver.ubuntu.com --recv-keys 80D15823B7FD1561F9F7BCDDDC30D7C23CBBABEE
+    RUN gpg --export 80D15823B7FD1561F9F7BCDDDC30D7C23CBBABEE > deb10-archive-signing-key.gpg
+    SAVE ARTIFACT deb10-archive-signing-key.gpg /keys/
+
+    # Import "Debian 11/bullseye archive signing key"
+    RUN gpg --keyserver keyserver.ubuntu.com --recv-keys 1F89983E0081FDE018F3CC9673A4F27B8DD47936
+    RUN gpg --export 1F89983E0081FDE018F3CC9673A4F27B8DD47936 > deb11-archive-signing-key.gpg
+    SAVE ARTIFACT deb11-archive-signing-key.gpg /keys/
 
 # The main "build" target. Options:
 #   • --env=[...] (default "u22")
