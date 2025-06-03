@@ -1,4 +1,9 @@
 # ChangeLog
+## 1.14.1
+### Fixed
+- Fix possible missing error state on `mongocrypt_ctx_finalize`.
+### Improvements
+- Add Ubuntu 24.04 package.
 ## 1.14.0
 ### Fixed
 - Fix building against libbson with extra alignment enabled (`ENABLE_EXTRA_ALIGNMENT=ON`).
