@@ -1578,6 +1578,8 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForTextSearc
     _mongocrypt_buffer_copy_to(&payload.edcDerivedToken, &payload.serverDerivedFromDataToken);
 
     // p := EncryptCTR(ECOCToken, ESCDerivedFromDataTokenAndContentionFactor | 0x000000)
+    // Since p is never used for text search, this just sets p to a bogus ciphertext of
+    // the correct length.
     if (!_fle2_derive_encrypted_token(kb->crypt->crypto,
                                       &payload.encryptedTokens,
                                       common.collectionsLevel1Token,
