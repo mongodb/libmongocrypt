@@ -1319,8 +1319,9 @@ static void validate_text_search_ciphertext(_mongocrypt_tester_t *tester,
         ASSERT(bson_iter_init_find(&b_iter, &b_bson, "e"));
         validate_text_search_token_set_common(&b_iter,
                                               crypt,
-                                              1 + expected_tag_counts->substrings + expected_tag_counts->suffixes
-                                                  + expected_tag_counts->prefixes);
+                                              (uint32_t)(1 + expected_tag_counts->substrings
+                                                         + expected_tag_counts->suffixes
+                                                         + expected_tag_counts->prefixes));
 
         size_t tscount = 0;
         ASSERT(bson_iter_init_find(&b_iter, &b_bson, "s"));
