@@ -37,7 +37,7 @@ static void _test_compact_success(_mongocrypt_tester_t *tester) {
         strcpy(collfile, datapath);
         strcat(collfile, "collinfo.json");
         strcpy(payloadfile, datapath);
-        strcat(payloadfile, "encrypted-payload-range-v2.json");
+        strcat(payloadfile, "encrypted-payload.json");
 
         mongocrypt_t *crypt;
         mongocrypt_ctx_t *ctx;
@@ -203,8 +203,7 @@ static void _test_compact_nonlocal_kms(_mongocrypt_tester_t *tester) {
     {
         mongocrypt_binary_t *out = mongocrypt_binary_new();
         ASSERT_OK(mongocrypt_ctx_finalize(ctx, out), ctx);
-        ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TEST_FILE("./test/data/compact/success/encrypted-payload-range-v2.json"),
-                                            out);
+        ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TEST_FILE("./test/data/compact/success/encrypted-payload.json"), out);
         mongocrypt_binary_destroy(out);
     }
 
@@ -338,8 +337,7 @@ static void _test_compact_need_kms_credentials(_mongocrypt_tester_t *tester) {
     {
         mongocrypt_binary_t *out = mongocrypt_binary_new();
         ASSERT_OK(mongocrypt_ctx_finalize(ctx, out), ctx);
-        ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TEST_FILE("./test/data/compact/success/encrypted-payload-range-v2.json"),
-                                            out);
+        ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TEST_FILE("./test/data/compact/success/encrypted-payload.json"), out);
         mongocrypt_binary_destroy(out);
     }
 
@@ -423,8 +421,7 @@ static void _test_compact_from_encrypted_field_config_map(_mongocrypt_tester_t *
     {
         mongocrypt_binary_t *out = mongocrypt_binary_new();
         ASSERT_OK(mongocrypt_ctx_finalize(ctx, out), ctx);
-        ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TEST_FILE("./test/data/compact/success/encrypted-payload-range-v2.json"),
-                                            out);
+        ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TEST_FILE("./test/data/compact/success/encrypted-payload.json"), out);
         mongocrypt_binary_destroy(out);
     }
 
