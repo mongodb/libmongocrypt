@@ -777,7 +777,7 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_common(_mongocrypt_key
     // Or in Range V2, when using range: p := EncryptCTR(ECOCToken, ESCDerivedFromDataTokenAndContentionFactor || 0x00)
     // Or in Text Search, when using msize: p := EncryptCTR(ECOCToken, ESCDerivedFromDataTokenAndContentionFactor ||
     // 0x000000)
-    struct encrypted_token_metadata et_meta = {0};
+    struct encrypted_token_metadata et_meta = {{0}};
     if (placeholder->algorithm == MONGOCRYPT_FLE2_ALGORITHM_RANGE) {
         // For range, we append isLeaf to the encryptedTokens.
         et_meta.is_leaf = OPT_BOOL(false);
