@@ -17,50 +17,70 @@
 #include "test-mongocrypt.h"
 
 static void _test_cleanup_success(_mongocrypt_tester_t *tester) {
-    mongocrypt_t *crypt;
-    mongocrypt_ctx_t *ctx;
+    const char basepath[] = "./test/data/cleanup/";
+    char datapath[1000];
+    char cmdfile[1000];
+    char collfile[1000];
+    char payloadfile[1000];
+    strcpy(datapath, basepath);
+    size_t nullb = strlen(basepath);
+    const char *simple_success_tests[] = {
+        "success/",
+        "text-search/",
+    };
+    for (size_t i = 0; i < sizeof(simple_success_tests) / sizeof(simple_success_tests[0]); i++) {
+        datapath[nullb] = 0;
+        strcat(datapath, simple_success_tests[i]);
+        strcpy(cmdfile, datapath);
+        strcat(cmdfile, "cmd.json");
+        strcpy(collfile, datapath);
+        strcat(collfile, "collinfo.json");
+        strcpy(payloadfile, datapath);
+        strcat(payloadfile, "encrypted-payload-range-v2.json");
+        mongocrypt_t *crypt;
+        mongocrypt_ctx_t *ctx;
 
-    crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
-    ctx = mongocrypt_ctx_new(crypt);
+        crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        ctx = mongocrypt_ctx_new(crypt);
 
-    ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_FILE("./test/data/cleanup/success/cmd.json")), ctx);
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_FILE(cmdfile)), ctx);
 
-    ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
-    {
-        ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TEST_FILE("./test/data/cleanup/success/collinfo.json")), ctx);
-        ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+        {
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TEST_FILE(collfile)), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+        {
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx,
+                                                TEST_FILE("./test/data/keys/"
+                                                          "12345678123498761234123456789012-local-document.json")),
+                      ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx,
+                                                TEST_FILE("./test/data/keys/"
+                                                          "ABCDEFAB123498761234123456789012-local-document.json")),
+                      ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx,
+                                                TEST_FILE("./test/data/keys/"
+                                                          "12345678123498761234123456789013-local-document.json")),
+                      ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
+        {
+            mongocrypt_binary_t *out = mongocrypt_binary_new();
+            ASSERT_OK(mongocrypt_ctx_finalize(ctx, out), ctx);
+            ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TEST_FILE(payloadfile), out);
+            mongocrypt_binary_destroy(out);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_DONE);
+
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
     }
-
-    ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
-    {
-        ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx,
-                                            TEST_FILE("./test/data/keys/"
-                                                      "12345678123498761234123456789012-local-document.json")),
-                  ctx);
-        ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx,
-                                            TEST_FILE("./test/data/keys/"
-                                                      "ABCDEFAB123498761234123456789012-local-document.json")),
-                  ctx);
-        ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx,
-                                            TEST_FILE("./test/data/keys/"
-                                                      "12345678123498761234123456789013-local-document.json")),
-                  ctx);
-        ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
-    }
-
-    ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
-    {
-        mongocrypt_binary_t *out = mongocrypt_binary_new();
-        ASSERT_OK(mongocrypt_ctx_finalize(ctx, out), ctx);
-        ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TEST_FILE("./test/data/cleanup/success/encrypted-payload-range-v2.json"),
-                                            out);
-        mongocrypt_binary_destroy(out);
-    }
-
-    ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_DONE);
-
-    mongocrypt_ctx_destroy(ctx);
-    mongocrypt_destroy(crypt);
 }
 
 static void _test_cleanup_nonlocal_kms(_mongocrypt_tester_t *tester) {

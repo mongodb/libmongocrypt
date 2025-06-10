@@ -24,9 +24,14 @@ static void _test_compact_success(_mongocrypt_tester_t *tester) {
     char payloadfile[1000];
     strcpy(datapath, basepath);
     size_t nullb = strlen(basepath);
-    for (int use_anchor_pad = 0; use_anchor_pad <= 1; use_anchor_pad++) {
+    const char *simple_success_tests[] = {
+        "success/",
+        "anchor-pad/",
+        "text-search/",
+    };
+    for (size_t i = 0; i < sizeof(simple_success_tests) / sizeof(simple_success_tests[0]); i++) {
         datapath[nullb] = 0;
-        strcat(datapath, use_anchor_pad ? "anchor-pad/" : "success/");
+        strcat(datapath, simple_success_tests[i]);
         strcpy(cmdfile, datapath);
         strcat(cmdfile, "cmd.json");
         strcpy(collfile, datapath);
