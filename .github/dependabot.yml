@@ -9,12 +9,12 @@ updates:
       actions:
         patterns:
           - "*"
-    assignees:
+    reviewers:
       - "@mongodb/dbx-python"
   # Python
   - package-ecosystem: "pip"
     directory: "/bindings/python"
     schedule:
       interval: "weekly"
-    assignees:
+    reviewers:
       - "@mongodb/dbx-python"
