@@ -1138,7 +1138,7 @@ static bool _is_retryable_req(_kms_request_type_t req_type) {
     return false;
 }
 
-bool mongocrypt_kms_ctx_should_retry_http(mongocrypt_kms_ctx_t *kms) {
+bool mongocrypt_kms_ctx_should_retry(mongocrypt_kms_ctx_t *kms) {
     return kms && kms->should_retry;
 }
 
@@ -1190,6 +1190,10 @@ bool mongocrypt_kms_ctx_feed(mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *byt
     mongocrypt_status_t *status = kms->status;
     if (!mongocrypt_status_ok(status)) {
         return false;
+    }
+    if (kms->should_retry) {
+        // This happens when a KMS context is reused in-place
+        kms->should_retry = false;
     }
 
     if (!bytes) {
