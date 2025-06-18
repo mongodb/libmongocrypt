@@ -24,15 +24,20 @@ static void _test_compact_success(_mongocrypt_tester_t *tester) {
     char payloadfile[1000];
     strcpy(datapath, basepath);
     size_t nullb = strlen(basepath);
-    for (int use_anchor_pad = 0; use_anchor_pad <= 1; use_anchor_pad++) {
+    const char *simple_success_tests[] = {
+        "success/",
+        "anchor-pad/",
+        "text-search/",
+    };
+    for (size_t i = 0; i < sizeof(simple_success_tests) / sizeof(simple_success_tests[0]); i++) {
         datapath[nullb] = 0;
-        strcat(datapath, use_anchor_pad ? "anchor-pad/" : "success/");
+        strcat(datapath, simple_success_tests[i]);
         strcpy(cmdfile, datapath);
         strcat(cmdfile, "cmd.json");
         strcpy(collfile, datapath);
         strcat(collfile, "collinfo.json");
         strcpy(payloadfile, datapath);
-        strcat(payloadfile, "encrypted-payload-range-v2.json");
+        strcat(payloadfile, "encrypted-payload.json");
 
         mongocrypt_t *crypt;
         mongocrypt_ctx_t *ctx;
@@ -198,8 +203,7 @@ static void _test_compact_nonlocal_kms(_mongocrypt_tester_t *tester) {
     {
         mongocrypt_binary_t *out = mongocrypt_binary_new();
         ASSERT_OK(mongocrypt_ctx_finalize(ctx, out), ctx);
-        ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TEST_FILE("./test/data/compact/success/encrypted-payload-range-v2.json"),
-                                            out);
+        ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TEST_FILE("./test/data/compact/success/encrypted-payload.json"), out);
         mongocrypt_binary_destroy(out);
     }
 
@@ -333,8 +337,7 @@ static void _test_compact_need_kms_credentials(_mongocrypt_tester_t *tester) {
     {
         mongocrypt_binary_t *out = mongocrypt_binary_new();
         ASSERT_OK(mongocrypt_ctx_finalize(ctx, out), ctx);
-        ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TEST_FILE("./test/data/compact/success/encrypted-payload-range-v2.json"),
-                                            out);
+        ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TEST_FILE("./test/data/compact/success/encrypted-payload.json"), out);
         mongocrypt_binary_destroy(out);
     }
 
@@ -418,8 +421,7 @@ static void _test_compact_from_encrypted_field_config_map(_mongocrypt_tester_t *
     {
         mongocrypt_binary_t *out = mongocrypt_binary_new();
         ASSERT_OK(mongocrypt_ctx_finalize(ctx, out), ctx);
-        ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TEST_FILE("./test/data/compact/success/encrypted-payload-range-v2.json"),
-                                            out);
+        ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TEST_FILE("./test/data/compact/success/encrypted-payload.json"), out);
         mongocrypt_binary_destroy(out);
     }
 

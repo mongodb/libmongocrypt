@@ -1,0 +1,97 @@
+{
+    "db.test": {
+        "escCollection": "esc",
+        "ecocCollection": "ecoc",
+        "fields": [
+            {
+                "keyId": {
+                    "$binary": {
+                        "base64": "EjRWeBI0mHYSNBI0VniQEg==",
+                        "subType": "04"
+                    }
+                },
+                "path": "encrypted",
+                "bsonType": "string",
+                "queries": {
+                    "queryType": "equality",
+                    "contention": 0
+                }
+            },
+            {
+                "keyId": {
+                    "$binary": {
+                        "base64": "q83vqxI0mHYSNBI0VniQEg==",
+                        "subType": "04"
+                    }
+                },
+                "path": "nested.encrypted",
+                "bsonType": "string",
+                "queries": {
+                    "queryType": "equality",
+                    "contention": 0
+                }
+            },
+            {
+                "keyId": {
+                    "$binary": {
+                        "base64": "EjRWeBI0mHYSNBI0VniQEw==",
+                        "subType": "04"
+                    }
+                },
+                "path": "nested.notindexed",
+                "bsonType": "string"
+            },
+            {
+                "keyId": {
+                    "$binary": {
+                        "base64": "EjRWeBI0mHYSNBI0VniQEw==",
+                        "subType": "04"
+                    }
+                },
+                "path": "textField1",
+                "bsonType": "string",
+                "queries": {
+                    "queryType": "substringPreview",
+                    "contention": {
+                        "$numberLong": "0"
+                    },
+                    "strMaxLength": 100,
+                    "strMinQueryLength": 5,
+                    "strMaxQueryLength": 20,
+                    "caseSensitive": false,
+                    "diacriticSensitive": true
+                }
+            },
+            {
+                "keyId": {
+                    "$binary": {
+                        "base64": "EjRWeBI0mHYSNBI0VniQEw==",
+                        "subType": "04"
+                    }
+                },
+                "path": "textField2",
+                "bsonType": "string",
+                "queries": [{
+                    "queryType": "suffixPreview",
+                    "contention": {
+                        "$numberLong": "0"
+                    },
+                    "strMinQueryLength": 1,
+                    "strMaxQueryLength": 10,
+                    "caseSensitive": true,
+                    "diacriticSensitive": false
+                }, 
+                {
+                    "queryType": "prefixPreview",
+                    "contention": {
+                        "$numberLong": "0"
+                    },
+                    "strMinQueryLength": 5,
+                    "strMaxQueryLength": 15,
+                    "caseSensitive": true,
+                    "diacriticSensitive": false
+                }]
+            }
+        ]
+    }
+}
