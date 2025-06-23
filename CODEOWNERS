@@ -5,3 +5,6 @@
 
 # Python Bindings
 bindings/python @mongodb/dbx-python
+
+# GitHub actions (currently only used by Python Bindings)
+.github @mongodb/dbx-python
