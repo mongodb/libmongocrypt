@@ -5795,6 +5795,69 @@ static void _test_lookup(_mongocrypt_tester_t *tester) {
 #undef TF
 }
 
+// This is a failing sketch of a test for explicit encryption of a text index.
+static void _test_text_explicit(_mongocrypt_tester_t *tester) {
+    // Create crypt:
+    // (TODO: if fixed random input is needed, use `_crypt_with_rng`)
+    mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+
+    // Create context:
+    mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+
+    // Set algorithm:
+    ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, "suffixPreview", -1), ctx);
+
+    // Set user key ID:
+    {
+        _mongocrypt_buffer_t key123_id;
+        _mongocrypt_buffer_copy_from_hex(&key123_id, "12345678123498761234123456789012");
+        // Skip setting index key ID. If index key ID is unset, defaults to user key ID.
+        // Driver API only supports user key ID.
+        ASSERT_OK(mongocrypt_ctx_setopt_key_id(ctx, _mongocrypt_buffer_as_binary(&key123_id)), ctx);
+        _mongocrypt_buffer_cleanup(&key123_id);
+    }
+
+    // Set contention factor (common option for all QE algorithms)
+    ASSERT_OK(mongocrypt_ctx_setopt_contention_factor(ctx, 0), ctx);
+
+    // Set text specific options:
+    ASSERT_OK(mongocrypt_ctx_setopt_algorithm_text(
+                  ctx,
+                  TEST_BSON(
+                      // See options in design:
+                      // https://docs.google.com/document/d/1KhCFiofunsk7VeVB4VftvxFd9rQQOZrBQaTqHCljHtU/
+                      BSON_STR({"strMaxLength" : 100, "strMinQueryLength" : 1, "strMaxQueryLength" : 100}))),
+              ctx);
+
+    // Initialize context:
+    ASSERT_OK(mongocrypt_ctx_explicit_encrypt_init(ctx, TEST_BSON(BSON_STR({"v" : "foobar"}))), ctx);
+
+    // Feed necessary key:
+    ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+    {
+        mongocrypt_binary_t *key123 =
+            TEST_FILE("./test/data/keys/12345678123498761234123456789012-local-document.json");
+        ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, key123), ctx);
+        ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        mongocrypt_binary_destroy(key123);
+    }
+
+    // Finalize encryption and check payload:
+    ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
+    {
+        mongocrypt_binary_t *got = mongocrypt_binary_new();
+        bool ret = mongocrypt_ctx_finalize(ctx, got);
+        ASSERT_OK(ret, ctx);
+        // Expected value may be large. Consider using TEST_FILE to read from a file.
+        mongocrypt_binary_t *expect = TEST_BSON(BSON_STR({"TODO" : "Set expected value"}));
+        ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(expect, got);
+        mongocrypt_binary_destroy(got);
+    }
+
+    mongocrypt_ctx_destroy(ctx);
+    mongocrypt_destroy(crypt);
+}
+
 void _mongocrypt_tester_install_ctx_encrypt(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_explicit_encrypt_init);
     INSTALL_TEST(_test_encrypt_init);
@@ -5893,4 +5956,5 @@ void _mongocrypt_tester_install_ctx_encrypt(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_fle2_encrypted_fields_with_unmatching_str_encode_version);
     INSTALL_TEST(_test_fle2_collinfo_with_bad_str_encode_version);
     INSTALL_TEST(_test_lookup);
+    INSTALL_TEST(_test_text_explicit);
 }

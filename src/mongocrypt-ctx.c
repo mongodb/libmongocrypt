@@ -1127,3 +1127,21 @@ bool mongocrypt_ctx_setopt_algorithm_range(mongocrypt_ctx_t *ctx, mongocrypt_bin
     ctx->opts.rangeopts.set = true;
     return true;
 }
+
+bool mongocrypt_ctx_setopt_algorithm_text(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *opts) {
+    if (!ctx) {
+        return false;
+    }
+
+    if (ctx->initialized) {
+        return _mongocrypt_ctx_fail_w_msg(ctx, "cannot set options after init");
+    }
+
+    if (ctx->state == MONGOCRYPT_CTX_ERROR) {
+        return false;
+    }
+
+    mongocrypt_status_t *status = ctx->status;
+    CLIENT_ERR("not-yet implemented");
+    return false;
+}
