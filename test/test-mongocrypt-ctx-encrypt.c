@@ -990,6 +990,7 @@ static void _test_encrypt_init_each_cmd(_mongocrypt_tester_t *tester) {
     _init_bypass(tester, "{'createSearchIndexes': 'coll' }");
     _init_bypass(tester, "{'dropSearchIndex': 'coll' }");
     _init_bypass(tester, "{'updateSearchIndex': 'coll' }");
+    _init_bypass(tester, "{'serverStatus': 1 }");
 }
 
 static void _test_encrypt_invalid_siblings(_mongocrypt_tester_t *tester) {
