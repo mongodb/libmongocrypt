@@ -248,7 +248,7 @@ Ensure `mongocrypt_setopt_retry_kms` is called on the `mongocrypt_t` to enable r
     d.  Feed the reply back with `mongocrypt_kms_ctx_feed`. Repeat
         > until `mongocrypt_kms_ctx_bytes_needed` returns 0.
 
-    If any step encounters a network error, call `mongocrypt_kms_ctx_fail`.
+    If any step encounters a network error or if `mongocrypt_kms_ctx_should_retry` returns true after feeding the reply, call `mongocrypt_kms_ctx_fail`.
     If `mongocrypt_kms_ctx_fail` returns true, retry the request by continuing to the next KMS context or by feeding the new response into the same context.
     If `mongocrypt_kms_ctx_fail` returns false, abort and report an error. Consider wrapping the error reported in `mongocrypt_kms_ctx_status` to include the last network error.
 
