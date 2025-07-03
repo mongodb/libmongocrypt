@@ -1333,6 +1333,11 @@ static bool _fle2_finalize_explicit(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *
         goto fail;
         // fallthrough
     case MONGOCRYPT_INDEX_TYPE_RANGE: marking.u.fle2.algorithm = MONGOCRYPT_FLE2_ALGORITHM_RANGE; break;
+    case MONGOCRYPT_INDEX_TYPE_PREFIXPREVIEW:
+    case MONGOCRYPT_INDEX_TYPE_SUFFIXPREVIEW:
+    case MONGOCRYPT_INDEX_TYPE_SUBSTRINGPREVIEW:
+        marking.u.fle2.algorithm = MONGOCRYPT_FLE2_ALGORITHM_TEXT_SEARCH;
+        break;
     default:
         // This might be unreachable because of other validation. Better safe than
         // sorry.
@@ -1365,6 +1370,8 @@ static bool _fle2_finalize_explicit(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *
 
         marking.u.fle2.sparsity = ctx->opts.rangeopts.value.sparsity;
 
+    } else if (ctx->opts.textopts.set) {
+        // todo text opts to fle2textinsertspec
     } else {
         bson_t as_bson;
 

@@ -41,7 +41,10 @@ typedef enum {
     MONGOCRYPT_INDEX_TYPE_NONE = 1,
     MONGOCRYPT_INDEX_TYPE_EQUALITY = 2,
     MONGOCRYPT_INDEX_TYPE_RANGE = 3,
-    MONGOCRYPT_INDEX_TYPE_RANGEPREVIEW_DEPRECATED = 4
+    MONGOCRYPT_INDEX_TYPE_RANGEPREVIEW_DEPRECATED = 4,
+    MONGOCRYPT_INDEX_TYPE_SUBSTRINGPREVIEW = 5,
+    MONGOCRYPT_INDEX_TYPE_SUFFIXPREVIEW = 6,
+    MONGOCRYPT_INDEX_TYPE_PREFIXPREVIEW = 7,
 } mongocrypt_index_type_t;
 
 const char *_mongocrypt_index_type_to_string(mongocrypt_index_type_t val);
@@ -87,6 +90,11 @@ typedef struct __mongocrypt_ctx_opts_t {
         mc_RangeOpts_t value;
         bool set;
     } rangeopts;
+
+    struct {
+        mc_TextOpts_t value;
+        bool set;
+    } textopts;
 } _mongocrypt_ctx_opts_t;
 
 // `_mongocrypt_ctx_opts_t` inherits extended alignment from libbson. To dynamically allocate, use

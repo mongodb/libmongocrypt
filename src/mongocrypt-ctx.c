@@ -16,6 +16,7 @@
 
 #include <bson/bson.h>
 
+#include "mlib/str.h"
 #include "mongocrypt-ctx-private.h"
 #include "mongocrypt-key-broker-private.h"
 
@@ -264,6 +265,12 @@ bool mongocrypt_ctx_setopt_algorithm(mongocrypt_ctx_t *ctx, const char *algorith
     } else if (mstr_eq_ignore_case(algo_str, mstrv_lit(MONGOCRYPT_ALGORITHM_RANGEPREVIEW_DEPRECATED_STR))) {
         _mongocrypt_ctx_fail_w_msg(ctx, "Algorithm 'rangePreview' is deprecated, please use 'range'");
         return false;
+    } else if (mstr_eq_ignore_case(algo_str, mstrv_lit(MONGOCRYPT_ALGORITHM_SUFFIXPREVIEW_STR))) {
+        ctx->opts.index_type.value = MONGOCRYPT_INDEX_TYPE_SUFFIXPREVIEW;
+    } else if (mstr_eq_ignore_case(algo_str, mstrv_lit(MONGOCRYPT_ALGORITHM_PREFIXPREVIEW_STR))) {
+        ctx->opts.index_type.value = MONGOCRYPT_INDEX_TYPE_PREFIXPREVIEW;
+    } else if (mstr_eq_ignore_case(algo_str, mstrv_lit(MONGOCRYPT_ALGORITHM_SUBSTRINGPREVIEW_STR))) {
+        ctx->opts.index_type.value = MONGOCRYPT_INDEX_TYPE_SUBSTRINGPREVIEW;
     } else {
         char *error = bson_strdup_printf("unsupported algorithm string \"%.*s\"",
                                          algo_str.len <= (size_t)INT_MAX ? (int)algo_str.len : INT_MAX,
@@ -1140,6 +1147,8 @@ bool mongocrypt_ctx_setopt_algorithm_text(mongocrypt_ctx_t *ctx, mongocrypt_bina
     if (ctx->state == MONGOCRYPT_CTX_ERROR) {
         return false;
     }
+
+    if ()
 
     mongocrypt_status_t *status = ctx->status;
     CLIENT_ERR("not-yet implemented");

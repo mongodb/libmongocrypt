@@ -712,6 +712,9 @@ bool mongocrypt_ctx_setopt_algorithm(mongocrypt_ctx_t *ctx, const char *algorith
 // DEPRECATED: support "RangePreview" has been removed in favor of "range".
 #define MONGOCRYPT_ALGORITHM_RANGEPREVIEW_DEPRECATED_STR "RangePreview"
 #define MONGOCRYPT_ALGORITHM_RANGE_STR "Range"
+#define MONGOCRYPT_ALGORITHM_SUFFIXPREVIEW_STR "suffixPreview"
+#define MONGOCRYPT_ALGORITHM_PREFIXPREVIEW_STR "prefixPreview"
+#define MONGOCRYPT_ALGORITHM_SUBSTRINGPREVIEW_STR "substringPreview"
 
 /**
  * Identify the AWS KMS master key to use for creating a data key.
