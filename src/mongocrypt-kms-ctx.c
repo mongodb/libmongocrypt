@@ -1142,13 +1142,6 @@ bool mongocrypt_kms_ctx_should_retry(mongocrypt_kms_ctx_t *kms) {
     return kms && kms->should_retry;
 }
 
-void mongocrypt_kms_ctx_reset(mongocrypt_kms_ctx_t *kms) {
-    if (kms->parser) {
-        kms_response_parser_reset(kms->parser);
-    }
-    kms->should_retry = false;
-}
-
 bool mongocrypt_kms_ctx_fail(mongocrypt_kms_ctx_t *kms) {
     if (!kms) {
         return false;
