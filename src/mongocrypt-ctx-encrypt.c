@@ -1300,7 +1300,7 @@ static bool _fle2_finalize_explicit(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *
 
     if (ctx->opts.rangeopts.set && ctx->opts.query_type.set) {
         // RangeOpts with query type is a special case. The result contains two
-        // ciphertext values.
+        // ciphertext values of FLE2RangeFindSpec.
         return FLE2RangeFindDriverSpec_to_ciphertexts(ctx, out);
     }
 
@@ -1339,8 +1339,7 @@ static bool _fle2_finalize_explicit(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *
 
     if (ctx->opts.rangeopts.set) {
         // Process the RangeOpts and the input 'v' document into a new 'v'.
-        // The new 'v' document will be a FLE2RangeFindSpec or
-        // FLE2RangeInsertSpec.
+        // The new 'v' document will be a FLE2RangeInsertSpec.
         bson_t old_v;
 
         if (!_mongocrypt_buffer_to_bson(&ectx->original_cmd, &old_v)) {
