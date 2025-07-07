@@ -1096,10 +1096,7 @@ static bool _fle2_finalize(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
 
     BSON_ASSERT(context_uses_fle2(ctx));
     BSON_ASSERT(ctx->state == MONGOCRYPT_CTX_READY);
-
-    if (ectx->explicit) {
-        return _mongocrypt_ctx_fail_w_msg(ctx, "explicit encryption is not yet supported. See MONGOCRYPT-409.");
-    }
+    BSON_ASSERT(!ectx->explicit);
 
     if (!_mongocrypt_buffer_to_bson(&ectx->original_cmd, &original_cmd_bson)) {
         return _mongocrypt_ctx_fail_w_msg(ctx, "malformed bson in original_cmd");
