@@ -1096,10 +1096,7 @@ static bool _fle2_finalize(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
 
     BSON_ASSERT(context_uses_fle2(ctx));
     BSON_ASSERT(ctx->state == MONGOCRYPT_CTX_READY);
-
-    if (ectx->explicit) {
-        return _mongocrypt_ctx_fail_w_msg(ctx, "explicit encryption is not yet supported. See MONGOCRYPT-409.");
-    }
+    BSON_ASSERT(!ectx->explicit);
 
     if (!_mongocrypt_buffer_to_bson(&ectx->original_cmd, &original_cmd_bson)) {
         return _mongocrypt_ctx_fail_w_msg(ctx, "malformed bson in original_cmd");
@@ -1303,7 +1300,7 @@ static bool _fle2_finalize_explicit(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *
 
     if (ctx->opts.rangeopts.set && ctx->opts.query_type.set) {
         // RangeOpts with query type is a special case. The result contains two
-        // ciphertext values.
+        // ciphertext values of FLE2RangeFindSpec.
         return FLE2RangeFindDriverSpec_to_ciphertexts(ctx, out);
     }
 
@@ -1342,8 +1339,7 @@ static bool _fle2_finalize_explicit(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *
 
     if (ctx->opts.rangeopts.set) {
         // Process the RangeOpts and the input 'v' document into a new 'v'.
-        // The new 'v' document will be a FLE2RangeFindSpec or
-        // FLE2RangeInsertSpec.
+        // The new 'v' document will be a FLE2RangeInsertSpec.
         bson_t old_v;
 
         if (!_mongocrypt_buffer_to_bson(&ectx->original_cmd, &old_v)) {
