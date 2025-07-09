@@ -2165,7 +2165,8 @@ _check_cmd_for_auto_encrypt(mongocrypt_binary_t *cmd, bool *bypass, char **targe
         eligible = true;
     } else if (0 == strcmp(cmd_name, "hello")) {
         *bypass = true;
-    } else if (0 == strcmp(cmd_name, "buildInfo")) {
+    } else if (0 == strcmp(cmd_name, "buildInfo") || 0 == strcmp(cmd_name, "buildinfo")) {
+        // Accept either case form to match server behavior.
         *bypass = true;
     } else if (0 == strcmp(cmd_name, "getCmdLineOpts")) {
         *bypass = true;
