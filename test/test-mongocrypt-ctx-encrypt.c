@@ -17,6 +17,7 @@
 #include <mongocrypt-marking-private.h>
 
 #include "kms_message/kms_b64.h"
+#include "mongocrypt-binary-private.h"
 #include "mongocrypt-crypto-private.h" // MONGOCRYPT_KEY_LEN
 #include "mongocrypt.h"
 #include "test-mongocrypt-assert-match-bson.h"
@@ -1911,6 +1912,7 @@ typedef struct {
     _mongocrypt_buffer_t *index_key_id;
     mc_optional_int64_t contention_factor;
     mongocrypt_binary_t *range_opts;
+    mongocrypt_binary_t *text_opts;
     const char *query_type;
     mongocrypt_binary_t *msg;
     mongocrypt_binary_t *keys_to_feed[3]; // NULL terminated list.
@@ -2463,6 +2465,22 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.keys_to_feed[0] = keyABC;
         tc.expect_finalize_error = "must be less than or equal to range max";
         tc.is_expression = true;
+        ee_testcase_run(&tc);
+    }
+
+    {
+        // TODO
+        ee_testcase tc = {0};
+        tc.desc = "suffix";
+        tc.algorithm = MONGOCRYPT_ALGORITHM_SUFFIXPREVIEW_STR;
+        tc.query_type = MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW_STR;
+        tc.user_key_id = &keyABC_id;
+        tc.index_key_id = &key123_id;
+        tc.contention_factor = OPT_I64(1);
+        tc.msg = TEST_BSON("{'v': 123456}");
+        tc.keys_to_feed[0] = keyABC;
+        tc.keys_to_feed[1] = key123;
+        tc.expect = TEST_FILE("./test/data/fle2-explicit/find-indexed-contentionFactor1-v2.json");
         ee_testcase_run(&tc);
     }
 
@@ -5849,6 +5867,10 @@ static void _test_text_explicit(_mongocrypt_tester_t *tester) {
         bool ret = mongocrypt_ctx_finalize(ctx, got);
         ASSERT_OK(ret, ctx);
         // Expected value may be large. Consider using TEST_FILE to read from a file.
+        bson_t b;
+        _mongocrypt_binary_to_bson(got, &b);
+        const char *s = bson_as_canonical_extended_json(&b, NULL);
+        printf("\n%s\n", s);
         mongocrypt_binary_t *expect = TEST_BSON(BSON_STR({"TODO" : "Set expected value"}));
         ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(expect, got);
         mongocrypt_binary_destroy(got);

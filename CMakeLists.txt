@@ -121,6 +121,7 @@ set (MONGOCRYPT_SOURCES
    src/mc-range-mincover.c
    src/mc-range-encoding.c
    src/mc-rangeopts.c
+   src/mc-textopts.c
    src/mc-reader.c
    src/mc-schema-broker.c
    src/mc-str-encode-string-sets.c

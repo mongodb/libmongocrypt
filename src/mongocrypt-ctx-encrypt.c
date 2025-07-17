@@ -1372,6 +1372,25 @@ static bool _fle2_finalize_explicit(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *
 
     } else if (ctx->opts.textopts.set) {
         // todo text opts to fle2textinsertspec
+        bson_t old_v;
+
+        if (!_mongocrypt_buffer_to_bson(&ectx->original_cmd, &old_v)) {
+            _mongocrypt_ctx_fail_w_msg(ctx, "unable to convert input to BSON");
+            goto fail;
+        }
+        if (!mc_TextOpts_to_FLE2TextSearchInsertSpec(&ctx->opts.textopts.value,
+                                                     ctx->opts.index_type.value,
+                                                     &old_v,
+                                                     &new_v,
+                                                     ctx->status)) {
+            _mongocrypt_ctx_fail(ctx);
+            goto fail;
+        }
+
+        if (!bson_iter_init_find(&marking.u.fle2.v_iter, &new_v, "v")) {
+            _mongocrypt_ctx_fail_w_msg(ctx, "invalid input BSON, must contain 'v'");
+            goto fail;
+        }
     } else {
         bson_t as_bson;
 
@@ -1901,6 +1920,11 @@ static bool explicit_encrypt_init(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *ms
             break;
         case MONGOCRYPT_QUERY_TYPE_EQUALITY:
             matches = (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_EQUALITY);
+            break;
+        case MONGOCRYPT_QUERY_TYPE_TEXTPREVIEW:
+            matches = (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_PREFIXPREVIEW
+                       || ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_SUFFIXPREVIEW
+                       || ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_SUBSTRINGPREVIEW);
             break;
         default:
             CLIENT_ERR("unsupported value for query_type: %d", (int)ctx->opts.query_type.value);
