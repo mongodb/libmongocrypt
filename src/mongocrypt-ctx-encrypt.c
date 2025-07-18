@@ -1317,6 +1317,7 @@ static bool _fle2_finalize_explicit(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *
             _mongocrypt_ctx_fail_w_msg(ctx, "Cannot use rangePreview query type with Range V2");
             goto fail;
         // fallthrough
+        case MONGOCRYPT_QUERY_TYPE_TEXTPREVIEW:
         case MONGOCRYPT_QUERY_TYPE_RANGE:
         case MONGOCRYPT_QUERY_TYPE_EQUALITY: marking.u.fle2.type = MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND; break;
         default: _mongocrypt_ctx_fail_w_msg(ctx, "Invalid value for EncryptOpts.queryType"); goto fail;

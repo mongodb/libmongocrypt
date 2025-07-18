@@ -1081,6 +1081,9 @@ bool mongocrypt_ctx_setopt_query_type(mongocrypt_ctx_t *ctx, const char *query_t
     } else if (mstr_eq_ignore_case(qt_str, mstrv_lit(MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_DEPRECATED_STR))) {
         _mongocrypt_ctx_fail_w_msg(ctx, "Query type 'rangePreview' is deprecated, please use 'range'");
         return false;
+    } else if (mstr_eq_ignore_case(qt_str, mstrv_lit(MONGOCRYPT_QUERY_TYPE_TEXTPREVIEW_STR))) {
+        ctx->opts.query_type.value = MONGOCRYPT_QUERY_TYPE_TEXTPREVIEW;
+        ctx->opts.query_type.set = true;
     } else {
         /* don't check if qt_str.len fits in int; we want the diagnostic output */
         char *error = bson_strdup_printf("Unsupported query_type \"%.*s\"",

@@ -5847,6 +5847,8 @@ static void _test_text_explicit(_mongocrypt_tester_t *tester) {
                       BSON_STR({"strMaxLength" : 100, "strMinQueryLength" : 1, "strMaxQueryLength" : 100}))),
               ctx);
 
+    ASSERT_OK(mongocrypt_ctx_setopt_query_type(ctx, "textPreview", -1), ctx);
+
     // Initialize context:
     ASSERT_OK(mongocrypt_ctx_explicit_encrypt_init(ctx, TEST_BSON(BSON_STR({"v" : "foobar"}))), ctx);
 
