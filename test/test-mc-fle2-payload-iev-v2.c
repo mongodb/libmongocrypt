@@ -595,7 +595,7 @@ static void test_fle2_iev_v2_parse_invalid_input(_mongocrypt_tester_t *tester) {
     mongocrypt_status_t *status = mongocrypt_status_new();
     mc_FLE2IndexedEncryptedValueV2_t *iev = mc_FLE2IndexedEncryptedValueV2_new();
 
-    const size_t minValidEqualityLength = 1 + UUID_LEN + 1 + kMinServerEncryptedValueLen + kMetadataLen;
+    const uint32_t minValidEqualityLength = 1 + UUID_LEN + 1 + kMinServerEncryptedValueLen + kMetadataLen;
     _mongocrypt_buffer_t input;
 
     uint8_t *data = (uint8_t *)bson_malloc0(minValidEqualityLength);
