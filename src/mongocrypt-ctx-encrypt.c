@@ -1317,7 +1317,9 @@ static bool _fle2_finalize_explicit(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *
             _mongocrypt_ctx_fail_w_msg(ctx, "Cannot use rangePreview query type with Range V2");
             goto fail;
         // fallthrough
-        case MONGOCRYPT_QUERY_TYPE_TEXTPREVIEW:
+        case MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW:
+        case MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW:
+        case MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW:
         case MONGOCRYPT_QUERY_TYPE_RANGE:
         case MONGOCRYPT_QUERY_TYPE_EQUALITY: marking.u.fle2.type = MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND; break;
         default: _mongocrypt_ctx_fail_w_msg(ctx, "Invalid value for EncryptOpts.queryType"); goto fail;
@@ -1922,10 +1924,14 @@ static bool explicit_encrypt_init(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *ms
         case MONGOCRYPT_QUERY_TYPE_EQUALITY:
             matches = (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_EQUALITY);
             break;
-        case MONGOCRYPT_QUERY_TYPE_TEXTPREVIEW:
-            matches = (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_PREFIXPREVIEW
-                       || ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_SUFFIXPREVIEW
-                       || ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_SUBSTRINGPREVIEW);
+        case MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW:
+            matches = (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_PREFIXPREVIEW);
+            break;
+        case MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW:
+            matches = (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_SUFFIXPREVIEW);
+            break;
+        case MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW:
+            matches = (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_SUBSTRINGPREVIEW);
             break;
         default:
             CLIENT_ERR("unsupported value for query_type: %d", (int)ctx->opts.query_type.value);

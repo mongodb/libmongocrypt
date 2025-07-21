@@ -89,7 +89,7 @@ bool mc_TextOpts_parse(mc_TextOpts_t *txo, const bson_t *in, mongocrypt_status_t
                 CLIENT_ERR(ERROR_PREFIX "'strMaxLength' must be greater than zero");
                 return false;
             }
-            txo->strMaxLength = val;
+            txo->strMaxLength = OPT_I32(val);
         }
         END_IF_FIELD;
 
@@ -170,14 +170,14 @@ bool mc_TextOpts_to_FLE2TextSearchInsertSpec(const mc_TextOpts_t *txo,
 
     bson_t insert_spec;
     const char *type_key;
-    switch (txo->type) {
-        case MONGOCRYPT_TEXT_SEARCH_PREFIX:
+    switch (index_type) {
+        case MONGOCRYPT_INDEX_TYPE_PREFIXPREVIEW:
             type_key = "prefix";
             break;
-        case MONGOCRYPT_TEXT_SEARCH_SUFFIX:
+        case MONGOCRYPT_INDEX_TYPE_SUFFIXPREVIEW:
             type_key = "suffix";
             break;
-        case MONGOCRYPT_TEXT_SEARCH_SUBSTRING:
+        case MONGOCRYPT_INDEX_TYPE_SUBSTRINGPREVIEW:
             type_key = "substr";
             break;
         default:
@@ -188,7 +188,17 @@ bool mc_TextOpts_to_FLE2TextSearchInsertSpec(const mc_TextOpts_t *txo,
         return false;
     }
 
-    // TODO optional strMaxLength
+    if (txo->strMaxLength.set) {
+        if (index_type != MONGOCRYPT_INDEX_TYPE_SUBSTRINGPREVIEW) {
+            CLIENT_ERR(ERROR_PREFIX "strMaxLength is only applicable to substring indexes");
+            return false;
+        }
+        if (!bson_append_int32(&insert_spec, "mlen", -1, txo->strMaxLength.value)) {
+            CLIENT_ERR(ERROR_PREFIX "Error appending to BSON");
+            return false;
+        }
+    }
+
     if (!bson_append_int32(&insert_spec, "ub", -1, txo->strMaxQueryLength)) {
         CLIENT_ERR(ERROR_PREFIX "Error appending to BSON");
         return false;

@@ -1557,7 +1557,5 @@ bool mongocrypt_setopt_key_expiration(mongocrypt_t *crypt, uint64_t cache_expira
 #define MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW_STR "suffixPreview"
 /// NOTE: "prefixPreview" is experimental and may be removed in a future non-major release.
 #define MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW_STR "prefixPreview"
-/// NOTE: "textPreview" is experimental and may be removed in a future non-major release.
-#define MONGOCRYPT_QUERY_TYPE_TEXTPREVIEW_STR "textPreview"
 
 #endif /* MONGOCRYPT_H */

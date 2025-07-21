@@ -19,19 +19,13 @@
 
 #include <bson/bson.h>
 
+#include "mc-optional-private.h"
 #include "mongocrypt-private.h"
-
-typedef enum {
-    MONGOCRYPT_TEXT_SEARCH_PREFIX = 0,
-    MONGOCRYPT_TEXT_SEARCH_SUFFIX = 1,
-    MONGOCRYPT_TEXT_SEARCH_SUBSTRING = 2,
-} mongocrypt_text_search_type_t;
 
 typedef struct {
     bson_t *bson;
 
-    mongocrypt_text_search_type_t type;
-    int32_t strMaxLength;
+    mc_optional_int32_t strMaxLength;
     int32_t strMinQueryLength;
     int32_t strMaxQueryLength;
     bool caseSensitive;
