@@ -1955,6 +1955,9 @@ static void ee_testcase_run(ee_testcase *tc) {
     if (tc->query_type) {
         ASSERT_OK(mongocrypt_ctx_setopt_query_type(ctx, tc->query_type, -1), ctx);
     }
+    if (tc->text_opts) {
+        ASSERT_OK(mongocrypt_ctx_setopt_algorithm_text(ctx, tc->text_opts), ctx);
+    }
     BSON_ASSERT(tc->msg);
     {
         bool ret;
@@ -2469,18 +2472,112 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
     }
 
     {
-        // TODO
         ee_testcase tc = {0};
-        tc.desc = "suffix";
+        tc.desc = "find suffix";
         tc.algorithm = MONGOCRYPT_ALGORITHM_SUFFIXPREVIEW_STR;
         tc.query_type = MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW_STR;
-        tc.user_key_id = &keyABC_id;
-        tc.index_key_id = &key123_id;
         tc.contention_factor = OPT_I64(1);
-        tc.msg = TEST_BSON("{'v': 123456}");
+        tc.msg = TEST_BSON("{'v': 'abc'}");
+        tc.user_key_id = &keyABC_id;
         tc.keys_to_feed[0] = keyABC;
-        tc.keys_to_feed[1] = key123;
-        tc.expect = TEST_FILE("./test/data/fle2-explicit/find-indexed-contentionFactor1-v2.json");
+        tc.text_opts = TEST_BSON(RAW_STRING({
+            "strMinQueryLength": 1,
+            "strMaxQueryLength": 100
+        }));
+        tc.expect = TEST_FILE("./test/data/fle2-explicit/find-suffix.json");
+        ee_testcase_run(&tc);
+    }
+
+    {
+        ee_testcase tc = {0};
+        tc.desc = "find prefix";
+        tc.algorithm = MONGOCRYPT_ALGORITHM_PREFIXPREVIEW_STR;
+        tc.query_type = MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW_STR;
+        tc.contention_factor = OPT_I64(1);
+        tc.msg = TEST_BSON("{'v': 'abc'}");
+        tc.user_key_id = &keyABC_id;
+        tc.keys_to_feed[0] = keyABC;
+        tc.text_opts = TEST_BSON(RAW_STRING({
+            "strMinQueryLength": 1,
+            "strMaxQueryLength": 100
+        }));
+        tc.expect = TEST_FILE("./test/data/fle2-explicit/find-prefix.json");
+        ee_testcase_run(&tc);
+    }
+
+    {
+        ee_testcase tc = {0};
+        tc.desc = "insert substring";
+        tc.algorithm = MONGOCRYPT_ALGORITHM_SUBSTRINGPREVIEW_STR;
+        tc.query_type = MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW_STR;
+        tc.contention_factor = OPT_I64(1);
+        tc.msg = TEST_BSON("{'v': 'abc'}");
+        tc.user_key_id = &keyABC_id;
+        tc.keys_to_feed[0] = keyABC;
+        tc.text_opts = TEST_BSON(RAW_STRING({
+            "strMaxLength": 100,
+            "strMinQueryLength": 1,
+            "strMaxQueryLength": 100
+        }));
+        tc.expect = TEST_FILE("./test/data/fle2-explicit/find-substring.json");
+        ee_testcase_run(&tc);
+    }
+
+    {
+        ee_testcase tc = {0};
+        tc.desc = "insert suffix";
+#include "./data/fle2-insert-text-search/RNG_DATA.h"
+        tc.rng_data = (_test_rng_data_source){.buf = {.data = (uint8_t *)RNG_DATA, .len = sizeof(RNG_DATA) - 1}};
+#undef RNG_DATA
+        tc.algorithm = MONGOCRYPT_ALGORITHM_SUFFIXPREVIEW_STR;
+        tc.contention_factor = OPT_I64(1);
+        tc.msg = TEST_BSON("{'v': 'abc'}");
+        tc.user_key_id = &keyABC_id;
+        tc.keys_to_feed[0] = keyABC;
+        tc.text_opts = TEST_BSON(RAW_STRING({
+            "strMinQueryLength": 1,
+            "strMaxQueryLength": 100
+        }));
+        tc.expect = TEST_FILE("./test/data/fle2-explicit/insert-suffix.json");
+        ee_testcase_run(&tc);
+    }
+
+    {
+        ee_testcase tc = {0};
+        tc.desc = "insert prefix";
+#include "./data/fle2-insert-text-search/RNG_DATA.h"
+        tc.rng_data = (_test_rng_data_source){.buf = {.data = (uint8_t *)RNG_DATA, .len = sizeof(RNG_DATA) - 1}};
+#undef RNG_DATA
+        tc.algorithm = MONGOCRYPT_ALGORITHM_PREFIXPREVIEW_STR;
+        tc.contention_factor = OPT_I64(1);
+        tc.msg = TEST_BSON("{'v': 'abc'}");
+        tc.user_key_id = &keyABC_id;
+        tc.keys_to_feed[0] = keyABC;
+        tc.text_opts = TEST_BSON(RAW_STRING({
+            "strMinQueryLength": 1,
+            "strMaxQueryLength": 100
+        }));
+        tc.expect = TEST_FILE("./test/data/fle2-explicit/insert-prefix.json");
+        ee_testcase_run(&tc);
+    }
+
+    {
+        ee_testcase tc = {0};
+        tc.desc = "insert substring";
+#include "./data/fle2-insert-text-search/RNG_DATA.h"
+        tc.rng_data = (_test_rng_data_source){.buf = {.data = (uint8_t *)RNG_DATA, .len = sizeof(RNG_DATA) - 1}};
+#undef RNG_DATA
+        tc.algorithm = MONGOCRYPT_ALGORITHM_SUBSTRINGPREVIEW_STR;
+        tc.contention_factor = OPT_I64(1);
+        tc.msg = TEST_BSON("{'v': 'abc'}");
+        tc.user_key_id = &keyABC_id;
+        tc.keys_to_feed[0] = keyABC;
+        tc.text_opts = TEST_BSON(RAW_STRING({
+            "strMaxLength": 100,
+            "strMinQueryLength": 1,
+            "strMaxQueryLength": 100
+        }));
+        tc.expect = TEST_FILE("./test/data/fle2-explicit/insert-substring.json");
         ee_testcase_run(&tc);
     }
 
