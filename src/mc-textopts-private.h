@@ -32,11 +32,6 @@ typedef struct {
     bool diacriticSensitive;
 } mc_TextOpts_t;
 
-// `mc_RangeOpts_t` inherits extended alignment from libbson. To dynamically allocate, use
-// aligned allocation (e.g. BSON_ALIGNED_ALLOC)
-// BSON_STATIC_ASSERT2(alignof_mc_TextOpts_t,
-//                     BSON_ALIGNOF(mc_TextOpts_t) >= BSON_MAX(BSON_ALIGNOF(bson_t), BSON_ALIGNOF(bson_iter_t)));
-
 /* mc_TextOpts_parse parses a BSON document into mc_TextOpts_t.
  * The document is expected to have the form:
  * {
@@ -50,33 +45,20 @@ typedef struct {
 bool mc_TextOpts_parse(mc_TextOpts_t *txo, const bson_t *in, mongocrypt_status_t *status);
 
 /*
- * mc_RangeOpts_to_FLE2RangeInsertSpec creates a placeholder value to be
+ * mc_TextOpts_to_FLE2TextSearchInsertSpec creates a placeholder value to be
  * encrypted. It is only expected to be called when query_type is unset. The
- * output FLE2RangeInsertSpec is a BSON document of the form:
- * {
- *    "v": BSON value to encrypt,
- *    "min": BSON value,
- *    "max": BSON value,
- *    "precision": Optional<Int32>
- * }
+ * output FLE2TextSearchInsertSpec is a BSON document of the form:
+ * https://github.com/mongodb/mongo/blob/219e90bfad3c712c9642da29ee52229908f06bcd/src/mongo/crypto/fle_field_schema.idl#L689
  *
  * v is expect to be a BSON document of the form:
  * { "v": BSON value to encrypt }.
  *
  * Preconditions: out must be initialized by caller.
  */
-// bool mc_RangeOpts_to_FLE2RangeInsertSpec(const mc_RangeOpts_t *ro,
-//                                          const bson_t *v,
-//                                          bson_t *out,
-//                                          mongocrypt_status_t *status);
-
 bool mc_TextOpts_to_FLE2TextSearchInsertSpec(const mc_TextOpts_t *txo,
                                          mongocrypt_index_type_t index_type,
                                          const bson_t *v,
                                          bson_t *out,
                                          mongocrypt_status_t *status);
-
-
-// void mc_RangeOpts_cleanup(mc_RangeOpts_t *ro);
 
 #endif // MC_TEXTOPTS_PRIVATE_H
