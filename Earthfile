@@ -189,6 +189,10 @@ ENV_DEBIAN:
         COPY +get-deb-signing-keys/keys/deb10-archive-signing-key.gpg /etc/apt/trusted.gpg.d
         COPY +get-deb-signing-keys/keys/deb11-archive-signing-key.gpg /etc/apt/trusted.gpg.d
     END
+    IF [ $version = "10.0" ]
+        # Update source list for archived Debian buster packages.
+        RUN echo "deb http://archive.debian.org/debian buster main" > /etc/apt/sources.list
+    END
     DO +DEBIAN_SETUP
 
 env.deb9:
