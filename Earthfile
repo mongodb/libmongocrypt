@@ -189,6 +189,10 @@ ENV_DEBIAN:
         COPY +get-deb-signing-keys/keys/deb10-archive-signing-key.gpg /etc/apt/trusted.gpg.d
         COPY +get-deb-signing-keys/keys/deb11-archive-signing-key.gpg /etc/apt/trusted.gpg.d
     END
+    IF [ $version = "10.0" ]
+        # Update source list for archived Debian buster packages.
+        RUN echo "deb http://archive.debian.org/debian buster main" > /etc/apt/sources.list
+    END
     DO +DEBIAN_SETUP
 
 env.deb9:
@@ -241,7 +245,6 @@ COPY_SOURCE:
         cmake/ \
         kms-message/ \
         test/ \
-        debian/ \
         src/ \
         doc/ \
         etc/ \
@@ -316,13 +319,15 @@ deb-build:
     RUN __install git-buildpackage fakeroot debhelper cmake libbson-dev \
                   libintelrdfpmath-dev
     DO +COPY_SOURCE
+    # Bring in the debian/ directory from the debian/unstable branch
+    GIT CLONE https://github.com/mongodb/libmongocrypt --branch debian/unstable libmongocrypt-debian
     WORKDIR /s/libmongocrypt
     RUN git clean -fdx && git reset --hard
     RUN python3 etc/calc_release_version.py > VERSION_CURRENT
     RUN git add -f VERSION_CURRENT && \
         git -c user.name=anon -c user.email=anon@localhost \
             commit VERSION_CURRENT -m 'Set version' && \
-        env LANG=C bash debian/build_snapshot.sh && \
+        env LANG=C bash libmongocrypt-debian/debian/build_snapshot.sh && \
         debc ../*.changes && \
         dpkg -i ../*.deb
     SAVE ARTIFACT /s/*.deb /debs/
