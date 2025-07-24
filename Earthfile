@@ -363,7 +363,7 @@ packaging-full-test:
     BUILD +rpm-runtime-test
 
 check-format:
-    FROM +init --base=python:3.11.2-slim-buster
+    FROM +init --base=python:3.13.5-slim-bookworm
     RUN __install build-essential # To install `make` to install clang-format.
     RUN pip install pipx
     COPY etc/format* /X/etc/
