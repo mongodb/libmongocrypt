@@ -53,7 +53,7 @@ typedef struct {
  * .   "strMaxQueryLength": Int32,
  * .   "strMinQueryLength": Int32,
  * . },
- * . "prefix": {
+ * . "substring": {
  * .   "strMaxLength": Int32,
  * .   "strMaxQueryLength": Int32,
  * .   "strMinQueryLength": Int32,

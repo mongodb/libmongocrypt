@@ -1,4 +1,4 @@
-// Defines the random data for IVs to obtain a deterministic
+// Defines the random data for to obtain a deterministic
 // FLE2InsertUpdatePayload.
 #define RNG_DATA                                                                                                       \
     "\xc1\xa1\x03\x4e\x80\xc5\x22\xf1\x6b\x0c\xa9\x39\x2f\xda\x68\x88"                                                 \

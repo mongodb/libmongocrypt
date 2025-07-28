@@ -1531,6 +1531,30 @@ bool mongocrypt_ctx_setopt_query_type(mongocrypt_ctx_t *ctx, const char *query_t
 MONGOCRYPT_EXPORT
 bool mongocrypt_ctx_setopt_algorithm_range(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *opts);
 
+/**
+ * Set options for explicit encryption with the "textPreview" algorithm.
+ * 
+ * @p opts is a BSON document of the form:
+ * {
+ *   "caseSensitive": bool,
+ * . "diacriticSensitive": bool,
+ * . "prefix": Optional{
+ * .   "strMaxQueryLength": Int32,
+ * .   "strMinQueryLength": Int32,
+ * . },
+ * . "suffix": Optional{
+ * .   "strMaxQueryLength": Int32,
+ * .   "strMinQueryLength": Int32,
+ * . },
+ * . "substring": Optional{
+ * .   "strMaxLength": Int32,
+ * .   "strMaxQueryLength": Int32,
+ * .   "strMinQueryLength": Int32,
+ * . },
+ * }
+ *
+ * "prefix" and "suffix" can both be set.
+ */
 MONGOCRYPT_EXPORT
 bool mongocrypt_ctx_setopt_algorithm_text(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *opts);
 
