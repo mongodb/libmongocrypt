@@ -1872,6 +1872,12 @@ static bool explicit_encrypt_init(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *ms
         }
     }
 
+    if (ctx->opts.textopts.set && ctx->opts.index_type.set) {
+        if (ctx->opts.index_type.value != MONGOCRYPT_INDEX_TYPE_TEXTPREVIEW) {
+            return _mongocrypt_ctx_fail_w_msg(ctx, "cannot set text opts without textPreview index type");
+        }
+    }
+
     if (ctx->opts.contention_factor.set && !mc_validate_contention(ctx->opts.contention_factor.value, ctx->status)) {
         return _mongocrypt_ctx_fail(ctx);
     }
