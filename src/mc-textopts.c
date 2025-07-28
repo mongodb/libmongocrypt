@@ -103,7 +103,8 @@ bool mc_TextOpts_parse(mc_TextOpts_t *txo, const bson_t *in, mongocrypt_status_t
     BSON_ASSERT_PARAM(txo);
     BSON_ASSERT_PARAM(in);
     BSON_ASSERT(status || true);
-    bool has_caseSensitive = false, has_diacriticSensitive = false, has_substring = false, has_prefix = false, has_suffix = false;
+    bool has_caseSensitive = false, has_diacriticSensitive = false, has_substring = false, has_prefix = false,
+         has_suffix = false;
 
     *txo = (mc_TextOpts_t){0};
     txo->bson = bson_copy(in);
@@ -209,9 +210,9 @@ static bool append_TextOptsPerIndex(const mc_TextOptsPerIndex_t *txio, bson_t *o
 }
 
 bool mc_TextOpts_to_FLE2TextSearchInsertSpec(const mc_TextOpts_t *txo,
-                                         const bson_t *v,
-                                         bson_t *out,
-                                         mongocrypt_status_t *status) {
+                                             const bson_t *v,
+                                             bson_t *out,
+                                             mongocrypt_status_t *status) {
     BSON_ASSERT_PARAM(txo);
     BSON_ASSERT_PARAM(v);
     BSON_ASSERT_PARAM(out);
@@ -275,7 +276,7 @@ bool mc_TextOpts_to_FLE2TextSearchInsertSpec(const mc_TextOpts_t *txo,
             return false;
         }
     }
-    
+
     if (txo->substring.set) {
         bson_t insert_spec;
         if (!BSON_APPEND_DOCUMENT_BEGIN(&child, "substr", &insert_spec)) {

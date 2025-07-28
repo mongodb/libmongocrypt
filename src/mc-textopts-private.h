@@ -74,8 +74,8 @@ bool mc_TextOpts_parse(mc_TextOpts_t *txo, const bson_t *in, mongocrypt_status_t
  * Preconditions: out must be initialized by caller.
  */
 bool mc_TextOpts_to_FLE2TextSearchInsertSpec(const mc_TextOpts_t *txo,
-                                         const bson_t *v,
-                                         bson_t *out,
-                                         mongocrypt_status_t *status);
+                                             const bson_t *v,
+                                             bson_t *out,
+                                             mongocrypt_status_t *status);
 
 #endif // MC_TEXTOPTS_PRIVATE_H

@@ -1336,9 +1336,7 @@ static bool _fle2_finalize_explicit(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *
         goto fail;
         // fallthrough
     case MONGOCRYPT_INDEX_TYPE_RANGE: marking.u.fle2.algorithm = MONGOCRYPT_FLE2_ALGORITHM_RANGE; break;
-    case MONGOCRYPT_INDEX_TYPE_TEXTPREVIEW:
-        marking.u.fle2.algorithm = MONGOCRYPT_FLE2_ALGORITHM_TEXT_SEARCH;
-        break;
+    case MONGOCRYPT_INDEX_TYPE_TEXTPREVIEW: marking.u.fle2.algorithm = MONGOCRYPT_FLE2_ALGORITHM_TEXT_SEARCH; break;
     default:
         // This might be unreachable because of other validation. Better safe than
         // sorry.
@@ -1378,10 +1376,7 @@ static bool _fle2_finalize_explicit(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *
             _mongocrypt_ctx_fail_w_msg(ctx, "unable to convert input to BSON");
             goto fail;
         }
-        if (!mc_TextOpts_to_FLE2TextSearchInsertSpec(&ctx->opts.textopts.value,
-                                                     &old_v,
-                                                     &new_v,
-                                                     ctx->status)) {
+        if (!mc_TextOpts_to_FLE2TextSearchInsertSpec(&ctx->opts.textopts.value, &old_v, &new_v, ctx->status)) {
             _mongocrypt_ctx_fail(ctx);
             goto fail;
         }
