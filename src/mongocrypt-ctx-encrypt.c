@@ -1336,9 +1336,7 @@ static bool _fle2_finalize_explicit(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *
         goto fail;
         // fallthrough
     case MONGOCRYPT_INDEX_TYPE_RANGE: marking.u.fle2.algorithm = MONGOCRYPT_FLE2_ALGORITHM_RANGE; break;
-    case MONGOCRYPT_INDEX_TYPE_PREFIXPREVIEW:
-    case MONGOCRYPT_INDEX_TYPE_SUFFIXPREVIEW:
-    case MONGOCRYPT_INDEX_TYPE_SUBSTRINGPREVIEW:
+    case MONGOCRYPT_INDEX_TYPE_TEXTPREVIEW:
         marking.u.fle2.algorithm = MONGOCRYPT_FLE2_ALGORITHM_TEXT_SEARCH;
         break;
     default:
@@ -1374,7 +1372,6 @@ static bool _fle2_finalize_explicit(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *
         marking.u.fle2.sparsity = ctx->opts.rangeopts.value.sparsity;
 
     } else if (ctx->opts.textopts.set) {
-        // todo text opts to fle2textinsertspec
         bson_t old_v;
 
         if (!_mongocrypt_buffer_to_bson(&ectx->original_cmd, &old_v)) {
@@ -1382,7 +1379,6 @@ static bool _fle2_finalize_explicit(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *
             goto fail;
         }
         if (!mc_TextOpts_to_FLE2TextSearchInsertSpec(&ctx->opts.textopts.value,
-                                                     ctx->opts.index_type.value,
                                                      &old_v,
                                                      &new_v,
                                                      ctx->status)) {
@@ -1924,14 +1920,11 @@ static bool explicit_encrypt_init(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *ms
         case MONGOCRYPT_QUERY_TYPE_EQUALITY:
             matches = (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_EQUALITY);
             break;
+        // fallthrough
         case MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW:
-            matches = (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_PREFIXPREVIEW);
-            break;
         case MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW:
-            matches = (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_SUFFIXPREVIEW);
-            break;
         case MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW:
-            matches = (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_SUBSTRINGPREVIEW);
+            matches = (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_TEXTPREVIEW);
             break;
         default:
             CLIENT_ERR("unsupported value for query_type: %d", (int)ctx->opts.query_type.value);

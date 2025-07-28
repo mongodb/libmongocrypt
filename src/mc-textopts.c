@@ -18,6 +18,8 @@
 
 #include "mongocrypt-private.h"
 #include "mongocrypt-util-private.h" // mc_bson_type_to_string
+#include "mongocrypt.h"
+#include <bson/bson.h>
 
 // Common logic for testing field name, tracking duplication, and presence.
 #define IF_FIELD(Name)                                                                                                 \
@@ -36,13 +38,72 @@
 
 #define ERROR_PREFIX "Error parsing TextOpts: "
 
+bool mc_TextOptsPerIndex_parse(mc_TextOptsPerIndex_t *txio, bson_iter_t *iter, mongocrypt_status_t *status) {
+    *txio = (mc_TextOptsPerIndex_t){0};
+    txio->set = true;
+
+    bool has_strMaxLength = false, has_strMinQueryLength = false, has_strMaxQueryLength = false;
+    while (bson_iter_next(iter)) {
+        const char *field = bson_iter_key(iter);
+        BSON_ASSERT(field);
+
+        IF_FIELD(strMaxLength);
+        {
+            if (!BSON_ITER_HOLDS_INT32(iter)) {
+                CLIENT_ERR(ERROR_PREFIX "'strMaxLength' must be an int32");
+                return false;
+            }
+            const int32_t val = bson_iter_int32(iter);
+            if (val <= 0) {
+                CLIENT_ERR(ERROR_PREFIX "'strMaxLength' must be greater than zero");
+                return false;
+            }
+            txio->strMaxLength = OPT_I32(val);
+        }
+        END_IF_FIELD;
+
+        IF_FIELD(strMinQueryLength);
+        {
+            if (!BSON_ITER_HOLDS_INT32(iter)) {
+                CLIENT_ERR(ERROR_PREFIX "'strMinQueryLength' must be an int32");
+                return false;
+            }
+            const int32_t val = bson_iter_int32(iter);
+            if (val <= 0) {
+                CLIENT_ERR(ERROR_PREFIX "'strMinQueryLength' must be greater than zero");
+                return false;
+            }
+            txio->strMinQueryLength = val;
+        }
+        END_IF_FIELD;
+
+        IF_FIELD(strMaxQueryLength);
+        {
+            if (!BSON_ITER_HOLDS_INT32(iter)) {
+                CLIENT_ERR(ERROR_PREFIX "'strMaxQueryLength' must be an int32");
+                return false;
+            }
+            const int32_t val = bson_iter_int32(iter);
+            if (val <= 0) {
+                CLIENT_ERR(ERROR_PREFIX "'strMaxQueryLength' must be greater than zero");
+                return false;
+            }
+            txio->strMaxQueryLength = val;
+        }
+        END_IF_FIELD;
+
+        CLIENT_ERR(ERROR_PREFIX "Unrecognized field: '%s'", field);
+        return false;
+    }
+    return true;
+}
+
 bool mc_TextOpts_parse(mc_TextOpts_t *txo, const bson_t *in, mongocrypt_status_t *status) {
     bson_iter_t iter = {0};
-    bool has_min = false, has_max = false, has_sparsity = false, has_precision = false, has_trimFactor = false;
-    bool has_caseSensitive = false, has_diacriticSensitive = false, has_strMaxLength = false, has_strMinQueryLength = false, has_strMaxQueryLength = false;
     BSON_ASSERT_PARAM(txo);
     BSON_ASSERT_PARAM(in);
     BSON_ASSERT(status || true);
+    bool has_caseSensitive = false, has_diacriticSensitive = false, has_substring = false, has_prefix = false, has_suffix = false;
 
     *txo = (mc_TextOpts_t){0};
     txo->bson = bson_copy(in);
@@ -51,11 +112,8 @@ bool mc_TextOpts_parse(mc_TextOpts_t *txo, const bson_t *in, mongocrypt_status_t
         CLIENT_ERR(ERROR_PREFIX "Invalid BSON");
         return false;
     }
-
     while (bson_iter_next(&iter)) {
         const char *field = bson_iter_key(&iter);
-        BSON_ASSERT(field);
-
         IF_FIELD(caseSensitive);
         {
             if (!BSON_ITER_HOLDS_BOOL(&iter)) {
@@ -78,53 +136,50 @@ bool mc_TextOpts_parse(mc_TextOpts_t *txo, const bson_t *in, mongocrypt_status_t
         }
         END_IF_FIELD;
 
-        IF_FIELD(strMaxLength);
+        IF_FIELD(substring);
         {
-            if (!BSON_ITER_HOLDS_INT32(&iter)) {
-                CLIENT_ERR(ERROR_PREFIX "'strMaxLength' must be an int32");
+            bson_iter_t subdoc;
+            if (!BSON_ITER_HOLDS_DOCUMENT(&iter) || !bson_iter_recurse(&iter, &subdoc)) {
+                CLIENT_ERR(ERROR_PREFIX "Expected document for substring, got: %s",
+                           mc_bson_type_to_string(bson_iter_type(&iter)));
                 return false;
             }
-            const int32_t val = bson_iter_int32(&iter);
-            if (val <= 0) {
-                CLIENT_ERR(ERROR_PREFIX "'strMaxLength' must be greater than zero");
+
+            if (!mc_TextOptsPerIndex_parse(&txo->substring, &subdoc, status)) {
                 return false;
             }
-            txo->strMaxLength = OPT_I32(val);
         }
         END_IF_FIELD;
 
-        IF_FIELD(strMinQueryLength);
+        IF_FIELD(prefix);
         {
-            if (!BSON_ITER_HOLDS_INT32(&iter)) {
-                CLIENT_ERR(ERROR_PREFIX "'strMinQueryLength' must be an int32");
+            bson_iter_t subdoc;
+            if (!BSON_ITER_HOLDS_DOCUMENT(&iter) || !bson_iter_recurse(&iter, &subdoc)) {
+                CLIENT_ERR(ERROR_PREFIX "Expected document for prefix, got: %s",
+                           mc_bson_type_to_string(bson_iter_type(&iter)));
                 return false;
             }
-            const int32_t val = bson_iter_int32(&iter);
-            if (val <= 0) {
-                CLIENT_ERR(ERROR_PREFIX "'strMinQueryLength' must be greater than zero");
+
+            if (!mc_TextOptsPerIndex_parse(&txo->prefix, &subdoc, status)) {
                 return false;
             }
-            txo->strMinQueryLength = val;
         }
         END_IF_FIELD;
 
-        IF_FIELD(strMaxQueryLength);
+        IF_FIELD(suffix);
         {
-            if (!BSON_ITER_HOLDS_INT32(&iter)) {
-                CLIENT_ERR(ERROR_PREFIX "'strMaxQueryLength' must be an int32");
+            bson_iter_t subdoc;
+            if (!BSON_ITER_HOLDS_DOCUMENT(&iter) || !bson_iter_recurse(&iter, &subdoc)) {
+                CLIENT_ERR(ERROR_PREFIX "Expected document for suffix, got: %s",
+                           mc_bson_type_to_string(bson_iter_type(&iter)));
                 return false;
             }
-            const int32_t val = bson_iter_int32(&iter);
-            if (val <= 0) {
-                CLIENT_ERR(ERROR_PREFIX "'strMaxQueryLength' must be greater than zero");
+
+            if (!mc_TextOptsPerIndex_parse(&txo->suffix, &subdoc, status)) {
                 return false;
             }
-            txo->strMaxQueryLength = val;
         }
         END_IF_FIELD;
-
-        CLIENT_ERR(ERROR_PREFIX "Unrecognized field: '%s'", field);
-        return false;
     }
 
     return true;
@@ -133,8 +188,27 @@ bool mc_TextOpts_parse(mc_TextOpts_t *txo, const bson_t *in, mongocrypt_status_t
 #undef ERROR_PREFIX
 #define ERROR_PREFIX "Error making FLE2RangeInsertSpec: "
 
+static bool append_TextOptsPerIndex(const mc_TextOptsPerIndex_t *txio, bson_t *out, mongocrypt_status_t *status) {
+    if (txio->strMaxLength.set) {
+        if (!bson_append_int32(out, "mlen", -1, txio->strMaxLength.value)) {
+            CLIENT_ERR(ERROR_PREFIX "Error appending to BSON");
+            return false;
+        }
+    }
+
+    if (!bson_append_int32(out, "ub", -1, txio->strMaxQueryLength)) {
+        CLIENT_ERR(ERROR_PREFIX "Error appending to BSON");
+        return false;
+    }
+
+    if (!bson_append_int32(out, "lb", -1, txio->strMinQueryLength)) {
+        CLIENT_ERR(ERROR_PREFIX "Error appending to BSON");
+        return false;
+    }
+    return true;
+}
+
 bool mc_TextOpts_to_FLE2TextSearchInsertSpec(const mc_TextOpts_t *txo,
-                                        mongocrypt_index_type_t index_type,
                                          const bson_t *v,
                                          bson_t *out,
                                          mongocrypt_status_t *status) {
@@ -168,50 +242,55 @@ bool mc_TextOpts_to_FLE2TextSearchInsertSpec(const mc_TextOpts_t *txo,
         return false;
     }
 
-    bson_t insert_spec;
-    const char *type_key;
-    switch (index_type) {
-        case MONGOCRYPT_INDEX_TYPE_PREFIXPREVIEW:
-            type_key = "prefix";
-            break;
-        case MONGOCRYPT_INDEX_TYPE_SUFFIXPREVIEW:
-            type_key = "suffix";
-            break;
-        case MONGOCRYPT_INDEX_TYPE_SUBSTRINGPREVIEW:
-            type_key = "substr";
-            break;
-        default:
-            abort();
-    }
-    if (!BSON_APPEND_DOCUMENT_BEGIN(&child, type_key, &insert_spec)) {
-        CLIENT_ERR(ERROR_PREFIX "Error appending to BSON");
-        return false;
-    }
-
-    if (txo->strMaxLength.set) {
-        if (index_type != MONGOCRYPT_INDEX_TYPE_SUBSTRINGPREVIEW) {
-            CLIENT_ERR(ERROR_PREFIX "strMaxLength is only applicable to substring indexes");
+    if (txo->prefix.set) {
+        bson_t insert_spec;
+        if (!BSON_APPEND_DOCUMENT_BEGIN(&child, "prefix", &insert_spec)) {
+            CLIENT_ERR(ERROR_PREFIX "Error appending to BSON");
             return false;
         }
-        if (!bson_append_int32(&insert_spec, "mlen", -1, txo->strMaxLength.value)) {
+
+        if (!append_TextOptsPerIndex(&txo->prefix, &insert_spec, status)) {
+            return false;
+        }
+
+        if (!bson_append_document_end(&child, &insert_spec)) {
             CLIENT_ERR(ERROR_PREFIX "Error appending to BSON");
             return false;
         }
     }
 
-    if (!bson_append_int32(&insert_spec, "ub", -1, txo->strMaxQueryLength)) {
-        CLIENT_ERR(ERROR_PREFIX "Error appending to BSON");
-        return false;
-    }
+    if (txo->suffix.set) {
+        bson_t insert_spec;
+        if (!BSON_APPEND_DOCUMENT_BEGIN(&child, "suffix", &insert_spec)) {
+            CLIENT_ERR(ERROR_PREFIX "Error appending to BSON");
+            return false;
+        }
 
-    if (!bson_append_int32(&insert_spec, "lb", -1, txo->strMinQueryLength)) {
-        CLIENT_ERR(ERROR_PREFIX "Error appending to BSON");
-        return false;
-    }
+        if (!append_TextOptsPerIndex(&txo->suffix, &insert_spec, status)) {
+            return false;
+        }
 
-    if (!bson_append_document_end(&child, &insert_spec)) {
-        CLIENT_ERR(ERROR_PREFIX "Error appending to BSON");
-        return false;
+        if (!bson_append_document_end(&child, &insert_spec)) {
+            CLIENT_ERR(ERROR_PREFIX "Error appending to BSON");
+            return false;
+        }
+    }
+    
+    if (txo->substring.set) {
+        bson_t insert_spec;
+        if (!BSON_APPEND_DOCUMENT_BEGIN(&child, "substr", &insert_spec)) {
+            CLIENT_ERR(ERROR_PREFIX "Error appending to BSON");
+            return false;
+        }
+
+        if (!append_TextOptsPerIndex(&txo->substring, &insert_spec, status)) {
+            return false;
+        }
+
+        if (!bson_append_document_end(&child, &insert_spec)) {
+            CLIENT_ERR(ERROR_PREFIX "Error appending to BSON");
+            return false;
+        }
     }
 
     if (!bson_append_document_end(out, &child)) {

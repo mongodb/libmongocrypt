@@ -21,6 +21,7 @@
 #include "mongocrypt-binary-private.h"
 #include "mongocrypt-ctx-private.h"
 #include "mongocrypt-key-broker-private.h"
+#include "mongocrypt-private.h"
 
 bool _mongocrypt_ctx_fail_w_msg(mongocrypt_ctx_t *ctx, const char *msg) {
     BSON_ASSERT_PARAM(ctx);
@@ -267,14 +268,8 @@ bool mongocrypt_ctx_setopt_algorithm(mongocrypt_ctx_t *ctx, const char *algorith
     } else if (mstr_eq_ignore_case(algo_str, mstrv_lit(MONGOCRYPT_ALGORITHM_RANGEPREVIEW_DEPRECATED_STR))) {
         _mongocrypt_ctx_fail_w_msg(ctx, "Algorithm 'rangePreview' is deprecated, please use 'range'");
         return false;
-    } else if (mstr_eq_ignore_case(algo_str, mstrv_lit(MONGOCRYPT_ALGORITHM_SUFFIXPREVIEW_STR))) {
-        ctx->opts.index_type.value = MONGOCRYPT_INDEX_TYPE_SUFFIXPREVIEW;
-        ctx->opts.index_type.set = true;
-    } else if (mstr_eq_ignore_case(algo_str, mstrv_lit(MONGOCRYPT_ALGORITHM_PREFIXPREVIEW_STR))) {
-        ctx->opts.index_type.value = MONGOCRYPT_INDEX_TYPE_PREFIXPREVIEW;
-        ctx->opts.index_type.set = true;
-    } else if (mstr_eq_ignore_case(algo_str, mstrv_lit(MONGOCRYPT_ALGORITHM_SUBSTRINGPREVIEW_STR))) {
-        ctx->opts.index_type.value = MONGOCRYPT_INDEX_TYPE_SUBSTRINGPREVIEW;
+    } else if (mstr_eq_ignore_case(algo_str, mstrv_lit(MONGOCRYPT_ALGORITHM_TEXTPREVIEW_STR))) {
+        ctx->opts.index_type.value = MONGOCRYPT_INDEX_TYPE_TEXTPREVIEW;
         ctx->opts.index_type.set = true;
     } else {
         char *error = bson_strdup_printf("unsupported algorithm string \"%.*s\"",
@@ -1105,6 +1100,7 @@ const char *_mongocrypt_index_type_to_string(mongocrypt_index_type_t val) {
     case MONGOCRYPT_INDEX_TYPE_EQUALITY: return "Equality";
     case MONGOCRYPT_INDEX_TYPE_RANGE: return "Range";
     case MONGOCRYPT_INDEX_TYPE_RANGEPREVIEW_DEPRECATED: return "RangePreview";
+    case MONGOCRYPT_INDEX_TYPE_TEXTPREVIEW: return "TextPreview";
     default: return "Unknown";
     }
 }
@@ -1114,6 +1110,9 @@ const char *_mongocrypt_query_type_to_string(mongocrypt_query_type_t val) {
     case MONGOCRYPT_QUERY_TYPE_EQUALITY: return "Equality";
     case MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_DEPRECATED: return "RangePreview";
     case MONGOCRYPT_QUERY_TYPE_RANGE: return "Range";
+    case MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW: return "PrefixPreview";
+    case MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW: return "SuffixPreview";
+    case MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW: return "SubstringPreview";
     default: return "Unknown";
     }
 }

@@ -2474,15 +2474,17 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
     {
         ee_testcase tc = {0};
         tc.desc = "find suffix";
-        tc.algorithm = MONGOCRYPT_ALGORITHM_SUFFIXPREVIEW_STR;
+        tc.algorithm = MONGOCRYPT_ALGORITHM_TEXTPREVIEW_STR;
         tc.query_type = MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW_STR;
         tc.contention_factor = OPT_I64(1);
         tc.msg = TEST_BSON("{'v': 'abc'}");
         tc.user_key_id = &keyABC_id;
         tc.keys_to_feed[0] = keyABC;
         tc.text_opts = TEST_BSON(RAW_STRING({
-            "strMinQueryLength": 1,
-            "strMaxQueryLength": 100
+            "suffix": {
+                "strMinQueryLength": 1,
+                "strMaxQueryLength": 100
+            }
         }));
         tc.expect = TEST_FILE("./test/data/fle2-explicit/find-suffix.json");
         ee_testcase_run(&tc);
@@ -2491,15 +2493,17 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
     {
         ee_testcase tc = {0};
         tc.desc = "find prefix";
-        tc.algorithm = MONGOCRYPT_ALGORITHM_PREFIXPREVIEW_STR;
+        tc.algorithm = MONGOCRYPT_ALGORITHM_TEXTPREVIEW_STR;
         tc.query_type = MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW_STR;
         tc.contention_factor = OPT_I64(1);
         tc.msg = TEST_BSON("{'v': 'abc'}");
         tc.user_key_id = &keyABC_id;
         tc.keys_to_feed[0] = keyABC;
         tc.text_opts = TEST_BSON(RAW_STRING({
-            "strMinQueryLength": 1,
-            "strMaxQueryLength": 100
+            "prefix": {
+                "strMinQueryLength": 1,
+                "strMaxQueryLength": 100
+            }
         }));
         tc.expect = TEST_FILE("./test/data/fle2-explicit/find-prefix.json");
         ee_testcase_run(&tc);
@@ -2508,16 +2512,18 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
     {
         ee_testcase tc = {0};
         tc.desc = "insert substring";
-        tc.algorithm = MONGOCRYPT_ALGORITHM_SUBSTRINGPREVIEW_STR;
+        tc.algorithm = MONGOCRYPT_ALGORITHM_TEXTPREVIEW_STR;
         tc.query_type = MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW_STR;
         tc.contention_factor = OPT_I64(1);
         tc.msg = TEST_BSON("{'v': 'abc'}");
         tc.user_key_id = &keyABC_id;
         tc.keys_to_feed[0] = keyABC;
         tc.text_opts = TEST_BSON(RAW_STRING({
-            "strMaxLength": 100,
-            "strMinQueryLength": 1,
-            "strMaxQueryLength": 100
+            "substring": {
+                "strMaxLength": 100,
+                "strMinQueryLength": 1,
+                "strMaxQueryLength": 100
+            }
         }));
         tc.expect = TEST_FILE("./test/data/fle2-explicit/find-substring.json");
         ee_testcase_run(&tc);
@@ -2529,14 +2535,16 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
 #include "./data/fle2-insert-text-search/RNG_DATA.h"
         tc.rng_data = (_test_rng_data_source){.buf = {.data = (uint8_t *)RNG_DATA, .len = sizeof(RNG_DATA) - 1}};
 #undef RNG_DATA
-        tc.algorithm = MONGOCRYPT_ALGORITHM_SUFFIXPREVIEW_STR;
+        tc.algorithm = MONGOCRYPT_ALGORITHM_TEXTPREVIEW_STR;
         tc.contention_factor = OPT_I64(1);
         tc.msg = TEST_BSON("{'v': 'abc'}");
         tc.user_key_id = &keyABC_id;
         tc.keys_to_feed[0] = keyABC;
         tc.text_opts = TEST_BSON(RAW_STRING({
-            "strMinQueryLength": 1,
-            "strMaxQueryLength": 100
+            "suffix": {
+                "strMinQueryLength": 1,
+                "strMaxQueryLength": 100
+            }
         }));
         tc.expect = TEST_FILE("./test/data/fle2-explicit/insert-suffix.json");
         ee_testcase_run(&tc);
@@ -2548,14 +2556,16 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
 #include "./data/fle2-insert-text-search/RNG_DATA.h"
         tc.rng_data = (_test_rng_data_source){.buf = {.data = (uint8_t *)RNG_DATA, .len = sizeof(RNG_DATA) - 1}};
 #undef RNG_DATA
-        tc.algorithm = MONGOCRYPT_ALGORITHM_PREFIXPREVIEW_STR;
+        tc.algorithm = MONGOCRYPT_ALGORITHM_TEXTPREVIEW_STR;
         tc.contention_factor = OPT_I64(1);
         tc.msg = TEST_BSON("{'v': 'abc'}");
         tc.user_key_id = &keyABC_id;
         tc.keys_to_feed[0] = keyABC;
         tc.text_opts = TEST_BSON(RAW_STRING({
-            "strMinQueryLength": 1,
-            "strMaxQueryLength": 100
+            "prefix": {
+                "strMinQueryLength": 1,
+                "strMaxQueryLength": 100
+            }
         }));
         tc.expect = TEST_FILE("./test/data/fle2-explicit/insert-prefix.json");
         ee_testcase_run(&tc);
@@ -2567,17 +2577,67 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
 #include "./data/fle2-insert-text-search/RNG_DATA.h"
         tc.rng_data = (_test_rng_data_source){.buf = {.data = (uint8_t *)RNG_DATA, .len = sizeof(RNG_DATA) - 1}};
 #undef RNG_DATA
-        tc.algorithm = MONGOCRYPT_ALGORITHM_SUBSTRINGPREVIEW_STR;
+        tc.algorithm = MONGOCRYPT_ALGORITHM_TEXTPREVIEW_STR;
         tc.contention_factor = OPT_I64(1);
         tc.msg = TEST_BSON("{'v': 'abc'}");
         tc.user_key_id = &keyABC_id;
         tc.keys_to_feed[0] = keyABC;
         tc.text_opts = TEST_BSON(RAW_STRING({
-            "strMaxLength": 100,
-            "strMinQueryLength": 1,
-            "strMaxQueryLength": 100
+            "substring": {
+                "strMaxLength": 100,
+                "strMinQueryLength": 1,
+                "strMaxQueryLength": 100
+            }
         }));
         tc.expect = TEST_FILE("./test/data/fle2-explicit/insert-substring.json");
+        ee_testcase_run(&tc);
+    }
+
+    {
+        ee_testcase tc = {0};
+        tc.desc = "insert prefix + suffix";
+#include "./data/fle2-insert-text-search/RNG_DATA.h"
+        tc.rng_data = (_test_rng_data_source){.buf = {.data = (uint8_t *)RNG_DATA, .len = sizeof(RNG_DATA) - 1}};
+#undef RNG_DATA
+        tc.algorithm = MONGOCRYPT_ALGORITHM_TEXTPREVIEW_STR;
+        tc.contention_factor = OPT_I64(1);
+        tc.msg = TEST_BSON("{'v': 'abc'}");
+        tc.user_key_id = &keyABC_id;
+        tc.keys_to_feed[0] = keyABC;
+        tc.text_opts = TEST_BSON(RAW_STRING({
+            "prefix": {
+                "strMinQueryLength": 1,
+                "strMaxQueryLength": 100
+            },
+            "suffix": {
+                "strMinQueryLength": 1,
+                "strMaxQueryLength": 100
+            }
+        }));
+        tc.expect = TEST_FILE("./test/data/fle2-explicit/insert-prefix-suffix.json");
+        ee_testcase_run(&tc);
+    }
+
+    {
+        ee_testcase tc = {0};
+        tc.desc = "insert casef + diacf";
+#include "./data/fle2-insert-text-search/RNG_DATA.h"
+        tc.rng_data = (_test_rng_data_source){.buf = {.data = (uint8_t *)RNG_DATA, .len = sizeof(RNG_DATA) - 1}};
+#undef RNG_DATA
+        tc.algorithm = MONGOCRYPT_ALGORITHM_TEXTPREVIEW_STR;
+        tc.contention_factor = OPT_I64(1);
+        tc.msg = TEST_BSON("{'v': 'abc'}");
+        tc.user_key_id = &keyABC_id;
+        tc.keys_to_feed[0] = keyABC;
+        tc.text_opts = TEST_BSON(RAW_STRING({
+            "caseSensitive": true,
+            "diacriticSensitive": true,
+            "prefix": {
+                "strMinQueryLength": 1,
+                "strMaxQueryLength": 100
+            }
+        }));
+        tc.expect = TEST_FILE("./test/data/fle2-explicit/insert-casef-diacf.json");
         ee_testcase_run(&tc);
     }
 

@@ -23,11 +23,19 @@
 #include "mongocrypt-private.h"
 
 typedef struct {
-    bson_t *bson;
-
+    bool set;
     mc_optional_int32_t strMaxLength;
     int32_t strMinQueryLength;
     int32_t strMaxQueryLength;
+} mc_TextOptsPerIndex_t;
+
+typedef struct {
+    bson_t *bson;
+
+    mc_TextOptsPerIndex_t substring;
+    mc_TextOptsPerIndex_t prefix;
+    mc_TextOptsPerIndex_t suffix;
+
     bool caseSensitive;
     bool diacriticSensitive;
 } mc_TextOpts_t;
@@ -35,11 +43,21 @@ typedef struct {
 /* mc_TextOpts_parse parses a BSON document into mc_TextOpts_t.
  * The document is expected to have the form:
  * {
- *    "min": BSON value,
- *    "max": BSON value,
- *    "sparsity": Optional<Int64>,
- *    "precision": Optional<Int32>,
- *    "trimFactor": Optional<Int32>,
+ *   "caseSensitive": bool,
+ * . "diacriticSensitive": bool,
+ * . "prefix": {
+ * .   "strMaxQueryLength": Int32,
+ * .   "strMinQueryLength": Int32,
+ * . },
+ * . "suffix": {
+ * .   "strMaxQueryLength": Int32,
+ * .   "strMinQueryLength": Int32,
+ * . },
+ * . "prefix": {
+ * .   "strMaxLength": Int32,
+ * .   "strMaxQueryLength": Int32,
+ * .   "strMinQueryLength": Int32,
+ * . },
  * }
  */
 bool mc_TextOpts_parse(mc_TextOpts_t *txo, const bson_t *in, mongocrypt_status_t *status);
@@ -56,7 +74,6 @@ bool mc_TextOpts_parse(mc_TextOpts_t *txo, const bson_t *in, mongocrypt_status_t
  * Preconditions: out must be initialized by caller.
  */
 bool mc_TextOpts_to_FLE2TextSearchInsertSpec(const mc_TextOpts_t *txo,
-                                         mongocrypt_index_type_t index_type,
                                          const bson_t *v,
                                          bson_t *out,
                                          mongocrypt_status_t *status);
