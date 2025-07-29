@@ -30,7 +30,7 @@ defaults:
 
 jobs:
   build_dist:
-    if: github.repository_owner == 'mongodb' || (github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call')
+    if: github.repository_owner == 'blink1073' || (github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call')
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
