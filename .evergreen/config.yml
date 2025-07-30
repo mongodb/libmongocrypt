@@ -1627,6 +1627,14 @@ buildvariants:
   tasks:
   - build-and-test-and-upload
   - test-python
+- name: macos-14
+  display_name: macOS 14 (arm)
+  run_on: macos-14-arm64
+  expansions:
+    compile_env: MACOS_UNIVERSAL=ON CMAKE=/opt/homebrew/bin/cmake
+  tasks:
+  - build-and-test-and-upload
+  - test-python
 - name: windows-vs2017-32bit
   # Test Windows 32 bit builds for PHPC. PHPC builds libmongocrypt from source. See MONGOCRYPT-391.
   display_name: "Windows VS 2017 32-bit compile"
