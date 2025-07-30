@@ -69,8 +69,8 @@ find_python3() {
 is_python_39() {
     if [ -z "$1" ]; then
         return 1
-    elif $1 -c "import sys; exit(sys.version_info[:2] < (3, 10))"; then
-        # runs when sys.version_info[:2] >= (3, 10)
+    elif $1 -c "import sys; exit(sys.version_info[:2] < (3, 9))"; then
+        # runs when sys.version_info[:2] >= (3, 9)
         return 0
     else
         return 1
