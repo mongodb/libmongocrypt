@@ -20,7 +20,7 @@ defaults:
 jobs:
 
   static:
-    if: github.repository_owner == 'blink1073'
+    if: github.repository_owner == 'mongodb'
     runs-on: ubuntu-latest
     steps:
      - uses: actions/checkout@v4
@@ -37,7 +37,7 @@ jobs:
         check-manifest -v
 
   build:
-    if: github.repository_owner == 'blink1073'
+    if: github.repository_owner == 'mongodb'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
