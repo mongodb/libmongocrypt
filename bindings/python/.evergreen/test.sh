@@ -76,7 +76,7 @@ for PYTHON_BINARY in "${PYTHONS[@]}"; do
     $PYTHON_BINARY -c 'import sys; print(sys.version)'
     git clean -dffx
     createvirtualenv $PYTHON_BINARY .venv
-    python -m pip install --prefer-binary -v -e ".[test]"
+    python -m pip install --prefer-binary -v -e ".[test]" || python -m pip install --pre --prefer-binary -v -e ".[test]"
     echo "Running tests with crypto enabled libmongocrypt..."
     PYMONGOCRYPT_LIB=$PYMONGOCRYPT_LIB_CRYPTO python -c 'from pymongocrypt.binding import lib;assert lib.mongocrypt_is_crypto_available(), "mongocrypt_is_crypto_available() returned False"'
     PYMONGOCRYPT_LIB=$PYMONGOCRYPT_LIB_CRYPTO python -m pytest -v --ignore=test/performance .
