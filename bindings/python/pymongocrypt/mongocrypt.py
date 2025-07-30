@@ -52,7 +52,7 @@ class MongoCrypt:
         if not isinstance(options, MongoCryptOptions):
             raise TypeError("options must be a MongoCryptOptions")
 
-        if not isinstance(callback, AsyncMongoCryptCallback | MongoCryptCallback):
+        if not isinstance(callback, (AsyncMongoCryptCallback, MongoCryptCallback)):
             raise TypeError(
                 "callback must be a MongoCryptCallback or AsyncMongoCryptCallback"
             )

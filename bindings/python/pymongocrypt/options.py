@@ -114,7 +114,7 @@ class MongoCryptOptions:
                             f"kms_providers[{name!r}] must contain "
                             "'email' and 'privateKey'"
                         )
-                    if not isinstance(provider["privateKey"], bytes | unicode_type):
+                    if not isinstance(provider["privateKey"], (bytes, unicode_type)):
                         raise TypeError(
                             f"kms_providers[{name!r}]['privateKey'] must "
                             "be an instance of bytes or str"
@@ -122,7 +122,7 @@ class MongoCryptOptions:
             elif provider_type == "kmip":
                 if "endpoint" not in provider:
                     raise ValueError(f"kms_providers[{name!r}] must contain 'endpoint'")
-                if not isinstance(provider["endpoint"], str | unicode_type):
+                if not isinstance(provider["endpoint"], (str, unicode_type)):
                     raise TypeError(
                         f"kms_providers[{name!r}]['endpoint'] must "
                         "be an instance of str"
@@ -130,7 +130,7 @@ class MongoCryptOptions:
             elif provider_type == "local":
                 if "key" not in provider:
                     raise ValueError(f"kms_providers[{name!r}] must contain 'key'")
-                if not isinstance(provider["key"], bytes | unicode_type):
+                if not isinstance(provider["key"], (bytes, unicode_type)):
                     raise TypeError(
                         f"kms_providers[{name!r}]['key'] must be an "
                         "instance of bytes or str"
