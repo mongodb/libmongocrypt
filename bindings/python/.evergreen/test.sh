@@ -31,6 +31,7 @@ elif [ "Darwin" = "$(uname -s)" ]; then
     export PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/nocrypto/lib/libmongocrypt.dylib
     PYMONGOCRYPT_LIB_CRYPTO=${MONGOCRYPT_DIR}/lib/libmongocrypt.dylib
     PYTHONS=(
+          "/Library/Frameworks/Python.framework/Versions/3.9/bin/python3"
           "/Library/Frameworks/Python.framework/Versions/3.10/bin/python3"
           "/Library/Frameworks/Python.framework/Versions/3.11/bin/python3"
           "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3"
@@ -58,6 +59,7 @@ else
         )
     else
         PYTHONS=(
+          "/opt/python/3.9/bin/python3"
           "/opt/python/3.10/bin/python3"
           "/opt/python/3.11/bin/python3"
           "/opt/python/3.12/bin/python3"
