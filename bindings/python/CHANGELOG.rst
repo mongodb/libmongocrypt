@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Changes in Version 1.15.0
+-------------------------
+
+- Add support for Python 3.14.
+- Drop support for Python 3.8.
+
 Changes in Version 1.14.1
 -------------------------
 
