@@ -553,7 +553,7 @@ tasks:
   commands:
     - func: "fetch source"
     - func: "build python release"
-      vars: { PYTHON: /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 }
+      vars: { PYTHON: /Library/Frameworks/Python.framework/Versions/3.9/bin/python3 }
     - func: "upload python release"
 
 - name: "release-python-linux"
@@ -563,7 +563,7 @@ tasks:
   commands:
     - func: "fetch source"
     - func: "build python release"
-      vars: { PYTHON: /opt/python/3.10/bin/python3 }
+      vars: { PYTHON: /opt/python/3.9/bin/python3 }
     - func: "upload python release"
 
 - name: "release-python-windows"
@@ -572,7 +572,7 @@ tasks:
   commands:
     - func: "fetch source"
     - func: "build python release"
-      vars: { PYTHON: C:/python/Python310/python.exe }
+      vars: { PYTHON: C:/python/Python39/python.exe }
     - func: "upload python release"
 
 - name: "release-python-combine"
