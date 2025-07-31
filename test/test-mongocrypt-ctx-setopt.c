@@ -599,9 +599,9 @@ static void _test_setopt_for_explicit_encrypt(_mongocrypt_tester_t *tester) {
     bson = TEST_BSON("{'v': 'hello'}");
     rangeopts = TEST_BSON("{'min': 0, 'max': 1, 'sparsity': {'$numberLong': '1'}}");
     textopts = TEST_BSON(RAW_STRING({
-             "caseSensitive" : true,
-             "diacriticSensitive" : false,
-             "prefix" : {"strMinQueryLength" : 1, "strMaxQueryLength" : 2}
+        "caseSensitive" : true,
+        "diacriticSensitive" : false,
+        "prefix" : {"strMinQueryLength" : 1, "strMaxQueryLength" : 2}
     }));
 
     /* Test required and prohibited options. */
