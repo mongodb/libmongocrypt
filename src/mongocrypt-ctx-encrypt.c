@@ -1862,6 +1862,25 @@ static bool explicit_encrypt_init(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *ms
         return _mongocrypt_ctx_fail_w_msg(ctx, "cannot set query type with no index type");
     }
 
+    if (ctx->opts.query_type.set) {
+        const mongocrypt_query_type_t qt = ctx->opts.query_type.value;
+        if (qt == MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW) {
+            if (!(ctx->opts.index_type.set && ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_TEXTPREVIEW)) {
+                return _mongocrypt_ctx_fail_w_msg(ctx, "prefixPreview query type requires textPreview index type");
+            }
+        }
+        if (qt == MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW) {
+            if (!(ctx->opts.index_type.set && ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_TEXTPREVIEW)) {
+                return _mongocrypt_ctx_fail_w_msg(ctx, "suffixPreview query type requires textPreview index type");
+            }
+        }
+        if (qt == MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW) {
+            if (!(ctx->opts.index_type.set && ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_TEXTPREVIEW)) {
+                return _mongocrypt_ctx_fail_w_msg(ctx, "substringPreview query type requires textPreview index type");
+            }
+        }
+    }
+
     if (ctx->opts.rangeopts.set && ctx->opts.index_type.set) {
         if (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_NONE) {
             return _mongocrypt_ctx_fail_w_msg(ctx, "cannot set range opts with no index type");
@@ -1869,6 +1888,10 @@ static bool explicit_encrypt_init(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *ms
 
         if (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_EQUALITY) {
             return _mongocrypt_ctx_fail_w_msg(ctx, "cannot set range opts with equality index type");
+        }
+
+        if (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_TEXTPREVIEW) {
+            return _mongocrypt_ctx_fail_w_msg(ctx, "cannot set range opts with textPreview index type");
         }
     }
 
