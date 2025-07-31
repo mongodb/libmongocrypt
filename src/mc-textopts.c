@@ -106,7 +106,7 @@ bool mc_TextOpts_parse(mc_TextOpts_t *txo, const bson_t *in, mongocrypt_status_t
     bool has_caseSensitive = false, has_diacriticSensitive = false, has_substring = false, has_prefix = false,
          has_suffix = false;
 
-    *txo = (mc_TextOpts_t){0};
+    *txo = (mc_TextOpts_t){{0}};
     if (!bson_iter_init(&iter, in)) {
         CLIENT_ERR(ERROR_PREFIX "Invalid BSON");
         return false;
