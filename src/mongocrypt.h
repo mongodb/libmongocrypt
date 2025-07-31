@@ -712,6 +712,7 @@ bool mongocrypt_ctx_setopt_algorithm(mongocrypt_ctx_t *ctx, const char *algorith
 // DEPRECATED: support "RangePreview" has been removed in favor of "range".
 #define MONGOCRYPT_ALGORITHM_RANGEPREVIEW_DEPRECATED_STR "RangePreview"
 #define MONGOCRYPT_ALGORITHM_RANGE_STR "Range"
+/// NOTE: "textPreview" is experimental only and may be removed in a future non-major release.
 #define MONGOCRYPT_ALGORITHM_TEXTPREVIEW_STR "textPreview"
 
 /**
