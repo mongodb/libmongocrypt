@@ -1533,7 +1533,8 @@ bool mongocrypt_ctx_setopt_algorithm_range(mongocrypt_ctx_t *ctx, mongocrypt_bin
 
 /**
  * Set options for explicit encryption with the "textPreview" algorithm.
- * 
+ *
+ * NOTE: "textPreview" is experimental only and may be removed in a future non-major release.
  * @p opts is a BSON document of the form:
  * {
  *   "caseSensitive": bool,
