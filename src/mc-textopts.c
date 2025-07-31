@@ -107,6 +107,10 @@ bool mc_TextOpts_parse(mc_TextOpts_t *txo, const bson_t *in, mongocrypt_status_t
          has_suffix = false;
 
     *txo = (mc_TextOpts_t){0};
+    if (!bson_iter_init(&iter, in)) {
+        CLIENT_ERR(ERROR_PREFIX "Invalid BSON");
+        return false;
+    }
 
     while (bson_iter_next(&iter)) {
         const char *field = bson_iter_key(&iter);
@@ -164,6 +168,11 @@ bool mc_TextOpts_parse(mc_TextOpts_t *txo, const bson_t *in, mongocrypt_status_t
             if (!mc_TextOptsPerIndex_parse(&txo->prefix, &subdoc, status)) {
                 return false;
             }
+
+            if (txo->prefix.strMaxLength.set) {
+                CLIENT_ERR(ERROR_PREFIX "'strMaxLength' is not allowed in 'prefix'");
+                return false;
+            }
         }
         END_IF_FIELD;
 
@@ -179,8 +188,33 @@ bool mc_TextOpts_parse(mc_TextOpts_t *txo, const bson_t *in, mongocrypt_status_t
             if (!mc_TextOptsPerIndex_parse(&txo->suffix, &subdoc, status)) {
                 return false;
             }
+
+            if (txo->suffix.strMaxLength.set) {
+                CLIENT_ERR(ERROR_PREFIX "'strMaxLength' is not allowed in 'suffix'");
+                return false;
+            }
         }
         END_IF_FIELD;
+
+        CLIENT_ERR(ERROR_PREFIX "Unrecognized field: '%s'", field);
+        return false;
+    }
+
+    if (!has_caseSensitive) {
+        CLIENT_ERR(ERROR_PREFIX "'caseSensitive' is required");
+        return false;
+    }
+    if (!has_diacriticSensitive) {
+        CLIENT_ERR(ERROR_PREFIX "'diacriticSensitive' is required");
+        return false;
+    }
+    if (has_substring && (has_prefix || has_suffix)) {
+        CLIENT_ERR(ERROR_PREFIX "Cannot specify 'substring' with 'prefix' or 'suffix'");
+        return false;
+    }
+    if (!(has_prefix || has_suffix || has_substring)) {
+        CLIENT_ERR(ERROR_PREFIX "One of 'prefix', 'suffix', or 'substring' is required");
+        return false;
     }
 
     return true;
