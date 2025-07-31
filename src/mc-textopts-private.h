@@ -30,8 +30,6 @@ typedef struct {
 } mc_TextOptsPerIndex_t;
 
 typedef struct {
-    bson_t *bson;
-
     mc_TextOptsPerIndex_t substring;
     mc_TextOptsPerIndex_t prefix;
     mc_TextOptsPerIndex_t suffix;

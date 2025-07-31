@@ -107,12 +107,7 @@ bool mc_TextOpts_parse(mc_TextOpts_t *txo, const bson_t *in, mongocrypt_status_t
          has_suffix = false;
 
     *txo = (mc_TextOpts_t){0};
-    txo->bson = bson_copy(in);
 
-    if (!bson_iter_init(&iter, txo->bson)) {
-        CLIENT_ERR(ERROR_PREFIX "Invalid BSON");
-        return false;
-    }
     while (bson_iter_next(&iter)) {
         const char *field = bson_iter_key(&iter);
         IF_FIELD(caseSensitive);
@@ -147,6 +142,11 @@ bool mc_TextOpts_parse(mc_TextOpts_t *txo, const bson_t *in, mongocrypt_status_t
             }
 
             if (!mc_TextOptsPerIndex_parse(&txo->substring, &subdoc, status)) {
+                return false;
+            }
+
+            if (!txo->substring.strMaxLength.set) {
+                CLIENT_ERR(ERROR_PREFIX "'strMaxLength' must be set for substring");
                 return false;
             }
         }
