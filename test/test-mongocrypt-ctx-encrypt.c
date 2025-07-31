@@ -984,6 +984,7 @@ static void _test_encrypt_init_each_cmd(_mongocrypt_tester_t *tester) {
     _init_ok(tester, "{'compactStructuredEncryptionData': 'coll'}");
     _init_bypass(tester, "{'hello': 1}");
     _init_bypass(tester, "{'buildInfo': 1}");
+    _init_bypass(tester, "{'buildinfo': 1}");
     _init_bypass(tester, "{'getCmdLineOpts': 1}");
     _init_bypass(tester, "{'getLog': 1}");
     _init_ok(tester, "{'collMod': 'coll'}");
@@ -991,6 +992,7 @@ static void _test_encrypt_init_each_cmd(_mongocrypt_tester_t *tester) {
     _init_bypass(tester, "{'createSearchIndexes': 'coll' }");
     _init_bypass(tester, "{'dropSearchIndex': 'coll' }");
     _init_bypass(tester, "{'updateSearchIndex': 'coll' }");
+    _init_bypass(tester, "{'serverStatus': 1 }");
 }
 
 static void _test_encrypt_invalid_siblings(_mongocrypt_tester_t *tester) {

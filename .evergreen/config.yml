@@ -559,11 +559,11 @@ tasks:
 - name: "release-python-linux"
   tags: ["release_python_tag"]
   run_on: ubuntu2004-large
-  exec_timeout_secs: 216000  # 60 minutes (manylinux task is slow).
+  exec_timeout_secs: 3600  # 60 minutes (manylinux task is slow).
   commands:
     - func: "fetch source"
     - func: "build python release"
-      vars: { PYTHON: /opt/python/3.8/bin/python3 }
+      vars: { PYTHON: /opt/python/3.9/bin/python3 }
     - func: "upload python release"
 
 - name: "release-python-windows"
@@ -572,7 +572,7 @@ tasks:
   commands:
     - func: "fetch source"
     - func: "build python release"
-      vars: { PYTHON: C:/python/Python38/python.exe }
+      vars: { PYTHON: C:/python/Python39/python.exe }
     - func: "upload python release"
 
 - name: "release-python-combine"

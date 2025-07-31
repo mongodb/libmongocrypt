@@ -591,6 +591,29 @@ static void test_fle2_iev_v2(_mongocrypt_tester_t *tester) {
     mongocrypt_destroy(crypt);
 }
 
+static void test_fle2_iev_v2_parse_invalid_input(_mongocrypt_tester_t *tester) {
+    mongocrypt_status_t *status = mongocrypt_status_new();
+    mc_FLE2IndexedEncryptedValueV2_t *iev = mc_FLE2IndexedEncryptedValueV2_new();
+
+    const uint32_t minValidEqualityLength = 1 + UUID_LEN + 1 + kMinServerEncryptedValueLen + kMetadataLen;
+    _mongocrypt_buffer_t input;
+
+    uint8_t *data = (uint8_t *)bson_malloc0(minValidEqualityLength);
+
+    data[0] = MC_SUBTYPE_FLE2IndexedEqualityEncryptedValueV2;
+
+    _mongocrypt_buffer_from_data(&input, data, minValidEqualityLength - 1);
+    ASSERT_FAILS_STATUS(mc_FLE2IndexedEncryptedValueV2_parse(iev, &input, status),
+                        status,
+                        "smaller than minimum length");
+
+    mc_FLE2IndexedEncryptedValueV2_destroy(iev);
+    bson_free(data);
+    _mongocrypt_buffer_cleanup(&input);
+    mongocrypt_status_destroy(status);
+}
+
 void _mongocrypt_tester_install_fle2_iev_v2_payloads(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(test_fle2_iev_v2);
+    INSTALL_TEST(test_fle2_iev_v2_parse_invalid_input);
 }

@@ -8,7 +8,7 @@ dynamic = ["version", "dependencies", "optional-dependencies"]
 description = "Python bindings for libmongocrypt"
 readme = "README.rst"
 license = {file="LICENSE"}
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 authors = [
     { name = "Shane Harvey", email = "mongodb-user@googlegroups.com" },
 ]
@@ -29,14 +29,14 @@ classifiers = [
     "Operating System :: POSIX",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: Python :: Implementation :: PyPy",
+    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Database",
 ]
 
