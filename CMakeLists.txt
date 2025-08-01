@@ -121,6 +121,7 @@ set (MONGOCRYPT_SOURCES
    src/mc-range-mincover.c
    src/mc-range-encoding.c
    src/mc-rangeopts.c
+   src/mc-textopts.c
    src/mc-reader.c
    src/mc-schema-broker.c
    src/mc-str-encode-string-sets.c
@@ -483,6 +484,7 @@ set (TEST_MONGOCRYPT_SOURCES
    test/test-mc-range-edge-generation.c
    test/test-mc-range-mincover.c
    test/test-mc-rangeopts.c
+   test/test-mc-textopts.c
    test/test-mc-reader.c
    test/test-mc-text-search-str-encode.c
    test/test-mc-schema-broker.c

@@ -1314,6 +1314,9 @@ static bool _fle2_finalize_explicit(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *
             _mongocrypt_ctx_fail_w_msg(ctx, "Cannot use rangePreview query type with Range V2");
             goto fail;
         // fallthrough
+        case MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW:
+        case MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW:
+        case MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW:
         case MONGOCRYPT_QUERY_TYPE_RANGE:
         case MONGOCRYPT_QUERY_TYPE_EQUALITY: marking.u.fle2.type = MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND; break;
         default: _mongocrypt_ctx_fail_w_msg(ctx, "Invalid value for EncryptOpts.queryType"); goto fail;
@@ -1330,6 +1333,7 @@ static bool _fle2_finalize_explicit(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *
         goto fail;
         // fallthrough
     case MONGOCRYPT_INDEX_TYPE_RANGE: marking.u.fle2.algorithm = MONGOCRYPT_FLE2_ALGORITHM_RANGE; break;
+    case MONGOCRYPT_INDEX_TYPE_TEXTPREVIEW: marking.u.fle2.algorithm = MONGOCRYPT_FLE2_ALGORITHM_TEXT_SEARCH; break;
     default:
         // This might be unreachable because of other validation. Better safe than
         // sorry.
@@ -1361,6 +1365,22 @@ static bool _fle2_finalize_explicit(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *
 
         marking.u.fle2.sparsity = ctx->opts.rangeopts.value.sparsity;
 
+    } else if (ctx->opts.textopts.set) {
+        bson_t old_v;
+
+        if (!_mongocrypt_buffer_to_bson(&ectx->original_cmd, &old_v)) {
+            _mongocrypt_ctx_fail_w_msg(ctx, "unable to convert input to BSON");
+            goto fail;
+        }
+        if (!mc_TextOpts_to_FLE2TextSearchInsertSpec(&ctx->opts.textopts.value, &old_v, &new_v, ctx->status)) {
+            _mongocrypt_ctx_fail(ctx);
+            goto fail;
+        }
+
+        if (!bson_iter_init_find(&marking.u.fle2.v_iter, &new_v, "v")) {
+            _mongocrypt_ctx_fail_w_msg(ctx, "invalid input BSON, must contain 'v'");
+            goto fail;
+        }
     } else {
         bson_t as_bson;
 
@@ -1838,6 +1858,25 @@ static bool explicit_encrypt_init(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *ms
         return _mongocrypt_ctx_fail_w_msg(ctx, "cannot set query type with no index type");
     }
 
+    if (ctx->opts.query_type.set) {
+        const mongocrypt_query_type_t qt = ctx->opts.query_type.value;
+        if (qt == MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW) {
+            if (!(ctx->opts.index_type.set && ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_TEXTPREVIEW)) {
+                return _mongocrypt_ctx_fail_w_msg(ctx, "prefixPreview query type requires textPreview index type");
+            }
+        }
+        if (qt == MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW) {
+            if (!(ctx->opts.index_type.set && ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_TEXTPREVIEW)) {
+                return _mongocrypt_ctx_fail_w_msg(ctx, "suffixPreview query type requires textPreview index type");
+            }
+        }
+        if (qt == MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW) {
+            if (!(ctx->opts.index_type.set && ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_TEXTPREVIEW)) {
+                return _mongocrypt_ctx_fail_w_msg(ctx, "substringPreview query type requires textPreview index type");
+            }
+        }
+    }
+
     if (ctx->opts.rangeopts.set && ctx->opts.index_type.set) {
         if (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_NONE) {
             return _mongocrypt_ctx_fail_w_msg(ctx, "cannot set range opts with no index type");
@@ -1845,6 +1884,16 @@ static bool explicit_encrypt_init(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *ms
 
         if (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_EQUALITY) {
             return _mongocrypt_ctx_fail_w_msg(ctx, "cannot set range opts with equality index type");
+        }
+
+        if (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_TEXTPREVIEW) {
+            return _mongocrypt_ctx_fail_w_msg(ctx, "cannot set range opts with textPreview index type");
+        }
+    }
+
+    if (ctx->opts.textopts.set && ctx->opts.index_type.set) {
+        if (ctx->opts.index_type.value != MONGOCRYPT_INDEX_TYPE_TEXTPREVIEW) {
+            return _mongocrypt_ctx_fail_w_msg(ctx, "cannot set text opts without textPreview index type");
         }
     }
 
@@ -1890,6 +1939,12 @@ static bool explicit_encrypt_init(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *ms
             break;
         case MONGOCRYPT_QUERY_TYPE_EQUALITY:
             matches = (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_EQUALITY);
+            break;
+        // fallthrough
+        case MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW:
+        case MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW:
+        case MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW:
+            matches = (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_TEXTPREVIEW);
             break;
         default:
             CLIENT_ERR("unsupported value for query_type: %d", (int)ctx->opts.query_type.value);
