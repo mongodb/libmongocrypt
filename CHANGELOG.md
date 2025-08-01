@@ -1,5 +1,15 @@
 # ChangeLog
-## 1.15.0 (Unreleased)
+## 1.15.0
+
+### Features
+- Support Queryable Encryption text indexes with `cleanupStructuredEncryptionData` and `compactStructuredEncryptionData`.
+- Support explicit encryption for algorithm type: `textPreview` and query types: `prefixPreview`, `suffixPreview` and `substringPreview`
+    - Add `mongocrypt_setopt_algorithm_text` to apply options for explicit encryption.
+
+### Fixed
+- Bypass command `buildinfo` (previously only `buildInfo` was bypassed).
+- Bypass command `serverStatus`.
+
 ### Removed
 - Support for building with Visual Studio 2015. Use Visual Studio 2017 or newer.
 
