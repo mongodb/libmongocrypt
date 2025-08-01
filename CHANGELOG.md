@@ -1,9 +1,9 @@
 # ChangeLog
 ## 1.15.0
 
-### Features
-- Support Queryable Encryption text indexes with `cleanupStructuredEncryptionData` and `compactStructuredEncryptionData`.
-- Support explicit encryption for algorithm type: `textPreview` and query types: `prefixPreview`, `suffixPreview` and `substringPreview`
+### New features
+- Support experimental Queryable Encryption text indexes with `cleanupStructuredEncryptionData` and `compactStructuredEncryptionData`.
+- Support experimental explicit encryption for algorithm type: `textPreview` and query types: `prefixPreview`, `suffixPreview` and `substringPreview`
     - Add `mongocrypt_setopt_algorithm_text` to apply options for explicit encryption.
 
 ### Fixed
