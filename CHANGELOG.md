@@ -26,6 +26,8 @@
 ### Improvements
 - Improve performance of OpenSSL crypto operations.
 - Improve error for incorrect path to crypt_shared library.
+### New features
+- Support experimental Queryable Encryption text indexes for automatic encryption.
 
 ## 1.13.2
 ### Notes
