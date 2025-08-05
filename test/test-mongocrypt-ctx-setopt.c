@@ -1028,6 +1028,26 @@ static void _test_setopt_for_explicit_encrypt(_mongocrypt_tester_t *tester) {
         ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "suffixPreview query type requires textPreview index type");
     }
 
+    /* It is an error to set a text algorithm without setting text options */
+    {
+        REFRESH;
+        /* Set key ID to get past the 'either key id or key alt name required' error */
+        ASSERT_KEY_ID_OK(uuid);
+        ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_TEXTPREVIEW_STR, -1), ctx);
+        ASSERT_OK(mongocrypt_ctx_setopt_contention_factor(ctx, 0), ctx);
+        ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "text opts are required for textPreview algorithm");
+    }
+
+    /* It is an error to set a text algorithm without setting contention */
+    {
+        REFRESH;
+        /* Set key ID to get past the 'either key id or key alt name required' error */
+        ASSERT_KEY_ID_OK(uuid);
+        ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_TEXTPREVIEW_STR, -1), ctx);
+        ASSERT_OK(mongocrypt_ctx_setopt_algorithm_text(ctx, textopts), ctx);
+        ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "contention factor is required for textPreview algorithm");
+    }
+
     mongocrypt_ctx_destroy(ctx);
     mongocrypt_destroy(crypt);
 }
