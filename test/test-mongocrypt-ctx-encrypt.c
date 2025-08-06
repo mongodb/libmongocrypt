@@ -2628,6 +2628,25 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         ee_testcase_run(&tc);
     }
 
+    {
+        ee_testcase tc = {0};
+        tc.desc = "find prefix on a field with prefix+suffix";
+        tc.algorithm = MONGOCRYPT_ALGORITHM_TEXTPREVIEW_STR;
+        tc.contention_factor = OPT_I64(1);
+        tc.msg = TEST_BSON("{'v': 'abc'}");
+        tc.user_key_id = &keyABC_id;
+        tc.keys_to_feed[0] = keyABC;
+        tc.query_type = MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW_STR;
+        tc.text_opts = TEST_BSON(RAW_STRING({
+            "caseSensitive" : false,
+            "diacriticSensitive" : false,
+            "prefix" : {"strMinQueryLength" : 1, "strMaxQueryLength" : 100},
+            "suffix" : {"strMinQueryLength" : 1, "strMaxQueryLength" : 100}
+        }));
+        tc.expect = TEST_FILE("./test/data/fle2-explicit/find-prefix.json");
+        ee_testcase_run(&tc);
+    }
+
     _mongocrypt_buffer_cleanup(&keyABC_id);
     _mongocrypt_buffer_cleanup(&key123_id);
 }
