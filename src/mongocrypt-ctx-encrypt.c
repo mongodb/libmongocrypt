@@ -1372,9 +1372,21 @@ static bool _fle2_finalize_explicit(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *
             _mongocrypt_ctx_fail_w_msg(ctx, "unable to convert input to BSON");
             goto fail;
         }
-        if (!mc_TextOpts_to_FLE2TextSearchInsertSpec(&ctx->opts.textopts.value, &old_v, &new_v, ctx->status)) {
-            _mongocrypt_ctx_fail(ctx);
-            goto fail;
+
+        if (ctx->opts.query_type.set) {
+            if (!mc_TextOpts_to_FLE2TextSearchInsertSpec_for_query(&ctx->opts.textopts.value,
+                                                                   &old_v,
+                                                                   ctx->opts.query_type.value,
+                                                                   &new_v,
+                                                                   ctx->status)) {
+                _mongocrypt_ctx_fail(ctx);
+                goto fail;
+            }
+        } else {
+            if (!mc_TextOpts_to_FLE2TextSearchInsertSpec(&ctx->opts.textopts.value, &old_v, &new_v, ctx->status)) {
+                _mongocrypt_ctx_fail(ctx);
+                goto fail;
+            }
         }
 
         if (!bson_iter_init_find(&marking.u.fle2.v_iter, &new_v, "v")) {
