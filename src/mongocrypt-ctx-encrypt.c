@@ -1403,11 +1403,20 @@ static bool _fle2_finalize_explicit(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *
         _mongocrypt_buffer_copy_to(&ctx->opts.key_id, &marking.u.fle2.index_key_id);
     }
 
-    if (ctx->opts.contention_factor.set) {
+    // Handle contention factor:
+    switch (ctx->opts.index_type.value) {
+    case MONGOCRYPT_INDEX_TYPE_NONE:
+    default:
+        BSON_ASSERT(!ctx->opts.contention_factor.set); // Checked earlier in explicit_encrypt_init.
+        break;
+
+    case MONGOCRYPT_INDEX_TYPE_EQUALITY:
+    case MONGOCRYPT_INDEX_TYPE_RANGEPREVIEW_DEPRECATED:
+    case MONGOCRYPT_INDEX_TYPE_RANGE:
+    case MONGOCRYPT_INDEX_TYPE_TEXTPREVIEW:
+        // All QE indexed algorithms require contention factor.
+        BSON_ASSERT(ctx->opts.contention_factor.set); // Checked earlier in explicit_encrypt_init.
         marking.u.fle2.maxContentionFactor = ctx->opts.contention_factor.value;
-    } else if (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_EQUALITY) {
-        _mongocrypt_ctx_fail_w_msg(ctx, "contention factor required for indexed algorithm");
-        goto fail;
     }
 
     /* Convert marking to ciphertext. */
@@ -1906,6 +1915,7 @@ static bool explicit_encrypt_init(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *ms
         return _mongocrypt_ctx_fail_w_msg(ctx, "contention factor is required for indexed algorithm");
     }
 
+    // Check required options for range algorithm are set:
     if (ctx->opts.index_type.set
         && (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_RANGE
             || ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_RANGEPREVIEW_DEPRECATED)) {
@@ -1915,6 +1925,17 @@ static bool explicit_encrypt_init(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *ms
 
         if (!ctx->opts.rangeopts.set) {
             return _mongocrypt_ctx_fail_w_msg(ctx, "range opts are required for range indexed algorithm");
+        }
+    }
+
+    // Check required options for text algorithm are set:
+    if (ctx->opts.index_type.set && (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_TEXTPREVIEW)) {
+        if (!ctx->opts.contention_factor.set) {
+            return _mongocrypt_ctx_fail_w_msg(ctx, "contention factor is required for textPreview algorithm");
+        }
+
+        if (!ctx->opts.textopts.set) {
+            return _mongocrypt_ctx_fail_w_msg(ctx, "text opts are required for textPreview algorithm");
         }
     }
 
