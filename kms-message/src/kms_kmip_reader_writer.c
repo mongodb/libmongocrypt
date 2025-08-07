@@ -205,7 +205,7 @@ kmip_writer_begin_struct (kmip_writer_t *writer, kmip_tag_type_t tag)
    size_t pos = writer->buffer->len;
 
    kmip_writer_write_u32 (writer, 0);
-   KMS_ASSERT(writer->cur_pos < MAX_KMIP_WRITER_POSITIONS);
+   KMS_ASSERT(writer->cur_pos < MAX_KMIP_WRITER_POSITIONS - 1);
    writer->cur_pos++;
    writer->positions[writer->cur_pos] = pos;
 }
