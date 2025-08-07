@@ -58,7 +58,7 @@ _download_cmake() {
         url="$url_base/cmake-$CMAKE_VERSION-Linux-$arch.tar.gz"
         ;;
     macos)
-        url="$url_base/cmake-$CMAKE_VERSION-macos10.10-universal.tar.gz"
+        url="$url_base/cmake-$CMAKE_VERSION-macos-universal.tar.gz"
         # We're pulling out the app bundle contents, so we need to skip more intermediate directories
         strip_components=3
         ;;

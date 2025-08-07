@@ -40,7 +40,7 @@ typedef enum {
 
 const char *_mongocrypt_index_type_to_string(mongocrypt_index_type_t val);
 
-typedef enum {
+typedef enum _mongocrypt_query_type_t {
     MONGOCRYPT_QUERY_TYPE_EQUALITY = 1,
     MONGOCRYPT_QUERY_TYPE_RANGE = 2,
     MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_DEPRECATED = 3,
