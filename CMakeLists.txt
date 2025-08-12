@@ -1,15 +1,4 @@
-cmake_minimum_required (VERSION 3.12)
-
-# Preempt the MSVC_RUNTIME_LIBRARY properties
-if (POLICY CMP0091)
-   cmake_policy (SET CMP0091 NEW)
-elseif (DEFINED CMAKE_MSVC_RUNTIME_LIBRARY)
-   message (WARNING "The CMAKE_MSVC_RUNTIME_LIBRARY variable is set, but CMake is too old to understand it")
-endif ()
-
-if (POLICY CMP0135)
-   cmake_policy (SET CMP0135 NEW)
-endif ()
+cmake_minimum_required (VERSION 3.15...4.0)
 
 project (mongocrypt C)
 
