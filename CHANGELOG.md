@@ -1,4 +1,11 @@
 # ChangeLog
+## 1.15.1
+
+### Fixed
+- Fix possible error when text options include multiple query types and are used for a find payload: `Text search query specification cannot contain multiple query type specifications`.
+- Require setting contention for text options.
+- Improve error message if text options are unset when using text algorithm.
+
 ## 1.15.0
 
 ### New features
