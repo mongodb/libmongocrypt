@@ -1,4 +1,11 @@
 # ChangeLog
+
+## 1.16.0 (Unreleased)
+
+### Changed
+
+- Set CMake minimum required version to `3.15...4.0` (with maximum policy version set to `4.0`).
+
 ## 1.15.0
 
 ### New features

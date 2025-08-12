@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.5)
+cmake_minimum_required (VERSION 3.15...4.0)
 project (app C)
 add_executable (app app.c)
 find_package (bson-1.0 1.11 REQUIRED)

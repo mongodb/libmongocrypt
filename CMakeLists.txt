@@ -1,15 +1,4 @@
-cmake_minimum_required (VERSION 3.12)
-
-# Preempt the MSVC_RUNTIME_LIBRARY properties
-if (POLICY CMP0091)
-   cmake_policy (SET CMP0091 NEW)
-elseif (DEFINED CMAKE_MSVC_RUNTIME_LIBRARY)
-   message (WARNING "The CMAKE_MSVC_RUNTIME_LIBRARY variable is set, but CMake is too old to understand it")
-endif ()
-
-if (POLICY CMP0135)
-   cmake_policy (SET CMP0135 NEW)
-endif ()
+cmake_minimum_required (VERSION 3.15...4.0)
 
 project (mongocrypt C)
 
@@ -27,20 +16,7 @@ option (ENABLE_BUILD_FOR_PPA "Maintainer-only option for preparing PPA build" OF
 option (ENABLE_ONLINE_TESTS "Enable online tests and the csfle utility. Requires libmongoc." ON)
 
 if (ENABLE_WINDOWS_STATIC_RUNTIME)
-   if (POLICY CMP0091)
-      # CMake 3.15 makes this trivial:
-      set (CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-   else ()
-      # Fix it up the old-fashioned way
-      string (REPLACE "/MDd" "" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
-      string (REPLACE "/MD" "" CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
-      string (REPLACE "/MDd" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-      string (REPLACE "/MD" "" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
-      string (APPEND CMAKE_C_FLAGS_DEBUG " /MTd")
-      string (APPEND CMAKE_CXX_FLAGS_DEBUG " /MTd")
-      string (APPEND CMAKE_C_FLAGS_RELEASE " /MT")
-      string (APPEND CMAKE_CXX_FLAGS_RELEASE " /MT")
-   endif ()
+   set (CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif ()
 
 list (APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
