@@ -52,9 +52,9 @@ if (NOT intel_dfp_POPULATED)
     message (STATUS "Obtaining Intel Decimal FP library: ${INTEL_DFP_LIBRARY_URL}")
     if("${CMAKE_VERSION}" VERSION_LESS "3.18.0")
         # SOURCE_SUBDIR is not yet supported.
-        FetchContent_Populate(embedded_mcd)
+        FetchContent_Populate(intel_dfp)
     else()
-        FetchContent_MakeAvailable(embedded_mcd)
+        FetchContent_MakeAvailable(intel_dfp)
     endif()
 endif ()
 
