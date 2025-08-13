@@ -44,7 +44,7 @@ FetchContent_Declare (
     URL "${_default_url}"
     ${_hash_arg}
     PATCH_COMMAND ${patch_command} --verbose
-    SOURCE_SUBDIR "/dev/null" # Targets are manually defined below.
+    SOURCE_SUBDIR "NO_ADD_SUBDIRECTORY" # Targets are manually defined below.
     )
 
 FetchContent_GetProperties (intel_dfp)

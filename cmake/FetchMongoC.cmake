@@ -27,7 +27,7 @@ FetchContent_Declare (
     embedded_mcd
     URL "https://github.com/mongodb/mongo-c-driver/archive/refs/tags/${MONGOC_FETCH_TAG_FOR_LIBBSON}.tar.gz"
     PATCH_COMMAND ${patch_command} --verbose
-    SOURCE_SUBDIR "/dev/null" # add_subdirectory() is handled by ImportBSON.cmake.
+    SOURCE_SUBDIR "NO_ADD_SUBDIRECTORY" # add_subdirectory() is handled by ImportBSON.cmake.
     )
 # Populate it:
 FetchContent_GetProperties (embedded_mcd)
