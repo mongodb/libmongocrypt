@@ -19,6 +19,12 @@ if (ENABLE_WINDOWS_STATIC_RUNTIME)
    set (CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif ()
 
+if (MINGW)
+   # MSVCRT-based mingw-w64 GCC requires this macro to enable C99 format specifiers. This does not apply to UCRT-based
+   # mingw-w64 GCC, but apply the workaround anyways until bson-compat.h no longer requires this.
+   add_compile_definitions ("__USE_MINGW_ANSI_STDIO=1")
+endif ()
+
 list (APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
 include (GNUInstallDirs)
