@@ -39,7 +39,7 @@ jobs:
 
     steps:  
       - name: Checkout libmongocrypt
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           ref: ${{ inputs.ref }}
@@ -70,7 +70,7 @@ jobs:
     name: Collect dist files
     steps:
       - name: Download all workflow run artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
       - name: Flatten directory
         working-directory: .
         run: |

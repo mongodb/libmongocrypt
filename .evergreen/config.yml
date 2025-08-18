@@ -1628,7 +1628,8 @@ buildvariants:
     use_ninja: OFF
   tasks:
   - build-and-test-and-upload
-  - test-python
+  - name: test-python
+    distros: macos-14-arm64
 - name: windows-vs2017-32bit
   # Test Windows 32 bit builds for PHPC. PHPC builds libmongocrypt from source. See MONGOCRYPT-391.
   display_name: "Windows VS 2017 32-bit compile"

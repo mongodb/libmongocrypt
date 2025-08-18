@@ -1,10 +1,22 @@
 # ChangeLog
+
+## 1.16.0 (Unreleased)
+
+### Changed
+
+- Set CMake minimum required version to `3.15...4.0` (with maximum policy version set to `4.0`).
+- `FetchContent_MakeAvailable()` is used to populate dependencies instead of `FetchContent_Populate()`.
+  - This applies to MongoDB C Driver when `MONGOCRYPT_MONGOC_DIR` is not set to `USE-SYSTEM`.
+  - This applies to IntelDFP when `MONGOCRYPT_DFP_DIR` is not set to `USE-SYSTEM`.
+  - Note: `FetchContent_Populate()` is still used for CMake versions prior to 3.18 to avoid `add_subdirectory()` behavior.
+
 ## 1.15.1
 
 ### Fixed
 - Fix possible error when text options include multiple query types and are used for a find payload: `Text search query specification cannot contain multiple query type specifications`.
 - Require setting contention for text options.
 - Improve error message if text options are unset when using text algorithm.
+
 
 ## 1.15.0
 
