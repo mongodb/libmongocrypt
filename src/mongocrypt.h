@@ -1180,7 +1180,24 @@ MONGOCRYPT_EXPORT
 bool mongocrypt_kms_ctx_feed(mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes);
 
 /**
- * Indicate a failure. Discards all data fed to this KMS context with @ref mongocrypt_kms_ctx_feed.
+ * Feed bytes from the HTTP response.
+ *
+ * Feeding more bytes than what has been returned in @ref
+ * mongocrypt_kms_ctx_bytes_needed is an error.
+ *
+ * @param[in] kms The @ref mongocrypt_kms_ctx_t.
+ * @param[in] bytes The bytes to feed. The viewed data is copied. It is valid to
+ * destroy @p bytes with @ref mongocrypt_binary_destroy immediately after.
+ * @param[out] should_retry Whether the KMS request should be retried. Retry in-place
+ * without calling @ref mongocrypt_kms_ctx_fail.
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_kms_ctx_status
+ */
+MONGOCRYPT_EXPORT
+bool mongocrypt_kms_ctx_feed_with_retry(mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes, bool *should_retry);
+
+/**
+ * Indicate a network error. Discards all data fed to this KMS context with @ref mongocrypt_kms_ctx_feed.
  * The @ref mongocrypt_kms_ctx_t may be reused.
  *
  * @param[in] kms The @ref mongocrypt_kms_ctx_t.
@@ -1188,15 +1205,6 @@ bool mongocrypt_kms_ctx_feed(mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *byt
  */
 MONGOCRYPT_EXPORT
 bool mongocrypt_kms_ctx_fail(mongocrypt_kms_ctx_t *kms);
-
-/**
- * Indicate if a KMS context is completed but should be retried.
- *
- * @param[in] kms The @ref mongocrypt_kms_ctx_t.
- * @return A boolean indicating whether the failed request should be retried.
- */
-MONGOCRYPT_EXPORT
-bool mongocrypt_kms_ctx_should_retry(mongocrypt_kms_ctx_t *kms);
 
 /**
  * Get the status associated with a @ref mongocrypt_kms_ctx_t object.

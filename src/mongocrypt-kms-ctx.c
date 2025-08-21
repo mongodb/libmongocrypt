@@ -1142,10 +1142,6 @@ static bool _is_retryable_req(_kms_request_type_t req_type) {
     return false;
 }
 
-bool mongocrypt_kms_ctx_should_retry(mongocrypt_kms_ctx_t *kms) {
-    return kms && kms->should_retry;
-}
-
 bool mongocrypt_kms_ctx_fail(mongocrypt_kms_ctx_t *kms) {
     if (!kms) {
         return false;
@@ -1172,6 +1168,13 @@ bool mongocrypt_kms_ctx_fail(mongocrypt_kms_ctx_t *kms) {
     // Mark KMS context as retryable. Return again in `mongocrypt_ctx_next_kms_ctx`.
     set_retry(kms);
     return true;
+}
+
+bool mongocrypt_kms_ctx_feed_with_retry(mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes, bool *should_retry) {
+    *should_retry = false;
+    const bool res = mongocrypt_kms_ctx_feed(kms, bytes);
+    *should_retry = kms->should_retry && kms->retry_enabled;
+    return res;
 }
 
 bool mongocrypt_kms_ctx_feed(mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes) {
