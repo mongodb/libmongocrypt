@@ -233,22 +233,22 @@ configure_file (
    "${PROJECT_BINARY_DIR}/src/mongocrypt-config.h"
 )
 
-# Define the mlib target, which is private and header-only. It is not exported
+# Define the mc_mlib target, which is private and header-only. It is not exported
 # nor are its headers installed.
-add_library (_mongo-mlib INTERFACE)
-add_library (mongo::mlib ALIAS _mongo-mlib)
+add_library (_mongo-mc_mlib INTERFACE)
+add_library (mongo::mc_mlib ALIAS _mongo-mc_mlib)
 list (APPEND MLIB_DEFINITIONS MLIB_USER)
 CHECK_INCLUDE_FILE (strings.h HAVE_STRINGS_H)
 if (HAVE_STRINGS_H)
    list (APPEND MLIB_DEFINITIONS MLIB_HAVE_STRINGS_H)
 endif ()
 set_property(
-   TARGET _mongo-mlib
+   TARGET _mongo-mc_mlib
    APPEND PROPERTY INTERFACE_COMPILE_DEFINITIONS
    ${MLIB_DEFINITIONS}
    )
 set_property(
-   TARGET _mongo-mlib
+   TARGET _mongo-mc_mlib
    APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES
    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>"
    )
@@ -271,7 +271,7 @@ target_link_libraries (
    PRIVATE
       _mongocrypt::libbson_for_shared
       kms_message_static
-      $<BUILD_INTERFACE:mongo::mlib>
+      $<BUILD_INTERFACE:mongo::mc_mlib>
    PUBLIC
       mongocrypt::platform
       ${maybe_dfp_library}
@@ -327,7 +327,7 @@ target_link_libraries (
    PRIVATE
       _mongocrypt::libbson_for_static
       kms_message_static
-      $<BUILD_INTERFACE:mongo::mlib>
+      $<BUILD_INTERFACE:mongo::mc_mlib>
    PUBLIC
       mongocrypt::platform
       ${maybe_dfp_library}
@@ -507,7 +507,7 @@ set (TEST_MONGOCRYPT_SOURCES
 add_executable (test-mongocrypt ${TEST_MONGOCRYPT_SOURCES})
 # Use the static version since it allows the test binary to use private symbols
 target_include_directories (test-mongocrypt PRIVATE ./src "${CMAKE_CURRENT_SOURCE_DIR}/kms-message/src")
-target_link_libraries (test-mongocrypt PRIVATE _mongocrypt::libbson_for_static mongocrypt_static mongo::mlib)
+target_link_libraries (test-mongocrypt PRIVATE _mongocrypt::libbson_for_static mongocrypt_static mongo::mc_mlib)
 target_include_directories (test-mongocrypt PRIVATE "${CMAKE_CURRENT_LIST_DIR}/test")
 target_compile_definitions (test-mongocrypt PRIVATE
    # Set a definition so that testcases can know where test-mongocrypt.exe was written to
@@ -527,7 +527,7 @@ add_test (
 foreach (test IN ITEMS path str)
    add_executable (mlib.${test}.test src/mlib/${test}.test.c)
    add_test (mlib.${test} mlib.${test}.test)
-   target_link_libraries (mlib.${test}.test PRIVATE mongo::mlib)
+   target_link_libraries (mlib.${test}.test PRIVATE mongo::mc_mlib)
 endforeach ()
 
 if ("cxx_relaxed_constexpr" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
@@ -545,7 +545,7 @@ if ("cxx_relaxed_constexpr" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
       target_compile_features ("${exe_name}" PRIVATE cxx_relaxed_constexpr)
       target_link_libraries ("${exe_name}" PRIVATE
          mongocrypt
-         mongo::mlib
+         mongo::mc_mlib
          ${maybe_dfp_library}
          _mongocrypt::libbson_for_static
          )
@@ -555,7 +555,7 @@ endif ()
 
 if ("cxx_std_20" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
    add_executable (csfle-markup src/csfle-markup.cpp)
-   target_link_libraries (csfle-markup PRIVATE mongocrypt_static _mongocrypt::libbson_for_static mongo::mlib)
+   target_link_libraries (csfle-markup PRIVATE mongocrypt_static _mongocrypt::libbson_for_static mongo::mc_mlib)
    target_compile_features (csfle-markup PRIVATE cxx_std_20)
 endif ()
 
@@ -606,8 +606,8 @@ install (
    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
-# This export set is not installed, and is only to allow export() of the mlib-using targets
-install (TARGETS _mongo-mlib EXPORT _exports_for_export)
+# This export set is not installed, and is only to allow export() of the mc_mlib-using targets
+install (TARGETS _mongo-mc_mlib EXPORT _exports_for_export)
 export (EXPORT _exports_for_export)
 
 install (
@@ -622,11 +622,11 @@ install (
 set (PROJECT_VERSION "${BUILD_VERSION}")
 set (PROJECT_DESCRIPTION "The libmongocrypt client-side field level encryption library.")
 if (NOT ENABLE_BUILD_FOR_PPA)
-   set (PKG_CONFIG_STATIC_REQUIRES "libbson-static-1.0")
+   set (PKG_CONFIG_STATIC_REQUIRES "bson2-static")
 endif ()
 if (USE_SHARED_LIBBSON)
-   set (PKG_CONFIG_REQUIRES "libbson-1.0")
-   set (PKG_CONFIG_STATIC_REQUIRES "libbson-1.0")
+   set (PKG_CONFIG_REQUIRES "bson2")
+   set (PKG_CONFIG_STATIC_REQUIRES "bson2")
 endif ()
 set (PKG_CONFIG_LIBDIR "\${prefix}/${CMAKE_INSTALL_LIBDIR}")
 set (PKG_CONFIG_INCLUDEDIR "\${prefix}/${CMAKE_INSTALL_INCLUDEDIR}/mongocrypt")

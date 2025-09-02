@@ -9,6 +9,7 @@
   - This applies to MongoDB C Driver when `MONGOCRYPT_MONGOC_DIR` is not set to `USE-SYSTEM`.
   - This applies to IntelDFP when `MONGOCRYPT_DFP_DIR` is not set to `USE-SYSTEM`.
   - Note: `FetchContent_Populate()` is still used for CMake versions prior to 3.18 to avoid `add_subdirectory()` behavior.
+- Bump downloaded libbson version from 1.30.3 to 2.1.0.
 
 ## 1.15.1
 

@@ -55,7 +55,7 @@ cmake_push_check_state ()
    # Even though we aren't going to use the system's libbson, try to detect whether it has
    # extra-alignment enabled. We want to match that setting as our default, for convenience
    # purposes only.
-   find_path (SYSTEM_BSON_INCLUDE_DIR bson/bson.h PATH_SUFFIXES libbson-1.0)
+   find_path (SYSTEM_BSON_INCLUDE_DIR bson/bson.h PATH_SUFFIXES bson-2.1.0)
    set (_extra_alignment_default OFF)
    if (SYSTEM_BSON_INCLUDE_DIR AND NOT DEFINED ENABLE_EXTRA_ALIGNMENT)
       set (CMAKE_REQUIRED_INCLUDES "${SYSTEM_BSON_INCLUDE_DIR}")
@@ -109,9 +109,9 @@ endif ()
 function (_import_bson)
    if (MONGOCRYPT_MONGOC_DIR STREQUAL "USE-SYSTEM" AND USE_SHARED_LIBBSON AND NOT ENABLE_ONLINE_TESTS)
       message (STATUS "NOTE: Using system-wide libbson library. This is intended only for package maintainers.")
-      find_library (_MONGOCRYPT_SYSTEM_LIBBSON_SHARED "${CMAKE_SHARED_LIBRARY_PREFIX}bson-1.0${CMAKE_SHARED_LIBRARY_SUFFIX}")
-      find_library (_MONGOCRYPT_SYSTEM_LIBBSON_STATIC "${CMAKE_STATIC_LIBRARY_PREFIX}bson-static-1.0${CMAKE_STATIC_LIBRARY_SUFFIX}")
-      find_path (_MONGOCRYPT_SYSTEM_LIBBSON_INCLUDE_DIR bson/bson.h PATH_SUFFIXES libbson-1.0)
+      find_library (_MONGOCRYPT_SYSTEM_LIBBSON_SHARED "${CMAKE_SHARED_LIBRARY_PREFIX}bson2${CMAKE_SHARED_LIBRARY_SUFFIX}")
+      find_library (_MONGOCRYPT_SYSTEM_LIBBSON_STATIC "${CMAKE_STATIC_LIBRARY_PREFIX}bson2-static${CMAKE_STATIC_LIBRARY_SUFFIX}")
+      find_path (_MONGOCRYPT_SYSTEM_LIBBSON_INCLUDE_DIR bson/bson.h PATH_SUFFIXES bson-2.1.0)
       add_library (bson_shared SHARED IMPORTED)
       add_library (bson_static STATIC IMPORTED)
       set_target_properties (bson_shared bson_static PROPERTIES
