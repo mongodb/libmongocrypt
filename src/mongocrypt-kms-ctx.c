@@ -1194,16 +1194,6 @@ bool mongocrypt_kms_ctx_feed(mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *byt
         return false;
     }
 
-    if (kms->log && kms->log->trace_enabled) {
-        _mongocrypt_log(kms->log,
-                        MONGOCRYPT_LOG_LEVEL_TRACE,
-                        "%s (%s=\"%.*s\")",
-                        BSON_FUNC,
-                        "bytes",
-                        mongocrypt_binary_len(bytes),
-                        mongocrypt_binary_data(bytes));
-    }
-
     if (!kms_response_parser_feed(kms->parser, bytes->data, bytes->len)) {
         if (is_kms(kms->req_type)) {
             /* The KMIP response parser does not suport kms_response_parser_status.

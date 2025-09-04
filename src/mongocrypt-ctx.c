@@ -76,21 +76,7 @@ bool mongocrypt_ctx_setopt_key_id(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *ke
     if (!ctx) {
         return false;
     }
-
-    if (ctx->crypt->log.trace_enabled && key_id && key_id->data) {
-        char *key_id_val;
-        /* this should never happen, so assert rather than return false */
-        BSON_ASSERT(key_id->len <= INT_MAX);
-        key_id_val = _mongocrypt_new_string_from_bytes(key_id->data, (int)key_id->len);
-        _mongocrypt_log(&ctx->crypt->log,
-                        MONGOCRYPT_LOG_LEVEL_TRACE,
-                        "%s (%s=\"%s\")",
-                        BSON_FUNC,
-                        "key_id",
-                        key_id_val);
-        bson_free(key_id_val);
-    }
-
+    
     return _set_binary_opt(ctx, key_id, &ctx->opts.key_id, BSON_SUBTYPE_UUID);
 }
 
@@ -241,15 +227,6 @@ bool mongocrypt_ctx_setopt_algorithm(mongocrypt_ctx_t *ctx, const char *algorith
     }
 
     const size_t calculated_len = len == -1 ? strlen(algorithm) : (size_t)len;
-    if (ctx->crypt->log.trace_enabled) {
-        _mongocrypt_log(&ctx->crypt->log,
-                        MONGOCRYPT_LOG_LEVEL_TRACE,
-                        "%s (%s=\"%.*s\")",
-                        BSON_FUNC,
-                        "algorithm",
-                        calculated_len <= (size_t)INT_MAX ? (int)calculated_len : INT_MAX,
-                        algorithm);
-    }
 
     mstr_view algo_str = mstrv_view_data(algorithm, calculated_len);
     if (mstr_eq_ignore_case(algo_str, mstrv_lit(MONGOCRYPT_ALGORITHM_DETERMINISTIC_STR))) {
@@ -441,14 +418,6 @@ bool mongocrypt_ctx_mongo_feed(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in) {
 
     if (!in) {
         return _mongocrypt_ctx_fail_w_msg(ctx, "invalid NULL input");
-    }
-
-    if (ctx->crypt->log.trace_enabled) {
-        char *in_val;
-
-        in_val = _mongocrypt_new_json_string_from_binary(in);
-        _mongocrypt_log(&ctx->crypt->log, MONGOCRYPT_LOG_LEVEL_TRACE, "%s (%s=\"%s\")", BSON_FUNC, "in", in_val);
-        bson_free(in_val);
     }
 
     switch (ctx->state) {
@@ -729,21 +698,6 @@ bool mongocrypt_ctx_setopt_masterkey_aws(mongocrypt_ctx_t *ctx,
     mongocrypt_binary_destroy(bin);
     bson_destroy(&as_bson);
 
-    if (ctx->crypt->log.trace_enabled) {
-        _mongocrypt_log(&ctx->crypt->log,
-                        MONGOCRYPT_LOG_LEVEL_TRACE,
-                        "%s (%s=\"%s\", %s=%d, %s=\"%s\", %s=%d)",
-                        BSON_FUNC,
-                        "region",
-                        ctx->opts.kek.provider.aws.region,
-                        "region_len",
-                        region_len,
-                        "cmk",
-                        ctx->opts.kek.provider.aws.cmk,
-                        "cmk_len",
-                        cmk_len);
-    }
-
     return ret;
 }
 
@@ -1010,12 +964,6 @@ bool mongocrypt_ctx_setopt_key_encryption_key(mongocrypt_ctx_t *ctx, mongocrypt_
 
     if (!_mongocrypt_kek_parse_owned(&as_bson, &ctx->opts.kek, ctx->status)) {
         return _mongocrypt_ctx_fail(ctx);
-    }
-
-    if (ctx->crypt->log.trace_enabled) {
-        char *bin_str = bson_as_canonical_extended_json(&as_bson, NULL);
-        _mongocrypt_log(&ctx->crypt->log, MONGOCRYPT_LOG_LEVEL_TRACE, "%s (%s=\"%s\")", BSON_FUNC, "bin", bin_str);
-        bson_free(bin_str);
     }
 
     return true;

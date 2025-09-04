@@ -2026,13 +2026,6 @@ static bool explicit_encrypt_init(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *ms
         return _mongocrypt_ctx_fail_w_msg(ctx, "msg must be bson");
     }
 
-    if (ctx->crypt->log.trace_enabled) {
-        char *cmd_val;
-        cmd_val = _mongocrypt_new_json_string_from_binary(msg);
-        _mongocrypt_log(&ctx->crypt->log, MONGOCRYPT_LOG_LEVEL_TRACE, "%s (%s=\"%s\")", BSON_FUNC, "msg", cmd_val);
-        bson_free(cmd_val);
-    }
-
     if (!bson_iter_init_find(&iter, &as_bson, "v")) {
         return _mongocrypt_ctx_fail_w_msg(ctx, "invalid msg, must contain 'v'");
     }
@@ -2575,22 +2568,6 @@ bool mongocrypt_ctx_encrypt_init(mongocrypt_ctx_t *ctx, const char *db, int32_t 
 
     if (ctx->opts.algorithm != MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE) {
         return _mongocrypt_ctx_fail_w_msg(ctx, "algorithm must not be set for auto encryption");
-    }
-
-    if (ctx->crypt->log.trace_enabled) {
-        char *cmd_val;
-        cmd_val = _mongocrypt_new_json_string_from_binary(cmd);
-        _mongocrypt_log(&ctx->crypt->log,
-                        MONGOCRYPT_LOG_LEVEL_TRACE,
-                        "%s (%s=\"%s\", %s=%d, %s=\"%s\")",
-                        BSON_FUNC,
-                        "db",
-                        ectx->cmd_db,
-                        "db_len",
-                        db_len,
-                        "cmd",
-                        cmd_val);
-        bson_free(cmd_val);
     }
 
     // Check if an isMaster request to mongocryptd is needed to detect feature support:
