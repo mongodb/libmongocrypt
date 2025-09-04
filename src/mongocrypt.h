@@ -255,7 +255,6 @@ typedef enum {
     MONGOCRYPT_LOG_LEVEL_ERROR = 1,
     MONGOCRYPT_LOG_LEVEL_WARNING = 2,
     MONGOCRYPT_LOG_LEVEL_INFO = 3,
-    MONGOCRYPT_LOG_LEVEL_TRACE = 4
 } mongocrypt_log_level_t;
 
 /**
