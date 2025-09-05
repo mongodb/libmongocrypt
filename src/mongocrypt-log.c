@@ -44,6 +44,7 @@ void _mongocrypt_stdout_log_fn(mongocrypt_log_level_t level, const char *message
     case MONGOCRYPT_LOG_LEVEL_ERROR: printf("ERROR"); break;
     case MONGOCRYPT_LOG_LEVEL_WARNING: printf("WARNING"); break;
     case MONGOCRYPT_LOG_LEVEL_INFO: printf("INFO"); break;
+    case MONGOCRYPT_LOG_LEVEL_TRACE: printf("TRACE"); break; /* UNUSED */
     default: printf("UNKNOWN"); break;
     }
     printf(" %s\n", message);
