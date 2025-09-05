@@ -184,12 +184,6 @@ else ()
    message (FATAL_ERROR "Unknown crypto provider ${MONGOCRYPT_CRYPTO}")
 endif ()
 
-set (MONGOCRYPT_ENABLE_TRACE 0)
-if (ENABLE_TRACE)
-   message (WARNING "Building with trace logging. This is highly insecure. Do not use in a production environment")
-   set (MONGOCRYPT_ENABLE_TRACE 1)
-endif ()
-
 set (BUILD_VERSION "0.0.0" CACHE STRING "Library version")
 if (BUILD_VERSION STREQUAL "0.0.0")
    if (EXISTS ${CMAKE_BINARY_DIR}/VERSION_CURRENT)

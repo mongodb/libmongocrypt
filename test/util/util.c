@@ -60,7 +60,7 @@ void _log_to_stdout(mongocrypt_log_level_t level, const char *message, uint32_t 
     case MONGOCRYPT_LOG_LEVEL_ERROR: printf("ERROR"); break;
     case MONGOCRYPT_LOG_LEVEL_WARNING: printf("WARNING"); break;
     case MONGOCRYPT_LOG_LEVEL_INFO: printf("INFO"); break;
-    case MONGOCRYPT_LOG_LEVEL_TRACE: printf("TRACE"); break;
+    case MONGOCRYPT_LOG_LEVEL_TRACE: printf("TRACE"); break; /* UNUSED */
     default: printf("?????"); break;
     }
     printf(" %s\n", message);
