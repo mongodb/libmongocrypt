@@ -76,7 +76,7 @@ bool mongocrypt_ctx_setopt_key_id(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *ke
     if (!ctx) {
         return false;
     }
-    
+
     return _set_binary_opt(ctx, key_id, &ctx->opts.key_id, BSON_SUBTYPE_UUID);
 }
 
