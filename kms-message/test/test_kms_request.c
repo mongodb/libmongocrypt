@@ -604,6 +604,7 @@ connection_close_test (void)
    kms_request_t *request;
 
    opt = kms_request_opt_new ();
+   ASSERT (opt);
    kms_request_opt_set_connection_close (opt, true);
 
    request = kms_request_new ("POST", "/", opt);
@@ -1106,6 +1107,7 @@ kms_request_kmip_prohibited_test (void)
    kms_request_t *req;
 
    opt = kms_request_opt_new ();
+   ASSERT (opt);
    kms_request_opt_set_provider (opt, KMS_REQUEST_PROVIDER_KMIP);
    req = kms_request_new ("method", "path_and_query", opt);
    ASSERT_REQUEST_ERROR (req, "Function not applicable to KMIP");
@@ -1141,6 +1143,7 @@ test_request_newlines (void)
    // Test kms_request_to_string.
    {
       opt = kms_request_opt_new ();
+      ASSERT (opt);
       kms_request_opt_set_connection_close (opt, true);
       ASSERT (kms_request_opt_set_provider (opt, KMS_REQUEST_PROVIDER_AZURE));
       req = kms_azure_request_wrapkey_new ("example-host",
@@ -1167,6 +1170,7 @@ test_request_newlines (void)
    // Test kms_request_get_signed.
    {
       opt = kms_request_opt_new ();
+      ASSERT (opt);
       kms_request_opt_set_connection_close (opt, true);
       req = kms_caller_identity_request_new (opt);
       ASSERT_REQUEST_OK (req);

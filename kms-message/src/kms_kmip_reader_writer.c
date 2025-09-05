@@ -43,6 +43,7 @@ kmip_writer_t *
 kmip_writer_new (void)
 {
    kmip_writer_t *writer = calloc (1, sizeof (kmip_writer_t));
+   KMS_ASSERT (writer);
    writer->buffer = kms_request_str_new ();
    return writer;
 }
@@ -241,6 +242,7 @@ kmip_reader_t *
 kmip_reader_new (uint8_t *ptr, size_t len)
 {
    kmip_reader_t *reader = calloc (1, sizeof (kmip_reader_t));
+   KMS_ASSERT (reader);
    reader->ptr = ptr;
    reader->len = len;
    return reader;
