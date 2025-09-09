@@ -84,8 +84,7 @@ typedef struct {
     mc_array_t named_mut;
 } _mongocrypt_opts_kms_providers_t;
 
-typedef bool (*_mongocrypt_contention_factor_fn)(int64_t exclusive_upper_bound,
-                                                 int64_t *out);
+typedef bool (*_mongocrypt_contention_factor_fn)(int64_t exclusive_upper_bound, int64_t *out);
 
 void _mongocrypt_opts_kms_providers_init(_mongocrypt_opts_kms_providers_t *kms_providers);
 

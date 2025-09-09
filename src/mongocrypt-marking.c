@@ -757,7 +757,10 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_common(_mongocrypt_key
             }
         }
 
-        else if (!_mongocrypt_random_int64(crypto, placeholder->maxContentionFactor + 1, &out->contentionFactor, status)) {
+        else if (!_mongocrypt_random_int64(crypto,
+                                           placeholder->maxContentionFactor + 1,
+                                           &out->contentionFactor,
+                                           status)) {
             goto fail;
         }
     }
