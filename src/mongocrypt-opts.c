@@ -323,10 +323,7 @@ bool _mongocrypt_opts_kms_providers_lookup(const _mongocrypt_opts_kms_providers_
 void _mongocrypt_opts_set_contention_factor_fn(mongocrypt_t *crypt,
                                                _mongocrypt_contention_factor_fn contention_factor_fn) {
     BSON_ASSERT_PARAM(crypt);
-    BSON_ASSERT_PARAM(contention_factor_fn);
-
-    _mongocrypt_opts_t *opts = &crypt->opts;
-    opts->contention_factor_fn = contention_factor_fn;
+    crypt->opts.contention_factor_fn = contention_factor_fn;
 }
 
 bool _mongocrypt_parse_optional_utf8(const bson_t *bson, const char *dotkey, char **out, mongocrypt_status_t *status) {

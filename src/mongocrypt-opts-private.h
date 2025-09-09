@@ -107,7 +107,7 @@ typedef struct {
     mongocrypt_hmac_fn sign_rsaes_pkcs1_v1_5;
     void *sign_ctx;
 
-    // For testing only.
+    // Support overriding random contentionFactor (when null, default) with a custom setter.
     _mongocrypt_contention_factor_fn contention_factor_fn;
 
     /// Keep an array of search paths for finding the crypt_shared library

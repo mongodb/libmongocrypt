@@ -5977,38 +5977,39 @@ static void _test_lookup(_mongocrypt_tester_t *tester) {
 #undef TF
 }
 
-bool _deterministic_contention(int64_t exclusive_upper_bound, int64_t *out) {
+static bool _deterministic_contention(int64_t exclusive_upper_bound, int64_t *out) {
+    ASSERT(out);
+    (void)exclusive_upper_bound;
     *out = 1;
     return true;
 }
 
 static void _test_deterministic_contention(_mongocrypt_tester_t *tester) {
-    mongocrypt_status_t *status = mongocrypt_status_new();
+    mongocrypt_status_t *const status = mongocrypt_status_new();
 
-    _mongocrypt_buffer_t keyABC_id;
-    _mongocrypt_buffer_copy_from_hex(&keyABC_id, "ABCDEFAB123498761234123456789012");
-    mongocrypt_binary_t *keyABC = TEST_FILE("./test/data/keys/ABCDEFAB123498761234123456789012-local-document.json");
-
-    mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_SKIP_INIT);
+    mongocrypt_t *const crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_SKIP_INIT);
     ASSERT_OK(mongocrypt_init(crypt), crypt);
     _mongocrypt_opts_set_contention_factor_fn(crypt, &_deterministic_contention); // register deterministic fn wth crypt
 
     // Expect the callback returns 1.
     {
-        int64_t *out = malloc(sizeof(int64_t));
-        ASSERT(crypt->opts.contention_factor_fn(4, out));
-        ASSERT_CMPINT64(*out, ==, 1);
-        free(out);
+        int64_t out;
+        ASSERT(crypt->opts.contention_factor_fn(4, &out));
+        ASSERT_CMPINT64(out, ==, 1);
     }
 
     // Start explicit encryption:
-    mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+    mongocrypt_ctx_t *const ctx = mongocrypt_ctx_new(crypt);
 
     // Use the QE algorithm "Indexed", which uses a contention factor:
     ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_INDEXED_STR, -1), ctx);
 
-    // Set the key ID:
-    ASSERT_OK(mongocrypt_ctx_setopt_key_id(ctx, _mongocrypt_buffer_as_binary(&keyABC_id)), ctx);
+    {
+        _mongocrypt_buffer_t keyABC_id;
+        _mongocrypt_buffer_copy_from_hex(&keyABC_id, "ABCDEFAB123498761234123456789012");
+        ASSERT_OK(mongocrypt_ctx_setopt_key_id(ctx, _mongocrypt_buffer_as_binary(&keyABC_id)), ctx);
+        _mongocrypt_buffer_cleanup(&keyABC_id);
+    }
 
     // Set max contention factor of 4:
     ASSERT_OK(mongocrypt_ctx_setopt_contention_factor(ctx, 4), ctx);
@@ -6019,6 +6020,8 @@ static void _test_deterministic_contention(_mongocrypt_tester_t *tester) {
     // Expect key is needed:
     ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
     {
+        mongocrypt_binary_t *const keyABC =
+            TEST_FILE("./test/data/keys/ABCDEFAB123498761234123456789012-local-document.json");
         ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, keyABC), ctx);
         ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
     }
@@ -6045,12 +6048,11 @@ static void _test_deterministic_contention(_mongocrypt_tester_t *tester) {
         mc_FLE2InsertUpdatePayloadV2_t got_payload;
         mc_FLE2InsertUpdatePayloadV2_init(&got_payload);
         ASSERT_OK_STATUS(mc_FLE2InsertUpdatePayloadV2_parse(&got_payload, &got_buffer, status), status);
-        ASSERT_CMPINT64(got_payload.contentionFactor, ==, 1); // should be 1 due to deterministic contention fn
+        ASSERT_CMPINT64(got_payload.contentionFactor, ==, 1); // Set by _deterministic_contention.
         mc_FLE2InsertUpdatePayloadV2_cleanup(&got_payload);
         mongocrypt_binary_destroy(got);
     }
 
-    _mongocrypt_buffer_cleanup(&keyABC_id);
     mongocrypt_ctx_destroy(ctx);
     mongocrypt_destroy(crypt);
     mongocrypt_status_destroy(status);

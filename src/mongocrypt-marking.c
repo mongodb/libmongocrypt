@@ -753,6 +753,11 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_common(_mongocrypt_key
     if (placeholder->maxContentionFactor > 0) {
         if (kb->crypt->opts.contention_factor_fn) {
             if (!kb->crypt->opts.contention_factor_fn(placeholder->maxContentionFactor + 1, &out->contentionFactor)) {
+                CLIENT_ERR("contention_factor_fn failed");
+                goto fail;
+            }
+            if (out->contentionFactor < 0 || out->contentionFactor > placeholder->maxContentionFactor) {
+                CLIENT_ERR("chosen contentionFactor out of range");
                 goto fail;
             }
         }
@@ -1559,6 +1564,11 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForTextSearc
         if (kb->crypt->opts.contention_factor_fn) {
             if (!kb->crypt->opts.contention_factor_fn(placeholder->maxContentionFactor + 1,
                                                       &payload.contentionFactor)) {
+                CLIENT_ERR("contention_factor_fn failed");
+                goto fail;
+            }
+            if (payload.contentionFactor < 0 || payload.contentionFactor > placeholder->maxContentionFactor) {
+                CLIENT_ERR("chosen contentionFactor out of range");
                 goto fail;
             }
         }
