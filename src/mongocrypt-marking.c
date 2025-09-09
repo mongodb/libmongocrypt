@@ -729,15 +729,17 @@ fail:
 }
 
 static bool _fle2_choose_contention_factor(mongocrypt_t *crypt,
-                                           int64_t exclusive_upper_bound,
+                                           int64_t maxContentionFactor,
                                            int64_t *out,
                                            mongocrypt_status_t *status) {
+    BSON_ASSERT_PARAM(crypt);
+    BSON_ASSERT_PARAM(out);
     if (crypt->opts.contention_factor_fn) {
-        if (!crypt->opts.contention_factor_fn(exclusive_upper_bound, out)) {
+        if (!crypt->opts.contention_factor_fn(maxContentionFactor + 1, out)) {
             CLIENT_ERR("contention_factor_fn failed");
             return false;
         }
-        if (*out < 0 || *out > exclusive_upper_bound) {
+        if (*out < 0 || *out > maxContentionFactor) {
             CLIENT_ERR("chosen contentionFactor out of range");
             return false;
         }
@@ -771,7 +773,7 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_common(_mongocrypt_key
         /* Choose a contentionFactor in the inclusive range [0,
          * placeholder->maxContentionFactor] */
         if (!_fle2_choose_contention_factor(kb->crypt,
-                                            placeholder->maxContentionFactor + 1,
+                                            placeholder->maxContentionFactor,
                                             &out->contentionFactor,
                                             status)) {
             goto fail;
@@ -1570,7 +1572,7 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForTextSearc
         /* Choose a contentionFactor in the inclusive range [0,
          * placeholder->maxContentionFactor] */
         if (!_fle2_choose_contention_factor(kb->crypt,
-                                            placeholder->maxContentionFactor + 1,
+                                            placeholder->maxContentionFactor,
                                             &payload.contentionFactor,
                                             status)) {
             goto fail;
