@@ -17,6 +17,7 @@
 #include <mongocrypt-marking-private.h>
 
 #include "kms_message/kms_b64.h"
+#include "mc-fle2-insert-update-payload-private-v2.h"
 #include "mongocrypt-binary-private.h"
 #include "mongocrypt-crypto-private.h" // MONGOCRYPT_KEY_LEN
 #include "mongocrypt.h"
@@ -5976,6 +5977,86 @@ static void _test_lookup(_mongocrypt_tester_t *tester) {
 #undef TF
 }
 
+bool det_random_hook(int64_t exclusive_upper_bound, int64_t *out) {
+    *out = 1;
+    return true;
+}
+
+static void _test_deterministic_contention(_mongocrypt_tester_t *tester) {
+    mongocrypt_status_t *status = mongocrypt_status_new();
+
+    _mongocrypt_buffer_t keyABC_id;
+    _mongocrypt_buffer_copy_from_hex(&keyABC_id, "ABCDEFAB123498761234123456789012");
+    mongocrypt_binary_t *keyABC = TEST_FILE("./test/data/keys/ABCDEFAB123498761234123456789012-local-document.json");
+
+    mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_SKIP_INIT);
+    ASSERT_OK(mongocrypt_init(crypt), crypt);
+    _mongocrypt_opts_set_contention_factor_fn(crypt, &det_random_hook); // register deterministic fn wth crypt
+
+    // Expect the callback returns 1.
+    {
+        int64_t *out = malloc(sizeof(int64_t));
+        ASSERT(crypt->opts.contention_factor_fn(4, out));
+        ASSERT_CMPINT64(*out, ==, 1);
+        free(out);
+    }
+
+    // Start explicit encryption:
+    mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+
+    // Use the QE algorithm "Indexed", which uses a contention factor:
+    ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_INDEXED_STR, -1), ctx);
+
+    // Set the key ID:
+    ASSERT_OK(mongocrypt_ctx_setopt_key_id(ctx, _mongocrypt_buffer_as_binary(&keyABC_id)), ctx);
+
+    // Set max contention factor of 4:
+    ASSERT_OK(mongocrypt_ctx_setopt_contention_factor(ctx, 4), ctx);
+
+    // Encrypt the value 123:
+    ASSERT_OK(mongocrypt_ctx_explicit_encrypt_init(ctx, TEST_BSON("{'v': 123}")), ctx);
+
+    // Expect key is needed:
+    ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+    {
+        ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, keyABC), ctx);
+        ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+    }
+
+    // Expect ready to encrypt:
+    ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
+    {
+        mongocrypt_binary_t *got = mongocrypt_binary_new();
+        bool ret = mongocrypt_ctx_finalize(ctx, got);
+        ASSERT_OK(ret, ctx);
+
+        // The result is represented in a BSON document: { "v": <binary> }.
+        // Do the long-winded conversion: binary -> BSON -> buffer:
+        _mongocrypt_buffer_t got_buffer;
+        {
+            bson_t got_bson;
+            ASSERT(_mongocrypt_binary_to_bson(got, &got_bson));
+            bson_iter_t got_iter;
+            ASSERT(bson_iter_init_find(&got_iter, &got_bson, "v"));
+            printf("got: %s\n", bson_as_canonical_extended_json(&got_bson, NULL));
+            ASSERT(_mongocrypt_buffer_from_binary_iter(&got_buffer, &got_iter));
+        }
+
+        // Check the contention factor in the resulting payload:
+        mc_FLE2InsertUpdatePayloadV2_t got_payload;
+        mc_FLE2InsertUpdatePayloadV2_init(&got_payload);
+        ASSERT_OK_STATUS(mc_FLE2InsertUpdatePayloadV2_parse(&got_payload, &got_buffer, status), status);
+        ASSERT_CMPINT64(got_payload.contentionFactor, ==, 1); // should be 1 due to det contention fn
+        mc_FLE2InsertUpdatePayloadV2_cleanup(&got_payload);
+        mongocrypt_binary_destroy(got);
+    }
+
+    _mongocrypt_buffer_cleanup(&keyABC_id);
+    mongocrypt_ctx_destroy(ctx);
+    mongocrypt_destroy(crypt);
+    mongocrypt_status_destroy(status);
+}
+
 void _mongocrypt_tester_install_ctx_encrypt(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_explicit_encrypt_init);
     INSTALL_TEST(_test_encrypt_init);
@@ -6074,4 +6155,5 @@ void _mongocrypt_tester_install_ctx_encrypt(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_fle2_encrypted_fields_with_unmatching_str_encode_version);
     INSTALL_TEST(_test_fle2_collinfo_with_bad_str_encode_version);
     INSTALL_TEST(_test_lookup);
+    INSTALL_TEST(_test_deterministic_contention);
 }

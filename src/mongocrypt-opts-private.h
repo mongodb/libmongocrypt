@@ -84,6 +84,9 @@ typedef struct {
     mc_array_t named_mut;
 } _mongocrypt_opts_kms_providers_t;
 
+typedef bool (*_mongocrypt_contention_factor_fn)(int64_t exclusive_upper_bound,
+                                                 int64_t *out);
+
 void _mongocrypt_opts_kms_providers_init(_mongocrypt_opts_kms_providers_t *kms_providers);
 
 bool _mongocrypt_parse_kms_providers(mongocrypt_binary_t *kms_providers_definition,
@@ -104,6 +107,9 @@ typedef struct {
     _mongocrypt_opts_kms_providers_t kms_providers;
     mongocrypt_hmac_fn sign_rsaes_pkcs1_v1_5;
     void *sign_ctx;
+
+    // For testing only.
+    _mongocrypt_contention_factor_fn contention_factor_fn;
 
     /// Keep an array of search paths for finding the crypt_shared library
     /// during mongocrypt_init()
@@ -137,6 +143,9 @@ bool _mongocrypt_opts_validate(_mongocrypt_opts_t *opts, mongocrypt_status_t *st
 bool _mongocrypt_opts_kms_providers_validate(_mongocrypt_opts_t *opts,
                                              _mongocrypt_opts_kms_providers_t *kms_providers,
                                              mongocrypt_status_t *status) MONGOCRYPT_WARN_UNUSED_RESULT;
+
+void _mongocrypt_opts_set_contention_factor_fn(mongocrypt_t *crypt,
+                                               _mongocrypt_contention_factor_fn contention_factor_fn);
 
 /*
  * Parse an optional UTF-8 value from BSON.
