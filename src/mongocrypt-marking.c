@@ -743,18 +743,17 @@ static bool _fle2_choose_contention_factor(mongocrypt_t *crypt,
         }
         return true;
     }
-    
+
     return _mongocrypt_random_int64(crypt->crypto, exclusive_upper_bound, out, status);
 }
 
 // Shared implementation for insert/update and insert/update ForRange (v2)
-static bool
-    _mongocrypt_fle2_placeholder_to_insert_update_common(_mongocrypt_key_broker_t *kb,
-                                                         mc_FLE2InsertUpdatePayloadV2_t *out,
-                                                         _FLE2EncryptedPayloadCommon_t *common,
-                                                         const mc_FLE2EncryptionPlaceholder_t *placeholder,
-                                                         bson_iter_t *value_iter,
-                                                         mongocrypt_status_t *status) {
+static bool _mongocrypt_fle2_placeholder_to_insert_update_common(_mongocrypt_key_broker_t *kb,
+                                                                 mc_FLE2InsertUpdatePayloadV2_t *out,
+                                                                 _FLE2EncryptedPayloadCommon_t *common,
+                                                                 const mc_FLE2EncryptionPlaceholder_t *placeholder,
+                                                                 bson_iter_t *value_iter,
+                                                                 mongocrypt_status_t *status) {
     BSON_ASSERT_PARAM(kb);
     BSON_ASSERT_PARAM(out);
     BSON_ASSERT_PARAM(common);
@@ -767,12 +766,14 @@ static bool
     _mongocrypt_buffer_t value = {0};
     bool res = false;
 
-
     out->contentionFactor = 0; // k
     if (placeholder->maxContentionFactor > 0) {
         /* Choose a contentionFactor in the inclusive range [0,
          * placeholder->maxContentionFactor] */
-        if (!_fle2_choose_contention_factor(kb->crypt, placeholder->maxContentionFactor + 1, &out->contentionFactor, status)) {
+        if (!_fle2_choose_contention_factor(kb->crypt,
+                                            placeholder->maxContentionFactor + 1,
+                                            &out->contentionFactor,
+                                            status)) {
             goto fail;
         }
     }
