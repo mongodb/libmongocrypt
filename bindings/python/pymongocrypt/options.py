@@ -170,6 +170,7 @@ class ExplicitEncryptOpts:
         contention_factor=None,
         range_opts=None,
         is_expression=False,
+        text_opts=None,
     ):
         """Options for explicit encryption.
 
@@ -186,11 +187,15 @@ class ExplicitEncryptOpts:
             with the "range" algorithm encoded as a BSON document.
           - `is_expression` (boolean): True if this is an encryptExpression()
             context. Defaults to False.
+          - `text_opts` (bytes): Options for explicit encryption
+            with the "textPreview" algorithm encoded as a BSON document.
 
         .. versionchanged:: 1.3
            Added the `query_type` and `contention_factor` parameters.
         .. versionchanged:: 1.5
            Added the `range_opts` and `is_expression` parameters.
+        .. versionchanged:: 1.16
+           Added the `text_opts` parameter.
         """
         self.algorithm = algorithm
         self.key_id = key_id
@@ -212,6 +217,11 @@ class ExplicitEncryptOpts:
             )
         self.range_opts = range_opts
         self.is_expression = is_expression
+        if text_opts is not None and not isinstance(text_opts, bytes):
+            raise TypeError(
+                f"text_opts must be an bytes or None, not: {type(text_opts)}"
+            )
+        self.text_opts = text_opts
 
 
 class DataKeyOpts:

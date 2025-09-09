@@ -93,6 +93,7 @@ class ExplicitEncrypter:
         contention_factor=None,
         range_opts=None,
         is_expression=False,
+        text_opts=None,
     ):
         """Encrypts a BSON value.
 
@@ -114,6 +115,8 @@ class ExplicitEncrypter:
             with the "range" algorithm encoded as a BSON document.
           - `is_expression` (boolean): True if this is an encryptExpression()
             context. Defaults to False.
+          - `text_opts` (bytes): Options for explicit encryption
+            with the "textPreview" algorithm encoded as a BSON document.
 
         :Returns:
           The encrypted BSON value.
@@ -122,6 +125,8 @@ class ExplicitEncrypter:
            Added the `query_type` and `contention_factor` parameters.
         .. versionchanged:: 1.5
            Added the `range_opts` and `is_expression` parameters.
+        .. versionchanged:: 1.16
+           Added the `text_opts` parameter.
         """
         # CDRIVER-3275 key_alt_name needs to be wrapped in a bson document.
         if key_alt_name is not None:
@@ -134,6 +139,7 @@ class ExplicitEncrypter:
             contention_factor,
             range_opts,
             is_expression,
+            text_opts,
         )
         with self.mongocrypt.explicit_encryption_context(value, opts) as ctx:
             return run_state_machine(ctx, self.callback)
