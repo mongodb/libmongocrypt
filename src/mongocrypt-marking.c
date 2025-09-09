@@ -728,13 +728,33 @@ fail:
     return false;
 }
 
+static bool _fle2_choose_contention_factor(mongocrypt_t *crypt,
+                                           int64_t exclusive_upper_bound,
+                                           int64_t *out,
+                                           mongocrypt_status_t *status) {
+    if (crypt->opts.contention_factor_fn) {
+        if (!crypt->opts.contention_factor_fn(exclusive_upper_bound, out)) {
+            CLIENT_ERR("contention_factor_fn failed");
+            return false;
+        }
+        if (*out < 0 || *out > exclusive_upper_bound) {
+            CLIENT_ERR("chosen contentionFactor out of range");
+            return false;
+        }
+        return true;
+    }
+    
+    return _mongocrypt_random_int64(crypt->crypto, exclusive_upper_bound, out, status);
+}
+
 // Shared implementation for insert/update and insert/update ForRange (v2)
-static bool _mongocrypt_fle2_placeholder_to_insert_update_common(_mongocrypt_key_broker_t *kb,
-                                                                 mc_FLE2InsertUpdatePayloadV2_t *out,
-                                                                 _FLE2EncryptedPayloadCommon_t *common,
-                                                                 const mc_FLE2EncryptionPlaceholder_t *placeholder,
-                                                                 bson_iter_t *value_iter,
-                                                                 mongocrypt_status_t *status) {
+static bool
+    _mongocrypt_fle2_placeholder_to_insert_update_common(_mongocrypt_key_broker_t *kb,
+                                                         mc_FLE2InsertUpdatePayloadV2_t *out,
+                                                         _FLE2EncryptedPayloadCommon_t *common,
+                                                         const mc_FLE2EncryptionPlaceholder_t *placeholder,
+                                                         bson_iter_t *value_iter,
+                                                         mongocrypt_status_t *status) {
     BSON_ASSERT_PARAM(kb);
     BSON_ASSERT_PARAM(out);
     BSON_ASSERT_PARAM(common);
@@ -747,25 +767,12 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_common(_mongocrypt_key
     _mongocrypt_buffer_t value = {0};
     bool res = false;
 
-    /* Choose a contentionFactor in the inclusive range [0,
-     * placeholder->maxContentionFactor] */
+
     out->contentionFactor = 0; // k
     if (placeholder->maxContentionFactor > 0) {
-        if (kb->crypt->opts.contention_factor_fn) {
-            if (!kb->crypt->opts.contention_factor_fn(placeholder->maxContentionFactor + 1, &out->contentionFactor)) {
-                CLIENT_ERR("contention_factor_fn failed");
-                goto fail;
-            }
-            if (out->contentionFactor < 0 || out->contentionFactor > placeholder->maxContentionFactor) {
-                CLIENT_ERR("chosen contentionFactor out of range");
-                goto fail;
-            }
-        }
-
-        else if (!_mongocrypt_random_int64(crypto,
-                                           placeholder->maxContentionFactor + 1,
-                                           &out->contentionFactor,
-                                           status)) {
+        /* Choose a contentionFactor in the inclusive range [0,
+         * placeholder->maxContentionFactor] */
+        if (!_fle2_choose_contention_factor(kb->crypt, placeholder->maxContentionFactor + 1, &out->contentionFactor, status)) {
             goto fail;
         }
     }
@@ -1561,22 +1568,10 @@ static bool _mongocrypt_fle2_placeholder_to_insert_update_ciphertextForTextSearc
     if (placeholder->maxContentionFactor > 0) {
         /* Choose a contentionFactor in the inclusive range [0,
          * placeholder->maxContentionFactor] */
-        if (kb->crypt->opts.contention_factor_fn) {
-            if (!kb->crypt->opts.contention_factor_fn(placeholder->maxContentionFactor + 1,
-                                                      &payload.contentionFactor)) {
-                CLIENT_ERR("contention_factor_fn failed");
-                goto fail;
-            }
-            if (payload.contentionFactor < 0 || payload.contentionFactor > placeholder->maxContentionFactor) {
-                CLIENT_ERR("chosen contentionFactor out of range");
-                goto fail;
-            }
-        }
-
-        else if (!_mongocrypt_random_int64(kb->crypt->crypto,
-                                           placeholder->maxContentionFactor + 1,
-                                           &payload.contentionFactor,
-                                           status)) {
+        if (!_fle2_choose_contention_factor(kb->crypt,
+                                            placeholder->maxContentionFactor + 1,
+                                            &payload.contentionFactor,
+                                            status)) {
             goto fail;
         }
     }
