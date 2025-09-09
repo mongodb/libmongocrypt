@@ -746,7 +746,7 @@ static bool _fle2_choose_contention_factor(mongocrypt_t *crypt,
         return true;
     }
 
-    return _mongocrypt_random_int64(crypt->crypto, exclusive_upper_bound, out, status);
+    return _mongocrypt_random_int64(crypt->crypto, maxContentionFactor + 1, out, status);
 }
 
 // Shared implementation for insert/update and insert/update ForRange (v2)
