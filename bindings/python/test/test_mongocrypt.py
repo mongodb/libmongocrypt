@@ -38,6 +38,7 @@ import unittest
 import unittest.mock
 
 import respx
+from pymongo import MongoClient
 from pymongo_auth_aws.auth import AwsCredential
 
 from pymongocrypt.asynchronous.auto_encrypter import AsyncAutoEncrypter
@@ -1013,6 +1014,30 @@ if sys.version_info >= (3, 8, 0):  # noqa: UP036
                 encrypted_val, adjust_range_counter(encrypted_val, expected)
             )
 
+        async def test_text_query(self):
+            key_path = "keys/ABCDEFAB123498761234123456789012-local-document.json"
+            key_id = json_data(key_path)["_id"]
+            encrypter = AsyncExplicitEncrypter(
+                MockAsyncCallback(
+                    key_docs=[bson_data(key_path)], kms_reply=http_data("kms-reply.txt")
+                ),
+                self.mongo_crypt_opts(),
+            )
+            self.addCleanup(encrypter.close)
+
+            text_opts = bson_data("fle2-text-search/textopts.json")
+            expected = bson_data("fle2-text-search/encrypted-payload.json")
+            value = bson.encode({"v": "foo"})
+            encrypted = await encrypter.encrypt(
+                value,
+                "textPreview",
+                key_id=key_id,
+                query_type="suffixPreview",
+                contention_factor=0,
+                text_opts=text_opts,
+            )
+            self.assertEqual(encrypted, expected)
+
 
 class TestNeedKMSAzureCredentials(unittest.TestCase):
     maxDiff = None
@@ -1458,6 +1483,30 @@ class TestExplicitEncryption(unittest.TestCase):
                 range_opts=range_opts,
                 is_expression=True,
             )
+
+    def test_text_query(self):
+        key_path = "keys/ABCDEFAB123498761234123456789012-local-document.json"
+        key_id = json_data(key_path)["_id"]
+        encrypter = ExplicitEncrypter(
+            MockCallback(
+                key_docs=[bson_data(key_path)], kms_reply=http_data("kms-reply.txt")
+            ),
+            self.mongo_crypt_opts(),
+        )
+        self.addCleanup(encrypter.close)
+
+        text_opts = bson_data("fle2-text-search/textopts.json")
+        expected = bson_data("fle2-text-search/encrypted-payload.json")
+        value = bson.encode({"v": "foo"})
+        encrypted = encrypter.encrypt(
+            value,
+            "textPreview",
+            key_id=key_id,
+            query_type="suffixPreview",
+            contention_factor=0,
+            text_opts=text_opts,
+        )
+        self.assertEqual(encrypted, expected)
 
 
 def read(filename, **kwargs):
