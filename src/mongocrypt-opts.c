@@ -329,8 +329,7 @@ void _mongocrypt_opts_set_contention_factor_fn(mongocrypt_t *crypt,
     opts->contention_factor_fn = contention_factor_fn;
 }
 
-    bool
-    _mongocrypt_parse_optional_utf8(const bson_t *bson, const char *dotkey, char **out, mongocrypt_status_t *status) {
+bool _mongocrypt_parse_optional_utf8(const bson_t *bson, const char *dotkey, char **out, mongocrypt_status_t *status) {
     bson_iter_t iter;
     bson_iter_t child;
 

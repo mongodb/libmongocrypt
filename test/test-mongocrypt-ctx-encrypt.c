@@ -5977,7 +5977,7 @@ static void _test_lookup(_mongocrypt_tester_t *tester) {
 #undef TF
 }
 
-bool det_random_hook(int64_t exclusive_upper_bound, int64_t *out) {
+bool _deterministic_contention(int64_t exclusive_upper_bound, int64_t *out) {
     *out = 1;
     return true;
 }
@@ -5991,7 +5991,7 @@ static void _test_deterministic_contention(_mongocrypt_tester_t *tester) {
 
     mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_SKIP_INIT);
     ASSERT_OK(mongocrypt_init(crypt), crypt);
-    _mongocrypt_opts_set_contention_factor_fn(crypt, &det_random_hook); // register deterministic fn wth crypt
+    _mongocrypt_opts_set_contention_factor_fn(crypt, &_deterministic_contention); // register deterministic fn wth crypt
 
     // Expect the callback returns 1.
     {
@@ -6038,7 +6038,6 @@ static void _test_deterministic_contention(_mongocrypt_tester_t *tester) {
             ASSERT(_mongocrypt_binary_to_bson(got, &got_bson));
             bson_iter_t got_iter;
             ASSERT(bson_iter_init_find(&got_iter, &got_bson, "v"));
-            printf("got: %s\n", bson_as_canonical_extended_json(&got_bson, NULL));
             ASSERT(_mongocrypt_buffer_from_binary_iter(&got_buffer, &got_iter));
         }
 
@@ -6046,7 +6045,7 @@ static void _test_deterministic_contention(_mongocrypt_tester_t *tester) {
         mc_FLE2InsertUpdatePayloadV2_t got_payload;
         mc_FLE2InsertUpdatePayloadV2_init(&got_payload);
         ASSERT_OK_STATUS(mc_FLE2InsertUpdatePayloadV2_parse(&got_payload, &got_buffer, status), status);
-        ASSERT_CMPINT64(got_payload.contentionFactor, ==, 1); // should be 1 due to det contention fn
+        ASSERT_CMPINT64(got_payload.contentionFactor, ==, 1); // should be 1 due to deterministic contention fn
         mc_FLE2InsertUpdatePayloadV2_cleanup(&got_payload);
         mongocrypt_binary_destroy(got);
     }

@@ -144,6 +144,7 @@ bool _mongocrypt_opts_kms_providers_validate(_mongocrypt_opts_t *opts,
                                              _mongocrypt_opts_kms_providers_t *kms_providers,
                                              mongocrypt_status_t *status) MONGOCRYPT_WARN_UNUSED_RESULT;
 
+// For testing only: register a custom contention factor function with crypt.
 void _mongocrypt_opts_set_contention_factor_fn(mongocrypt_t *crypt,
                                                _mongocrypt_contention_factor_fn contention_factor_fn);
 
