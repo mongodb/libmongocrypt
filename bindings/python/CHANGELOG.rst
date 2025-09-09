@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Changes in Version 1.16.0
+-------------------------
+
+- Add support for text-based Queryable Encryption with the new "textPreview"
+  algorithm. NOTE: The "textPreview" algorithm is experimental only. It is
+  not intended for public use.
+
 Changes in Version 1.15.1
 -------------------------
 
