@@ -1174,6 +1174,7 @@ bool mongocrypt_kms_ctx_feed_with_retry(mongocrypt_kms_ctx_t *kms, mongocrypt_bi
     BSON_ASSERT_PARAM(kms);
     BSON_ASSERT_PARAM(bytes);
     BSON_ASSERT_PARAM(should_retry);
+    kms->should_retry = false;
     *should_retry = false;
     const bool res = mongocrypt_kms_ctx_feed(kms, bytes);
     *should_retry = kms->should_retry && kms->retry_enabled;
@@ -1190,8 +1191,8 @@ bool mongocrypt_kms_ctx_feed(mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *byt
         return false;
     }
     if (kms->should_retry) {
-        // This happens when a KMS context is reused in-place
-        kms->should_retry = false;
+        CLIENT_ERR("KMS context needs retry. Call mongocrypt_kms_ctx_feed_with_retry instead");
+        return false;
     }
 
     if (!bytes) {
