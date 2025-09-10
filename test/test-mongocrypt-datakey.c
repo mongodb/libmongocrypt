@@ -459,8 +459,13 @@ static void _test_create_datakey_with_retry(_mongocrypt_tester_t *tester) {
         // In-place retry is indicated.
         ASSERT(should_retry);
         ASSERT(kms_ctx->attempts == 2);
+
         // Feed a successful response.
-        ASSERT_OK(mongocrypt_kms_ctx_feed(kms_ctx, TEST_FILE("./test/data/kms-aws/encrypt-response.txt")), kms_ctx);
+        ASSERT_OK(mongocrypt_kms_ctx_feed_with_retry(kms_ctx,
+                                                     TEST_FILE("./test/data/kms-aws/encrypt-response.txt"),
+                                                     &should_retry),
+                  kms_ctx);
+        ASSERT(!should_retry);
         ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
         _mongocrypt_tester_run_ctx_to(tester, ctx, MONGOCRYPT_CTX_DONE);
         mongocrypt_ctx_destroy(ctx);
@@ -498,6 +503,7 @@ static void _test_create_datakey_with_retry(_mongocrypt_tester_t *tester) {
     {
         mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+        bool should_retry;
         ASSERT_OK(
             mongocrypt_ctx_setopt_key_encryption_key(ctx,
                                                      TEST_BSON("{'provider': 'aws', 'key': 'foo', 'region': 'bar'}")),
@@ -511,7 +517,9 @@ static void _test_create_datakey_with_retry(_mongocrypt_tester_t *tester) {
         // Mark a network error.
         ASSERT_OK(mongocrypt_kms_ctx_fail(kms_ctx), kms_ctx);
         // Feed a partial response
-        ASSERT_OK(mongocrypt_kms_ctx_feed(kms_ctx, TEST_FILE("./test/data/kms-aws/encrypt-response-partial.txt")),
+        ASSERT_OK(mongocrypt_kms_ctx_feed_with_retry(kms_ctx,
+                                                     TEST_FILE("./test/data/kms-aws/encrypt-response-partial.txt"),
+                                                     &should_retry),
                   kms_ctx);
         // Mark another network error.
         ASSERT_OK(mongocrypt_kms_ctx_fail(kms_ctx), kms_ctx);
@@ -519,7 +527,11 @@ static void _test_create_datakey_with_retry(_mongocrypt_tester_t *tester) {
         ASSERT_CMPINT64(mongocrypt_kms_ctx_usleep(kms_ctx), >=, 0);
         ASSERT(kms_ctx->attempts == 2);
         // Feed a successful response.
-        ASSERT_OK(mongocrypt_kms_ctx_feed(kms_ctx, TEST_FILE("./test/data/kms-aws/encrypt-response.txt")), kms_ctx);
+        ASSERT_OK(mongocrypt_kms_ctx_feed_with_retry(kms_ctx,
+                                                     TEST_FILE("./test/data/kms-aws/encrypt-response.txt"),
+                                                     &should_retry),
+                  kms_ctx);
+        ASSERT(!should_retry);
         ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
         _mongocrypt_tester_run_ctx_to(tester, ctx, MONGOCRYPT_CTX_DONE);
         mongocrypt_ctx_destroy(ctx);
@@ -553,7 +565,11 @@ static void _test_create_datakey_with_retry(_mongocrypt_tester_t *tester) {
         ASSERT_CMPINT64(mongocrypt_kms_ctx_usleep(kms_ctx), >=, 0);
         ASSERT(kms_ctx->attempts == 2);
         // Feed a successful response.
-        ASSERT_OK(mongocrypt_kms_ctx_feed(kms_ctx, TEST_FILE("./test/data/kms-aws/encrypt-response.txt")), kms_ctx);
+        ASSERT_OK(mongocrypt_kms_ctx_feed_with_retry(kms_ctx,
+                                                     TEST_FILE("./test/data/kms-aws/encrypt-response.txt"),
+                                                     &should_retry),
+                  kms_ctx);
+        ASSERT(!should_retry);
         ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
         _mongocrypt_tester_run_ctx_to(tester, ctx, MONGOCRYPT_CTX_DONE);
         mongocrypt_ctx_destroy(ctx);
@@ -588,7 +604,10 @@ static void _test_create_datakey_with_retry(_mongocrypt_tester_t *tester) {
         ASSERT_CMPINT64(mongocrypt_kms_ctx_usleep(kms_ctx), >=, 0);
         ASSERT(kms_ctx->attempts == 2);
         // Feed a successful response.
-        ASSERT_OK(mongocrypt_kms_ctx_feed(kms_ctx, TEST_FILE("./test/data/kms-aws/encrypt-response.txt")), kms_ctx);
+        ASSERT_OK(mongocrypt_kms_ctx_feed_with_retry(kms_ctx,
+                                                     TEST_FILE("./test/data/kms-aws/encrypt-response.txt"),
+                                                     &should_retry),
+                  kms_ctx);
         ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
         _mongocrypt_tester_run_ctx_to(tester, ctx, MONGOCRYPT_CTX_DONE);
         mongocrypt_ctx_destroy(ctx);
