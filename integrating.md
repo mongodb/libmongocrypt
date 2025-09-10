@@ -246,7 +246,7 @@ Ensure `mongocrypt_setopt_retry_kms` is called on the `mongocrypt_t` to enable r
         > socket.
 
     d.  Feed the reply back with `mongocrypt_kms_ctx_feed` or `mongocrypt_kms_ctx_feed_with_retry`. Repeat
-        > until `mongocrypt_kms_ctx_bytes_needed` returns 0. If the `should_retry` outparam returns true,
+        until `mongocrypt_kms_ctx_bytes_needed` returns 0. If the `should_retry` outparam returns true,
         the request may be retried by feeding the new response into the same context.
 
     If any step encounters a network error, call `mongocrypt_kms_ctx_fail`.

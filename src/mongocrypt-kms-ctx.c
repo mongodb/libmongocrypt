@@ -1171,6 +1171,9 @@ bool mongocrypt_kms_ctx_fail(mongocrypt_kms_ctx_t *kms) {
 }
 
 bool mongocrypt_kms_ctx_feed_with_retry(mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes, bool *should_retry) {
+    BSON_ASSERT_PARAM(kms);
+    BSON_ASSERT_PARAM(bytes);
+    BSON_ASSERT_PARAM(should_retry);
     *should_retry = false;
     const bool res = mongocrypt_kms_ctx_feed(kms, bytes);
     *should_retry = kms->should_retry && kms->retry_enabled;

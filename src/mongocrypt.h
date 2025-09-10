@@ -1180,7 +1180,7 @@ MONGOCRYPT_EXPORT
 bool mongocrypt_kms_ctx_feed(mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes);
 
 /**
- * Feed bytes from the HTTP response.
+ * Feed bytes from the KMS response.
  *
  * Feeding more bytes than what has been returned in @ref
  * mongocrypt_kms_ctx_bytes_needed is an error.
