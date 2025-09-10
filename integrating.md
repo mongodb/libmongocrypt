@@ -266,7 +266,9 @@ There are two options for retry:
     context. Use `mongocrypt_kms_ctx_feed_with_retry` and check the return of `mongocrypt_kms_ctx_fail` to check if a
     retry is indicated.
 
-The driver MAY fan out KMS requests in parallel. It is not safe to iterate KMS contexts (i.e. call `mongocrypt_ctx_next_kms_ctx`) while operating on KMS contexts (e.g. calling `mongocrypt_kms_ctx_feed`). Drivers are recommended to do an in-place retry on KMS requests.
+The driver MAY fan out KMS requests in parallel. It is not safe to iterate KMS contexts (i.e. call
+`mongocrypt_ctx_next_kms_ctx`) while operating on KMS contexts (e.g. calling `mongocrypt_kms_ctx_feed`). Drivers are
+recommended to do an in-place retry on KMS requests.
 
 **Applies to...**
 
