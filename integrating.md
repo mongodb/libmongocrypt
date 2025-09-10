@@ -255,7 +255,18 @@ Ensure `mongocrypt_setopt_retry_kms` is called on the `mongocrypt_t` to enable r
 
 2.  When done feeding all replies, call `mongocrypt_ctx_kms_done`.
 
-Note, the driver MAY fan out KMS requests in parallel. More KMS requests may be added when processing responses to retry.
+##### Retry and Iteration
+
+Call `mongocrypt_setopt_retry_kms` to enable retry behavior.
+
+There are two options for retry:
+-   Lazy retry: After processing KMS contexts, iterate again by calling `mongocrypt_ctx_next_kms_ctx`. KMS contexts
+    needing a retry will be returned.
+-   In-place retry: If a KMS context indicates retry, retry the KMS request and feed the new response to the same KMS
+    context. Use `mongocrypt_kms_ctx_feed_with_retry` and check the return of `mongocrypt_kms_ctx_fail` to check if a
+    retry is indicated.
+
+The driver MAY fan out KMS requests in parallel. It is not safe to iterate KMS contexts (i.e. call `mongocrypt_ctx_next_kms_ctx`) while operating on KMS contexts (e.g. calling `mongocrypt_kms_ctx_feed`). Drivers are recommended to do an in-place retry on KMS requests.
 
 **Applies to...**
 
