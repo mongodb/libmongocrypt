@@ -234,7 +234,7 @@ configure_file (
 )
 
 # Define the mc_mlib target, which is private and header-only. It is not exported
-# nor are its headers installed.
+# nor are its headers installed. The name `mc_mlib` avoids a conflict with the C driver `mlib` target.
 add_library (_mongo-mc_mlib INTERFACE)
 add_library (mongo::mc_mlib ALIAS _mongo-mc_mlib)
 list (APPEND MLIB_DEFINITIONS MLIB_USER)
