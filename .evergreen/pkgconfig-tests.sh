@@ -43,6 +43,10 @@ if is_true USE_NINJA; then
     bash "$EVG_DIR/ensure-ninja.sh"
 fi
 
+# Apply patches to fix compile on RHEL 6.2. TODO: try to remove once RHEL 6.2 is dropped (MONGOCRYPT-688).
+run_chdir "$mongoc_src_dir" git apply "$LIBMONGOCRYPT_DIR/etc/libbson-remove-GCC-diagnostic-pragma.patch"
+run_chdir "$mongoc_src_dir" git apply "$LIBMONGOCRYPT_DIR/etc/mongo-common-test-harness.patch"
+
 echo "Building libbson ..."
 libbson_install_dir="$pkgconfig_tests_root/install/libbson"
 build_dir="$mongoc_src_dir/_build"
@@ -52,7 +56,7 @@ run_cmake -DENABLE_MONGOC=OFF \
        -H"$mongoc_src_dir" \
        -B"$build_dir"
 run_cmake --build "$build_dir" --target install --config RelWithDebInfo
-libbson_pkg_config_path="$(native_path "$(dirname "$(find "$libbson_install_dir" -name libbson-1.0.pc)")")"
+libbson_pkg_config_path="$(native_path "$(dirname "$(find "$libbson_install_dir" -name bson2.pc)")")"
 echo "Building libbson ... done"
 
 echo "Build libmongocrypt, static linking against libbson and configured for the PPA ..."
@@ -79,7 +83,7 @@ pkg-config --debug --print-errors --exists libmongocrypt
 echo "Validating pkg-config scripts ... done"
 
 echo "Build example-state-machine, static linking against libmongocrypt ..."
-gcc $(pkg-config --cflags libmongocrypt-static libbson-static-1.0) \
+gcc $(pkg-config --cflags libmongocrypt-static bson2-static) \
     -o "$pkgconfig_tests_root/example-state-machine" \
     "$LIBMONGOCRYPT_DIR/test/example-state-machine.c" \
     $(pkg-config --libs libmongocrypt-static)
@@ -95,7 +99,7 @@ command "$pkgconfig_tests_root/example-no-bson"
 echo "Build example-no-bson, static linking against libmongocrypt ... done"
 
 echo "Build example-state-machine, dynamic linking against libmongocrypt ..."
-gcc $(pkg-config --cflags libmongocrypt libbson-static-1.0) \
+gcc $(pkg-config --cflags libmongocrypt bson2-static) \
     -o "$pkgconfig_tests_root/example-state-machine" \
     "$LIBMONGOCRYPT_DIR/test/example-state-machine.c" \
     $(pkg-config --libs libmongocrypt)
@@ -127,7 +131,7 @@ run_cmake --build "$build_dir" --target install --config RelWithDebInfo
 echo "Build libmongocrypt, dynamic linking against libbson ... done"
 
 echo "Build example-state-machine, static linking against libmongocrypt ..."
-gcc $(pkg-config --cflags libmongocrypt-static libbson-static-1.0) \
+gcc $(pkg-config --cflags libmongocrypt-static bson2-static) \
     -o "$pkgconfig_tests_root/example-state-machine" \
     "$LIBMONGOCRYPT_DIR/test/example-state-machine.c" \
     $(pkg-config --libs libmongocrypt-static)
@@ -146,7 +150,7 @@ env LD_LIBRARY_PATH="$libbson_install_dir/lib:/$libbson_install_dir/lib64" \
 echo "Build example-no-bson, static linking against libmongocrypt ... done"
 
 echo "Build example-state-machine, dynamic linking against libmongocrypt ..."
-gcc $(pkg-config --cflags libmongocrypt libbson-static-1.0) \
+gcc $(pkg-config --cflags libmongocrypt bson2-static) \
     -o "$pkgconfig_tests_root/example-state-machine" \
     "$LIBMONGOCRYPT_DIR/test/example-state-machine.c" \
     $(pkg-config --libs libmongocrypt)

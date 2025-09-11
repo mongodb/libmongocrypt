@@ -1,8 +1,8 @@
 diff --git a/src/common/src/common-bson-dsl-private.h b/src/common/src/common-bson-dsl-private.h
-index 58a14e28e..3341e603f 100644
+index b6cb7a2705..c2cb0bcaf2 100644
 --- a/src/common/src/common-bson-dsl-private.h
 +++ b/src/common/src/common-bson-dsl-private.h
-@@ -29,6 +29,13 @@ enum {
+@@ -31,6 +31,13 @@ enum {
     BSON_IF_WINDOWS (__declspec (selectany)) \
     BSON_IF_POSIX (__attribute__ ((weak)))
  
@@ -16,12 +16,76 @@ index 58a14e28e..3341e603f 100644
  #ifdef __GNUC__
  // GCC has a bug handling pragma statements that disable warnings within complex
  // nested macro expansions. If we're GCC, just disable -Wshadow outright:
-@@ -47,7 +54,7 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
-       BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic pop");) \
-    } else                                                \
+@@ -50,7 +57,7 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
+       mlib_diagnostic_pop ();      \
+    } else                          \
        ((void) 0)
 -
 +#endif
  /**
   * @brief Parse the given BSON document.
   *
+diff --git a/src/common/src/mlib/config.h b/src/common/src/mlib/config.h
+index 6a1e45275b..797f278250 100644
+--- a/src/common/src/mlib/config.h
++++ b/src/common/src/mlib/config.h
+@@ -175,7 +175,13 @@
+  * @brief Expands to `noexcept` when compiled as C++, otherwise expands to
+  * nothing
+  */
++#if defined(__GNUC__) && !defined(__clang__) && ((__GNUC__ < 4) || (__GNUC__ == 4 && __GNUC_MINOR__ < 6))
++// Using GCC < 4.6
++// Don't define this expansion for the older gcc/g++
++#define mlib_noexcept
++#else
+ #define mlib_noexcept MLIB_IF_CXX (noexcept)
++#endif
+ 
+ #if defined(__BYTE_ORDER__) && defined(__ORDER_LITTLE_ENDIAN__)
+ #define mlib_is_little_endian() (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+@@ -253,15 +259,29 @@
+ 
+ #define MLIB_FUNC MLIB_IF_GNU_LIKE (__func__) MLIB_IF_MSVC (__FUNCTION__)
+ 
++#if defined(__GNUC__) && !defined(__clang__) && ((__GNUC__ < 4) || (__GNUC__ == 4 && __GNUC_MINOR__ < 6))
++// Using GCC < 4.6
++// Do not define `GCC diagnostic` pragma for GCC < 4.6.
++#define mlib_diagnostic_push()
++#else
++// Not using GCC < 4.6
+ #define mlib_diagnostic_push()                           \
+    MLIB_IF_GNU_LIKE (mlib_pragma (GCC diagnostic push);) \
+    MLIB_IF_MSVC (mlib_pragma (warning (push));)          \
+    mlib_static_assert (1, "")
++#endif
+ 
++#if defined(__GNUC__) && !defined(__clang__) && ((__GNUC__ < 4) || (__GNUC__ == 4 && __GNUC_MINOR__ < 6))
++// Using GCC < 4.6
++// Do not define `GCC diagnostic` pragma for GCC < 4.6.
++#define mlib_diagnostic_pop()
++#else
++// Not using GCC < 4.6
+ #define mlib_diagnostic_pop()                           \
+    MLIB_IF_GNU_LIKE (mlib_pragma (GCC diagnostic pop);) \
+    MLIB_IF_MSVC (mlib_pragma (warning (pop));)          \
+    mlib_static_assert (1, "")
++#endif
+ 
+ #define mlib_gcc_warning_disable(Warning)                      \
+    MLIB_IF_GCC (mlib_pragma (GCC diagnostic ignored Warning);) \
+@@ -315,9 +335,15 @@
+ /**
+  * @brief Emit a _Pragma that will disable warnings about the use of deprecated entities.
+  */
++#if defined(__GNUC__) && !defined(__clang__) && ((__GNUC__ < 4) || (__GNUC__ == 4 && __GNUC_MINOR__ < 6))
++// Using GCC < 4.6
++#define mlib_disable_deprecation_warnings()
++#else
++// Not using GCC < 4.6
+ #define mlib_disable_deprecation_warnings()                \
+    mlib_gnu_warning_disable ("-Wdeprecated-declarations"); \
+    mlib_msvc_warning (disable : 4996)
++#endif
+ 
+ /**
+  * @brief Function-like macro that expands to `1` if we are certain that we are
