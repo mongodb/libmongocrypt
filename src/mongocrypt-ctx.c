@@ -16,8 +16,8 @@
 
 #include <bson/bson.h>
 
+#include "mc-mlib/str.h"
 #include "mc-textopts-private.h"
-#include "mlib/str.h"
 #include "mongocrypt-binary-private.h"
 #include "mongocrypt-ctx-private.h"
 #include "mongocrypt-key-broker-private.h"
