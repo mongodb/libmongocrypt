@@ -884,6 +884,7 @@ tasks:
     - func: "setup packaging credentials"
     - func: "publish packages"
 - name: windows-upload-release
+  patchable: false # Garasign credentials are marked as "Admin only" in Evergreen and are not included in patch builds.
   depends_on:
   - variant: windows-test
     name: build-and-test-and-upload
