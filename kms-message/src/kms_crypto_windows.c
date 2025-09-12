@@ -18,6 +18,8 @@
 
 #ifdef KMS_MESSAGE_ENABLE_CRYPTO_CNG
 
+#include "kms_message_private.h"
+
 // tell windows.h not to include a bunch of headers we don't need:
 #define WIN32_LEAN_AND_MEAN
 

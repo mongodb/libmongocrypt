@@ -20,8 +20,8 @@
 #include "mc-fle-blob-subtype-private.h" // MC_SUBTYPE_FLE2EncryptionPlaceholder
 #include "mongocrypt-private.h"          // CLIENT_ERR
 
-#include "mlib/thread.h" // mlib_once_flag
-#include <math.h>        // INFINITY
+#include "mc-mlib/thread.h" // mlib_once_flag
+#include <math.h>           // INFINITY
 
 static mc_FLE2RangeOperator_t get_operator_type(const char *key) {
     BSON_ASSERT_PARAM(key);
