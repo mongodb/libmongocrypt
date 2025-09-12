@@ -37,7 +37,7 @@
 #include "mongocrypt-private.h" // CLIENT_ERR
 #include "mongocrypt-util-private.h"
 
-#include "mlib/thread.h"
+#include "mc-mlib/thread.h"
 
 #include <errno.h>
 #include <math.h> // isinf, isnan, isfinite
