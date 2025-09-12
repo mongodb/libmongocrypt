@@ -521,6 +521,7 @@ static void _test_create_datakey_with_retry(_mongocrypt_tester_t *tester) {
                                                      TEST_FILE("./test/data/kms-aws/encrypt-response-partial.txt"),
                                                      &should_retry),
                   kms_ctx);
+        ASSERT(!should_retry);
         // Mark another network error.
         ASSERT_OK(mongocrypt_kms_ctx_fail(kms_ctx), kms_ctx);
         // Expect some sleep is requested
@@ -608,6 +609,7 @@ static void _test_create_datakey_with_retry(_mongocrypt_tester_t *tester) {
                                                      TEST_FILE("./test/data/kms-aws/encrypt-response.txt"),
                                                      &should_retry),
                   kms_ctx);
+        ASSERT(!should_retry);
         ASSERT_OK(mongocrypt_ctx_kms_done(ctx), ctx);
         _mongocrypt_tester_run_ctx_to(tester, ctx, MONGOCRYPT_CTX_DONE);
         mongocrypt_ctx_destroy(ctx);
