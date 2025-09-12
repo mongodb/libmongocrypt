@@ -1096,10 +1096,7 @@ static bool _fle2_finalize(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
 
     BSON_ASSERT(context_uses_fle2(ctx));
     BSON_ASSERT(ctx->state == MONGOCRYPT_CTX_READY);
-
-    if (ectx->explicit) {
-        return _mongocrypt_ctx_fail_w_msg(ctx, "explicit encryption is not yet supported. See MONGOCRYPT-409.");
-    }
+    BSON_ASSERT(!ectx->explicit);
 
     if (!_mongocrypt_buffer_to_bson(&ectx->original_cmd, &original_cmd_bson)) {
         return _mongocrypt_ctx_fail_w_msg(ctx, "malformed bson in original_cmd");
@@ -1303,7 +1300,7 @@ static bool _fle2_finalize_explicit(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *
 
     if (ctx->opts.rangeopts.set && ctx->opts.query_type.set) {
         // RangeOpts with query type is a special case. The result contains two
-        // ciphertext values.
+        // ciphertext values of FLE2RangeFindSpec.
         return FLE2RangeFindDriverSpec_to_ciphertexts(ctx, out);
     }
 
@@ -1317,6 +1314,9 @@ static bool _fle2_finalize_explicit(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *
             _mongocrypt_ctx_fail_w_msg(ctx, "Cannot use rangePreview query type with Range V2");
             goto fail;
         // fallthrough
+        case MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW:
+        case MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW:
+        case MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW:
         case MONGOCRYPT_QUERY_TYPE_RANGE:
         case MONGOCRYPT_QUERY_TYPE_EQUALITY: marking.u.fle2.type = MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND; break;
         default: _mongocrypt_ctx_fail_w_msg(ctx, "Invalid value for EncryptOpts.queryType"); goto fail;
@@ -1333,6 +1333,7 @@ static bool _fle2_finalize_explicit(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *
         goto fail;
         // fallthrough
     case MONGOCRYPT_INDEX_TYPE_RANGE: marking.u.fle2.algorithm = MONGOCRYPT_FLE2_ALGORITHM_RANGE; break;
+    case MONGOCRYPT_INDEX_TYPE_TEXTPREVIEW: marking.u.fle2.algorithm = MONGOCRYPT_FLE2_ALGORITHM_TEXT_SEARCH; break;
     default:
         // This might be unreachable because of other validation. Better safe than
         // sorry.
@@ -1342,8 +1343,7 @@ static bool _fle2_finalize_explicit(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *
 
     if (ctx->opts.rangeopts.set) {
         // Process the RangeOpts and the input 'v' document into a new 'v'.
-        // The new 'v' document will be a FLE2RangeFindSpec or
-        // FLE2RangeInsertSpec.
+        // The new 'v' document will be a FLE2RangeInsertSpec.
         bson_t old_v;
 
         if (!_mongocrypt_buffer_to_bson(&ectx->original_cmd, &old_v)) {
@@ -1365,6 +1365,34 @@ static bool _fle2_finalize_explicit(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *
 
         marking.u.fle2.sparsity = ctx->opts.rangeopts.value.sparsity;
 
+    } else if (ctx->opts.textopts.set) {
+        bson_t old_v;
+
+        if (!_mongocrypt_buffer_to_bson(&ectx->original_cmd, &old_v)) {
+            _mongocrypt_ctx_fail_w_msg(ctx, "unable to convert input to BSON");
+            goto fail;
+        }
+
+        if (ctx->opts.query_type.set) {
+            if (!mc_TextOpts_to_FLE2TextSearchInsertSpec_for_query(&ctx->opts.textopts.value,
+                                                                   &old_v,
+                                                                   ctx->opts.query_type.value,
+                                                                   &new_v,
+                                                                   ctx->status)) {
+                _mongocrypt_ctx_fail(ctx);
+                goto fail;
+            }
+        } else {
+            if (!mc_TextOpts_to_FLE2TextSearchInsertSpec(&ctx->opts.textopts.value, &old_v, &new_v, ctx->status)) {
+                _mongocrypt_ctx_fail(ctx);
+                goto fail;
+            }
+        }
+
+        if (!bson_iter_init_find(&marking.u.fle2.v_iter, &new_v, "v")) {
+            _mongocrypt_ctx_fail_w_msg(ctx, "invalid input BSON, must contain 'v'");
+            goto fail;
+        }
     } else {
         bson_t as_bson;
 
@@ -1387,11 +1415,20 @@ static bool _fle2_finalize_explicit(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *
         _mongocrypt_buffer_copy_to(&ctx->opts.key_id, &marking.u.fle2.index_key_id);
     }
 
-    if (ctx->opts.contention_factor.set) {
+    // Handle contention factor:
+    switch (ctx->opts.index_type.value) {
+    case MONGOCRYPT_INDEX_TYPE_NONE:
+    default:
+        BSON_ASSERT(!ctx->opts.contention_factor.set); // Checked earlier in explicit_encrypt_init.
+        break;
+
+    case MONGOCRYPT_INDEX_TYPE_EQUALITY:
+    case MONGOCRYPT_INDEX_TYPE_RANGEPREVIEW_DEPRECATED:
+    case MONGOCRYPT_INDEX_TYPE_RANGE:
+    case MONGOCRYPT_INDEX_TYPE_TEXTPREVIEW:
+        // All QE indexed algorithms require contention factor.
+        BSON_ASSERT(ctx->opts.contention_factor.set); // Checked earlier in explicit_encrypt_init.
         marking.u.fle2.maxContentionFactor = ctx->opts.contention_factor.value;
-    } else if (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_EQUALITY) {
-        _mongocrypt_ctx_fail_w_msg(ctx, "contention factor required for indexed algorithm");
-        goto fail;
     }
 
     /* Convert marking to ciphertext. */
@@ -1842,6 +1879,25 @@ static bool explicit_encrypt_init(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *ms
         return _mongocrypt_ctx_fail_w_msg(ctx, "cannot set query type with no index type");
     }
 
+    if (ctx->opts.query_type.set) {
+        const mongocrypt_query_type_t qt = ctx->opts.query_type.value;
+        if (qt == MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW) {
+            if (!(ctx->opts.index_type.set && ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_TEXTPREVIEW)) {
+                return _mongocrypt_ctx_fail_w_msg(ctx, "prefixPreview query type requires textPreview index type");
+            }
+        }
+        if (qt == MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW) {
+            if (!(ctx->opts.index_type.set && ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_TEXTPREVIEW)) {
+                return _mongocrypt_ctx_fail_w_msg(ctx, "suffixPreview query type requires textPreview index type");
+            }
+        }
+        if (qt == MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW) {
+            if (!(ctx->opts.index_type.set && ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_TEXTPREVIEW)) {
+                return _mongocrypt_ctx_fail_w_msg(ctx, "substringPreview query type requires textPreview index type");
+            }
+        }
+    }
+
     if (ctx->opts.rangeopts.set && ctx->opts.index_type.set) {
         if (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_NONE) {
             return _mongocrypt_ctx_fail_w_msg(ctx, "cannot set range opts with no index type");
@@ -1849,6 +1905,16 @@ static bool explicit_encrypt_init(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *ms
 
         if (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_EQUALITY) {
             return _mongocrypt_ctx_fail_w_msg(ctx, "cannot set range opts with equality index type");
+        }
+
+        if (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_TEXTPREVIEW) {
+            return _mongocrypt_ctx_fail_w_msg(ctx, "cannot set range opts with textPreview index type");
+        }
+    }
+
+    if (ctx->opts.textopts.set && ctx->opts.index_type.set) {
+        if (ctx->opts.index_type.value != MONGOCRYPT_INDEX_TYPE_TEXTPREVIEW) {
+            return _mongocrypt_ctx_fail_w_msg(ctx, "cannot set text opts without textPreview index type");
         }
     }
 
@@ -1861,6 +1927,7 @@ static bool explicit_encrypt_init(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *ms
         return _mongocrypt_ctx_fail_w_msg(ctx, "contention factor is required for indexed algorithm");
     }
 
+    // Check required options for range algorithm are set:
     if (ctx->opts.index_type.set
         && (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_RANGE
             || ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_RANGEPREVIEW_DEPRECATED)) {
@@ -1870,6 +1937,17 @@ static bool explicit_encrypt_init(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *ms
 
         if (!ctx->opts.rangeopts.set) {
             return _mongocrypt_ctx_fail_w_msg(ctx, "range opts are required for range indexed algorithm");
+        }
+    }
+
+    // Check required options for text algorithm are set:
+    if (ctx->opts.index_type.set && (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_TEXTPREVIEW)) {
+        if (!ctx->opts.contention_factor.set) {
+            return _mongocrypt_ctx_fail_w_msg(ctx, "contention factor is required for textPreview algorithm");
+        }
+
+        if (!ctx->opts.textopts.set) {
+            return _mongocrypt_ctx_fail_w_msg(ctx, "text opts are required for textPreview algorithm");
         }
     }
 
@@ -1894,6 +1972,12 @@ static bool explicit_encrypt_init(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *ms
             break;
         case MONGOCRYPT_QUERY_TYPE_EQUALITY:
             matches = (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_EQUALITY);
+            break;
+        // fallthrough
+        case MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW:
+        case MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW:
+        case MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW:
+            matches = (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_TEXTPREVIEW);
             break;
         default:
             CLIENT_ERR("unsupported value for query_type: %d", (int)ctx->opts.query_type.value);
@@ -1940,13 +2024,6 @@ static bool explicit_encrypt_init(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *ms
     _mongocrypt_buffer_copy_from_binary(&ectx->original_cmd, msg);
     if (!_mongocrypt_buffer_to_bson(&ectx->original_cmd, &as_bson)) {
         return _mongocrypt_ctx_fail_w_msg(ctx, "msg must be bson");
-    }
-
-    if (ctx->crypt->log.trace_enabled) {
-        char *cmd_val;
-        cmd_val = _mongocrypt_new_json_string_from_binary(msg);
-        _mongocrypt_log(&ctx->crypt->log, MONGOCRYPT_LOG_LEVEL_TRACE, "%s (%s=\"%s\")", BSON_FUNC, "msg", cmd_val);
-        bson_free(cmd_val);
     }
 
     if (!bson_iter_init_find(&iter, &as_bson, "v")) {
@@ -2172,7 +2249,8 @@ _check_cmd_for_auto_encrypt(mongocrypt_binary_t *cmd, bool *bypass, char **targe
         eligible = true;
     } else if (0 == strcmp(cmd_name, "hello")) {
         *bypass = true;
-    } else if (0 == strcmp(cmd_name, "buildInfo")) {
+    } else if (0 == strcmp(cmd_name, "buildInfo") || 0 == strcmp(cmd_name, "buildinfo")) {
+        // Accept either case form to match server behavior.
         *bypass = true;
     } else if (0 == strcmp(cmd_name, "getCmdLineOpts")) {
         *bypass = true;
@@ -2490,22 +2568,6 @@ bool mongocrypt_ctx_encrypt_init(mongocrypt_ctx_t *ctx, const char *db, int32_t 
 
     if (ctx->opts.algorithm != MONGOCRYPT_ENCRYPTION_ALGORITHM_NONE) {
         return _mongocrypt_ctx_fail_w_msg(ctx, "algorithm must not be set for auto encryption");
-    }
-
-    if (ctx->crypt->log.trace_enabled) {
-        char *cmd_val;
-        cmd_val = _mongocrypt_new_json_string_from_binary(cmd);
-        _mongocrypt_log(&ctx->crypt->log,
-                        MONGOCRYPT_LOG_LEVEL_TRACE,
-                        "%s (%s=\"%s\", %s=%d, %s=\"%s\")",
-                        BSON_FUNC,
-                        "db",
-                        ectx->cmd_db,
-                        "db_len",
-                        db_len,
-                        "cmd",
-                        cmd_val);
-        bson_free(cmd_val);
     }
 
     // Check if an isMaster request to mongocryptd is needed to detect feature support:

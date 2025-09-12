@@ -43,6 +43,7 @@ kmip_writer_t *
 kmip_writer_new (void)
 {
    kmip_writer_t *writer = calloc (1, sizeof (kmip_writer_t));
+   KMS_ASSERT (writer);
    writer->buffer = kms_request_str_new ();
    return writer;
 }
@@ -205,7 +206,7 @@ kmip_writer_begin_struct (kmip_writer_t *writer, kmip_tag_type_t tag)
    size_t pos = writer->buffer->len;
 
    kmip_writer_write_u32 (writer, 0);
-   KMS_ASSERT(writer->cur_pos < MAX_KMIP_WRITER_POSITIONS);
+   KMS_ASSERT(writer->cur_pos < MAX_KMIP_WRITER_POSITIONS - 1);
    writer->cur_pos++;
    writer->positions[writer->cur_pos] = pos;
 }
@@ -241,6 +242,7 @@ kmip_reader_t *
 kmip_reader_new (uint8_t *ptr, size_t len)
 {
    kmip_reader_t *reader = calloc (1, sizeof (kmip_reader_t));
+   KMS_ASSERT (reader);
    reader->ptr = ptr;
    reader->len = len;
    return reader;

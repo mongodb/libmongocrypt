@@ -20,7 +20,6 @@ import sys
 import time
 import unittest
 from concurrent.futures import ThreadPoolExecutor
-from typing import List
 
 try:
     import simplejson as json
@@ -52,7 +51,7 @@ LOCAL_MASTER_KEY = (
 
 OUTPUT_FILE = os.environ.get("OUTPUT_FILE")
 
-result_data: List = []
+result_data: list = []
 
 
 def read(filename, **kwargs):

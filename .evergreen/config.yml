@@ -106,7 +106,7 @@ functions:
           export LSAN_OPTIONS="suppressions=$LIBMONGOCRYPT_DIR/.lsan-suppressions"
           export VS_VERSION=${vs_version|}
           export VS_TARGET_ARCH=${vs_target_arch|amd64}
-          export USE_NINJA=ON
+          export USE_NINJA=${use_ninja|ON}
           env ${compile_env|} \
             bash "$EVG_DIR/env-run.sh" \
               bash "$EVG_DIR/build_all.sh"
@@ -151,7 +151,7 @@ functions:
     - command: "shell.exec"
       params:
         script: |-
-          if test "$OS_NAME" != "windows"; then export USE_NINJA=ON; fi
+          if test "$OS_NAME" != "windows"; then export USE_NINJA=${use_ninja|ON}; fi
           env ${compile_env|} CONFIGURE_ONLY=ON ${clang_env|CC=clang CXX=clang++} \
               bash libmongocrypt/.evergreen/build_all.sh
           ./libmongocrypt/.evergreen/clang-tidy.sh
@@ -563,7 +563,7 @@ tasks:
   commands:
     - func: "fetch source"
     - func: "build python release"
-      vars: { PYTHON: /opt/python/3.8/bin/python3 }
+      vars: { PYTHON: /opt/python/3.9/bin/python3 }
     - func: "upload python release"
 
 - name: "release-python-windows"
@@ -572,7 +572,7 @@ tasks:
   commands:
     - func: "fetch source"
     - func: "build python release"
-      vars: { PYTHON: C:/python/Python38/python.exe }
+      vars: { PYTHON: C:/python/Python39/python.exe }
     - func: "upload python release"
 
 - name: "release-python-combine"
@@ -1624,9 +1624,12 @@ buildvariants:
   run_on: macos-1100-arm64
   expansions:
     compile_env: MACOS_UNIVERSAL=ON CMAKE=/opt/homebrew/bin/cmake
+    # Disable Ninja to work around error "Bad CPU type in executable"
+    use_ninja: OFF
   tasks:
   - build-and-test-and-upload
-  - test-python
+  - name: test-python
+    distros: macos-14-arm64
 - name: windows-vs2017-32bit
   # Test Windows 32 bit builds for PHPC. PHPC builds libmongocrypt from source. See MONGOCRYPT-391.
   display_name: "Windows VS 2017 32-bit compile"

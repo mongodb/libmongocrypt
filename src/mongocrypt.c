@@ -203,20 +203,6 @@ bool mongocrypt_setopt_kms_provider_aws(mongocrypt_t *crypt,
         return false;
     }
 
-    if (crypt->log.trace_enabled) {
-        _mongocrypt_log(&crypt->log,
-                        MONGOCRYPT_LOG_LEVEL_TRACE,
-                        "%s (%s=\"%s\", %s=%d, %s=\"%s\", %s=%d)",
-                        BSON_FUNC,
-                        "aws_access_key_id",
-                        kms_providers->aws_mut.access_key_id,
-                        "aws_access_key_id_len",
-                        aws_access_key_id_len,
-                        "aws_secret_access_key",
-                        kms_providers->aws_mut.secret_access_key,
-                        "aws_secret_access_key_len",
-                        aws_secret_access_key_len);
-    }
     kms_providers->configured_providers |= MONGOCRYPT_KMS_PROVIDER_AWS;
     return true;
 }
@@ -360,15 +346,6 @@ bool mongocrypt_setopt_kms_provider_local(mongocrypt_t *crypt, mongocrypt_binary
         return false;
     }
 
-    if (crypt->log.trace_enabled) {
-        char *key_val;
-        BSON_ASSERT(key->len <= (uint32_t)INT_MAX);
-        key_val = _mongocrypt_new_string_from_bytes(key->data, (int)key->len);
-
-        _mongocrypt_log(&crypt->log, MONGOCRYPT_LOG_LEVEL_TRACE, "%s (%s=\"%s\")", BSON_FUNC, "key", key_val);
-        bson_free(key_val);
-    }
-
     _mongocrypt_buffer_copy_from_binary(&kms_providers->local_mut.key, key);
     kms_providers->configured_providers |= MONGOCRYPT_KMS_PROVIDER_LOCAL;
     return true;
@@ -408,9 +385,6 @@ static _loaded_csfle _try_load_csfle(const char *filepath, mongocrypt_status_t *
         // Bad:
         return (_loaded_csfle){.okay = false};
     }
-
-    // Successfully opened DLL
-    _mongocrypt_log(log, MONGOCRYPT_LOG_LEVEL_TRACE, "Loading crypt_shared dynamic library [%s]", filepath);
 
     // Construct the library vtable
     _mongo_crypt_v1_vtable vtable = {.okay = true};
@@ -796,7 +770,6 @@ static bool _csfle_replace_or_take_validate_singleton(mongocrypt_t *crypt, _load
         // Reset the library in the caller so they can't unload the DLL. The DLL
         // is now managed in the global variable.
         found->lib = MCR_DLL_NULL;
-        _mongocrypt_log(&crypt->log, MONGOCRYPT_LOG_LEVEL_TRACE, "Loading new csfle library for the application.");
         have_csfle = true;
         break;
     case LIB_CREATE_FAILED:

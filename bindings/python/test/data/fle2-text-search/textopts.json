@@ -1,0 +1,8 @@
+{
+    "caseSensitive": true,
+    "diacriticSensitive": true,
+    "prefix": {
+        "strMaxQueryLength": 10,
+        "strMinQueryLength": 2
+     }
+}

@@ -501,6 +501,11 @@ class ExplicitEncryptionContext(MongoCryptContext):
                     ):
                         self._raise_from_status()
 
+            if opts.text_opts is not None:
+                with MongoCryptBinaryIn(opts.text_opts) as text_opts:
+                    if not lib.mongocrypt_ctx_setopt_algorithm_text(ctx, text_opts.bin):
+                        self._raise_from_status()
+
             with MongoCryptBinaryIn(value) as binary:
                 if opts.is_expression:
                     if not lib.mongocrypt_ctx_explicit_encrypt_expression_init(

@@ -28,7 +28,7 @@ static void _log_to_stderr(mongocrypt_log_level_t level, const char *message, ui
     case MONGOCRYPT_LOG_LEVEL_ERROR: fprintf(stderr, "ERROR"); break;
     case MONGOCRYPT_LOG_LEVEL_WARNING: fprintf(stderr, "WARNING"); break;
     case MONGOCRYPT_LOG_LEVEL_INFO: fprintf(stderr, "INFO"); break;
-    case MONGOCRYPT_LOG_LEVEL_TRACE: fprintf(stderr, "TRACE"); break;
+    case MONGOCRYPT_LOG_LEVEL_TRACE: fprintf(stderr, "TRACE"); break; /* UNUSED */
     default: fprintf(stderr, "UNKNOWN"); break;
     }
     fprintf(stderr, " %s\n", message);

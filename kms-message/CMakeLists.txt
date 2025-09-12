@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.5)
+cmake_minimum_required (VERSION 3.15...4.0)
 project (kms_message
    VERSION 0.0.1
    LANGUAGES C
@@ -7,8 +7,7 @@ project (kms_message
 set (CMAKE_C_STANDARD 99)
 
 include (CheckCCompilerFlag)
-# All targets obey visibility, not just library targets.
-cmake_policy (SET CMP0063 NEW)
+
 set (CMAKE_C_VISIBILITY_PRESET hidden)
 set (KMS_MESSAGE_SOURCES
    src/kms_b64.c

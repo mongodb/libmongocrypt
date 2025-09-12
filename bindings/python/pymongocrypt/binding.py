@@ -260,7 +260,6 @@ typedef enum {
     MONGOCRYPT_LOG_LEVEL_ERROR = 1,
     MONGOCRYPT_LOG_LEVEL_WARNING = 2,
     MONGOCRYPT_LOG_LEVEL_INFO = 3,
-    MONGOCRYPT_LOG_LEVEL_TRACE = 4
 } mongocrypt_log_level_t;
 
 /**
@@ -687,6 +686,7 @@ bool mongocrypt_ctx_setopt_algorithm(mongocrypt_ctx_t *ctx, const char *algorith
 /// String constant for setopt_algorithm "Indexed" explicit encryption
 /// String constant for setopt_algorithm "Unindexed" explicit encryption
 // DEPRECATED: support "RangePreview" has been removed in favor of "range".
+/// NOTE: "textPreview" is experimental only and may be removed in a future non-major release.
 
 /**
  * Identify the AWS KMS master key to use for creating a data key.
@@ -1465,6 +1465,33 @@ bool mongocrypt_ctx_setopt_query_type(mongocrypt_ctx_t *ctx, const char *query_t
  * Retrieve it with @ref mongocrypt_ctx_status
  */
 bool mongocrypt_ctx_setopt_algorithm_range(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *opts);
+
+/**
+ * Set options for explicit encryption with the "textPreview" algorithm.
+ *
+ * NOTE: "textPreview" is experimental only and may be removed in a future non-major release.
+ * @p opts is a BSON document of the form:
+ * {
+ *   "caseSensitive": bool,
+ * . "diacriticSensitive": bool,
+ * . "prefix": Optional{
+ * .   "strMaxQueryLength": Int32,
+ * .   "strMinQueryLength": Int32,
+ * . },
+ * . "suffix": Optional{
+ * .   "strMaxQueryLength": Int32,
+ * .   "strMinQueryLength": Int32,
+ * . },
+ * . "substring": Optional{
+ * .   "strMaxLength": Int32,
+ * .   "strMaxQueryLength": Int32,
+ * .   "strMinQueryLength": Int32,
+ * . },
+ * }
+ *
+ * "prefix" and "suffix" can both be set.
+ */
+bool mongocrypt_ctx_setopt_algorithm_text(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *opts);
 
 /**
  * Set the expiration time for the data encryption key cache. Defaults to 60 seconds if not set.

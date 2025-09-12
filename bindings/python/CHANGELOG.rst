@@ -1,6 +1,25 @@
 Changelog
 =========
 
+Changes in Version 1.16.0
+-------------------------
+
+- Add support for text-based Queryable Encryption with the new "textPreview"
+  algorithm. NOTE: The "textPreview" algorithm is experimental only. It is
+  not intended for public use.
+
+Changes in Version 1.15.1
+-------------------------
+
+- Bundle libmongocrypt 1.15.1 in release wheels.
+
+Changes in Version 1.15.0
+-------------------------
+
+- Add support for Python 3.14.
+- Drop support for Python 3.8.
+- Bundle libmongocrypt 1.15.0 in release wheels.
+
 Changes in Version 1.14.1
 -------------------------
 

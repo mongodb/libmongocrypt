@@ -16,8 +16,12 @@
 
 #include <bson/bson.h>
 
+#include "mc-textopts-private.h"
+#include "mlib/str.h"
+#include "mongocrypt-binary-private.h"
 #include "mongocrypt-ctx-private.h"
 #include "mongocrypt-key-broker-private.h"
+#include "mongocrypt-private.h"
 
 bool _mongocrypt_ctx_fail_w_msg(mongocrypt_ctx_t *ctx, const char *msg) {
     BSON_ASSERT_PARAM(ctx);
@@ -71,20 +75,6 @@ _set_binary_opt(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *binary, _mongocrypt_
 bool mongocrypt_ctx_setopt_key_id(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *key_id) {
     if (!ctx) {
         return false;
-    }
-
-    if (ctx->crypt->log.trace_enabled && key_id && key_id->data) {
-        char *key_id_val;
-        /* this should never happen, so assert rather than return false */
-        BSON_ASSERT(key_id->len <= INT_MAX);
-        key_id_val = _mongocrypt_new_string_from_bytes(key_id->data, (int)key_id->len);
-        _mongocrypt_log(&ctx->crypt->log,
-                        MONGOCRYPT_LOG_LEVEL_TRACE,
-                        "%s (%s=\"%s\")",
-                        BSON_FUNC,
-                        "key_id",
-                        key_id_val);
-        bson_free(key_id_val);
     }
 
     return _set_binary_opt(ctx, key_id, &ctx->opts.key_id, BSON_SUBTYPE_UUID);
@@ -237,15 +227,6 @@ bool mongocrypt_ctx_setopt_algorithm(mongocrypt_ctx_t *ctx, const char *algorith
     }
 
     const size_t calculated_len = len == -1 ? strlen(algorithm) : (size_t)len;
-    if (ctx->crypt->log.trace_enabled) {
-        _mongocrypt_log(&ctx->crypt->log,
-                        MONGOCRYPT_LOG_LEVEL_TRACE,
-                        "%s (%s=\"%.*s\")",
-                        BSON_FUNC,
-                        "algorithm",
-                        calculated_len <= (size_t)INT_MAX ? (int)calculated_len : INT_MAX,
-                        algorithm);
-    }
 
     mstr_view algo_str = mstrv_view_data(algorithm, calculated_len);
     if (mstr_eq_ignore_case(algo_str, mstrv_lit(MONGOCRYPT_ALGORITHM_DETERMINISTIC_STR))) {
@@ -264,6 +245,9 @@ bool mongocrypt_ctx_setopt_algorithm(mongocrypt_ctx_t *ctx, const char *algorith
     } else if (mstr_eq_ignore_case(algo_str, mstrv_lit(MONGOCRYPT_ALGORITHM_RANGEPREVIEW_DEPRECATED_STR))) {
         _mongocrypt_ctx_fail_w_msg(ctx, "Algorithm 'rangePreview' is deprecated, please use 'range'");
         return false;
+    } else if (mstr_eq_ignore_case(algo_str, mstrv_lit(MONGOCRYPT_ALGORITHM_TEXTPREVIEW_STR))) {
+        ctx->opts.index_type.value = MONGOCRYPT_INDEX_TYPE_TEXTPREVIEW;
+        ctx->opts.index_type.set = true;
     } else {
         char *error = bson_strdup_printf("unsupported algorithm string \"%.*s\"",
                                          algo_str.len <= (size_t)INT_MAX ? (int)algo_str.len : INT_MAX,
@@ -434,14 +418,6 @@ bool mongocrypt_ctx_mongo_feed(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in) {
 
     if (!in) {
         return _mongocrypt_ctx_fail_w_msg(ctx, "invalid NULL input");
-    }
-
-    if (ctx->crypt->log.trace_enabled) {
-        char *in_val;
-
-        in_val = _mongocrypt_new_json_string_from_binary(in);
-        _mongocrypt_log(&ctx->crypt->log, MONGOCRYPT_LOG_LEVEL_TRACE, "%s (%s=\"%s\")", BSON_FUNC, "in", in_val);
-        bson_free(in_val);
     }
 
     switch (ctx->state) {
@@ -722,21 +698,6 @@ bool mongocrypt_ctx_setopt_masterkey_aws(mongocrypt_ctx_t *ctx,
     mongocrypt_binary_destroy(bin);
     bson_destroy(&as_bson);
 
-    if (ctx->crypt->log.trace_enabled) {
-        _mongocrypt_log(&ctx->crypt->log,
-                        MONGOCRYPT_LOG_LEVEL_TRACE,
-                        "%s (%s=\"%s\", %s=%d, %s=\"%s\", %s=%d)",
-                        BSON_FUNC,
-                        "region",
-                        ctx->opts.kek.provider.aws.region,
-                        "region_len",
-                        region_len,
-                        "cmk",
-                        ctx->opts.kek.provider.aws.cmk,
-                        "cmk_len",
-                        cmk_len);
-    }
-
     return ret;
 }
 
@@ -1005,12 +966,6 @@ bool mongocrypt_ctx_setopt_key_encryption_key(mongocrypt_ctx_t *ctx, mongocrypt_
         return _mongocrypt_ctx_fail(ctx);
     }
 
-    if (ctx->crypt->log.trace_enabled) {
-        char *bin_str = bson_as_canonical_extended_json(&as_bson, NULL);
-        _mongocrypt_log(&ctx->crypt->log, MONGOCRYPT_LOG_LEVEL_TRACE, "%s (%s=\"%s\")", BSON_FUNC, "bin", bin_str);
-        bson_free(bin_str);
-    }
-
     return true;
 }
 
@@ -1066,6 +1021,15 @@ bool mongocrypt_ctx_setopt_query_type(mongocrypt_ctx_t *ctx, const char *query_t
     } else if (mstr_eq_ignore_case(qt_str, mstrv_lit(MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_DEPRECATED_STR))) {
         _mongocrypt_ctx_fail_w_msg(ctx, "Query type 'rangePreview' is deprecated, please use 'range'");
         return false;
+    } else if (mstr_eq_ignore_case(qt_str, mstrv_lit(MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW_STR))) {
+        ctx->opts.query_type.value = MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW;
+        ctx->opts.query_type.set = true;
+    } else if (mstr_eq_ignore_case(qt_str, mstrv_lit(MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW_STR))) {
+        ctx->opts.query_type.value = MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW;
+        ctx->opts.query_type.set = true;
+    } else if (mstr_eq_ignore_case(qt_str, mstrv_lit(MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW_STR))) {
+        ctx->opts.query_type.value = MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW;
+        ctx->opts.query_type.set = true;
     } else {
         /* don't check if qt_str.len fits in int; we want the diagnostic output */
         char *error = bson_strdup_printf("Unsupported query_type \"%.*s\"",
@@ -1084,6 +1048,7 @@ const char *_mongocrypt_index_type_to_string(mongocrypt_index_type_t val) {
     case MONGOCRYPT_INDEX_TYPE_EQUALITY: return "Equality";
     case MONGOCRYPT_INDEX_TYPE_RANGE: return "Range";
     case MONGOCRYPT_INDEX_TYPE_RANGEPREVIEW_DEPRECATED: return "RangePreview";
+    case MONGOCRYPT_INDEX_TYPE_TEXTPREVIEW: return "TextPreview";
     default: return "Unknown";
     }
 }
@@ -1093,6 +1058,9 @@ const char *_mongocrypt_query_type_to_string(mongocrypt_query_type_t val) {
     case MONGOCRYPT_QUERY_TYPE_EQUALITY: return "Equality";
     case MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_DEPRECATED: return "RangePreview";
     case MONGOCRYPT_QUERY_TYPE_RANGE: return "Range";
+    case MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW: return "PrefixPreview";
+    case MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW: return "SuffixPreview";
+    case MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW: return "SubstringPreview";
     default: return "Unknown";
     }
 }
@@ -1125,5 +1093,34 @@ bool mongocrypt_ctx_setopt_algorithm_range(mongocrypt_ctx_t *ctx, mongocrypt_bin
     }
 
     ctx->opts.rangeopts.set = true;
+    return true;
+}
+
+bool mongocrypt_ctx_setopt_algorithm_text(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *opts) {
+    bson_t as_bson;
+    if (!ctx) {
+        return false;
+    }
+
+    if (ctx->initialized) {
+        return _mongocrypt_ctx_fail_w_msg(ctx, "cannot set options after init");
+    }
+
+    if (ctx->state == MONGOCRYPT_CTX_ERROR) {
+        return false;
+    }
+
+    if (ctx->opts.textopts.set) {
+        return _mongocrypt_ctx_fail_w_msg(ctx, "TextOpts already set");
+    }
+
+    if (!_mongocrypt_binary_to_bson(opts, &as_bson)) {
+        return _mongocrypt_ctx_fail_w_msg(ctx, "invalid BSON");
+    }
+
+    if (!mc_TextOpts_parse(&ctx->opts.textopts.value, &as_bson, ctx->status)) {
+        return _mongocrypt_ctx_fail(ctx);
+    }
+    ctx->opts.textopts.set = true;
     return true;
 }
