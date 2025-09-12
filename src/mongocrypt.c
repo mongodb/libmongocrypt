@@ -15,9 +15,9 @@
  */
 
 #include "mongocrypt.h"
-#include "mlib/error.h"
-#include "mlib/path.h"
-#include "mlib/thread.h"
+#include "mc-mlib/error.h"
+#include "mc-mlib/path.h"
+#include "mc-mlib/thread.h"
 
 #include <bson/bson.h>
 #include <kms_message/kms_message.h>

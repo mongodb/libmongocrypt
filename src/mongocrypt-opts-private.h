@@ -19,7 +19,7 @@
 
 #include <bson/bson.h>
 
-#include "mlib/str.h"
+#include "mc-mlib/str.h"
 
 #include "mongocrypt-buffer-private.h"
 #include "mongocrypt-endpoint-private.h"

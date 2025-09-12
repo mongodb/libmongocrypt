@@ -33,7 +33,7 @@
 
 #include "mongo_crypt-v1.h"
 
-#include <mlib/macros.h>
+#include <mc-mlib/macros.h>
 
 #define MONGOCRYPT_GENERIC_ERROR_CODE 1
 
