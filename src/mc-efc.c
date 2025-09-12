@@ -16,7 +16,7 @@
 
 #include "mc-efc-private.h"
 
-#include "mlib/str.h"
+#include "mc-mlib/str.h"
 #include "mongocrypt-private.h"
 #include "mongocrypt-util-private.h" // mc_iter_document_as_bson
 #include <stdint.h>

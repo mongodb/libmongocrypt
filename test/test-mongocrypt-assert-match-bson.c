@@ -17,7 +17,7 @@
 #include "test-mongocrypt-assert-match-bson.h"
 #include "test-mongocrypt-assert.h"
 
-#include <mlib/macros.h>
+#include <mc-mlib/macros.h>
 
 /* string comparison functions for Windows */
 #ifdef _WIN32
