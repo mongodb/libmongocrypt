@@ -6058,6 +6058,40 @@ static void _test_deterministic_contention(_mongocrypt_tester_t *tester) {
     mongocrypt_status_destroy(status);
 }
 
+static void _test_qe_keyAltName(_mongocrypt_tester_t *tester) {
+#define TF(suffix) TEST_FILE("./test/data/qe_keyAltName/" suffix)
+    {
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_SKIP_INIT);
+
+        // Q: Do we need the server to support keyAltName in encryptedFields? A:
+
+        // Specify a local encryptedFieldsMap with keyAltName:
+        mongocrypt_binary_t *encrypted_fields_map = TEST_BSON_STR(
+            BSON_STR({"db.coll" : {"fields" : [ {"path" : "secret", "bsonType" : "string", "keyAltName" : "foo"} ]}}));
+        mongocrypt_setopt_encrypted_field_config_map(crypt, encrypted_fields_map);
+        ASSERT_OK(mongocrypt_init(crypt), crypt);
+
+        mongocrypt_binary_t *cmd = TEST_BSON_STR(BSON_STR({"insert" : "coll", "documents" : [ {"secret" : "bar"} ]}));
+
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, cmd), ctx);
+
+        // TODO: expect the key is requested with keyAltName "foo".
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+        {
+            mongocrypt_binary_t *filter = mongocrypt_binary_new();
+            ASSERT_OK(mongocrypt_ctx_mongo_op(ctx, filter), ctx);
+            ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TEST_BSON_STR(BSON_STR({"keyAltName" : {"$in" : ["foo"]}})), filter);
+            mongocrypt_binary_destroy(filter);
+        }
+
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+#undef TF
+}
+
 void _mongocrypt_tester_install_ctx_encrypt(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_explicit_encrypt_init);
     INSTALL_TEST(_test_encrypt_init);
@@ -6157,4 +6191,5 @@ void _mongocrypt_tester_install_ctx_encrypt(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_fle2_collinfo_with_bad_str_encode_version);
     INSTALL_TEST(_test_lookup);
     INSTALL_TEST(_test_deterministic_contention);
+    INSTALL_TEST(_test_qe_keyAltName);
 }
