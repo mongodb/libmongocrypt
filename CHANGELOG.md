@@ -1,4 +1,9 @@
 # ChangeLog
+## 1.15.2
+
+### Fixed
+- Rename internal headers to avoid conflicts building libmongocrypt and C driver together.
+
 ## 1.15.1
 
 ### Fixed
