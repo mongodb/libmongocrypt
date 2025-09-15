@@ -1,5 +1,5 @@
 pymongo[aws]>=4
-cffi>=1.12.0,<2
+cffi>=1.12.0,<3
 cryptography>=2
 pytest>=7.0
 unasync
