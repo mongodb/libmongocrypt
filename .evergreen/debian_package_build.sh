@@ -83,7 +83,7 @@ sudo chroot ./unstable-chroot /bin/bash -c '(set -o xtrace && \
   LANG=C /bin/bash ./debian/build_snapshot.sh && \
   debc ../*.changes && \
   dpkg -i ../*.deb && \
-  /usr/bin/gcc -I/usr/include/mongocrypt -I/usr/include/libbson-1.0 -o example-state-machine test/example-state-machine.c -lmongocrypt -lbson-1.0 )'
+  /usr/bin/gcc $(pkgconf --cflags mongocrypt bson2) -o example-state-machine test/example-state-machine.c -lmongocrypt -lbson2 )'
 
 [ -e ./unstable-chroot/tmp/libmongocrypt/example-state-machine ] || (echo "Example 'example-state-machine' was not built!" ; exit 1)
 (cd ./unstable-chroot/tmp/ ; tar zcvf ../../deb.tar.gz *.dsc *.orig.tar.gz *.debian.tar.xz *.build *.deb)
