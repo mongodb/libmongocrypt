@@ -50,6 +50,7 @@ struct mc_schema_broker_t {
     char *db; // Database shared by all schemas.
     mc_schema_entry_t *ll;
     size_t ll_len;
+    bool schema_mixing_is_supported;
 };
 
 mc_schema_broker_t *mc_schema_broker_new(void) {
@@ -90,6 +91,11 @@ bool mc_schema_broker_request(mc_schema_broker_t *sb, const char *db, const char
 bool mc_schema_broker_has_multiple_requests(const mc_schema_broker_t *sb) {
     BSON_ASSERT_PARAM(sb);
     return sb->ll_len > 1;
+}
+
+void mc_schema_broker_support_mixing_schemas(mc_schema_broker_t *sb) {
+    BSON_ASSERT_PARAM(sb);
+    sb->schema_mixing_is_supported = true;
 }
 
 void mc_schema_broker_destroy(mc_schema_broker_t *sb) {
@@ -702,6 +708,10 @@ static bool append_encryptionInformation(const mc_schema_broker_t *sb,
     }
 
     for (mc_schema_entry_t *se = sb->ll; se != NULL; se = se->next) {
+        if (!se->encryptedFields.set && se->jsonSchema.set) {
+            continue;
+        }
+
         BSON_ASSERT(se->satisfied);
         bool loop_ok = false;
         char *ns = bson_strdup_printf("%s.%s", sb->db, se->coll);
@@ -917,6 +927,18 @@ fail:
     return ok;
 }
 
+static inline size_t count_non_encryptedFields_entries(const mc_schema_entry_t *head) {
+    size_t result = 0;
+
+    for (const mc_schema_entry_t *se = head; se != NULL; se = se->next) {
+        if (!se->encryptedFields.set) {
+            ++result;
+        }
+    }
+
+    return result;
+}
+
 // insert_csfleEncryptionSchemas appends schema information to a command for CSFLE.
 // Only consumed by query analysis (mongocryptd/crypt_shared).
 // For one JSON schema, use `jsonSchema` for backwards compatibility.
@@ -933,11 +955,16 @@ static bool insert_csfleEncryptionSchemas(const mc_schema_broker_t *sb,
         return true;
     }
 
-    if (sb->ll_len == 1) {
+    if (count_non_encryptedFields_entries(sb->ll) == 1) {
         // Append the only jsonSchema with the "jsonSchema" field.
         const mc_schema_entry_t *se = sb->ll;
-        BSON_ASSERT(se);
-        BSON_ASSERT(!se->next);
+
+        while (se->encryptedFields.set) {
+            se = se->next;
+            BSON_ASSERT(se);
+        }
+
+        // BSON_ASSERT(!se->next); TODO: consider filtering out entries first for better code reuse
         BSON_ASSERT(se->satisfied);
         if (se->jsonSchema.set) {
             TRY_BSON_OR(BSON_APPEND_DOCUMENT(cmd, "jsonSchema", &se->jsonSchema.bson)) {
@@ -966,6 +993,10 @@ static bool insert_csfleEncryptionSchemas(const mc_schema_broker_t *sb,
     }
 
     for (mc_schema_entry_t *se = sb->ll; se != NULL; se = se->next) {
+        if (se->encryptedFields.set) {
+            continue;
+        }
+
         BSON_ASSERT(se->satisfied);
 
         char *ns = bson_strdup_printf("%s.%s", sb->db, se->coll);
@@ -1033,6 +1064,10 @@ bool mc_schema_broker_add_schemas_to_cmd(const mc_schema_broker_t *sb,
     }
 
     if (has_encryptedFields && has_jsonSchema) {
+        if (sb->schema_mixing_is_supported) {
+            return insert_csfleEncryptionSchemas(sb, cmd, cmd_target, status)
+                && insert_encryptionInformation(sb, cmd_name, cmd, cmd_target, status);
+        }
         // If any collection has encryptedFields, error if any collection only has a JSON Schema.
         CLIENT_ERR("Collection '%s' has an encryptedFields configured, but collection '%s' has a JSON schema "
                    "configured. This is currently not supported. To ignore the JSON schema, add an empty entry for "
