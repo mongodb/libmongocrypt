@@ -5778,6 +5778,7 @@ static void _test_lookup(_mongocrypt_tester_t *tester) {
     }
 #undef TF
 
+    // Test $lookup with mixed: CSFLE + QE (unsupported <8.2)
 #define TF(suffix) TEST_FILE("./test/data/lookup/mixed/csfle/qe/" suffix)
     {
         mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
@@ -5798,6 +5799,40 @@ static void _test_lookup(_mongocrypt_tester_t *tester) {
         {
             mongocrypt_binary_t *got = mongocrypt_binary_new();
             ASSERT_FAILS(mongocrypt_ctx_mongo_op(ctx, got), ctx, "This is currently not supported");
+            mongocrypt_binary_destroy(got);
+        }
+
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+#undef TF
+
+    // Test $lookup with mixed: CSFLE + QE (supported >=8.2)
+#define TF(suffix) TEST_FILE("./test/data/lookup/mixed/csfle/qe/" suffix)
+    {
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")), ctx);
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+        expect_mongo_op(ctx, TEST_BSON("{'isMaster': 1}"));
+        ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TEST_FILE("./test/data/mongocryptd-ismaster-27.json")), ctx);
+        ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+        {
+            expect_mongo_op(ctx, TEST_BSON(BSON_STR({"name" : {"$in" : [ "c1", "c2" ]}})));
+            // Feed both needed schemas.
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c1.json")), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c2.json")), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+        {
+            mongocrypt_binary_t *got = mongocrypt_binary_new();
+            ASSERT_OK(mongocrypt_ctx_mongo_op(ctx, got), ctx);
             mongocrypt_binary_destroy(got);
         }
 
@@ -6056,6 +6091,9 @@ static void _test_deterministic_contention(_mongocrypt_tester_t *tester) {
     mongocrypt_ctx_destroy(ctx);
     mongocrypt_destroy(crypt);
     mongocrypt_status_destroy(status);
+}
+
+void _mongocrypt_test_encrypt_with_mixed_schemas(_mongocrypt_tester_t *tester) {
 }
 
 void _mongocrypt_tester_install_ctx_encrypt(_mongocrypt_tester_t *tester) {
