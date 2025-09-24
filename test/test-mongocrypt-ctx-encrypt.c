@@ -5777,12 +5777,7 @@ static void _test_lookup(_mongocrypt_tester_t *tester) {
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
 
         ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")), ctx);
-
-        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
-        expect_mongo_op(ctx, TEST_BSON("{'isMaster': 1}"));
-        ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TEST_FILE("./test/data/mongocryptd-ismaster-27.json")), ctx);
-        ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
-
+        expect_and_reply_to_ismaster(ctx);
         ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
         {
             expect_mongo_op(ctx, TEST_BSON(BSON_STR({"name" : {"$in" : [ "c1", "c2" ]}})));
