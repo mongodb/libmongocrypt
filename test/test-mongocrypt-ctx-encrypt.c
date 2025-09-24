@@ -5621,7 +5621,7 @@ static void _test_lookup(_mongocrypt_tester_t *tester) {
 
 // Test $lookup with mixed: QE + CSFLE
 #define TF(suffix) TEST_FILE("./test/data/lookup/mixed/qe/csfle/" suffix)
-    // Supported >=8.2
+    // Schema mixing is supported >=8.2 (wire version >=27)
     {
         mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
@@ -5649,7 +5649,7 @@ static void _test_lookup(_mongocrypt_tester_t *tester) {
         mongocrypt_destroy(crypt);
     }
 
-    // Unsupported <8.2
+    // Schema mixing is unsupported <8.2 (wire version <26)
     {
         mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
@@ -5862,7 +5862,7 @@ static void _test_lookup(_mongocrypt_tester_t *tester) {
 #undef TF
 
 #define TF(suffix) TEST_FILE("./test/data/lookup/mixed/csfle/qe/" suffix)
-    // Supported >=8.2
+    // Schema mixing is supported >=8.2 (wire version >=27)
     {
         mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
@@ -5889,7 +5889,7 @@ static void _test_lookup(_mongocrypt_tester_t *tester) {
         mongocrypt_destroy(crypt);
     }
 
-    // Unsupported <8.2
+    // Schema mixing is unsupported <8.2 (wire version <26)
     {
         mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
