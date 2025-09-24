@@ -5796,14 +5796,13 @@ static void _test_lookup(_mongocrypt_tester_t *tester) {
         }
 
         ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
-        // TODO: Figure out what cmd-to-mongod should actually be
-        // {
-        //     mongocrypt_binary_t *expect = TF("cmd-to-mongod.json");
-        //     mongocrypt_binary_t *got = mongocrypt_binary_new();
-        //     ASSERT_OK(mongocrypt_ctx_finalize(ctx, got), ctx);
-        //     ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(expect, got);
-        //     mongocrypt_binary_destroy(got);
-        // }
+        {
+            mongocrypt_binary_t *expect = TF("cmd-to-mongod.json");
+            mongocrypt_binary_t *got = mongocrypt_binary_new();
+            ASSERT_OK(mongocrypt_ctx_finalize(ctx, got), ctx);
+            ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(expect, got);
+            mongocrypt_binary_destroy(got);
+        }
 
         mongocrypt_ctx_destroy(ctx);
         mongocrypt_destroy(crypt);
