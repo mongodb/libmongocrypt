@@ -5823,7 +5823,6 @@ static void _test_lookup(_mongocrypt_tester_t *tester) {
     }
 #undef TF
 
-    // Test $lookup with mixed: CSFLE + QE
 #define TF(suffix) TEST_FILE("./test/data/lookup/mixed/csfle/qe/" suffix)
     {
         mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
@@ -6102,9 +6101,6 @@ static void _test_deterministic_contention(_mongocrypt_tester_t *tester) {
     mongocrypt_ctx_destroy(ctx);
     mongocrypt_destroy(crypt);
     mongocrypt_status_destroy(status);
-}
-
-void _mongocrypt_test_encrypt_with_mixed_schemas(_mongocrypt_tester_t *tester) {
 }
 
 void _mongocrypt_tester_install_ctx_encrypt(_mongocrypt_tester_t *tester) {
