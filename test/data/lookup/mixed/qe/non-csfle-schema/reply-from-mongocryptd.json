@@ -20,6 +20,8 @@
             },
             "schema": {
                 "db.c1": {
+                    "escCollection": "enxcol_.c1.esc",
+                    "ecocCollection": "enxcol_.c1.ecoc",
                     "fields": [
                         {
                             "keyId": {
