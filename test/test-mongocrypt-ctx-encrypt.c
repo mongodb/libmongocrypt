@@ -3487,6 +3487,15 @@ static void _test_dollardb_preserved_fle1(_mongocrypt_tester_t *tester) {
     if (1) {                                                                                                           \
         ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);                             \
         expect_mongo_op(ctx, TEST_BSON("{'isMaster': 1}"));                                                            \
+        ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TEST_FILE("./test/data/mongocryptd-ismaster-27.json")), ctx);         \
+        ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);                                                                \
+    } else                                                                                                             \
+        ((void)0)
+
+#define expect_and_reply_to_ismaster26(ctx)                                                                            \
+    if (1) {                                                                                                           \
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);                             \
+        expect_mongo_op(ctx, TEST_BSON("{'isMaster': 1}"));                                                            \
         ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TEST_FILE("./test/data/mongocryptd-ismaster-26.json")), ctx);         \
         ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);                                                                \
     } else                                                                                                             \
@@ -5612,12 +5621,41 @@ static void _test_lookup(_mongocrypt_tester_t *tester) {
 
 // Test $lookup with mixed: QE + CSFLE
 #define TF(suffix) TEST_FILE("./test/data/lookup/mixed/qe/csfle/" suffix)
+    // Supported >=8.2
     {
         mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
 
         ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")), ctx);
         expect_and_reply_to_ismaster(ctx);
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+        {
+            expect_mongo_op(ctx, TEST_BSON(BSON_STR({"name" : {"$in" : [ "c1", "c2" ]}})));
+
+            // Feed both needed schemas.
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c1.json")), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c2.json")), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+        {
+            expect_mongo_op(ctx, TF("cmd-to-mongocryptd.json"));
+            // Stopping here since mongocryptd is expected to error with "Cannot specify both encryptionInformation and
+            // csfleEncryptionSchemas unless csfleEncryptionSchemas only contains non-encryption JSON schema validators"
+        }
+
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+
+    // Unsupported <8.2
+    {
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")), ctx);
+        expect_and_reply_to_ismaster26(ctx);
         ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
         {
             expect_mongo_op(ctx, TEST_BSON(BSON_STR({"name" : {"$in" : [ "c1", "c2" ]}})));
@@ -5824,12 +5862,40 @@ static void _test_lookup(_mongocrypt_tester_t *tester) {
 #undef TF
 
 #define TF(suffix) TEST_FILE("./test/data/lookup/mixed/csfle/qe/" suffix)
+    // Supported >=8.2
     {
         mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
 
         ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")), ctx);
         expect_and_reply_to_ismaster(ctx);
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+        {
+            expect_mongo_op(ctx, TEST_BSON(BSON_STR({"name" : {"$in" : [ "c1", "c2" ]}})));
+            // Feed both needed schemas.
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c1.json")), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c2.json")), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+        {
+            expect_mongo_op(ctx, TF("cmd-to-mongocryptd.json"));
+            // Stopping here since mongocryptd is expected to error with "Cannot specify both encryptionInformation and
+            // csfleEncryptionSchemas unless csfleEncryptionSchemas only contains non-encryption JSON schema validators"
+        }
+
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+
+    // Unsupported <8.2
+    {
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")), ctx);
+        expect_and_reply_to_ismaster26(ctx);
         ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
         {
             expect_mongo_op(ctx, TEST_BSON(BSON_STR({"name" : {"$in" : [ "c1", "c2" ]}})));
