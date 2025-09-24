@@ -708,6 +708,7 @@ static bool append_encryptionInformation(const mc_schema_broker_t *sb,
     }
 
     for (mc_schema_entry_t *se = sb->ll; se != NULL; se = se->next) {
+        // encryptedFields is preferred over jsonSchema
         if (!se->encryptedFields.set && se->jsonSchema.set) {
             continue;
         }
