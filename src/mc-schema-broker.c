@@ -927,18 +927,6 @@ fail:
     return ok;
 }
 
-static inline size_t count_non_encryptedFields_entries(const mc_schema_entry_t *head) {
-    size_t result = 0;
-
-    for (const mc_schema_entry_t *se = head; se != NULL; se = se->next) {
-        if (!se->encryptedFields.set) {
-            ++result;
-        }
-    }
-
-    return result;
-}
-
 // insert_csfleEncryptionSchemas appends schema information to a command for CSFLE.
 // Only consumed by query analysis (mongocryptd/crypt_shared).
 // For one JSON schema, use `jsonSchema` for backwards compatibility.
@@ -955,7 +943,7 @@ static bool insert_csfleEncryptionSchemas(const mc_schema_broker_t *sb,
         return true;
     }
 
-    if (count_non_encryptedFields_entries(sb->ll) == 1) {
+    if (sb->ll_len == 1) {
         // Append the only jsonSchema with the "jsonSchema" field.
         const mc_schema_entry_t *se = sb->ll;
 
@@ -964,7 +952,7 @@ static bool insert_csfleEncryptionSchemas(const mc_schema_broker_t *sb,
             BSON_ASSERT(se);
         }
 
-        // BSON_ASSERT(!se->next); TODO: consider filtering out entries first for better code reuse
+        BSON_ASSERT(!se->next);
         BSON_ASSERT(se->satisfied);
         if (se->jsonSchema.set) {
             TRY_BSON_OR(BSON_APPEND_DOCUMENT(cmd, "jsonSchema", &se->jsonSchema.bson)) {
@@ -1036,6 +1024,27 @@ static bool insert_csfleEncryptionSchemas(const mc_schema_broker_t *sb,
     return true;
 }
 
+static inline bool jsonSchema_is_unencrypted(const bson_t *schema) {
+    bson_iter_t properties_iter;
+    if (!bson_iter_init_find(&properties_iter, schema, "properties")) {
+        return true;
+    }
+
+    bson_iter_t fields_iter;
+    if (!bson_iter_recurse(&properties_iter, &fields_iter)) {
+        return true;
+    }
+
+    while (bson_iter_next(&fields_iter)) {
+        bson_iter_t encrypt_iter;
+        if (bson_iter_recurse(&fields_iter, &encrypt_iter) && bson_iter_find(&encrypt_iter, "encrypt")) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 bool mc_schema_broker_add_schemas_to_cmd(const mc_schema_broker_t *sb,
                                          bson_t *cmd /* in and out */,
                                          mc_cmd_target_t cmd_target,
@@ -1050,32 +1059,32 @@ bool mc_schema_broker_add_schemas_to_cmd(const mc_schema_broker_t *sb,
 
     bool has_encryptedFields = false;
     bool has_jsonSchema = false;
-    const char *coll_with_encryptedFields = NULL;
-    const char *coll_with_jsonSchema = NULL;
+    const mc_schema_entry_t *entry_with_encryptedFields = NULL;
+    const mc_schema_entry_t *entry_with_jsonSchema = NULL;
     for (mc_schema_entry_t *it = sb->ll; it != NULL; it = it->next) {
         BSON_ASSERT(it->satisfied);
         if (it->encryptedFields.set) {
             has_encryptedFields = true;
-            coll_with_encryptedFields = it->coll;
+            entry_with_encryptedFields = it;
         } else if (it->jsonSchema.set) {
             has_jsonSchema = true;
-            coll_with_jsonSchema = it->coll;
+            entry_with_jsonSchema = it;
         }
     }
 
     if (has_encryptedFields && has_jsonSchema) {
-        if (sb->schema_mixing_is_supported) {
-            return insert_csfleEncryptionSchemas(sb, cmd, cmd_target, status)
-                && insert_encryptionInformation(sb, cmd_name, cmd, cmd_target, status);
+        if (sb->schema_mixing_is_supported && jsonSchema_is_unencrypted(&entry_with_jsonSchema->jsonSchema.bson)) {
+            return insert_encryptionInformation(sb, cmd_name, cmd, cmd_target, status)
+                && insert_csfleEncryptionSchemas(sb, cmd, cmd_target, status);
         }
         // If any collection has encryptedFields, error if any collection only has a JSON Schema.
         CLIENT_ERR("Collection '%s' has an encryptedFields configured, but collection '%s' has a JSON schema "
                    "configured. This is currently not supported. To ignore the JSON schema, add an empty entry for "
                    "'%s' to AutoEncryptionOpts.encryptedFieldsMap: \"%s\": { \"fields\": [] }",
-                   coll_with_encryptedFields,
-                   coll_with_jsonSchema,
-                   coll_with_jsonSchema,
-                   coll_with_jsonSchema);
+                   entry_with_encryptedFields->coll,
+                   entry_with_jsonSchema->coll,
+                   entry_with_jsonSchema->coll,
+                   entry_with_jsonSchema->coll);
         return false;
     }
 

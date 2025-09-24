@@ -580,6 +580,9 @@ static void test_mc_schema_broker_add_schemas_to_cmd(_mongocrypt_tester_t *teste
     bson_t *encryptedFields2 = TEST_FILE_AS_BSON("./test/data/schema-broker/encryptedFields2.json");
     bson_t *encryptedFieldsMap = TEST_FILE_AS_BSON("./test/data/schema-broker/encryptedFieldsMap.json");
     bson_t *collinfo_encryptedFields2 = TEST_FILE_AS_BSON("./test/data/schema-broker/collinfo-encryptedFields2.json");
+    bson_t *jsonSchema_unencrypted = TEST_FILE_AS_BSON("./test/data/schema-broker/jsonSchema-unencrypted.json");
+    bson_t *collinfo_jsonSchema_unencrypted =
+        TEST_FILE_AS_BSON("./test/data/schema-broker/collinfo-jsonSchema-unencrypted.json");
 
     // Adds one JSON schema as jsonSchema.
     {
@@ -739,15 +742,14 @@ static void test_mc_schema_broker_add_schemas_to_cmd(_mongocrypt_tester_t *teste
         _mongocrypt_cache_t cache;
         _mongocrypt_cache_collinfo_init(&cache);
 
-        // TODO: mongocrypt_ctx_encrypt_ismaster_done should call mc_schema_broker_support_mixing_schemas if the server
-        // is 8.2+. Older servers do not support mixing. See SERVER-100260.
         mc_schema_broker_support_mixing_schemas(sb);
 
         ASSERT_OK_STATUS(mc_schema_broker_request(sb, "db", "coll", status), status);
         ASSERT_OK_STATUS(mc_schema_broker_request(sb, "db", "coll2", status), status);
         ASSERT(mc_schema_broker_need_more_schemas(sb));
         // Satisfy db.coll with a CSFLE schema (JSON schema):
-        ASSERT_OK_STATUS(mc_schema_broker_satisfy_from_collinfo(sb, collinfo_jsonSchema, &cache, status), status);
+        ASSERT_OK_STATUS(mc_schema_broker_satisfy_from_collinfo(sb, collinfo_jsonSchema_unencrypted, &cache, status),
+                         status);
         // Satisfy db.coll2 with a QE schema (encryptedFields):
         ASSERT_OK_STATUS(mc_schema_broker_satisfy_from_collinfo(sb, collinfo_encryptedFields2, &cache, status), status);
         ASSERT(!mc_schema_broker_need_more_schemas(sb));
@@ -755,14 +757,14 @@ static void test_mc_schema_broker_add_schemas_to_cmd(_mongocrypt_tester_t *teste
         bson_t *cmd = TMP_BSON(BSON_STR({"find" : "coll"}));
         ASSERT_OK_STATUS(mc_schema_broker_add_schemas_to_cmd(sb, cmd, MC_CMD_SCHEMAS_FOR_MONGOCRYPTD, status), status);
         // Expect command has both 'jsonSchema' and 'encryptionInformation':
-        bson_t *expect = TMP_BSONF(BSON_STR({
-                                       "find" : "coll",
-                                       "jsonSchema" : MC_BSON,
-                                       "isRemoteSchema" : true,
-                                       "encryptionInformation" : {"type" : 1, "schema" : {"db.coll2" : MC_BSON}}
-                                   }), // TODO: Verify that `isRemoteSchema: true` is correct
-                                   jsonSchema,
-                                   encryptedFields2);
+        bson_t *expect =
+            TMP_BSONF(BSON_STR({
+                          "find" : "coll",
+                          "encryptionInformation" : {"type" : 1, "schema" : {"db.coll2" : MC_BSON}},
+                          "csfleEncryptionSchemas" : {"db.coll" : {"jsonSchema" : MC_BSON, "isRemoteSchema" : true}}
+                      }),
+                      encryptedFields2,
+                      jsonSchema_unencrypted);
         ASSERT_EQUAL_BSON(expect, cmd);
         _mongocrypt_cache_cleanup(&cache);
         mc_schema_broker_destroy(sb);
