@@ -1,0 +1,42 @@
+{
+    "hasEncryptionPlaceholders": false,
+    "schemaRequiresEncryption": true,
+    "result": {
+        "aggregate": "c1",
+        "pipeline": [
+            {
+                "$lookup": {
+                    "from": "c2",
+                    "as": "matched",
+                    "localField": "joinme",
+                    "foreignField": "joinme"
+                }
+            }
+        ],
+        "cursor": {},
+        "encryptionInformation": {
+            "type": {
+                "$numberInt": "1"
+            },
+            "schema": {
+                "db.c1": {
+                    "fields": [
+                        {
+                            "keyId": {
+                                "$binary": {
+                                    "base64": "q83vqxI0mHYSNBI0VniQEg==",
+                                    "subType": "04"
+                                }
+                            },
+                            "path": "encryptedUnindexed",
+                            "bsonType": "string"
+                        }
+                    ]
+                }
+            }
+        }
+    },
+    "ok": {
+        "$numberDouble": "1.0"
+    }
+}
