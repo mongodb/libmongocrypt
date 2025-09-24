@@ -947,7 +947,7 @@ static bool insert_csfleEncryptionSchemas(const mc_schema_broker_t *sb,
     if (sb->ll_len == 1) {
         // Append the only jsonSchema with the "jsonSchema" field.
         const mc_schema_entry_t *se = sb->ll;
-
+        BSON_ASSERT(se);
         BSON_ASSERT(!se->next);
         BSON_ASSERT(se->satisfied);
         if (se->jsonSchema.set) {
