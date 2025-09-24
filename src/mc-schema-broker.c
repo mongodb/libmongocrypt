@@ -1019,27 +1019,6 @@ static bool insert_csfleEncryptionSchemas(const mc_schema_broker_t *sb,
     return true;
 }
 
-static inline bool jsonSchema_is_unencrypted(const bson_t *schema) {
-    bson_iter_t properties_iter;
-    if (!bson_iter_init_find(&properties_iter, schema, "properties")) {
-        return true;
-    }
-
-    bson_iter_t fields_iter;
-    if (!bson_iter_recurse(&properties_iter, &fields_iter)) {
-        return true;
-    }
-
-    while (bson_iter_next(&fields_iter)) {
-        bson_iter_t encrypt_iter;
-        if (bson_iter_recurse(&fields_iter, &encrypt_iter) && bson_iter_find(&encrypt_iter, "encrypt")) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
 bool mc_schema_broker_add_schemas_to_cmd(const mc_schema_broker_t *sb,
                                          bson_t *cmd /* in and out */,
                                          mc_cmd_target_t cmd_target,
@@ -1054,21 +1033,21 @@ bool mc_schema_broker_add_schemas_to_cmd(const mc_schema_broker_t *sb,
 
     bool has_encryptedFields = false;
     bool has_jsonSchema = false;
-    const mc_schema_entry_t *entry_with_encryptedFields = NULL;
-    const mc_schema_entry_t *entry_with_jsonSchema = NULL;
+    const char *coll_with_encryptedFields = NULL;
+    const char *coll_with_jsonSchema = NULL;
     for (mc_schema_entry_t *it = sb->ll; it != NULL; it = it->next) {
         BSON_ASSERT(it->satisfied);
         if (it->encryptedFields.set) {
             has_encryptedFields = true;
-            entry_with_encryptedFields = it;
+            coll_with_encryptedFields = it->coll;
         } else if (it->jsonSchema.set) {
             has_jsonSchema = true;
-            entry_with_jsonSchema = it;
+            coll_with_jsonSchema = it->coll;
         }
     }
 
     if (has_encryptedFields && has_jsonSchema) {
-        if (sb->schema_mixing_is_supported && jsonSchema_is_unencrypted(&entry_with_jsonSchema->jsonSchema.bson)) {
+        if (sb->schema_mixing_is_supported) {
             return insert_encryptionInformation(sb, cmd_name, cmd, cmd_target, status)
                 && insert_csfleEncryptionSchemas(sb, cmd, cmd_target, status);
         }
@@ -1076,10 +1055,10 @@ bool mc_schema_broker_add_schemas_to_cmd(const mc_schema_broker_t *sb,
         CLIENT_ERR("Collection '%s' has an encryptedFields configured, but collection '%s' has a JSON schema "
                    "configured. This is currently not supported. To ignore the JSON schema, add an empty entry for "
                    "'%s' to AutoEncryptionOpts.encryptedFieldsMap: \"%s\": { \"fields\": [] }",
-                   entry_with_encryptedFields->coll,
-                   entry_with_jsonSchema->coll,
-                   entry_with_jsonSchema->coll,
-                   entry_with_jsonSchema->coll);
+                   coll_with_encryptedFields,
+                   coll_with_jsonSchema,
+                   coll_with_jsonSchema,
+                   coll_with_jsonSchema);
         return false;
     }
 
