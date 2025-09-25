@@ -3492,7 +3492,7 @@ static void _test_dollardb_preserved_fle1(_mongocrypt_tester_t *tester) {
     } else                                                                                                             \
         ((void)0)
 
-#define expect_and_reply_to_ismaster26(ctx)                                                                            \
+#define expect_and_reply_to_ismaster_26(ctx)                                                                           \
     if (1) {                                                                                                           \
         ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);                             \
         expect_mongo_op(ctx, TEST_BSON("{'isMaster': 1}"));                                                            \
@@ -5655,7 +5655,7 @@ static void _test_lookup(_mongocrypt_tester_t *tester) {
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
 
         ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")), ctx);
-        expect_and_reply_to_ismaster26(ctx);
+        expect_and_reply_to_ismaster_26(ctx);
         ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
         {
             expect_mongo_op(ctx, TEST_BSON(BSON_STR({"name" : {"$in" : [ "c1", "c2" ]}})));
@@ -5889,7 +5889,7 @@ static void _test_lookup(_mongocrypt_tester_t *tester) {
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
 
         ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")), ctx);
-        expect_and_reply_to_ismaster26(ctx);
+        expect_and_reply_to_ismaster_26(ctx);
         ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
         {
             expect_mongo_op(ctx, TEST_BSON(BSON_STR({"name" : {"$in" : [ "c1", "c2" ]}})));
