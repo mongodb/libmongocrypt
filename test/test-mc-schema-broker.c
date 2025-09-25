@@ -752,7 +752,7 @@ static void test_mc_schema_broker_add_schemas_to_cmd(_mongocrypt_tester_t *teste
 
         bson_t *cmd = TMP_BSON(BSON_STR({"find" : "coll"}));
         ASSERT_OK_STATUS(mc_schema_broker_add_schemas_to_cmd(sb, cmd, MC_CMD_SCHEMAS_FOR_MONGOCRYPTD, status), status);
-        // Expect command has both 'jsonSchema' and 'encryptionInformation':
+        // Expect command has both 'encryptionInformation' and 'csfleEncryptionSchemas':
         bson_t *expect =
             TMP_BSONF(BSON_STR({
                           "find" : "coll",
