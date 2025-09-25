@@ -1,10 +1,10 @@
 Adds a printf to bson_malloc0 to test linking scenarios with two forms of libbson.
 See linker-tests.sh. If this patch fails to apply, regenerate from libbson's source.
 
-diff --git a/src/libbson/src/bson/bson-memory.c b/src/libbson/src/bson/bson-memory.c
+diff --git a/src/libbson/src/bson/memory.c b/src/libbson/src/bson/memory.c
 index 0e1523331..aa7112305 100644
---- a/src/libbson/src/bson/bson-memory.c
-+++ b/src/libbson/src/bson/bson-memory.c
+--- a/src/libbson/src/bson/memory.c
++++ b/src/libbson/src/bson/memory.c
 @@ -104,6 +104,7 @@ bson_malloc0 (size_t num_bytes) /* IN */
  {
     void *mem = NULL;
