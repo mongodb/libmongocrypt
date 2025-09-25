@@ -5669,7 +5669,7 @@ static void _test_lookup(_mongocrypt_tester_t *tester) {
         ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
         {
             mongocrypt_binary_t *got = mongocrypt_binary_new();
-            ASSERT_FAILS(mongocrypt_ctx_mongo_op(ctx, got), ctx, "currently not supported");
+            ASSERT_FAILS(mongocrypt_ctx_mongo_op(ctx, got), ctx, "not supported");
             mongocrypt_binary_destroy(got);
         }
 
@@ -5902,7 +5902,7 @@ static void _test_lookup(_mongocrypt_tester_t *tester) {
         ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
         {
             mongocrypt_binary_t *got = mongocrypt_binary_new();
-            ASSERT_FAILS(mongocrypt_ctx_mongo_op(ctx, got), ctx, "This is currently not supported");
+            ASSERT_FAILS(mongocrypt_ctx_mongo_op(ctx, got), ctx, "not supported");
             mongocrypt_binary_destroy(got);
         }
 

@@ -1052,10 +1052,11 @@ bool mc_schema_broker_add_schemas_to_cmd(const mc_schema_broker_t *sb,
             return insert_encryptionInformation(sb, cmd_name, cmd, cmd_target, status)
                 && insert_csfleEncryptionSchemas(sb, cmd, cmd_target, status);
         }
-        // If any collection has encryptedFields, error if any collection only has a JSON Schema.
+
         CLIENT_ERR("Collection '%s' has an encryptedFields configured, but collection '%s' has a JSON schema "
-                   "configured. This is currently not supported. To ignore the JSON schema, add an empty entry for "
-                   "'%s' to AutoEncryptionOpts.encryptedFieldsMap: \"%s\": { \"fields\": [] }",
+                   "configured. This is not supported on mongocryptd/crypt_shared versions below 8.2. To ignore the "
+                   "JSON schema, add an empty entry for '%s' to AutoEncryptionOpts.encryptedFieldsMap: \"%s\": { "
+                   "\"fields\": [] }",
                    coll_with_encryptedFields,
                    coll_with_jsonSchema,
                    coll_with_jsonSchema,
