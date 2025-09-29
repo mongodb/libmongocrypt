@@ -305,7 +305,7 @@ add_library (mongocrypt_static STATIC ${MONGOCRYPT_SOURCES})
 # the common case that users are setting -DCMAKE_C_FLAGS='-fPIC'
 string (FIND "${CMAKE_C_FLAGS}" "-fPIC" FPIC_LOCATION)
 if (NOT WIN32 AND ENABLE_PIC AND "${FPIC_LOCATION}" EQUAL "-1")
-   target_compile_options (mongocrypt_static PUBLIC -fPIC)
+   set_property (TARGET mongocrypt_static PROPERTY POSITION_INDEPENDENT_CODE TRUE)
    message ("Adding -fPIC to compilation of mongocrypt_static components")
 endif ()
 target_include_directories (
