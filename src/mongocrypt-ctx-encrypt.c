@@ -132,6 +132,33 @@ static bool _fle2_collect_keys_for_compaction(mongocrypt_ctx_t *ctx) {
     return true;
 }
 
+// Return value: 1 = keys needed, 0 = no keys needed, -1 = error
+static int _fle2_collect_keys_for_encrypted_fields(mongocrypt_ctx_t *ctx) {
+    int need_keys = 0;
+    _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *)ctx;
+    BSON_ASSERT_PARAM(ctx);
+
+    const mc_EncryptedFieldConfig_t *efc =
+        mc_schema_broker_get_encryptedFields(ectx->sb, ectx->target_coll, ctx->status);
+    if (!efc) {
+        _mongocrypt_ctx_fail(ctx);
+        return -1;
+    }
+
+    for (const mc_EncryptedField_t *field = efc->fields; field != NULL && field->keyAltName; field = field->next) {
+        need_keys = 1;
+        bson_value_t keyAltName;
+        _bson_value_from_string(field->keyAltName, &keyAltName);
+        if (!_mongocrypt_key_broker_request_name(&ctx->kb, &keyAltName)) {
+            _mongocrypt_key_broker_status(&ctx->kb, ctx->status);
+            _mongocrypt_ctx_fail(ctx);
+            return -1;
+        }
+    }
+
+    return need_keys;
+}
+
 static bool _mongo_feed_collinfo(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in) {
     bson_t as_bson;
 
@@ -2699,8 +2726,13 @@ static bool mongocrypt_ctx_encrypt_ismaster_done(mongocrypt_ctx_t *ctx) {
         return false;
     }
 
+    const int need_keys = _fle2_collect_keys_for_encrypted_fields(ctx);
+    if (need_keys == -1) {
+        return false;
+    }
+
     if (ctx->state == MONGOCRYPT_CTX_NEED_MONGO_MARKINGS) {
-        if (ectx->bypass_query_analysis) {
+        if (ectx->bypass_query_analysis || need_keys == 1) {
             /* Keys may have been requested for compactionTokens.
              * Finish key requests.
              */

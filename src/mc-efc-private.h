@@ -37,6 +37,7 @@ typedef enum _supported_query_type_flags {
 typedef struct _mc_EncryptedField_t {
     supported_query_type_flags supported_queries;
     _mongocrypt_buffer_t keyId;
+    const char *keyAltName;
     const char *path;
     struct _mc_EncryptedField_t *next;
 } mc_EncryptedField_t;

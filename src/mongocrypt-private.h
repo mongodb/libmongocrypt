@@ -175,4 +175,6 @@ bool _mongocrypt_needs_credentials_for_provider(mongocrypt_t *crypt,
                                                 _mongocrypt_kms_provider_t provider,
                                                 const char *name);
 
+void _bson_value_from_string(const char *string, bson_value_t *value);
+
 #endif /* MONGOCRYPT_PRIVATE_H */

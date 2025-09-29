@@ -16,11 +16,12 @@
 
 #include "mongocrypt-key-broker-private.h"
 #include "mongocrypt-key-private.h"
+#include "mongocrypt-private.h"
 #include "mongocrypt.h"
 #include "test-mongocrypt.h"
 
 /* Given a string, populate a bson_value_t for that string */
-static void _bson_value_from_string(char *string, bson_value_t *value) {
+void _bson_value_from_string(const char *string, bson_value_t *value) {
     bson_t *bson;
     bson_iter_t iter;
 

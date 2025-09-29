@@ -6063,8 +6063,6 @@ static void _test_qe_keyAltName(_mongocrypt_tester_t *tester) {
     {
         mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_SKIP_INIT);
 
-        // Q: Do we need the server to support keyAltName in encryptedFields? A:
-
         // Specify a local encryptedFieldsMap with keyAltName:
         mongocrypt_binary_t *encrypted_fields_map = TEST_BSON_STR(
             BSON_STR({"db.coll" : {"fields" : [ {"path" : "secret", "bsonType" : "string", "keyAltName" : "foo"} ]}}));
