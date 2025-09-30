@@ -81,10 +81,13 @@ void _usleep(int64_t usec) {
 }
 
 #define TEST_DATA_COUNT_INC(var)                                                                                       \
-    (var)++;                                                                                                           \
-    if ((var) >= TEST_DATA_COUNT) {                                                                                    \
-        TEST_ERROR("TEST_DATA_COUNT exceeded for %s. Increment TEST_DATA_COUNT.", #var);                               \
-    }
+    if (1) {                                                                                                           \
+        (var)++;                                                                                                       \
+        if ((var) >= TEST_DATA_COUNT) {                                                                                \
+            TEST_ERROR("TEST_DATA_COUNT exceeded for %s. Increment TEST_DATA_COUNT.", #var);                           \
+        }                                                                                                              \
+    } else                                                                                                             \
+        ((void)0)
 
 static void _load_json(_mongocrypt_tester_t *tester, const char *path) {
     bson_t as_bson;
@@ -206,29 +209,34 @@ bson_t *_mongocrypt_tester_file_as_bson(_mongocrypt_tester_t *tester, const char
     return bson;
 }
 
-bson_t *_mongocrypt_tester_bson_from_json(_mongocrypt_tester_t *tester, const char *json, ...) {
-    va_list ap;
-    char *full_json;
-    bson_t *bson;
-    bson_error_t error;
-    char *c;
+bson_t *_mongocrypt_tester_bson_from_str(_mongocrypt_tester_t *tester, const char *json) {
+    char *const full_json = bson_strdup(json);
 
-    va_start(ap, json);
-    full_json = bson_strdupv_printf(json, ap);
     /* Replace ' with " */
-    for (c = full_json; *c; c++) {
+    for (char *c = full_json; *c; c++) {
         if (*c == '\'') {
             *c = '"';
         }
     }
 
-    va_end(ap);
-    bson = &tester->test_bson[tester->bson_count];
+    bson_error_t error;
+    bson_t *const bson = &tester->test_bson[tester->bson_count];
     TEST_DATA_COUNT_INC(tester->bson_count);
-    if (!bson_init_from_json(bson, full_json, strlen(full_json), &error)) {
+    if (!bson_init_from_json(bson, full_json, -1, &error)) {
         TEST_STDERR_PRINTF("%s", error.message);
         abort();
     }
+    bson_free(full_json);
+    return bson;
+}
+
+bson_t *_mongocrypt_tester_bson_from_json(_mongocrypt_tester_t *tester, const char *json, ...) {
+    va_list ap;
+    va_start(ap, json);
+    char *const full_json = bson_strdupv_printf(json, ap);
+    va_end(ap);
+
+    bson_t *const bson = _mongocrypt_tester_bson_from_str(tester, full_json);
     bson_free(full_json);
     return bson;
 }
@@ -283,41 +291,30 @@ bson_t *tmp_bsonf(_mongocrypt_tester_t *tester, const char *fmt, ...) {
 #undef ENSURE_CAPACITY
 
     dst[dst_len] = '\0';
-    bson_t *tmp = TMP_BSON(dst);
+    bson_t *tmp = TMP_BSON_STR(dst);
     va_end(arg);
     bson_free(dst);
     return tmp;
 }
 
-mongocrypt_binary_t *_mongocrypt_tester_bin_from_json(_mongocrypt_tester_t *tester, const char *json, ...) {
-    va_list ap;
-    char *full_json;
-    bson_t *bson;
-    mongocrypt_binary_t *bin;
-    bson_error_t error;
-    char *c;
-
-    va_start(ap, json);
-    full_json = bson_strdupv_printf(json, ap);
-    /* Replace ' with " */
-    for (c = full_json; *c; c++) {
-        if (*c == '\'') {
-            *c = '"';
-        }
-    }
-
-    va_end(ap);
-    bson = &tester->test_bson[tester->bson_count];
-    TEST_DATA_COUNT_INC(tester->bson_count);
-    if (!bson_init_from_json(bson, full_json, strlen(full_json), &error)) {
-        TEST_STDERR_PRINTF("failed to parse JSON %s: %s", error.message, json);
-        abort();
-    }
-    bin = mongocrypt_binary_new();
+mongocrypt_binary_t *_mongocrypt_tester_bin_from_str(_mongocrypt_tester_t *tester, const char *json) {
+    mongocrypt_binary_t *const bin = mongocrypt_binary_new();
     tester->test_bin[tester->bin_count] = bin;
     TEST_DATA_COUNT_INC(tester->bin_count);
+
+    bson_t *const bson = _mongocrypt_tester_bson_from_str(tester, json);
     bin->data = (uint8_t *)bson_get_data(bson);
     bin->len = bson->len;
+    return bin;
+}
+
+mongocrypt_binary_t *_mongocrypt_tester_bin_from_json(_mongocrypt_tester_t *tester, const char *json, ...) {
+    va_list ap;
+    va_start(ap, json);
+    char *const full_json = bson_strdupv_printf(json, ap);
+    va_end(ap);
+
+    mongocrypt_binary_t *const bin = _mongocrypt_tester_bin_from_str(tester, full_json);
     bson_free(full_json);
     return bin;
 }
@@ -459,8 +456,8 @@ const char *_mongocrypt_tester_plaintext(_mongocrypt_tester_t *tester) {
     status = mongocrypt_status_new();
     ASSERT_OR_PRINT(_mongocrypt_marking_parse_unowned(&buf, &marking, status), status);
     mongocrypt_status_destroy(status);
-    BSON_ASSERT(BSON_ITER_HOLDS_UTF8(&marking.v_iter));
-    return bson_iter_utf8(&marking.v_iter, NULL);
+    BSON_ASSERT(BSON_ITER_HOLDS_UTF8(&marking.u.fle1.v_iter));
+    return bson_iter_utf8(&marking.u.fle1.v_iter, NULL);
 }
 
 mongocrypt_binary_t *_mongocrypt_tester_encrypted_doc(_mongocrypt_tester_t *tester) {
@@ -575,11 +572,6 @@ mongocrypt_t *_mongocrypt_tester_mongocrypt(tester_mongocrypt_flags flags) {
     if (flags & TESTER_MONGOCRYPT_WITH_CRYPT_SHARED_LIB) {
         mongocrypt_setopt_append_crypt_shared_lib_search_path(crypt, "$ORIGIN");
     }
-    if (flags & TESTER_MONGOCRYPT_WITH_RANGE_V2) {
-        ASSERT(mongocrypt_setopt_use_range_v2(crypt));
-    } else {
-        crypt->opts.use_range_v2 = false;
-    }
     if (flags & TESTER_MONGOCRYPT_WITH_SHORT_CACHE) {
         ASSERT(mongocrypt_setopt_key_expiration(crypt, 1));
     }
@@ -599,10 +591,6 @@ mongocrypt_t *_mongocrypt_tester_mongocrypt(tester_mongocrypt_flags flags) {
 
 bool _mongocrypt_init_for_test(mongocrypt_t *crypt) {
     BSON_ASSERT_PARAM(crypt);
-    // Even if the ENABLE_USE_RANGE_V2 compile flag is on, we should have range V2 off by default for testing, as many
-    // existing tests are based around range V2 being disabled. To use range V2, use the TESTER_MONGOCRYPT_WITH_RANGE_V2
-    // flag with the above function.
-    crypt->opts.use_range_v2 = false;
     return mongocrypt_init(crypt);
 }
 
@@ -876,14 +864,14 @@ static void _test_setopt_kms_providers(_mongocrypt_tester_t *tester) {
             mongocrypt_setopt_use_need_kms_credentials_state(crypt);
         }
         if (!test->errmsg) {
-            ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, TEST_BSON(test->value)), crypt);
+            ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, TEST_BSON_STR(test->value)), crypt);
             if (!test->errmsg_init) {
                 ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
             } else {
                 ASSERT_FAILS(_mongocrypt_init_for_test(crypt), crypt, test->errmsg_init);
             }
         } else {
-            ASSERT_FAILS(mongocrypt_setopt_kms_providers(crypt, TEST_BSON(test->value)), crypt, test->errmsg);
+            ASSERT_FAILS(mongocrypt_setopt_kms_providers(crypt, TEST_BSON_STR(test->value)), crypt, test->errmsg);
         }
         mongocrypt_destroy(crypt);
     }
@@ -930,7 +918,7 @@ static void test_tmp_bsonf(_mongocrypt_tester_t *tester) {
 bool _aes_ctr_is_supported_by_os = true;
 
 int main(int argc, char **argv) {
-    _mongocrypt_tester_t tester = {0};
+    static _mongocrypt_tester_t tester = {0};
     int i;
 
     TEST_PRINTF("Pass a list of patterns to run a subset of tests.\n");
@@ -989,11 +977,13 @@ int main(int argc, char **argv) {
     _mongocrypt_tester_install_fle2_payload_iup_v2(&tester);
     _mongocrypt_tester_install_fle2_payload_find_equality_v2(&tester);
     _mongocrypt_tester_install_fle2_payload_find_range_v2(&tester);
+    _mongocrypt_tester_install_fle2_payload_find_text(&tester);
     _mongocrypt_tester_install_fle2_tag_and_encrypted_metadata_block(&tester);
     _mongocrypt_tester_install_range_encoding(&tester);
     _mongocrypt_tester_install_range_edge_generation(&tester);
     _mongocrypt_tester_install_range_mincover(&tester);
     _mongocrypt_tester_install_mc_RangeOpts(&tester);
+    _mongocrypt_tester_install_mc_TextOpts(&tester);
     _mongocrypt_tester_install_mc_FLE2RangeFindDriverSpec(&tester);
     _mongocrypt_tester_install_gcp_auth(&tester);
     _mongocrypt_tester_install_mc_reader(&tester);

@@ -30,7 +30,6 @@ static void test_mc_RangeOpts_parse(_mongocrypt_tester_t *tester) {
         int64_t expectSparsity;
         mc_optional_uint32_t expectPrecision;
         mc_optional_int32_t expectTrimFactor;
-        bool useRangeV2;
     } testcase;
 
     testcase tests[] = {
@@ -62,24 +61,17 @@ static void test_mc_RangeOpts_parse(_mongocrypt_tester_t *tester) {
         {.desc = "Requires precision for double when only min is set",
          .in = RAW_STRING({"min" : 0.0, "sparsity" : {"$numberLong" : "1"}}),
          .expectError = "expected 'precision'"},
-        // Once `use_range_v2` is default true, this test may be removed.
-        {.desc = "Fails when trim factor is set but Range V2 is disabled",
-         .in = RAW_STRING({"trimFactor" : 1, "sparsity" : {"$numberLong" : "1"}}),
-         .expectError = "'trimFactor' is not supported for QE range v1"},
         {.desc = "Works when trim factor is set and Range V2 is enabled",
          .in = RAW_STRING({"trimFactor" : 1, "sparsity" : {"$numberLong" : "1"}}),
-         .useRangeV2 = true,
          .expectSparsity = 1,
          .expectTrimFactor = OPT_I32(1)},
         {.desc = "Does not require sparsity",
          .in = RAW_STRING({"min" : 123, "max" : 456}),
-         .useRangeV2 = true,
          .expectSparsity = mc_FLERangeSparsityDefault,
          .expectMin = OPT_I32_C(123),
          .expectMax = OPT_I32_C(456)},
         {.desc = "Errors on negative trim factor",
          .in = RAW_STRING({"trimFactor" : -1, "sparsity" : {"$numberLong" : "1"}}),
-         .useRangeV2 = true,
          .expectError = "'trimFactor' must be non-negative"},
     };
 
@@ -88,7 +80,7 @@ static void test_mc_RangeOpts_parse(_mongocrypt_tester_t *tester) {
         mongocrypt_status_t *status = mongocrypt_status_new();
         mc_RangeOpts_t ro;
         TEST_PRINTF("running test_mc_RangeOpts_parse subtest: %s\n", test->desc);
-        bool ret = mc_RangeOpts_parse(&ro, TMP_BSON(test->in), test->useRangeV2, status);
+        bool ret = mc_RangeOpts_parse(&ro, TMP_BSON_STR(test->in), status);
         if (!test->expectError) {
             ASSERT_OK_STATUS(ret, status);
             ASSERT_CMPINT(test->expectMin.set, ==, ro.min.set);
@@ -119,19 +111,12 @@ static void test_mc_RangeOpts_to_FLE2RangeInsertSpec(_mongocrypt_tester_t *teste
         const char *v;
         const char *expectError;
         const char *expect;
-        // Most of the tests are for trim factor, so range V2 is default enabled.
-        bool disableRangeV2;
     } testcase;
 
     testcase tests[] = {
         {.desc = "Works",
          .in = RAW_STRING({"min" : 123, "max" : 456, "sparsity" : {"$numberLong" : "1"}}),
          .v = RAW_STRING({"v" : 789}),
-         .expect = RAW_STRING({"v" : {"v" : 789, "min" : 123, "max" : 456}})},
-        {.desc = "Trim factor not appended if range V2 disabled",
-         .in = RAW_STRING({"min" : 123, "max" : 456, "sparsity" : {"$numberLong" : "1"}}),
-         .v = RAW_STRING({"v" : 789}),
-         .disableRangeV2 = true,
          .expect = RAW_STRING({"v" : {"v" : 789, "min" : 123, "max" : 456}})},
         {.desc = "Works with precision",
          .in = RAW_STRING({"min" : 123.0, "max" : 456.0, "precision" : 2, "sparsity" : {"$numberLong" : "1"}}),
@@ -260,7 +245,7 @@ static void test_mc_RangeOpts_to_FLE2RangeInsertSpec(_mongocrypt_tester_t *teste
          .expectError = "Trim factor (64) must be less than the total number of bits (64) used to represent any "
                         "element in the domain."},
 
-#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT()
         {.desc = "tf bound check passes correctly for decimal with min, max, precision set (tf = 9, 2^9 < domain size "
                  "< 2^10)",
          .in = RAW_STRING({
@@ -317,12 +302,12 @@ static void test_mc_RangeOpts_to_FLE2RangeInsertSpec(_mongocrypt_tester_t *teste
         mongocrypt_status_t *status = mongocrypt_status_new();
         mc_RangeOpts_t ro;
         TEST_PRINTF("running test_mc_RangeOpts_to_FLE2RangeInsertSpec subtest: %s\n", test->desc);
-        ASSERT_OK_STATUS(mc_RangeOpts_parse(&ro, TMP_BSON(test->in), !test->disableRangeV2, status), status);
+        ASSERT_OK_STATUS(mc_RangeOpts_parse(&ro, TMP_BSON_STR(test->in), status), status);
         bson_t out = BSON_INITIALIZER;
-        bool ret = mc_RangeOpts_to_FLE2RangeInsertSpec(&ro, TMP_BSON(test->v), &out, !test->disableRangeV2, status);
+        bool ret = mc_RangeOpts_to_FLE2RangeInsertSpec(&ro, TMP_BSON_STR(test->v), &out, status);
         if (!test->expectError) {
             ASSERT_OK_STATUS(ret, status);
-            ASSERT_EQUAL_BSON(TMP_BSON(test->expect), &out);
+            ASSERT_EQUAL_BSON(TMP_BSON_STR(test->expect), &out);
         } else {
             ASSERT_FAILS_STATUS(ret, status, test->expectError);
         }

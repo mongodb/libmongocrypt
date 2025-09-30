@@ -96,8 +96,7 @@ static void _test_FLE2EncryptionPlaceholder_range_parse(_mongocrypt_tester_t *te
         {
             mc_FLE2RangeInsertSpec_t spec;
 
-            ASSERT_OK_STATUS(mc_FLE2RangeInsertSpec_parse(&spec, &placeholder.v_iter, false /* use_range_v2 */, status),
-                             status);
+            ASSERT_OK_STATUS(mc_FLE2RangeInsertSpec_parse(&spec, &placeholder.v_iter, status), status);
 
             ASSERT(BSON_ITER_HOLDS_INT32(&spec.v));
             ASSERT_CMPINT32(bson_iter_int32(&spec.v), ==, 123456);
@@ -153,8 +152,7 @@ static void _test_FLE2EncryptionPlaceholder_range_parse(_mongocrypt_tester_t *te
         {
             mc_FLE2RangeFindSpec_t spec;
 
-            ASSERT_OK_STATUS(mc_FLE2RangeFindSpec_parse(&spec, &placeholder.v_iter, false /* use_range_v2 */, status),
-                             status);
+            ASSERT_OK_STATUS(mc_FLE2RangeFindSpec_parse(&spec, &placeholder.v_iter, status), status);
 
             ASSERT(spec.edgesInfo.set);
 
@@ -225,8 +223,7 @@ static void _test_FLE2EncryptionPlaceholder_range_parse(_mongocrypt_tester_t *te
         {
             mc_FLE2RangeFindSpec_t spec;
 
-            ASSERT_OK_STATUS(mc_FLE2RangeFindSpec_parse(&spec, &placeholder.v_iter, false /* use_range_v2 */, status),
-                             status);
+            ASSERT_OK_STATUS(mc_FLE2RangeFindSpec_parse(&spec, &placeholder.v_iter, status), status);
 
             ASSERT(spec.edgesInfo.set);
 
@@ -295,8 +292,7 @@ static void _test_FLE2EncryptionPlaceholder_range_parse(_mongocrypt_tester_t *te
         {
             mc_FLE2RangeInsertSpec_t spec;
 
-            ASSERT_OK_STATUS(mc_FLE2RangeInsertSpec_parse(&spec, &placeholder.v_iter, false /* use_range_v2 */, status),
-                             status);
+            ASSERT_OK_STATUS(mc_FLE2RangeInsertSpec_parse(&spec, &placeholder.v_iter, status), status);
 
             ASSERT(BSON_ITER_HOLDS_DOUBLE(&spec.v));
             ASSERT_CMPDOUBLE(bson_iter_double(&spec.v), ==, 123.456);
@@ -321,15 +317,17 @@ static bool _parse_text_search_spec_from_placeholder(_mongocrypt_tester_t *teste
                                                      const char *spec_json_in,
                                                      mc_FLE2TextSearchInsertSpec_t *spec_out,
                                                      mongocrypt_status_t *status_out) {
-    const char *template = RAW_STRING({
-        "t" : {"$numberInt" : "1"},
-        "a" : {"$numberInt" : "4"},
-        "ki" : {"$binary" : {"base64" : "EjRWeBI0mHYSNBI0VniQEg==", "subType" : "04"}},
-        "ku" : {"$binary" : {"base64" : "q83vqxI0mHYSNBI0VniQEg==", "subType" : "04"}},
-        "v" : % s,
-        "cm" : {"$numberLong" : "7"}
-    });
-    bson_t *const as_bson = TMP_BSON(template, spec_json_in);
+#define PLACEHOLDER_TEMPLATE                                                                                           \
+    RAW_STRING({                                                                                                       \
+        "t" : {"$numberInt" : "1"},                                                                                    \
+        "a" : {"$numberInt" : "4"},                                                                                    \
+        "ki" : {"$binary" : {"base64" : "EjRWeBI0mHYSNBI0VniQEg==", "subType" : "04"}},                                \
+        "ku" : {"$binary" : {"base64" : "q83vqxI0mHYSNBI0VniQEg==", "subType" : "04"}},                                \
+        "v" : MC_BSON,                                                                                                 \
+        "cm" : {"$numberLong" : "7"}                                                                                   \
+    })
+
+    bson_t *const as_bson = TMP_BSONF(PLACEHOLDER_TEMPLATE, TMP_BSON_STR(spec_json_in));
 
     mc_FLE2EncryptionPlaceholder_t placeholder;
     mc_FLE2EncryptionPlaceholder_init(&placeholder);
@@ -355,6 +353,8 @@ static bool _parse_text_search_spec_from_placeholder(_mongocrypt_tester_t *teste
 
     mc_FLE2EncryptionPlaceholder_cleanup(&placeholder);
     return res;
+
+#undef PLACEHOLDER_TEMPLATE
 }
 
 static void _test_FLE2EncryptionPlaceholder_textSearch_parse(_mongocrypt_tester_t *tester) {
@@ -387,17 +387,6 @@ static void _test_FLE2EncryptionPlaceholder_textSearch_parse(_mongocrypt_tester_
         ASSERT(spec.prefix.set == true);
         ASSERT(spec.prefix.value.lb == 400);
         ASSERT(spec.prefix.value.ub == 400);
-        mongocrypt_status_destroy(status);
-    }
-
-    // Test type=MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT without substring, suffix, or prefix specs
-    {
-        const char *input = RAW_STRING({"v" : "foobar", "casef" : false, "diacf" : true});
-        mongocrypt_status_t *status = mongocrypt_status_new();
-        mc_FLE2TextSearchInsertSpec_t spec;
-        ASSERT_FAILS_STATUS(_parse_text_search_spec_from_placeholder(tester, input, &spec, status),
-                            status,
-                            "Must have a substring, suffix, or prefix index specification");
         mongocrypt_status_destroy(status);
     }
 
@@ -441,7 +430,7 @@ static void _test_FLE2EncryptionPlaceholder_textSearch_parse(_mongocrypt_tester_
 }
 
 static void _test_FLE2EncryptionPlaceholder_parse_errors(_mongocrypt_tester_t *tester) {
-    bson_t *input_bson = TMP_BSON(BSON_STR({
+    bson_t *input_bson = TMP_BSON_STR(BSON_STR({
         "t" : {"$numberInt" : "1"},
         "a" : {"$numberInt" : "1"},
         "ki" : {"$binary" : {"base64" : "EjRWeBI0mHYSNBI0VniQEg==", "subType" : "04"}},

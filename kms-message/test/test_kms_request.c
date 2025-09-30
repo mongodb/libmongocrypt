@@ -43,15 +43,15 @@
 
 #include "test_kms_assert.h"
 
-const char *aws_test_suite_dir = "aws-sig-v4-test-suite";
+static const char *aws_test_suite_dir = "aws-sig-v4-test-suite";
 
-const char *skipped_aws_tests[] = {
+static const char *skipped_aws_tests[] = {
    /* we don't yet support temporary security credentials provided by the AWS
     * Security Token Service (AWS STS). see post-sts-token/readme.txt */
    "post-sts-token",
 };
 
-bool
+static bool
 skip_aws_test (const char *test_name)
 {
    size_t i;
@@ -65,7 +65,7 @@ skip_aws_test (const char *test_name)
    return false;
 }
 
-bool
+static bool
 ends_with (const char *str, const char *suffix)
 {
    size_t str_len = strlen (str);
@@ -79,7 +79,7 @@ ends_with (const char *str, const char *suffix)
 }
 
 
-char *
+static char *
 last_segment (const char *str)
 {
    const char *p = str + strlen (str);
@@ -93,7 +93,7 @@ last_segment (const char *str)
    return strdup (str);
 }
 
-char *
+static char *
 test_file_path (const char *path, const char *suffix)
 {
    char *r;
@@ -105,7 +105,7 @@ test_file_path (const char *path, const char *suffix)
    return r;
 }
 
-void
+static void
 realloc_buffer (char **buffer, size_t *n, size_t len)
 {
    if (*buffer == NULL) {
@@ -119,12 +119,12 @@ realloc_buffer (char **buffer, size_t *n, size_t len)
    *n = len;
 }
 
-ssize_t
+static ssize_t
 test_getline (char **lineptr, size_t *n, FILE *stream)
 {
    if (*lineptr == NULL && *n == 0) {
       realloc_buffer (lineptr, n, 128);
-   };
+   }
 
    // Sanity check
    if ((*lineptr == NULL && *n != 0) || (*lineptr != NULL && *n == 0)) {
@@ -164,7 +164,7 @@ test_getline (char **lineptr, size_t *n, FILE *stream)
    }
 }
 
-char *
+static char *
 read_test (const char *path, const char *suffix)
 {
    char *file_path = test_file_path (path, suffix);
@@ -210,7 +210,7 @@ read_test (const char *path, const char *suffix)
    return str;
 }
 
-void
+static void
 set_test_date (kms_request_t *request)
 {
    struct tm tm;
@@ -230,7 +230,7 @@ set_test_date (kms_request_t *request)
    KMS_ASSERT (kms_request_set_date (request, &tm));
 }
 
-kms_request_t *
+static kms_request_t *
 read_req (const char *path)
 {
    kms_request_t *request;
@@ -305,7 +305,7 @@ read_req (const char *path)
    return request;
 }
 
-void
+static void
 test_compare (kms_request_t *request,
               char *(*func) (kms_request_t *),
               const char *dir_path,
@@ -330,31 +330,31 @@ test_compare (kms_request_t *request,
    free (test_name);
 }
 
-void
+static void
 test_compare_creq (kms_request_t *request, const char *dir_path)
 {
    test_compare (request, kms_request_get_canonical, dir_path, "creq");
 }
 
-void
+static void
 test_compare_sts (kms_request_t *request, const char *dir_path)
 {
    test_compare (request, kms_request_get_string_to_sign, dir_path, "sts");
 }
 
-void
+static void
 test_compare_authz (kms_request_t *request, const char *dir_path)
 {
    test_compare (request, kms_request_get_signature, dir_path, "authz");
 }
 
-void
+static void
 test_compare_sreq (kms_request_t *request, const char *dir_path)
 {
    test_compare (request, kms_request_get_signed, dir_path, "sreq");
 }
 
-void
+static void
 aws_sig_v4_test (const char *dir_path)
 {
    kms_request_t *request;
@@ -367,7 +367,7 @@ aws_sig_v4_test (const char *dir_path)
    kms_request_destroy (request);
 }
 
-bool
+static bool
 all_aws_sig_v4_tests (const char *path, const char *selected)
 {
    /* Amazon supplies tests, one per directory, 5 files per test, see
@@ -422,7 +422,7 @@ done:
 }
 
 /* docs.aws.amazon.com/general/latest/gr/sigv4-calculate-signature.html */
-void
+static void
 example_signature_test (void)
 {
    const char *expect =
@@ -446,7 +446,7 @@ example_signature_test (void)
    kms_request_destroy (request);
 }
 
-void
+static void
 path_normalization_test (void)
 {
    const char *tests[][2] = {
@@ -501,7 +501,7 @@ path_normalization_test (void)
    }
 }
 
-kms_request_t *
+static kms_request_t *
 make_test_request (void)
 {
    kms_request_t *request = kms_request_new ("POST", "/", NULL);
@@ -515,7 +515,7 @@ make_test_request (void)
    return request;
 }
 
-void
+static void
 host_test (void)
 {
    kms_request_t *request = make_test_request ();
@@ -523,7 +523,7 @@ host_test (void)
    kms_request_destroy (request);
 }
 
-void
+static void
 content_length_test (void)
 {
    const char *payload = "foo-payload";
@@ -533,7 +533,7 @@ content_length_test (void)
    kms_request_destroy (request);
 }
 
-void
+static void
 bad_query_test (void)
 {
    kms_request_t *request = kms_request_new ("GET", "/?asdf", NULL);
@@ -541,7 +541,7 @@ bad_query_test (void)
    kms_request_destroy (request);
 }
 
-void
+static void
 append_header_field_value_test (void)
 {
    kms_request_t *request = kms_request_new ("GET", "/", NULL);
@@ -552,7 +552,7 @@ append_header_field_value_test (void)
    kms_request_destroy (request);
 }
 
-void
+static void
 set_date_test (void)
 {
 // Windows CRT asserts on this negative test because it is a negative test
@@ -568,7 +568,7 @@ set_date_test (void)
 #endif
 }
 
-void
+static void
 multibyte_test (void)
 {
 /* euro currency symbol */
@@ -597,13 +597,14 @@ multibyte_test (void)
 #undef EU
 }
 
-void
+static void
 connection_close_test (void)
 {
    kms_request_opt_t *opt;
    kms_request_t *request;
 
    opt = kms_request_opt_new ();
+   ASSERT (opt);
    kms_request_opt_set_connection_close (opt, true);
 
    request = kms_request_new ("POST", "/", opt);
@@ -619,7 +620,7 @@ connection_close_test (void)
 }
 
 /* the ciphertext blob from a response to an "Encrypt" API call */
-const char ciphertext_blob[] =
+static const char ciphertext_blob[] =
    "\x01\x02\x02\x00\x78\xf3\x8e\xd8\xd4\xc6\xba\xfb\xa1\xcf\xc1\x1e\x68\xf2"
    "\xa1\x91\x9e\x36\x4d\x74\xa2\xc4\x9e\x30\x67\x08\x53\x33\x0d\xcd\xe0\xc9"
    "\x1b\x01\x60\x30\xd4\x73\x9e\x90\x1f\xa7\x43\x55\x84\x26\xf9\xd5\xf0\xb1"
@@ -630,7 +631,7 @@ const char ciphertext_blob[] =
    "\x03\xcd\xcb\xe2\xac\x36\x4f\x73\xdb\x1b\x73\x2e\x33\xda\x45\x51\xf4\xcd"
    "\xc0\xff\xd2\xe1\xb9\xc4\xc2\x0e\xbf\x53\x90\x46\x18\x42";
 
-void
+static void
 decrypt_request_test (void)
 {
    kms_request_t *request = kms_decrypt_request_new (
@@ -649,7 +650,7 @@ decrypt_request_test (void)
    kms_request_destroy (request);
 }
 
-void
+static void
 encrypt_request_test (void)
 {
    char *plaintext = "foobar";
@@ -669,7 +670,7 @@ encrypt_request_test (void)
    kms_request_destroy (request);
 }
 
-void
+static void
 kv_list_del_test (void)
 {
    kms_kv_list_t *lst = kms_kv_list_new ();
@@ -696,7 +697,7 @@ kv_list_del_test (void)
    kms_kv_list_destroy (lst);
 }
 
-void
+static void
 b64_test (void)
 {
    uint8_t *expected = (uint8_t *) "\x01\x02\x03\x04";
@@ -712,7 +713,7 @@ b64_test (void)
    KMS_ASSERT (0 == memcmp (expected, data, 4));
 }
 
-void
+static void
 b64_b64url_test (void)
 {
    char base64_data[64];
@@ -744,7 +745,7 @@ b64_b64url_test (void)
    ASSERT_CMPSTR (base64_data, "PDw_Pz8-Pg==");
 }
 
-void
+static void
 kms_response_parser_test (void)
 {
    kms_response_parser_t *parser = kms_response_parser_new ();
@@ -760,7 +761,7 @@ kms_response_parser_test (void)
       kms_response_parser_feed (parser, (uint8_t *) "This is a test.", 15));
    ASSERT (0 == kms_response_parser_wants_bytes (parser, 123));
    response = kms_response_parser_get_response (parser);
-   ASSERT (response->status == 200)
+   ASSERT (response->status == 200);
    ASSERT_CMPSTR (response->body->str, "This is a test.");
 
    kms_response_destroy (response);
@@ -958,7 +959,7 @@ kms_response_parser_files (void)
       _field = kms_request_str_new ();  \
    } while (0)
 
-void
+static void
 kms_request_validate_test (void)
 {
    kms_request_t *request = NULL;
@@ -1106,6 +1107,7 @@ kms_request_kmip_prohibited_test (void)
    kms_request_t *req;
 
    opt = kms_request_opt_new ();
+   ASSERT (opt);
    kms_request_opt_set_provider (opt, KMS_REQUEST_PROVIDER_KMIP);
    req = kms_request_new ("method", "path_and_query", opt);
    ASSERT_REQUEST_ERROR (req, "Function not applicable to KMIP");
@@ -1141,6 +1143,7 @@ test_request_newlines (void)
    // Test kms_request_to_string.
    {
       opt = kms_request_opt_new ();
+      ASSERT (opt);
       kms_request_opt_set_connection_close (opt, true);
       ASSERT (kms_request_opt_set_provider (opt, KMS_REQUEST_PROVIDER_AZURE));
       req = kms_azure_request_wrapkey_new ("example-host",
@@ -1167,6 +1170,7 @@ test_request_newlines (void)
    // Test kms_request_get_signed.
    {
       opt = kms_request_opt_new ();
+      ASSERT (opt);
       kms_request_opt_set_connection_close (opt, true);
       req = kms_caller_identity_request_new (opt);
       ASSERT_REQUEST_OK (req);
@@ -1242,7 +1246,7 @@ main (int argc, char *argv[])
 
    int ret = kms_message_init ();
    if (ret != 0) {
-      TEST_PRINTF ("kms_message_init failed: 0x%x\n", ret);
+      TEST_PRINTF ("kms_message_init failed: 0x%d\n", ret);
       abort ();
    }
 

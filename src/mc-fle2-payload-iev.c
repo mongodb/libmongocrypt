@@ -27,7 +27,8 @@
 #define CHECK_AND_RETURN(x)                                                                                            \
     if (!(x)) {                                                                                                        \
         return false;                                                                                                  \
-    }
+    } else                                                                                                             \
+        ((void)0)
 
 struct _mc_FLE2IndexedEqualityEncryptedValue_t {
     _mongocrypt_buffer_t S_KeyId;
@@ -58,7 +59,7 @@ bool mc_FLE2IndexedEqualityEncryptedValueTokens_init_from_buffer(mc_FLE2IndexedE
     BSON_ASSERT_PARAM(buf);
 
     mc_reader_t reader;
-    mc_reader_init_from_buffer(&reader, buf, __FUNCTION__);
+    mc_reader_init_from_buffer(&reader, buf, __func__);
 
     CHECK_AND_RETURN(mc_reader_read_u64(&reader, &tokens->counter, status));
 
@@ -78,7 +79,7 @@ static bool mc_fle2IndexedEncryptedValue_encrypt(_mongocrypt_crypto_t *crypto,
                                                  _mongocrypt_buffer_t *out,
                                                  mongocrypt_status_t *status);
 
-bool safe_uint32_t_sum(const uint32_t a, const uint32_t b, uint32_t *out, mongocrypt_status_t *status) {
+static bool safe_uint32_t_sum(const uint32_t a, const uint32_t b, uint32_t *out, mongocrypt_status_t *status) {
     if (a > UINT32_MAX - b) {
         CLIENT_ERR("safe_uint32_t_sum overflow, %" PRIu32 ", %" PRIu32, a, b);
         return false;
@@ -98,7 +99,8 @@ bool mc_FLE2IndexedEncryptedValue_write(_mongocrypt_crypto_t *crypto,
 #define CHECK_AND_GOTO(x)                                                                                              \
     if (!(x)) {                                                                                                        \
         goto cleanup;                                                                                                  \
-    }
+    } else                                                                                                             \
+        ((void)0)
 
     bool ok = false;
 
@@ -130,12 +132,12 @@ bool mc_FLE2IndexedEncryptedValue_write(_mongocrypt_crypto_t *crypto,
                                                         &encryption_out,
                                                         status));
     mc_writer_t writer;
-    mc_writer_init_from_buffer(&writer, buf, __FUNCTION__);
+    mc_writer_init_from_buffer(&writer, buf, __func__);
 
     const uint8_t subtype = (uint8_t)MC_SUBTYPE_FLE2IndexedEqualityEncryptedValue;
 
     if (((int)original_bson_type < 0) || ((int)original_bson_type > 0xFF)) {
-        CLIENT_ERR("Field 't' must be a valid BSON type, got: %d", original_bson_type);
+        CLIENT_ERR("Field 't' must be a valid BSON type, got: %d", (int)original_bson_type);
         CHECK_AND_GOTO(false);
     }
 
@@ -164,7 +166,8 @@ static bool mc_fle2IndexedEncryptedValue_encrypt(_mongocrypt_crypto_t *crypto,
 #define CHECK_AND_GOTO(x)                                                                                              \
     if (!(x)) {                                                                                                        \
         goto cleanup;                                                                                                  \
-    }
+    } else                                                                                                             \
+        ((void)0)
 
     const _mongocrypt_value_encryption_algorithm_t *fle2alg = _mcFLE2Algorithm();
     bool ok = false;
@@ -191,7 +194,7 @@ static bool mc_fle2IndexedEncryptedValue_encrypt(_mongocrypt_crypto_t *crypto,
     _mongocrypt_buffer_resize(out, ciphertext_len);
 
     mc_writer_t writer;
-    mc_writer_init_from_buffer(&writer, &in, __FUNCTION__);
+    mc_writer_init_from_buffer(&writer, &in, __func__);
 
     uint64_t length;
     length = ClientEncryptedValue->len;
@@ -236,7 +239,7 @@ bool mc_FLE2IndexedEncryptedValue_parse(mc_FLE2IndexedEncryptedValue_t *iev,
     }
 
     mc_reader_t reader;
-    mc_reader_init_from_buffer(&reader, buf, __FUNCTION__);
+    mc_reader_init_from_buffer(&reader, buf, __func__);
 
     CHECK_AND_RETURN(mc_reader_read_u8(&reader, &iev->fle_blob_subtype, status));
 
@@ -364,7 +367,7 @@ static bool mc_FLE2IndexedEncryptedValue_decrypt(_mongocrypt_crypto_t *crypto,
     }
 
     mc_reader_t reader;
-    mc_reader_init_from_buffer(&reader, &iev->Inner, __FUNCTION__);
+    mc_reader_init_from_buffer(&reader, &iev->Inner, __func__);
 
     /* Parse Inner for K_KeyId. */
     uint64_t length; /* length is sizeof(K_KeyId) + ClientEncryptedValue_length. */

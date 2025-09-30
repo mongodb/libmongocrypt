@@ -106,7 +106,7 @@ functions:
           export LSAN_OPTIONS="suppressions=$LIBMONGOCRYPT_DIR/.lsan-suppressions"
           export VS_VERSION=${vs_version|}
           export VS_TARGET_ARCH=${vs_target_arch|amd64}
-          export USE_NINJA=ON
+          export USE_NINJA=${use_ninja|ON}
           env ${compile_env|} \
             bash "$EVG_DIR/env-run.sh" \
               bash "$EVG_DIR/build_all.sh"
@@ -151,7 +151,7 @@ functions:
     - command: "shell.exec"
       params:
         script: |-
-          if test "$OS_NAME" != "windows"; then export USE_NINJA=ON; fi
+          if test "$OS_NAME" != "windows"; then export USE_NINJA=${use_ninja|ON}; fi
           env ${compile_env|} CONFIGURE_ONLY=ON ${clang_env|CC=clang CXX=clang++} \
               bash libmongocrypt/.evergreen/build_all.sh
           ./libmongocrypt/.evergreen/clang-tidy.sh
@@ -164,12 +164,18 @@ functions:
           cd ./libmongocrypt/bindings/python && ${test_env|} ./.evergreen/test.sh
 
   "test python integ":
+    - command: ec2.assume_role
+      params:
+        role_arn: ${drivers_test_secrets_role}
     - command: subprocess.exec
       params:
         binary: bash
         include_expansions_in_env:
           - project_directory
           - variant_name
+          - AWS_SECRET_ACCESS_KEY
+          - AWS_ACCESS_KEY_ID
+          - AWS_SESSION_TOKEN
         args:
           - ./libmongocrypt/bindings/python/.evergreen/integ-setup.sh
     - command: expansions.update
@@ -306,7 +312,7 @@ functions:
         script: |
           set -ex
           cd ./libmongocrypt/bindings/python
-          PYTHON=${PYTHON} ./release.sh
+          PYTHON=${PYTHON} ./scripts/release.sh
 
   "upload python release":
     - command: archive.targz_pack
@@ -383,10 +389,7 @@ functions:
         script: |
           # Authenticate to artifactory.
           echo "${artifactory_password}" | docker login --password-stdin --username "${artifactory_username}" artifactory.corp.mongodb.com
-          # TODO(MONGOCRYPT-747): remove `--persist-build=false`. 
-          # Pass `--persist-build=false` to avoid using Docker Hub.
-          # Earthly hardcodes use of docker/dockerfile-copy:v0.1.9 for the CACHE command.
-          bash ${workdir}/libmongocrypt/.evergreen/earthly.sh ${args} --persist-build=false
+          bash ${workdir}/libmongocrypt/.evergreen/earthly.sh ${args}
 
   sbom:
     - command: ec2.assume_role
@@ -556,11 +559,11 @@ tasks:
 - name: "release-python-linux"
   tags: ["release_python_tag"]
   run_on: ubuntu2004-large
-  exec_timeout_secs: 216000  # 60 minutes (manylinux task is slow).
+  exec_timeout_secs: 3600  # 60 minutes (manylinux task is slow).
   commands:
     - func: "fetch source"
     - func: "build python release"
-      vars: { PYTHON: /opt/python/3.8/bin/python3 }
+      vars: { PYTHON: /opt/python/3.9/bin/python3 }
     - func: "upload python release"
 
 - name: "release-python-windows"
@@ -569,7 +572,7 @@ tasks:
   commands:
     - func: "fetch source"
     - func: "build python release"
-      vars: { PYTHON: C:/python/Python38/python.exe }
+      vars: { PYTHON: C:/python/Python39/python.exe }
     - func: "upload python release"
 
 - name: "release-python-combine"
@@ -715,6 +718,10 @@ tasks:
     - variant: ubuntu2204-64
       name: build-and-test-and-upload
     - variant: ubuntu2204-arm64
+      name: build-and-test-and-upload
+    - variant: ubuntu2404-64
+      name: build-and-test-and-upload
+    - variant: ubuntu2404-arm64
       name: build-and-test-and-upload
     - variant: macos
       name: build-and-test-and-upload
@@ -877,6 +884,7 @@ tasks:
     - func: "setup packaging credentials"
     - func: "publish packages"
 - name: windows-upload-release
+  patchable: false # Garasign credentials are marked as "Admin only" in Evergreen and are not included in patch builds.
   depends_on:
   - variant: windows-test
     name: build-and-test-and-upload
@@ -967,8 +975,6 @@ tasks:
         shell: bash
         script: |-
           set -o errexit
-          # Authenticate to artifactory for signing image.
-          echo "${artifactory_password}" | docker login --password-stdin --username "${artifactory_username}" artifactory.corp.mongodb.com
           # Copy file to sign into `libmongocrypt` directory to be used by Earthly.
           cp libmongocrypt_upload.tar.gz libmongocrypt
     - func: "earthly" # Sign tarball.
@@ -1070,9 +1076,38 @@ tasks:
         working_dir: "./libmongocrypt"
         args:
           - "./.evergreen/benchmark-python.sh"
-    - command: "perf.send"
+    - command: shell.exec
       params:
-        file: libmongocrypt/bindings/python/results.json
+        script: |
+          # We use the requester expansion to determine whether the data is from a mainline evergreen run or not
+          if [ "${requester}" == "commit" ]; then
+            is_mainline=true
+          else
+            is_mainline=false
+          fi
+
+          # Parse the username out of the order_id. Patches append the username. The Signal Processing Service (SPS) endpoint does not need the other information.
+          parsed_order_id=$(echo "${revision_order_id}" | awk -F'_' '{print $NF}')
+
+          # Submit the performance data to the SPS endpoint
+          response=$(curl -s -w "\nHTTP_STATUS:%{http_code}" -X 'POST' \
+            "https://performance-monitoring-api.corp.mongodb.com/raw_perf_results/cedar_report?project=${project_id}&version=${version_id}&variant=${build_variant}&order=$parsed_order_id&task_name=${task_name}&task_id=${task_id}&execution=${execution}&mainline=$is_mainline" \
+            -H 'accept: application/json' \
+            -H 'Content-Type: application/json' \
+            -d @libmongocrypt/bindings/python/results.json)
+
+          http_status=$(echo "$response" | grep "HTTP_STATUS" | awk -F':' '{print $2}')
+          response_body=$(echo "$response" | sed '/HTTP_STATUS/d')
+
+          # We want to throw an error if the data was not successfully submitted
+          if [ "$http_status" -ne 200 ]; then
+            echo "Error: Received HTTP status $http_status"
+            echo "Response Body: $response_body"
+            exit 1
+          fi
+
+          echo "Response Body: $response_body"
+          echo "HTTP Status: $http_status"
 
 - name: sbom
   commands:
@@ -1160,15 +1195,6 @@ buildvariants:
   run_on: rhel83-zseries-small
   tasks:
   - build-and-test-and-upload
-- name: windows-vs2015-compile
-  display_name: "Windows VS 2015 compile"
-  run_on: windows-64-vs2015-test
-  expansions:
-    vs_version: "14"
-    vs_target_arch: amd64
-  tasks:
-  - build-and-test-and-upload
-  - build-and-test-shared-bson
 - name: windows-test
   display_name: "Windows 2016"
   run_on: windows-64-vs2017-test
@@ -1311,6 +1337,8 @@ buildvariants:
 - name: rhel-62-64-bit
   display_name: "RHEL 6.2 64-bit"
   run_on: rhel62-small
+  expansions:
+    compile_env: CFLAGS="-D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS" ADDITIONAL_CMAKE_FLAGS="-DENABLE_TESTS=OFF -DBUILD_TESTING=OFF"
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
@@ -1525,6 +1553,30 @@ buildvariants:
   - name: publish-packages
     distros:
     - ubuntu2004-small
+- name: ubuntu2404-64
+  display_name: "Ubuntu 24.04 64-bit"
+  run_on: ubuntu2404-small
+  expansions:
+    has_packages: true
+    packager_distro: ubuntu2404
+    packager_arch: x86_64
+  tasks:
+  - build-and-test-and-upload
+  - name: publish-packages
+    distros:
+    - ubuntu2004-small
+- name: ubuntu2404-arm64
+  display_name: "Ubuntu 24.04 arm64"
+  run_on: ubuntu2404-arm64-small
+  expansions:
+    has_packages: true
+    packager_distro: ubuntu2404
+    packager_arch: arm64
+  tasks:
+  - build-and-test-and-upload
+  - name: publish-packages
+    distros:
+    - ubuntu2004-small
 - name: ubuntu2204-64
   display_name: "Ubuntu 22.04 64-bit"
   run_on: ubuntu2204-small
@@ -1575,9 +1627,12 @@ buildvariants:
   run_on: macos-1100-arm64
   expansions:
     compile_env: MACOS_UNIVERSAL=ON CMAKE=/opt/homebrew/bin/cmake
+    # Disable Ninja to work around error "Bad CPU type in executable"
+    use_ninja: OFF
   tasks:
   - build-and-test-and-upload
-  - test-python
+  - name: test-python
+    distros: macos-14-arm64
 - name: windows-vs2017-32bit
   # Test Windows 32 bit builds for PHPC. PHPC builds libmongocrypt from source. See MONGOCRYPT-391.
   display_name: "Windows VS 2017 32-bit compile"

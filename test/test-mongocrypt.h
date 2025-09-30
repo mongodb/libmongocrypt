@@ -40,8 +40,6 @@ typedef enum tester_mongocrypt_flags {
     /// crypt_shared library must be present in the same directory as the test
     /// executable.
     TESTER_MONGOCRYPT_WITH_CRYPT_SHARED_LIB = 1 << 0,
-    /// Enable range V2
-    TESTER_MONGOCRYPT_WITH_RANGE_V2 = 1 << 2,
     /// Short cache expiration
     TESTER_MONGOCRYPT_WITH_SHORT_CACHE = 1 << 3,
     /// Do not call `mongocrypt_init` yet to allow for further configuration of the resulting `mongocrypt_t`.
@@ -49,7 +47,6 @@ typedef enum tester_mongocrypt_flags {
 } tester_mongocrypt_flags;
 
 /* Arbitrary max of 2148 instances of temporary test data. Increase as needed.
- * TODO(MONGOCRYPT-775) increasing further (e.g. 3000+) causes a segfault on Windows test runs. Revise.
  */
 #define TEST_DATA_COUNT 2148
 
@@ -195,6 +192,8 @@ void _mongocrypt_tester_install_fle2_payload_find_equality_v2(_mongocrypt_tester
 
 void _mongocrypt_tester_install_fle2_payload_find_range_v2(_mongocrypt_tester_t *tester);
 
+void _mongocrypt_tester_install_fle2_payload_find_text(_mongocrypt_tester_t *tester);
+
 void _mongocrypt_tester_install_fle2_tag_and_encrypted_metadata_block(_mongocrypt_tester_t *tester);
 
 void _mongocrypt_tester_install_gcp_auth(_mongocrypt_tester_t *tester);
@@ -206,6 +205,8 @@ void _mongocrypt_tester_install_range_edge_generation(_mongocrypt_tester_t *test
 void _mongocrypt_tester_install_range_mincover(_mongocrypt_tester_t *tester);
 
 void _mongocrypt_tester_install_mc_RangeOpts(_mongocrypt_tester_t *tester);
+
+void _mongocrypt_tester_install_mc_TextOpts(_mongocrypt_tester_t *tester);
 
 void _mongocrypt_tester_install_mc_FLE2RangeFindDriverSpec(_mongocrypt_tester_t *tester);
 
@@ -228,6 +229,11 @@ void _mongocrypt_tester_install_mc_schema_broker(_mongocrypt_tester_t *tester);
 /* Conveniences for getting test data. */
 
 /* Get a temporary bson_t from a JSON string. Do not free it. */
+bson_t *_mongocrypt_tester_bson_from_str(_mongocrypt_tester_t *tester, const char *json);
+#define TMP_BSON_STR(...) _mongocrypt_tester_bson_from_str(tester, __VA_ARGS__)
+
+/* Get a temporary bson_t from a formattable JSON string. Do not free it. */
+MLIB_ANNOTATE_PRINTF(2, 3)
 bson_t *_mongocrypt_tester_bson_from_json(_mongocrypt_tester_t *tester, const char *json, ...);
 #define TMP_BSON(...) _mongocrypt_tester_bson_from_json(tester, __VA_ARGS__)
 
@@ -246,6 +252,11 @@ bson_t *_mongocrypt_tester_file_as_bson(_mongocrypt_tester_t *tester, const char
 #define TEST_FILE_AS_BSON(path) _mongocrypt_tester_file_as_bson(tester, path)
 
 /* Get a temporary binary from a JSON string. Do not free it. */
+mongocrypt_binary_t *_mongocrypt_tester_bin_from_str(_mongocrypt_tester_t *tester, const char *json);
+#define TEST_BSON_STR(...) _mongocrypt_tester_bin_from_str(tester, __VA_ARGS__)
+
+/* Get a temporary binary from a formattable JSON string. Do not free it. */
+MLIB_ANNOTATE_PRINTF(2, 3)
 mongocrypt_binary_t *_mongocrypt_tester_bin_from_json(_mongocrypt_tester_t *tester, const char *json, ...);
 #define TEST_BSON(...) _mongocrypt_tester_bin_from_json(tester, __VA_ARGS__)
 

@@ -35,11 +35,20 @@ typedef struct {
     mc_substring_set_t *substring_set;
     // Encoded exact string.
     _mongocrypt_buffer_t exact;
+    // Total number of tags over all the sets and the exact string.
+    uint32_t msize;
 } mc_str_encode_sets_t;
 
 // Run StrEncode with the given spec.
 mc_str_encode_sets_t *mc_text_search_str_encode(const mc_FLE2TextSearchInsertSpec_t *spec, mongocrypt_status_t *status);
 
 void mc_str_encode_sets_destroy(mc_str_encode_sets_t *sets);
+
+// Applies case/diacritic folding to the string value in spec (if applicable), and returns
+// the resulting string as a BSON string element in *out. Returns false and an error if the string
+// is not valid UTF-8 or is unsuitable per the query parameters in the spec.
+bool mc_text_search_str_query(const mc_FLE2TextSearchInsertSpec_t *spec,
+                              _mongocrypt_buffer_t *out,
+                              mongocrypt_status_t *status);
 
 #endif /* MONGOCRYPT_TEXT_SEARCH_STR_ENCODE_PRIVATE_H */

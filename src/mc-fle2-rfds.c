@@ -20,8 +20,8 @@
 #include "mc-fle-blob-subtype-private.h" // MC_SUBTYPE_FLE2EncryptionPlaceholder
 #include "mongocrypt-private.h"          // CLIENT_ERR
 
-#include "mlib/thread.h" // mlib_once_flag
-#include <math.h>        // INFINITY
+#include "mc-mlib/thread.h" // mlib_once_flag
+#include <math.h>           // INFINITY
 
 static mc_FLE2RangeOperator_t get_operator_type(const char *key) {
     BSON_ASSERT_PARAM(key);
@@ -302,10 +302,7 @@ bool mc_FLE2RangeFindDriverSpec_parse(mc_FLE2RangeFindDriverSpec_t *spec,
             spec->upper.included = op.op_type == FLE2RangeOperator_kLte;
             break;
         case FLE2RangeOperator_kNone:
-        default:
-            ERR_WITH_BSON(in, "unsupported operator type %s", op.op_type_str);
-            goto fail;
-            break;
+        default: ERR_WITH_BSON(in, "unsupported operator type %s", op.op_type_str); goto fail;
         }
 
         if (spec->field && 0 != strcmp(spec->field, op.field)) {
@@ -352,7 +349,8 @@ bool mc_makeRangeFindPlaceholder(mc_makeRangeFindPlaceholder_args_t *args,
     if (!(stmt)) {                                                                                                     \
         CLIENT_ERR("error appending BSON for placeholder");                                                            \
         goto fail;                                                                                                     \
-    }
+    } else                                                                                                             \
+        ((void)0)
 
     // create edgesInfo.
 
@@ -431,7 +429,8 @@ bool mc_FLE2RangeFindDriverSpec_to_placeholders(mc_FLE2RangeFindDriverSpec_t *sp
     if (!(stmt)) {                                                                                                     \
         CLIENT_ERR("error transforming BSON for FLE2RangeFindDriverSpec: %s", #stmt);                                  \
         goto fail;                                                                                                     \
-    }
+    } else                                                                                                             \
+        ((void)0)
 
     TRY(bson_iter_init_find(&posInf, &infDoc, "p"));
     TRY(bson_iter_init_find(&negInf, &infDoc, "n"));
@@ -578,6 +577,8 @@ static int32_t payloadId = 0;
 static void payloadId_init_mutex(void) {
     _mongocrypt_mutex_init(&payloadId_mutex);
 }
+
+void mc_reset_payloadId_for_testing(void); // -Wmissing-prototypes: for testing only.
 
 void mc_reset_payloadId_for_testing(void) {
     mlib_call_once(&payloadId_init_flag, payloadId_init_mutex);

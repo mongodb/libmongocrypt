@@ -56,42 +56,12 @@ static void _test_log(_mongocrypt_tester_t *tester) {
     mongocrypt_destroy(crypt);
 }
 
-static void _test_trace_log(_mongocrypt_tester_t *tester) {
-    log_test_ctx_t log_ctx = {0};
-    mongocrypt_t *crypt;
-    mongocrypt_status_t *status;
-    uint32_t expected_int = -1;
-    const char *expected_string = "_test_trace_log_test_str";
-    bool original_trace;
-
-    status = mongocrypt_status_new();
-    crypt = mongocrypt_new();
-
-    _mongocrypt_log_set_fn(&crypt->log, _test_log_fn, &log_ctx);
-    original_trace = crypt->log.trace_enabled;
-    crypt->log.trace_enabled = true;
-    log_ctx.expected_level = MONGOCRYPT_LOG_LEVEL_TRACE;
-
-    log_ctx.message = "mongocrypt_setopt_kms_provider_aws "
-                      "(aws_access_key_id=\"_test\", "
-                      "aws_access_key_id_len=5, "
-                      "aws_secret_access_key=\"_test_trace_log_test_str\", "
-                      "aws_secret_access_key_len=-1)";
-
-    /* 'expected_string' is truncated to test for non-null terminated strings */
-    mongocrypt_setopt_kms_provider_aws(crypt, expected_string, 5, expected_string, expected_int);
-    crypt->log.trace_enabled = original_trace;
-
-    mongocrypt_status_destroy(status);
-    mongocrypt_destroy(crypt);
-}
-
 #if defined(__GLIBC__) || defined(__APPLE__)
 static void _test_no_log(_mongocrypt_tester_t *tester) {
-    const int buffer_size = BUFSIZ;
     mongocrypt_t *crypt;
     mongocrypt_status_t *status;
-    char captured_logs[buffer_size];
+    char captured_logs[BUFSIZ];
+    const int buffer_size = sizeof(captured_logs);
     int saved_stdout = dup(1);
 
     /* Redirect stdout to /dev/null and capture output in a buffer
@@ -115,7 +85,6 @@ static void _test_no_log(_mongocrypt_tester_t *tester) {
 
 void _mongocrypt_tester_install_log(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_log);
-    INSTALL_TEST(_test_trace_log);
 #if defined(__GLIBC__) || defined(__APPLE__)
     INSTALL_TEST(_test_no_log);
 #endif

@@ -50,7 +50,7 @@ void _errexit_ctx(mongocrypt_ctx_t *ctx, int line) {
 }
 
 void _errexit_bson(bson_error_t *error, int line) {
-    MONGOC_ERROR("Error at line %d with code %d and msg: %s", line, error->code, error->message);
+    MONGOC_ERROR("Error at line %d with code %" PRIu32 " and msg: %s", line, error->code, error->message);
     exit(1);
 }
 
@@ -60,7 +60,7 @@ void _log_to_stdout(mongocrypt_log_level_t level, const char *message, uint32_t 
     case MONGOCRYPT_LOG_LEVEL_ERROR: printf("ERROR"); break;
     case MONGOCRYPT_LOG_LEVEL_WARNING: printf("WARNING"); break;
     case MONGOCRYPT_LOG_LEVEL_INFO: printf("INFO"); break;
-    case MONGOCRYPT_LOG_LEVEL_TRACE: printf("TRACE"); break;
+    case MONGOCRYPT_LOG_LEVEL_TRACE: printf("TRACE"); break; /* UNUSED */
     default: printf("?????"); break;
     }
     printf(" %s\n", message);
@@ -111,7 +111,7 @@ static void _status_to_error(mongocrypt_status_t *status, bson_error_t *error) {
  * Returns true if ok, and does not modify @error.
  * Returns false if error, and sets @error.
  */
-bool _test_ctx_check_error(mongocrypt_ctx_t *ctx, bson_error_t *error, bool error_expected) {
+static bool _test_ctx_check_error(mongocrypt_ctx_t *ctx, bson_error_t *error, bool error_expected) {
     mongocrypt_status_t *status;
 
     status = mongocrypt_status_new();
@@ -131,7 +131,7 @@ bool _test_ctx_check_error(mongocrypt_ctx_t *ctx, bson_error_t *error, bool erro
     return true;
 }
 
-bool _test_kms_ctx_check_error(mongocrypt_kms_ctx_t *kms_ctx, bson_error_t *error, bool error_expected) {
+static bool _test_kms_ctx_check_error(mongocrypt_kms_ctx_t *kms_ctx, bson_error_t *error, bool error_expected) {
     mongocrypt_status_t *status;
 
     status = mongocrypt_status_new();
@@ -659,7 +659,7 @@ fail:
     return ret;
 }
 
-const char *_state_string(mongocrypt_ctx_state_t state) {
+static const char *_state_string(mongocrypt_ctx_state_t state) {
     switch (state) {
     case MONGOCRYPT_CTX_ERROR: return "MONGOCRYPT_CTX_ERROR";
     case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB: return "MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB";
@@ -732,7 +732,7 @@ bool _csfle_state_machine_run(_state_machine_t *state_machine, bson_t *result, b
                 goto fail;
             }
             break;
-        case MONGOCRYPT_CTX_DONE: goto success; break;
+        case MONGOCRYPT_CTX_DONE: goto success;
         }
     }
 

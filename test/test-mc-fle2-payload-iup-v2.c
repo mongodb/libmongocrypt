@@ -182,26 +182,11 @@ static void _test_mc_FLE2InsertUpdatePayloadV2_includes_crypto_params(_mongocryp
     // Test crypto params from SERVER-91889 are included in "range" payload.
     {
         bson_t got = BSON_INITIALIZER;
-        const bool use_range_v2 = true;
-        ASSERT(mc_FLE2InsertUpdatePayloadV2_serializeForRange(&payload, &got, use_range_v2));
+        ASSERT(mc_FLE2InsertUpdatePayloadV2_serializeForRange(&payload, &got));
         _assert_match_bson(&got, TMP_BSON(BSON_STR({"sp" : 1, "pn" : 2, "tf" : 3, "mn" : 4, "mx" : 5})));
         bson_destroy(&got);
     }
 
-    // Test crypto params from SERVER-91889 are excluded in "rangePreview" payload.
-    {
-        bson_t got = BSON_INITIALIZER;
-        const bool use_range_v2 = false;
-        ASSERT(mc_FLE2InsertUpdatePayloadV2_serializeForRange(&payload, &got, use_range_v2));
-        _assert_match_bson(&got, TMP_BSON(BSON_STR({
-            "sp" : {"$exists" : false},
-            "pn" : {"$exists" : false},
-            "tf" : {"$exists" : false},
-            "mn" : {"$exists" : false},
-            "mx" : {"$exists" : false}
-        })));
-        bson_destroy(&got);
-    }
     mc_FLE2InsertUpdatePayloadV2_cleanup(&payload);
 }
 
@@ -243,7 +228,7 @@ static void _test_mc_FLE2InsertUpdatePayloadV2_parses_crypto_params(_mongocrypt_
 }
 
 static void _test_mc_FLE2InsertUpdatePayloadV2_parse_errors(_mongocrypt_tester_t *tester) {
-    bson_t *input_bson = TMP_BSON(BSON_STR({
+    bson_t *input_bson = TMP_BSON_STR(BSON_STR({
         "d" : {"$binary" : {"base64" : "AAAA", "subType" : "00"}}, //
         "t" : "wrong type!"
     }));

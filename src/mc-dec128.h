@@ -3,19 +3,19 @@
 
 #include <bson/bson.h>
 
-#include <mlib/endian.h>
-#include <mlib/int128.h>
-#include <mlib/macros.h>
+#include <mc-mlib/endian.h>
+#include <mc-mlib/int128.h>
+#include <mc-mlib/macros.h>
 
 // Conditional preprocessor definition set by the usage of an intel_dfp from
 // the ImportDFP.cmake script:
 #ifndef MONGOCRYPT_INTELDFP
 // Notify includers that Decimal128 is not available:
-#define MONGOCRYPT_HAVE_DECIMAL128_SUPPORT 0
+#define MONGOCRYPT_HAVE_DECIMAL128_SUPPORT() false
 
 #else // With IntelDFP:
 // Tell includers that Decimal128 is okay:
-#define MONGOCRYPT_HAVE_DECIMAL128_SUPPORT 1
+#define MONGOCRYPT_HAVE_DECIMAL128_SUPPORT() true
 
 // Include the header that declares the DFP functions, which may be macros that
 // expand to renamed symbols:

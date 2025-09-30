@@ -35,7 +35,6 @@ void _mongocrypt_opts_kms_providers_init(_mongocrypt_opts_kms_providers_t *kms_p
 void _mongocrypt_opts_init(_mongocrypt_opts_t *opts) {
     BSON_ASSERT_PARAM(opts);
     memset(opts, 0, sizeof(*opts));
-    opts->use_range_v2 = true;
     _mongocrypt_opts_kms_providers_init(&opts->kms_providers);
 }
 
@@ -319,6 +318,12 @@ bool _mongocrypt_opts_kms_providers_lookup(const _mongocrypt_opts_kms_providers_
     }
 
     return false;
+}
+
+void _mongocrypt_opts_set_contention_factor_fn(mongocrypt_t *crypt,
+                                               _mongocrypt_contention_factor_fn contention_factor_fn) {
+    BSON_ASSERT_PARAM(crypt);
+    crypt->opts.contention_factor_fn = contention_factor_fn;
 }
 
 bool _mongocrypt_parse_optional_utf8(const bson_t *bson, const char *dotkey, char **out, mongocrypt_status_t *status) {
@@ -987,12 +992,6 @@ bool _mongocrypt_parse_kms_providers(mongocrypt_binary_t *kms_providers_definiti
             CLIENT_ERR("unsupported KMS provider: %s", field_name);
             return false;
         }
-    }
-
-    if (log && log->trace_enabled) {
-        char *as_str = bson_as_relaxed_extended_json(&as_bson, NULL);
-        _mongocrypt_log(log, MONGOCRYPT_LOG_LEVEL_TRACE, "%s (%s=\"%s\")", BSON_FUNC, "kms_providers", as_str);
-        bson_free(as_str);
     }
 
     return true;

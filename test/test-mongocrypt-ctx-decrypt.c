@@ -123,7 +123,7 @@ static void _test_decrypt_ready(_mongocrypt_tester_t *tester) {
 }
 
 /* Test with empty AWS credentials. */
-void _test_decrypt_empty_aws(_mongocrypt_tester_t *tester) {
+static void _test_decrypt_empty_aws(_mongocrypt_tester_t *tester) {
     mongocrypt_t *crypt;
     mongocrypt_ctx_t *ctx;
 
@@ -888,7 +888,8 @@ static void _test_explicit_decrypt(_mongocrypt_tester_t *tester) {
     }
 
     // FLE2InsertUpdatePayload can be decrypted.
-    // Payload is only used in the QE-V1 protocol removed in MongoDB 7.0. Decrypting is currently still supported.
+    // Payload is only used in the QE-V1 protocol removed in MongoDB 7.0. Decrypting is still supported.
+    // libmongocrypt no longer produces QE-V1 payloads. Payload is copied from libmongocrypt 1.8.0.
     {
         ed_testcase tc = {
             .desc = "FLE2InsertUpdatePayload",
@@ -899,12 +900,13 @@ static void _test_explicit_decrypt(_mongocrypt_tester_t *tester) {
         ed_testcase_run(&tc);
     }
 
-    // FLE2InsertUpdatePayload with edges can be decrypted.
-    // Edges are sent on payloads for range algorithm.
+    // FLE2InsertUpdatePayload for RangeV1 can be decrypted. Range payloads include additional fields.
+    // Payload is only used in the Range-V1 protocol removed in MongoDB 8.0. Decrypting is still supported.
+    // libmongocrypt no longer produces Range-V1 payloads. Payload is copied from libmongocrypt 1.11.0.
     {
         ed_testcase tc = {
-            .desc = "FLE2InsertUpdatePayload with edges",
-            .msg = TEST_FILE("./test/data/explicit-decrypt/FLE2InsertUpdatePayload-with-edges.json"),
+            .desc = "FLE2InsertUpdatePayload for RangeV1",
+            .msg = TEST_FILE("./test/data/explicit-decrypt/FLE2InsertUpdatePayload-RangeV1.json"),
             .keys_to_feed = {keyABC},
             .expect = TEST_BSON(BSON_STR({"v" : 123456})),
         };
@@ -912,7 +914,8 @@ static void _test_explicit_decrypt(_mongocrypt_tester_t *tester) {
     }
 
     // FLE2UnindexedEncryptedValue can be decrypted.
-    // Payload is only used in the QE-V1 protocol removed in MongoDB 7.0. Decrypting is currently still supported.
+    // Payload is only used in the QE-V1 protocol removed in MongoDB 7.0. Decrypting is still supported.
+    // libmongocrypt no longer produces QE-V1 payloads. Payload is copied from libmongocrypt 1.8.0.
     {
         ed_testcase tc = {
             .desc = "FLE2UnindexedEncryptedValue",
@@ -924,7 +927,8 @@ static void _test_explicit_decrypt(_mongocrypt_tester_t *tester) {
     }
 
     // FLE2IndexedEqualityEncryptedValue can be decrypted.
-    // Payload is only used in the QE-V1 protocol removed in MongoDB 7.0. Decrypting is currently still supported.
+    // Payload is only used in the QE-V1 protocol removed in MongoDB 7.0. Decrypting is still supported.
+    // libmongocrypt no longer produces QE-V1 payloads. Payload is copied from libmongocrypt 1.8.0.
     {
         ed_testcase tc = {
             .desc = "FLE2IndexedEqualityEncryptedValue",
@@ -936,7 +940,8 @@ static void _test_explicit_decrypt(_mongocrypt_tester_t *tester) {
     }
 
     // FLE2IndexedRangeEncryptedValue can be decrypted.
-    // Payload is only used in the QE-V1 protocol removed in MongoDB 7.0. Decrypting is currently still supported.
+    // Payload is only used in the QE-V1 protocol removed in MongoDB 7.0. Decrypting is still supported.
+    // libmongocrypt no longer produces QE-V1 payloads. Payload is copied from libmongocrypt 1.8.0.
     {
         ed_testcase tc = {
             .desc = "FLE2IndexedRangeEncryptedValue",
@@ -967,12 +972,24 @@ static void _test_explicit_decrypt(_mongocrypt_tester_t *tester) {
         ed_testcase_run(&tc);
     }
 
-    // FLE2InsertUpdatePayloadV2 with edges can be decrypted.
-    // Edges are sent on payloads for range algorithm.
+    // FLE2InsertUpdatePayloadV2 for RangeV1 can be decrypted. Range payloads include additional fields.
+    // Payload is only used in the Range-V1 protocol removed in MongoDB 8.0. Decrypting is still supported.
+    // libmongocrypt no longer produces Range-V1 payloads. Payload is copied from libmongocrypt 1.11.0.
     {
         ed_testcase tc = {
-            .desc = "FLE2InsertUpdatePayloadV2 with edges",
-            .msg = TEST_FILE("./test/data/explicit-decrypt/FLE2InsertUpdatePayload-with-edges-V2.json"),
+            .desc = "FLE2InsertUpdatePayloadV2 for RangeV1",
+            .msg = TEST_FILE("./test/data/explicit-decrypt/FLE2InsertUpdatePayloadV2-RangeV1.json"),
+            .keys_to_feed = {keyABC},
+            .expect = TEST_BSON(BSON_STR({"v" : 123456})),
+        };
+        ed_testcase_run(&tc);
+    }
+
+    // FLE2InsertUpdatePayloadV2 for RangeV2 can be decrypted. Range payloads include additional fields.
+    {
+        ed_testcase tc = {
+            .desc = "FLE2InsertUpdatePayloadV2 for RangeV2",
+            .msg = TEST_FILE("./test/data/explicit-decrypt/FLE2InsertUpdatePayloadV2-RangeV2.json"),
             .keys_to_feed = {keyABC},
             .expect = TEST_BSON(BSON_STR({"v" : 123456})),
         };
@@ -1002,6 +1019,7 @@ static void _test_explicit_decrypt(_mongocrypt_tester_t *tester) {
     }
 
     // FLE2IndexedRangeEncryptedValueV2 can be decrypted.
+    // Payload did not change between RangeV1 and RangeV2.
     {
         ed_testcase tc = {
             .desc = "FLE2IndexedRangeEncryptedValueV2",

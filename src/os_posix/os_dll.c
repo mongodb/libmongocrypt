@@ -43,6 +43,8 @@ mcr_dll mcr_dll_open(const char *filepath) {
     }
 }
 
+void mcr_dll_close_handle(mcr_dll); // -Wmissing-prototypes: not for external use despite external linkage.
+
 void mcr_dll_close_handle(mcr_dll dll) {
     if (dll._native_handle) {
         dlclose(dll._native_handle);

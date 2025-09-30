@@ -17,7 +17,7 @@
 #include "test-mongocrypt-assert-match-bson.h"
 #include "test-mongocrypt-assert.h"
 
-#include <mlib/macros.h>
+#include <mc-mlib/macros.h>
 
 /* string comparison functions for Windows */
 #ifdef _WIN32
@@ -77,11 +77,6 @@ bool match_json(const bson_t *doc,
                 const char *funcname,
                 const char *json_pattern,
                 ...);
-
-#define ASSERT_MATCH(doc, ...)                                                                                         \
-    do {                                                                                                               \
-        BSON_ASSERT(match_json(doc, false, __FILE__, __LINE__, BSON_FUNC, __VA_ARGS__));                               \
-    } while (0)
 
 const char *_mongoc_bson_type_to_str(bson_type_t t);
 
@@ -225,7 +220,7 @@ bool match_bson(const bson_t *doc, const bson_t *pattern, bool is_command) {
 
 MLIB_ANNOTATE_PRINTF(2, 3)
 
-void match_err(match_ctx_t *ctx, const char *fmt, ...) {
+static void match_err(match_ctx_t *ctx, const char *fmt, ...) {
     va_list args;
     char *formatted;
 
@@ -849,7 +844,8 @@ bool match_bson_value(const bson_value_t *doc, const bson_value_t *pattern, matc
                       "numeric values may be equal)");
         }
         break;
-    default: match_err(ctx, "unexpected value type %d: %s", doc->value_type, _mongoc_bson_type_to_str(doc->value_type));
+    default:
+        match_err(ctx, "unexpected value type %d: %s", (int)doc->value_type, _mongoc_bson_type_to_str(doc->value_type));
     }
 
     if (!ret) {

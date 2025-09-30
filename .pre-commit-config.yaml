@@ -53,6 +53,18 @@ repos:
     language: system
     types: [shell]
 
+- repo: local
+  hooks:
+    - id: synchro
+      name: synchro
+      entry: bash ./bindings/python/scripts/synchro.sh
+      language: python
+      require_serial: true
+      fail_fast: true
+      additional_dependencies:
+        - ruff==0.1.3
+        - unasync
+
 - repo: https://github.com/astral-sh/ruff-pre-commit
   # Ruff version.
   rev: v0.1.3

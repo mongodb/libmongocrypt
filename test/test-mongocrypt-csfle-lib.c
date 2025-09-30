@@ -96,7 +96,7 @@ static void _test_csfle_load_twice_fail(_mongocrypt_tester_t *tester) {
     mongocrypt_t *const crypt2 = get_test_mongocrypt(tester);
     mongocrypt_setopt_set_crypt_shared_lib_path_override(crypt2, "$ORIGIN/stubbed-crypt_shared-2.dll");
     // Loading a second different library is an error:
-    ASSERT_FAILS(_mongocrypt_init_for_test(crypt2), crypt2, "attempted to load a second CSFLE library");
+    ASSERT_FAILS(_mongocrypt_init_for_test(crypt2), crypt2, "attempted to load a second crypt_shared library");
 
     mstr_view version = mstrv_view_cstr(mongocrypt_crypt_shared_lib_version_string(crypt1, NULL));
     if (TEST_MONGOCRYPT_HAVE_REAL_CRYPT_SHARED_LIB) {
@@ -143,7 +143,7 @@ static void _test_csfle_path_override_fail(_mongocrypt_tester_t *tester) {
 static void _test_cur_exe_path(_mongocrypt_tester_t *tester) {
     current_module_result self = current_module_path();
     BSON_ASSERT(self.error == 0);
-    BSON_ASSERT(self.path.len != 0);
+    BSON_ASSERT(self.path.raw.len != 0);
     mstr_free(self.path);
 }
 
@@ -180,13 +180,22 @@ static void _test_lookup_version_check(_mongocrypt_tester_t *tester) {
     mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_WITH_CRYPT_SHARED_LIB);
     uint64_t version = crypt->csfle.get_version();
     mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
-    mongocrypt_binary_t *cmd = TEST_FILE("./test/data/lookup/csfle/01-cmd.json");
+    mongocrypt_binary_t *cmd = TEST_FILE("./test/data/lookup/csfle/cmd.json");
     if (version >= CRYPT_SHARED_8_1) {
         ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, cmd), ctx);
     } else {
         ASSERT_FAILS(mongocrypt_ctx_encrypt_init(ctx, "db", -1, cmd), ctx, "Upgrade crypt_shared");
     }
     mongocrypt_ctx_destroy(ctx);
+    mongocrypt_destroy(crypt);
+}
+
+static void _test_loading_libmongocrypt_fails(_mongocrypt_tester_t *tester) {
+    mongocrypt_t *const crypt = get_test_mongocrypt(tester);
+    const char *path_to_libmongocrypt = TEST_MONGOCRYPT_MONGOCRYPT_SHARED_PATH;
+    mongocrypt_setopt_set_crypt_shared_lib_path_override(crypt, path_to_libmongocrypt);
+    bool ok = mongocrypt_init(crypt);
+    ASSERT_FAILS(ok, crypt, "detected libmongocrypt");
     mongocrypt_destroy(crypt);
 }
 
@@ -202,4 +211,5 @@ void _mongocrypt_tester_install_csfle_lib(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_csfle_not_loaded_with_bypassqueryanalysis);
     INSTALL_TEST(_test_override_error_includes_reason);
     INSTALL_TEST(_test_lookup_version_check);
+    INSTALL_TEST(_test_loading_libmongocrypt_fails);
 }

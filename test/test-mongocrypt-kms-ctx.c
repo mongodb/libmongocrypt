@@ -611,7 +611,7 @@ static void _test_mongocrypt_kms_ctx_kmip_encrypt(_mongocrypt_tester_t *tester) 
     _mongocrypt_endpoint_t *endpoint;
 
     _mongocrypt_buffer_t plaintext = {0};
-    ASSERT(_mongocrypt_buffer_copy_from_data_and_size(&plaintext, PLAINTEXT, sizeof(PLAINTEXT)))
+    ASSERT(_mongocrypt_buffer_copy_from_data_and_size(&plaintext, PLAINTEXT, sizeof(PLAINTEXT)));
 
     status = mongocrypt_status_new();
     endpoint = _mongocrypt_endpoint_new("example.com", -1, NULL /* opts */, status);
@@ -748,7 +748,7 @@ static void _test_mongocrypt_kms_ctx_kmip_decrypt(_mongocrypt_tester_t *tester) 
     key_doc.kek.kms_provider = MONGOCRYPT_KMS_PROVIDER_KMIP;
     key_doc.kek.provider.kmip.delegated = true;
     key_doc.kek.provider.kmip.key_id = (char *)KEK_UNIQUE_IDENTIFIER;
-    ASSERT(_mongocrypt_buffer_copy_from_data_and_size(&key_doc.key_material, IV_CIPHERTEXT, sizeof(IV_CIPHERTEXT)))
+    ASSERT(_mongocrypt_buffer_copy_from_data_and_size(&key_doc.key_material, IV_CIPHERTEXT, sizeof(IV_CIPHERTEXT)));
 
     status = mongocrypt_status_new();
     endpoint = _mongocrypt_endpoint_new("example.com", -1, NULL /* opts */, status);

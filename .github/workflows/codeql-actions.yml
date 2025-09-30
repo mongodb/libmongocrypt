@@ -10,6 +10,11 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '17 10 * * 2'
+  workflow_call:
+    inputs:
+      ref:
+        required: true
+        type: string
 
 jobs:
   analyze-python:
@@ -24,14 +29,15 @@ jobs:
       packages: read
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
+        ref: ${{ inputs.ref }}
         persist-credentials: false
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v3
+      uses: github/codeql-action/init@3599b3baa15b485a2e49ef411a7a4bb2452e7f93 # v3
       with:
         languages: actions
         build-mode: none
@@ -39,6 +45,6 @@ jobs:
         queries: security-extended
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v3
+      uses: github/codeql-action/analyze@3599b3baa15b485a2e49ef411a7a4bb2452e7f93 # v3
       with:
         category: "/language:actions"

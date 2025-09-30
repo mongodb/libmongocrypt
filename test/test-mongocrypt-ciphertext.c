@@ -91,7 +91,7 @@ static void _test_malformed_ciphertext(_mongocrypt_tester_t *tester) {
     mongocrypt_status_destroy(status);
 }
 
-void _test_ciphertext_algorithm(_mongocrypt_tester_t *tester) {
+static void _test_ciphertext_algorithm(_mongocrypt_tester_t *tester) {
     mongocrypt_t *crypt;
     mongocrypt_ctx_t *ctx;
     mongocrypt_status_t *status;
@@ -118,10 +118,10 @@ void _test_ciphertext_algorithm(_mongocrypt_tester_t *tester) {
     ctx = mongocrypt_ctx_new(crypt);
     ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "test", -1, TEST_FILE("./test/example/cmd.json")), ctx);
 
-    _mongocrypt_buffer_from_binary(&marking.key_id, TEST_BIN(16));
-    marking.key_id.subtype = BSON_SUBTYPE_UUID;
+    _mongocrypt_buffer_from_binary(&marking.u.fle1.key_id, TEST_BIN(16));
+    marking.u.fle1.key_id.subtype = BSON_SUBTYPE_UUID;
     kb = &ctx->kb;
-    _mongocrypt_key_broker_add_test_key(kb, &marking.key_id);
+    _mongocrypt_key_broker_add_test_key(kb, &marking.u.fle1.key_id);
 
     bson = BCON_NEW("v", "a", "v", "b");
     bson_iter_init(&a_iter, bson);
@@ -131,26 +131,26 @@ void _test_ciphertext_algorithm(_mongocrypt_tester_t *tester) {
     bson_iter_next(&b_iter);
 
     /* Marking type = 1, plaintext = a */
-    marking.algorithm = 1;
-    memcpy(&marking.v_iter, &a_iter, sizeof(bson_iter_t));
+    marking.u.fle1.algorithm = 1;
+    memcpy(&marking.u.fle1.v_iter, &a_iter, sizeof(bson_iter_t));
     res = _mongocrypt_marking_to_ciphertext((void *)kb, &marking, &type1_valueA, status);
     ASSERT_OR_PRINT(res, status);
 
     /* Marking type = 1, plaintext = a */
-    marking.algorithm = 1;
-    memcpy(&marking.v_iter, &a_iter, sizeof(bson_iter_t));
+    marking.u.fle1.algorithm = 1;
+    memcpy(&marking.u.fle1.v_iter, &a_iter, sizeof(bson_iter_t));
     res = _mongocrypt_marking_to_ciphertext((void *)kb, &marking, &type1_valueA_again, status);
     ASSERT_OR_PRINT(res, status);
 
     /* Marking type = 2, plaintext = a */
-    marking.algorithm = 2;
-    memcpy(&marking.v_iter, &a_iter, sizeof(bson_iter_t));
+    marking.u.fle1.algorithm = 2;
+    memcpy(&marking.u.fle1.v_iter, &a_iter, sizeof(bson_iter_t));
     res = _mongocrypt_marking_to_ciphertext((void *)kb, &marking, &type2_valueA, status);
     ASSERT_OR_PRINT(res, status);
 
     /* Marking type = 1, plaintext = b */
-    marking.algorithm = 1;
-    memcpy(&marking.v_iter, &b_iter, sizeof(bson_iter_t));
+    marking.u.fle1.algorithm = 1;
+    memcpy(&marking.u.fle1.v_iter, &b_iter, sizeof(bson_iter_t));
     res = _mongocrypt_marking_to_ciphertext((void *)kb, &marking, &type1_valueB, status);
     ASSERT_OR_PRINT(res, status);
 
@@ -184,7 +184,7 @@ void _test_ciphertext_algorithm(_mongocrypt_tester_t *tester) {
     mongocrypt_status_destroy(status);
 }
 
-void _test_ciphertext_serialize_associated_data(_mongocrypt_tester_t *tester) {
+static void _test_ciphertext_serialize_associated_data(_mongocrypt_tester_t *tester) {
     _mongocrypt_ciphertext_t ciphertext;
     _mongocrypt_buffer_t serialized;
     /* Expected associated data is:

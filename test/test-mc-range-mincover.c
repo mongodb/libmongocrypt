@@ -68,7 +68,7 @@ typedef struct {
     const char *expectError;
 } DoubleTest;
 
-#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT()
 typedef struct {
     mc_dec128 lowerBound;
     bool includeLowerBound;
@@ -95,7 +95,6 @@ static mc_mincover_t *_test_getMincover32(void *tests, size_t idx, mongocrypt_st
 
     Int32Test *test = (Int32Test *)tests + idx;
 
-    const bool use_range_v2 = true;
     return mc_getMincoverInt32((mc_getMincoverInt32_args_t){.lowerBound = test->lowerBound,
                                                             .includeLowerBound = test->includeLowerBound,
                                                             .upperBound = test->upperBound,
@@ -104,14 +103,12 @@ static mc_mincover_t *_test_getMincover32(void *tests, size_t idx, mongocrypt_st
                                                             .max = test->max,
                                                             .sparsity = test->sparsity,
                                                             .trimFactor = OPT_I32(test->trimFactor)},
-                               status,
-                               use_range_v2);
+                               status);
 }
 
 static mc_mincover_t *_test_getMincover64(void *tests, size_t idx, mongocrypt_status_t *status) {
     BSON_ASSERT_PARAM(tests);
 
-    const bool use_range_v2 = true;
     const uint32_t trimFactor = 0; // At present, all test cases expect trimFactor=0.
     Int64Test *const test = (Int64Test *)tests + idx;
 
@@ -123,14 +120,12 @@ static mc_mincover_t *_test_getMincover64(void *tests, size_t idx, mongocrypt_st
                                                             .max = test->max,
                                                             .sparsity = test->sparsity,
                                                             .trimFactor = OPT_I32(trimFactor)},
-                               status,
-                               use_range_v2);
+                               status);
 }
 
 static mc_mincover_t *_test_getMincoverDouble_helper(void *tests, size_t idx, mongocrypt_status_t *status) {
     BSON_ASSERT_PARAM(tests);
 
-    const bool use_range_v2 = true;
     const uint32_t trimFactor = 0; // At present, all test cases expect trimFactor=0.
     DoubleTest *const test = (DoubleTest *)tests + idx;
 
@@ -144,17 +139,15 @@ static mc_mincover_t *_test_getMincoverDouble_helper(void *tests, size_t idx, mo
                                       .max = test->precision.set ? test->max : (mc_optional_double_t){0},
                                       .precision = test->precision,
                                       .trimFactor = OPT_I32(trimFactor)},
-        status,
-        use_range_v2);
+        status);
 }
 
-#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT()
 static mc_mincover_t *_test_getMincoverDecimal128_helper(void *tests, size_t idx, mongocrypt_status_t *status) {
     BSON_ASSERT_PARAM(tests);
 
     Decimal128Test *const test = (Decimal128Test *)tests + idx;
 
-    const bool use_range_v2 = true;
     const uint32_t trimFactor = 0; // At present, all test cases expect trimFactor=0.
     return mc_getMincoverDecimal128(
         (mc_getMincoverDecimal128_args_t){.lowerBound = test->lowerBound,
@@ -166,8 +159,7 @@ static mc_mincover_t *_test_getMincoverDecimal128_helper(void *tests, size_t idx
                                           .max = test->precision.set ? test->max : (mc_optional_dec128_t){0},
                                           .precision = test->precision,
                                           .trimFactor = OPT_I32(trimFactor)},
-        status,
-        use_range_v2);
+        status);
 }
 #endif // MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
 
@@ -202,7 +194,7 @@ static const char *_test_expectErrorDouble(void *tests, size_t idx, mongocrypt_s
     return test->expectError;
 }
 
-#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT()
 static const char *_test_expectErrorDecimal128(void *tests, size_t idx, mongocrypt_status_t *status) {
     BSON_ASSERT_PARAM(tests);
     BSON_ASSERT_PARAM(status);
@@ -238,7 +230,7 @@ static const char *const *_test_expectMincoverDouble(void *tests, size_t idx) {
     return ((DoubleTest *)tests + idx)->expectMincoverStrings;
 }
 
-#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT()
 static const char *const *_test_expectMincoverDecimal128(void *tests, size_t idx) {
     BSON_ASSERT_PARAM(tests);
     return ((Decimal128Test *)tests + idx)->expectMincoverStrings;
@@ -314,7 +306,7 @@ static void _test_dump_Double(void *tests, size_t idx, mc_mincover_t *got) {
         TEST_STDERR_PRINTF(" max=%f", test->max.value);
     }
     if (test->precision.set) {
-        TEST_STDERR_PRINTF(" precision=%" PRIu32, test->precision.value);
+        TEST_STDERR_PRINTF(" precision=%" PRId32, test->precision.value);
     }
     TEST_STDERR_PRINTF(" sparsity=%zu\n", test->sparsity);
     TEST_STDERR_PRINTF("mincover expected ... begin\n");
@@ -329,7 +321,7 @@ static void _test_dump_Double(void *tests, size_t idx, mc_mincover_t *got) {
     TEST_STDERR_PRINTF("mincover got ... end\n");
 }
 
-#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT()
 static void _test_dump_Decimal128(void *tests, size_t idx, mc_mincover_t *got) {
     BSON_ASSERT_PARAM(tests);
     Decimal128Test *const test = (Decimal128Test *)tests + idx;
@@ -594,7 +586,7 @@ static void _test_getMincoverDouble(_mongocrypt_tester_t *tester) {
                                                     .dump = _test_dump_Double});
 }
 
-#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT()
 static void _test_getMincoverDecimal128(_mongocrypt_tester_t *tester) {
     Decimal128Test tests[] = {
 #include "./data/range-min-cover/mincover_decimal128.cstruct"
@@ -614,7 +606,7 @@ void _mongocrypt_tester_install_range_mincover(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_getMincoverInt32);
     INSTALL_TEST(_test_getMincoverInt64);
     INSTALL_TEST(_test_getMincoverDouble);
-#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT()
     INSTALL_TEST(_test_getMincoverDecimal128);
 #endif
 }

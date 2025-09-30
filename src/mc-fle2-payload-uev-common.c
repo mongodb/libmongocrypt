@@ -21,7 +21,8 @@
 #define CHECK_AND_RETURN(x)                                                                                            \
     if (!(x)) {                                                                                                        \
         return false;                                                                                                  \
-    }
+    } else                                                                                                             \
+        ((void)0)
 
 bool _mc_FLE2UnindexedEncryptedValueCommon_parse(const _mongocrypt_buffer_t *buf,
                                                  uint8_t *fle_blob_subtype,
@@ -36,7 +37,7 @@ bool _mc_FLE2UnindexedEncryptedValueCommon_parse(const _mongocrypt_buffer_t *buf
     BSON_ASSERT_PARAM(ciphertext);
 
     mc_reader_t reader;
-    mc_reader_init_from_buffer(&reader, buf, __FUNCTION__);
+    mc_reader_init_from_buffer(&reader, buf, __func__);
 
     /* Read fle_blob_subtype. */
     CHECK_AND_RETURN(mc_reader_read_u8(&reader, fle_blob_subtype, status));

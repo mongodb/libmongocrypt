@@ -2,11 +2,11 @@
 
 #include <cstdio>
 
-#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT()
 
 #include <stdlib.h>
 
-#include <mlib/check.hpp>
+#include <mc-mlib/check.hpp>
 #define CHECK MLIB_CHECK
 
 inline std::ostream &operator<<(std::ostream &out, mc_dec128 d) noexcept {

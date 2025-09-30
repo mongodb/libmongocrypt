@@ -96,6 +96,9 @@ class MongoCrypt:
         if self.__opts.bypass_query_analysis:
             lib.mongocrypt_setopt_bypass_query_analysis(self.__crypt)
 
+        if self.__opts.enable_multiple_collinfo:
+            lib.mongocrypt_setopt_enable_multiple_collinfo(self.__crypt)
+
         # Prefer using the native crypto binding when we know it's available.
         try:
             crypto_available = lib.mongocrypt_is_crypto_available()
@@ -149,10 +152,15 @@ class MongoCrypt:
         if any([on_demand_aws, on_demand_gcp, on_demand_azure]):
             lib.mongocrypt_setopt_use_need_kms_credentials_state(self.__crypt)
 
-        # Enable KMS retry when available, libmongocrypt >= 1.12.0,
+        # Enable KMS retry and key_expiration_ms when available, libmongocrypt >= 1.12.0,
         try:
             if not lib.mongocrypt_setopt_retry_kms(self.__crypt, True):
                 self.__raise_from_status()
+            if self.__opts.key_expiration_ms is not None:
+                if not lib.mongocrypt_setopt_key_expiration(
+                    self.__crypt, self.__opts.key_expiration_ms
+                ):
+                    self.__raise_from_status()
         except AttributeError:
             # libmongocrypt < 1.12
             pass
@@ -491,6 +499,11 @@ class ExplicitEncryptionContext(MongoCryptContext):
                     if not lib.mongocrypt_ctx_setopt_algorithm_range(
                         ctx, range_opts.bin
                     ):
+                        self._raise_from_status()
+
+            if opts.text_opts is not None:
+                with MongoCryptBinaryIn(opts.text_opts) as text_opts:
+                    if not lib.mongocrypt_ctx_setopt_algorithm_text(ctx, text_opts.bin):
                         self._raise_from_status()
 
             with MongoCryptBinaryIn(value) as binary:

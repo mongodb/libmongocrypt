@@ -162,7 +162,7 @@ static void test_FLE2InsertUpdatePayload_decrypt(_mongocrypt_tester_t *tester) {
 #undef TEST_IUP_HEX
 
 static void test_FLE2InsertUpdatePayload_parse_errors(_mongocrypt_tester_t *tester) {
-    bson_t *input_bson = TMP_BSON(BSON_STR({
+    bson_t *input_bson = TMP_BSON_STR(BSON_STR({
         "d" : {"$binary" : {"base64" : "AAAA", "subType" : "00"}}, //
         "t" : "wrong type!"
     }));

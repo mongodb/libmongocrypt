@@ -39,24 +39,24 @@ jobs:
 
     steps:  
       - name: Checkout libmongocrypt
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           ref: ${{ inputs.ref }}
           persist-credentials: false
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
-          python-version: 3.8
+          python-version: "3.9"
           cache: 'pip'
           cache-dependency-path: 'bindings/python/pyproject.toml'
           allow-prereleases: true
 
       - name: Build and test dist files
         run: |
-          export LIBMONGOCRYPT_VERSION=$(cat ./libmongocrypt-version.txt)
+          export LIBMONGOCRYPT_VERSION=$(cat ./scripts/libmongocrypt-version.txt)
           git fetch origin $LIBMONGOCRYPT_VERSION
-          bash ./release.sh
+          bash ./scripts/release.sh
 
       - uses: actions/upload-artifact@v4
         with:
@@ -70,7 +70,7 @@ jobs:
     name: Collect dist files
     steps:
       - name: Download all workflow run artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
       - name: Flatten directory
         working-directory: .
         run: |

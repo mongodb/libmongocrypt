@@ -29,19 +29,22 @@
 #define CHECK_AND_RETURN(cond)                                                                                         \
     if (!(cond)) {                                                                                                     \
         goto fail;                                                                                                     \
-    }
+    } else                                                                                                             \
+        ((void)0)
 
 #define CHECK_AND_RETURN_STATUS(cond, msg)                                                                             \
     if (!(cond)) {                                                                                                     \
         CLIENT_ERR(msg);                                                                                               \
         goto fail;                                                                                                     \
-    }
+    } else                                                                                                             \
+        ((void)0)
 
 #define CHECK_AND_RETURN_KB_STATUS(cond)                                                                               \
     if (!(cond)) {                                                                                                     \
         _mongocrypt_key_broker_status(kb, status);                                                                     \
         goto fail;                                                                                                     \
-    }
+    } else                                                                                                             \
+        ((void)0)
 
 static bool _replace_FLE2IndexedEncryptedValue_with_plaintext(void *ctx,
                                                               _mongocrypt_buffer_t *in,
@@ -775,14 +778,6 @@ bool mongocrypt_ctx_explicit_decrypt_init(mongocrypt_ctx_t *ctx, mongocrypt_bina
         return _mongocrypt_ctx_fail_w_msg(ctx, "invalid msg");
     }
 
-    if (ctx->crypt->log.trace_enabled) {
-        char *msg_val;
-        msg_val = _mongocrypt_new_json_string_from_binary(msg);
-        _mongocrypt_log(&ctx->crypt->log, MONGOCRYPT_LOG_LEVEL_TRACE, "%s (%s=\"%s\")", BSON_FUNC, "msg", msg_val);
-
-        bson_free(msg_val);
-    }
-
     /* Expect msg to be the BSON a document of the form:
        { "v" : (BSON BINARY value of subtype 6) }
     */
@@ -863,12 +858,6 @@ bool mongocrypt_ctx_decrypt_init(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *doc
         return _mongocrypt_ctx_fail_w_msg(ctx, "invalid doc");
     }
 
-    if (ctx->crypt->log.trace_enabled) {
-        char *doc_val;
-        doc_val = _mongocrypt_new_json_string_from_binary(doc);
-        _mongocrypt_log(&ctx->crypt->log, MONGOCRYPT_LOG_LEVEL_TRACE, "%s (%s=\"%s\")", BSON_FUNC, "doc", doc_val);
-        bson_free(doc_val);
-    }
     dctx = (_mongocrypt_ctx_decrypt_t *)ctx;
     ctx->type = _MONGOCRYPT_TYPE_DECRYPT;
     ctx->vtable.finalize = _finalize;

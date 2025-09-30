@@ -18,10 +18,12 @@
 
 #include "bson/bson.h"
 #include "mc-fle-blob-subtype-private.h"
+#include "mc-fle2-find-text-payload-private.h"
 #include "mc-tokens-private.h"
 #include "mongocrypt-buffer-private.h"
 #include "mongocrypt-ciphertext-private.h"
 #include "mongocrypt-marking-private.h"
+#include "mongocrypt-private.h"
 #include "mongocrypt.h"
 #include "test-mongocrypt-assert.h"
 #include "test-mongocrypt.h"
@@ -68,8 +70,8 @@ static void test_mongocrypt_marking_parse(_mongocrypt_tester_t *tester) {
     marking_bson = TMP_BSON("{'a': 2, 'v': 'abc', 'ka': 'alt'}");
     _make_marking(marking_bson, &marking_buf);
     _parse_ok(&marking_buf, &marking);
-    BSON_ASSERT(marking.algorithm == MONGOCRYPT_ENCRYPTION_ALGORITHM_RANDOM);
-    BSON_ASSERT(0 == strcmp("abc", bson_iter_utf8(&marking.v_iter, NULL)));
+    BSON_ASSERT(marking.u.fle1.algorithm == MONGOCRYPT_ENCRYPTION_ALGORITHM_RANDOM);
+    BSON_ASSERT(0 == strcmp("abc", bson_iter_utf8(&marking.u.fle1.v_iter, NULL)));
     _mongocrypt_buffer_cleanup(&marking_buf);
     _mongocrypt_marking_cleanup(&marking);
 
@@ -198,36 +200,9 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
         mc_optional_int64_t sparsity;
         const char *expectedError;
         const char *expectedErrorAtParseTime;
-        bool disableRangeV2;
     } testcase_t;
 
     testcase_t tests[] = {
-        {.description = "Range V2 disabled w/ trim factor fails",
-         .findSpecJSON = RAW_STRING({
-             "lowerBound" : {"$numberInt" : "7"},
-             "lbIncluded" : true,
-             "upperBound" : {"$numberInt" : "32"},
-             "ubIncluded" : true,
-             "indexMin" : {"$numberInt" : "0"},
-             "indexMax" : {"$numberInt" : "32"},
-             "trimFactor" : 0
-         }),
-         .disableRangeV2 = true,
-         .expectedErrorAtParseTime = "'trimFactor' is not supported for QE range v1"},
-        {.description = "Range V2 disabled w/ no trim factor succeeds",
-         .findSpecJSON = RAW_STRING({
-             "lowerBound" : {"$numberInt" : "7"},
-             "lbIncluded" : true,
-             "upperBound" : {"$numberInt" : "32"},
-             "ubIncluded" : true,
-             "indexMin" : {"$numberInt" : "0"},
-             "indexMax" : {"$numberInt" : "32"}
-         }),
-         .disableRangeV2 = true,
-         .expectedMinCover = "000111\n"
-                             "001\n"
-                             "01\n"
-                             "100000\n"},
         {.description = "Int32 Bounds included",
          .findSpecJSON = RAW_STRING({
              "lowerBound" : {"$numberInt" : "7"},
@@ -875,7 +850,7 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
         ASSERT(bson_iter_init_find(&findSpecIter, findSpecDoc, "findSpec"));
 
         mc_FLE2RangeFindSpec_t findSpec;
-        bool res = mc_FLE2RangeFindSpec_parse(&findSpec, &findSpecIter, !test->disableRangeV2, status);
+        bool res = mc_FLE2RangeFindSpec_parse(&findSpec, &findSpecIter, status);
         if (test->expectedErrorAtParseTime) {
             ASSERT(!res);
             ASSERT_STATUS_CONTAINS(status, test->expectedErrorAtParseTime);
@@ -889,8 +864,7 @@ static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *te
             sparsity = (size_t)test->sparsity.value;
         }
 
-        const bool use_range_v2 = !test->disableRangeV2;
-        mc_mincover_t *mc = mc_get_mincover_from_FLE2RangeFindSpec(&findSpec, sparsity, status, use_range_v2);
+        mc_mincover_t *mc = mc_get_mincover_from_FLE2RangeFindSpec(&findSpec, sparsity, status);
 
         if (test->expectedError) {
             ASSERT(NULL == mc);
@@ -950,7 +924,7 @@ static void get_ciphertext_from_marking_json(_mongocrypt_tester_t *tester,
                                              const char *markingJSON,
                                              _mongocrypt_ciphertext_t *out) {
     get_ciphertext_from_marking_json_with_bufs(crypt,
-                                               TMP_BSON(markingJSON),
+                                               TMP_BSON_STR(markingJSON),
                                                out,
                                                TEST_FILE("./test/example/cmd.json"),
                                                TEST_BIN(16),
@@ -1011,13 +985,15 @@ static void validate_encrypted_token(mongocrypt_t *crypt,
                                      mongocrypt_binary_t *encrypted_token_bin,
                                      mongocrypt_binary_t *expected_esc_token,
                                      bool expect_is_leaf,
-                                     uint8_t *is_leaf_out) {
+                                     uint8_t *is_leaf_out,
+                                     bool expect_msize,
+                                     uint32_t *msize_out) {
     mongocrypt_status_t *status = mongocrypt_status_new();
     mc_ECOCToken_t *ecocToken = getECOCToken(crypt);
     const _mongocrypt_value_encryption_algorithm_t *fle2alg = _mcFLE2Algorithm();
 
     _mongocrypt_buffer_t p_buf, decrypt_buf;
-    uint32_t expect_decrypt_size = expected_esc_token->len + (expect_is_leaf ? 1 : 0);
+    uint32_t expect_decrypt_size = expected_esc_token->len + (expect_is_leaf ? 1 : 0) + (expect_msize ? 3 : 0);
     ASSERT(_mongocrypt_buffer_copy_from_data_and_size(&p_buf, encrypted_token_bin->data, encrypted_token_bin->len));
 
     _mongocrypt_buffer_init_size(&decrypt_buf, expect_decrypt_size);
@@ -1034,6 +1010,11 @@ static void validate_encrypted_token(mongocrypt_t *crypt,
 
     if (expect_is_leaf && is_leaf_out) {
         *is_leaf_out = decrypt_buf.data[decrypt_buf.len - 1];
+    }
+
+    if (expect_msize && msize_out) {
+        *msize_out = decrypt_buf.data[decrypt_buf.len - 3] | decrypt_buf.data[decrypt_buf.len - 2] << 8
+                   | decrypt_buf.data[decrypt_buf.len - 1] << 16;
     }
 
     _mongocrypt_buffer_cleanup(&decrypt_buf);
@@ -1089,11 +1070,9 @@ static iupv2_fields_common validate_iupv2_common(bson_t *iup_bson) {
 
 // Assert that the encryptedTokens fields in V2 insert/update ciphertext matches our expectations. Specifically, checks
 // that the length of these fields are what we expect, and that the "isLeaf" token is appended when using range V2.
-static void validate_range_ciphertext(_mongocrypt_ciphertext_t *ciphertext,
-                                      mongocrypt_t *crypt,
-                                      bool useRangeV2,
-                                      uint32_t expectedEdges) {
-    uint32_t expectedPLength = useRangeV2 ? (MONGOCRYPT_HMAC_SHA256_LEN + 1) : MONGOCRYPT_HMAC_SHA256_LEN;
+static void
+validate_range_ciphertext(_mongocrypt_ciphertext_t *ciphertext, mongocrypt_t *crypt, uint32_t expectedEdges) {
+    uint32_t expectedPLength = (MONGOCRYPT_HMAC_SHA256_LEN + 1);
 
     bson_t ciphertextBSON;
     bson_iter_t iter;
@@ -1109,14 +1088,10 @@ static void validate_range_ciphertext(_mongocrypt_ciphertext_t *ciphertext,
     ASSERT(res.p.len == 16 + expectedPLength);
 
     // validate crypto of 'p'
-    if (useRangeV2) {
-        uint8_t is_leaf = 255;
-        validate_encrypted_token(crypt, &res.p, &res.s, true, &is_leaf);
-        // isLeaf byte should be 0.
-        ASSERT(is_leaf == 0);
-    } else {
-        validate_encrypted_token(crypt, &res.p, &res.s, false, NULL);
-    }
+    uint8_t is_leaf = 255;
+    validate_encrypted_token(crypt, &res.p, &res.s, true, &is_leaf, false, NULL);
+    // isLeaf byte should be 0.
+    ASSERT(is_leaf == 0);
 
     // 'g' field should be available
     ASSERT(bson_iter_init_find(&iter, &ciphertextBSON, "g"));
@@ -1150,24 +1125,18 @@ static void validate_range_ciphertext(_mongocrypt_ciphertext_t *ciphertext,
         ASSERT_CMPUINT32(encrypted_token_bin.len, ==, 16 + expectedPLength);
         ASSERT_CMPUINT32(esc_token_bin.len, ==, MONGOCRYPT_HMAC_SHA256_LEN);
 
-        if (useRangeV2) {
-            uint8_t is_leaf = 255;
-            validate_encrypted_token(crypt, &encrypted_token_bin, &esc_token_bin, true, &is_leaf);
-            // isLeaf byte should be either 0 or 1.
-            if (is_leaf == 1) {
-                leaf_count++;
-            } else {
-                ASSERT_CMPUINT8(is_leaf, ==, 0)
-            }
+        uint8_t is_leaf = 255;
+        validate_encrypted_token(crypt, &encrypted_token_bin, &esc_token_bin, true, &is_leaf, false, NULL);
+        // isLeaf byte should be either 0 or 1.
+        if (is_leaf == 1) {
+            leaf_count++;
         } else {
-            validate_encrypted_token(crypt, &encrypted_token_bin, &esc_token_bin, false, NULL);
+            ASSERT_CMPUINT8(is_leaf, ==, 0);
         }
     }
     ASSERT_CMPSIZE_T(g_count, ==, expectedEdges);
-    if (useRangeV2) {
-        // There should be exactly one leaf in any insert call.
-        ASSERT_CMPSIZE_T(leaf_count, ==, 1);
-    }
+    // There should be exactly one leaf in any insert call.
+    ASSERT_CMPSIZE_T(leaf_count, ==, 1);
     bson_destroy(&ciphertextBSON);
 }
 
@@ -1177,25 +1146,7 @@ static void test_mc_marking_to_ciphertext_fle2_range(_mongocrypt_tester_t *teste
         return;
     }
 
-    // Test that whether range V2 is enabled or disabled, the ciphertext matches our expectations.
-    {
-        const char markingJSON[] = RAW_STRING({
-            't' : 1,
-            'a' : 3,
-            'v' : {'min' : 0, 'max' : 7, 'v' : 5},
-            's' : {'$numberLong' : '1'},
-            'cm' : {'$numberLong' : '1'}
-        });
-        _mongocrypt_ciphertext_t ciphertext;
-        _mongocrypt_ciphertext_init(&ciphertext);
-        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
-
-        get_ciphertext_from_marking_json(tester, crypt, markingJSON, &ciphertext);
-
-        validate_range_ciphertext(&ciphertext, crypt, false, 4);
-        _mongocrypt_ciphertext_cleanup(&ciphertext);
-        mongocrypt_destroy(crypt);
-    }
+    // Test that ciphertext matches our expectations.
     {
         const char markingJSON[] = RAW_STRING({
             't' : 1,
@@ -1206,18 +1157,20 @@ static void test_mc_marking_to_ciphertext_fle2_range(_mongocrypt_tester_t *teste
         });
         _mongocrypt_ciphertext_t ciphertext;
         _mongocrypt_ciphertext_init(&ciphertext);
-        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_WITH_RANGE_V2);
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
 
         get_ciphertext_from_marking_json(tester, crypt, markingJSON, &ciphertext);
 
-        validate_range_ciphertext(&ciphertext, crypt, true, 4);
+        validate_range_ciphertext(&ciphertext, crypt, 4);
         _mongocrypt_ciphertext_cleanup(&ciphertext);
 
         mongocrypt_destroy(crypt);
     }
 }
 
-static void validate_text_search_token_set_common(bson_iter_t *iter_at_token_set_obj, mongocrypt_t *crypt) {
+static void validate_text_search_token_set_common(bson_iter_t *iter_at_token_set_obj,
+                                                  mongocrypt_t *crypt,
+                                                  uint32_t expected_msize) {
     ASSERT(BSON_ITER_HOLDS_DOCUMENT(iter_at_token_set_obj));
     bson_t ts_bson;
     {
@@ -1241,13 +1194,16 @@ static void validate_text_search_token_set_common(bson_iter_t *iter_at_token_set
     ASSERT_CMPUINT32(esc_token_bin.len, ==, MONGOCRYPT_HMAC_SHA256_LEN);
 
     validate_and_get_bindata(&ts_bson, "p", BSON_SUBTYPE_BINARY, &encrypted_token_bin);
-    ASSERT_CMPUINT32(encrypted_token_bin.len, ==, (16 + MONGOCRYPT_HMAC_SHA256_LEN));
+    ASSERT_CMPUINT32(encrypted_token_bin.len, ==, (16 + MONGOCRYPT_HMAC_SHA256_LEN + 3 /* msize */));
 
     // validate crypto of p
-    validate_encrypted_token(crypt, &encrypted_token_bin, &esc_token_bin, false, NULL);
+    uint32_t out_msize;
+    validate_encrypted_token(crypt, &encrypted_token_bin, &esc_token_bin, false, NULL, true, &out_msize);
+    ASSERT_CMPUINT32(out_msize, ==, expected_msize);
 }
 
-static size_t validate_text_search_token_set_array_common(bson_iter_t *iter_at_array, mongocrypt_t *crypt) {
+static size_t
+validate_text_search_token_set_array_common(bson_iter_t *iter_at_array, mongocrypt_t *crypt, uint32_t expected_msize) {
     ASSERT(BSON_ITER_HOLDS_ARRAY(iter_at_array));
     bson_t arr_bson;
     {
@@ -1263,7 +1219,7 @@ static size_t validate_text_search_token_set_array_common(bson_iter_t *iter_at_a
     size_t count = 0;
     while (bson_iter_next(&iter)) {
         count++;
-        validate_text_search_token_set_common(&iter, crypt);
+        validate_text_search_token_set_common(&iter, crypt, expected_msize);
     }
     return count;
 }
@@ -1280,13 +1236,13 @@ typedef struct {
 static void validate_text_search_ciphertext(_mongocrypt_tester_t *tester,
                                             _mongocrypt_ciphertext_t *ciphertext,
                                             mongocrypt_t *crypt,
-                                            const char *text_value,
+                                            mc_FLE2TextSearchInsertSpec_t *spec,
                                             mongocrypt_fle2_placeholder_type_t type,
                                             uint64_t contention_max,
-                                            text_search_expected_token_counts expected_tag_counts) {
-    bson_t iup_bson;
+                                            text_search_expected_token_counts *expected_tag_counts) {
+    bson_t payload_bson;
     bson_iter_t iter;
-    ASSERT(_mongocrypt_buffer_to_bson(&ciphertext->data, &iup_bson));
+    ASSERT(_mongocrypt_buffer_to_bson(&ciphertext->data, &payload_bson));
 
     mc_ServerDataEncryptionLevel1Token_t *sdel1Token = getSDEL1Token(crypt);
     const mongocrypt_binary_t *keyId = TEST_BIN(16); // don't free!
@@ -1296,7 +1252,7 @@ static void validate_text_search_ciphertext(_mongocrypt_tester_t *tester,
         ASSERT_CMPUINT8(ciphertext->original_bson_type, ==, 0); // unset
         ASSERT_CMPUINT32(ciphertext->key_id.len, ==, 0);        // unset
 
-        iupv2_fields_common res = validate_iupv2_common(&iup_bson);
+        iupv2_fields_common res = validate_iupv2_common(&payload_bson);
 
         // validate u, t, k have correct values
         ASSERT_CMPBYTES(keyId->data, keyId->len, res.u.data, res.u.len);
@@ -1308,8 +1264,11 @@ static void validate_text_search_ciphertext(_mongocrypt_tester_t *tester,
         ASSERT(memcmp(res.e.data, mc_ServerDataEncryptionLevel1Token_get(sdel1Token)->data, res.e.len) == 0);
 
         // validate crypto of p
-        ASSERT(res.p.len == 16 + MONGOCRYPT_HMAC_SHA256_LEN);
-        validate_encrypted_token(crypt, &res.p, &res.s, false, NULL);
+        ASSERT(res.p.len == 16 + MONGOCRYPT_HMAC_SHA256_LEN + 3 /* msize */);
+        // msize should be 0 for p
+        uint32_t out_msize;
+        validate_encrypted_token(crypt, &res.p, &res.s, false, NULL, true, &out_msize);
+        ASSERT_CMPUINT32(0, ==, out_msize);
 
         // validate v decrypts cleanly
         {
@@ -1333,8 +1292,8 @@ static void validate_text_search_ciphertext(_mongocrypt_tester_t *tester,
 
             // BSON strings have 5 (4 for size + 1 null terminator) bytes of overhead
             ASSERT_CMPUINT32(pbytes, >=, 5);
-            ASSERT_CMPSIZE_T(strlen(text_value), ==, (pbytes - 5));
-            ASSERT_STREQUAL(text_value, ((char *)(ptext.data + 4)));
+            ASSERT_CMPSIZE_T(spec->len, ==, (pbytes - 5));
+            ASSERT_STREQUAL(spec->v, ((char *)(ptext.data + 4)));
 
             _mongocrypt_buffer_cleanup(&ptext);
             _mongocrypt_buffer_cleanup(&ctext);
@@ -1344,7 +1303,7 @@ static void validate_text_search_ciphertext(_mongocrypt_tester_t *tester,
         }
 
         // assert b exists with correct fields
-        ASSERT(bson_iter_init_find(&iter, &iup_bson, "b"));
+        ASSERT(bson_iter_init_find(&iter, &payload_bson, "b"));
         ASSERT(BSON_ITER_HOLDS_DOCUMENT(&iter));
 
         bson_t b_bson;
@@ -1356,25 +1315,77 @@ static void validate_text_search_ciphertext(_mongocrypt_tester_t *tester,
             ASSERT(bson_init_static(&b_bson, subdoc_buf, subdoc_len));
         }
 
+        // msize on equality token should be the sum of all tag counts, and for other tokens, 0.
         ASSERT(bson_iter_init_find(&b_iter, &b_bson, "e"));
-        validate_text_search_token_set_common(&b_iter, crypt);
+        validate_text_search_token_set_common(&b_iter,
+                                              crypt,
+                                              (uint32_t)(1 + expected_tag_counts->substrings
+                                                         + expected_tag_counts->suffixes
+                                                         + expected_tag_counts->prefixes));
 
         size_t tscount = 0;
         ASSERT(bson_iter_init_find(&b_iter, &b_bson, "s"));
-        tscount = validate_text_search_token_set_array_common(&b_iter, crypt);
-        ASSERT_CMPSIZE_T(expected_tag_counts.substrings, ==, tscount);
+        tscount = validate_text_search_token_set_array_common(&b_iter, crypt, 0 /* msize */);
+        ASSERT_CMPSIZE_T(expected_tag_counts->substrings, ==, tscount);
 
         ASSERT(bson_iter_init_find(&b_iter, &b_bson, "u"));
-        tscount = validate_text_search_token_set_array_common(&b_iter, crypt);
-        ASSERT_CMPSIZE_T(expected_tag_counts.suffixes, ==, tscount);
+        tscount = validate_text_search_token_set_array_common(&b_iter, crypt, 0 /* msize */);
+        ASSERT_CMPSIZE_T(expected_tag_counts->suffixes, ==, tscount);
 
         ASSERT(bson_iter_init_find(&b_iter, &b_bson, "p"));
-        tscount = validate_text_search_token_set_array_common(&b_iter, crypt);
-        ASSERT_CMPSIZE_T(expected_tag_counts.prefixes, ==, tscount);
+        tscount = validate_text_search_token_set_array_common(&b_iter, crypt, 0 /* msize */);
+        ASSERT_CMPSIZE_T(expected_tag_counts->prefixes, ==, tscount);
+    } else {
+        ASSERT_CMPUINT8(ciphertext->blob_subtype, ==, MC_SUBTYPE_FLE2FindTextPayload);
+        ASSERT_CMPUINT8(ciphertext->original_bson_type, ==, 0); // unset
+        ASSERT_CMPUINT32(ciphertext->key_id.len, ==, 0);        // unset
+        mc_FLE2FindTextPayload_t parsed;
+        mongocrypt_status_t *status = mongocrypt_status_new();
+
+        ASSERT_OK_STATUS(mc_FLE2FindTextPayload_parse(&parsed, &payload_bson, status), status);
+        ASSERT_CMPUINT64(parsed.maxContentionFactor, ==, contention_max);
+        ASSERT(parsed.caseFold == spec->casef);
+        ASSERT(parsed.diacriticFold == spec->diacf);
+
+        bool exact = !(spec->prefix.set || spec->suffix.set || spec->substr.set);
+        ASSERT(parsed.tokenSets.prefix.set == spec->prefix.set);
+        ASSERT(parsed.tokenSets.substring.set == spec->substr.set);
+        ASSERT(parsed.tokenSets.suffix.set == spec->suffix.set);
+        ASSERT(parsed.tokenSets.exact.set == exact);
+        ASSERT(parsed.prefixSpec.set == spec->prefix.set);
+        ASSERT(parsed.substringSpec.set == spec->substr.set);
+        ASSERT(parsed.suffixSpec.set == spec->suffix.set);
+
+#define CHECK_TOKENS(Type)                                                                                             \
+    if (parsed.tokenSets.Type.set) {                                                                                   \
+        ASSERT_CMPUINT32(parsed.tokenSets.Type.value.edcDerivedToken.len, ==, MONGOCRYPT_HMAC_SHA256_LEN);             \
+        ASSERT_CMPUINT32(parsed.tokenSets.Type.value.escDerivedToken.len, ==, MONGOCRYPT_HMAC_SHA256_LEN);             \
+        ASSERT_CMPUINT32(parsed.tokenSets.Type.value.serverDerivedFromDataToken.len, ==, MONGOCRYPT_HMAC_SHA256_LEN);  \
+    }
+        CHECK_TOKENS(prefix);
+        CHECK_TOKENS(suffix);
+        CHECK_TOKENS(substring);
+        CHECK_TOKENS(exact);
+#undef CHECK_TOKENS
+        if (parsed.prefixSpec.set) {
+            ASSERT_CMPUINT32(parsed.prefixSpec.value.lb, ==, spec->prefix.value.lb);
+            ASSERT_CMPUINT32(parsed.prefixSpec.value.ub, ==, spec->prefix.value.ub);
+        }
+        if (parsed.suffixSpec.set) {
+            ASSERT_CMPUINT32(parsed.suffixSpec.value.lb, ==, spec->suffix.value.lb);
+            ASSERT_CMPUINT32(parsed.suffixSpec.value.ub, ==, spec->suffix.value.ub);
+        }
+        if (parsed.substringSpec.set) {
+            ASSERT_CMPUINT32(parsed.substringSpec.value.mlen, ==, spec->substr.value.mlen);
+            ASSERT_CMPUINT32(parsed.substringSpec.value.lb, ==, spec->substr.value.lb);
+            ASSERT_CMPUINT32(parsed.substringSpec.value.ub, ==, spec->substr.value.ub);
+        }
+        mongocrypt_status_destroy(status);
+        mc_FLE2FindTextPayload_cleanup(&parsed);
     }
 
     mc_ServerDataEncryptionLevel1Token_destroy(sdel1Token);
-    bson_destroy(&iup_bson);
+    bson_destroy(&payload_bson);
 }
 
 static size_t calculate_expected_substring_tag_count(size_t beta, size_t mlen, size_t ub, size_t lb) {
@@ -1408,16 +1419,15 @@ static size_t calculate_expected_nfix_tag_count(size_t beta, size_t ub, size_t l
 }
 
 // Runs _mongocrypt_marking_to_ciphertext to compute the ciphertext for the given marking.
-static bool test_text_search_insert_marking_to_ciphertext(_mongocrypt_tester_t *tester,
-                                                          mongocrypt_t *crypt,
-                                                          _mongocrypt_ciphertext_t *out,
-                                                          const char *test_string,
-                                                          int test_string_len,
-                                                          int mlen,
-                                                          mongocrypt_status_t *status) {
-    ASSERT_CMPINT(mlen, >, 0);
-
+static bool test_text_search_marking_to_ciphertext(_mongocrypt_tester_t *tester,
+                                                   mongocrypt_t *crypt,
+                                                   _mongocrypt_ciphertext_t *out,
+                                                   mongocrypt_fle2_placeholder_type_t type,
+                                                   int64_t contention_max,
+                                                   mc_FLE2TextSearchInsertSpec_t *test_spec,
+                                                   mongocrypt_status_t *status) {
     mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+
     // Set up encryption environment
     ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "test", -1, TEST_FILE("./test/example/cmd.json")), ctx);
     // Add a test key
@@ -1430,20 +1440,36 @@ static bool test_text_search_insert_marking_to_ciphertext(_mongocrypt_tester_t *
     _mongocrypt_marking_t marking;
 
     bson_t *marking_bson = bson_new();
-    BSON_APPEND_INT32(marking_bson, "t", 1);
-    BSON_APPEND_INT32(marking_bson, "a", 4);
-    BSON_APPEND_INT64(marking_bson, "cm", 2);
+    BSON_APPEND_INT32(marking_bson, "t", type);
+    BSON_APPEND_INT32(marking_bson, "a", MONGOCRYPT_FLE2_ALGORITHM_TEXT_SEARCH);
+    BSON_APPEND_INT64(marking_bson, "cm", contention_max);
     bson_t text_spec;
     BSON_APPEND_DOCUMENT_BEGIN(marking_bson, "v", &text_spec);
-    bson_append_utf8(&text_spec, "v", 1, test_string, test_string_len);
-    BSON_APPEND_BOOL(&text_spec, "casef", false);
-    BSON_APPEND_BOOL(&text_spec, "diacf", false);
-    bson_t subspec;
-    BSON_APPEND_DOCUMENT_BEGIN(&text_spec, "substr", &subspec);
-    BSON_APPEND_INT32(&subspec, "mlen", mlen);
-    BSON_APPEND_INT32(&subspec, "ub", 1);
-    BSON_APPEND_INT32(&subspec, "lb", 1);
-    ASSERT(bson_append_document_end(&text_spec, &subspec));
+    bson_append_utf8(&text_spec, "v", 1, test_spec->v, test_spec->len);
+    BSON_APPEND_BOOL(&text_spec, "casef", test_spec->casef);
+    BSON_APPEND_BOOL(&text_spec, "diacf", test_spec->diacf);
+    if (test_spec->prefix.set) {
+        bson_t subspec;
+        BSON_APPEND_DOCUMENT_BEGIN(&text_spec, "prefix", &subspec);
+        BSON_APPEND_INT32(&subspec, "ub", test_spec->prefix.value.ub);
+        BSON_APPEND_INT32(&subspec, "lb", test_spec->prefix.value.lb);
+        ASSERT(bson_append_document_end(&text_spec, &subspec));
+    }
+    if (test_spec->substr.set) {
+        bson_t subspec;
+        BSON_APPEND_DOCUMENT_BEGIN(&text_spec, "substr", &subspec);
+        BSON_APPEND_INT32(&subspec, "mlen", test_spec->substr.value.mlen);
+        BSON_APPEND_INT32(&subspec, "ub", test_spec->substr.value.ub);
+        BSON_APPEND_INT32(&subspec, "lb", test_spec->substr.value.lb);
+        ASSERT(bson_append_document_end(&text_spec, &subspec));
+    }
+    if (test_spec->suffix.set) {
+        bson_t subspec;
+        BSON_APPEND_DOCUMENT_BEGIN(&text_spec, "suffix", &subspec);
+        BSON_APPEND_INT32(&subspec, "ub", test_spec->suffix.value.ub);
+        BSON_APPEND_INT32(&subspec, "lb", test_spec->suffix.value.lb);
+        ASSERT(bson_append_document_end(&text_spec, &subspec));
+    }
     ASSERT(bson_append_document_end(marking_bson, &text_spec));
 
     // Add key identifier info to the marking
@@ -1471,99 +1497,104 @@ static void test_mc_marking_to_ciphertext_fle2_text_search(_mongocrypt_tester_t 
 
     // Test substring
     {
-        const char *markingJSON = RAW_STRING({
-            't' : 1,
-            'a' : 4,
-            'v' : {
-                'v' : "foobar",
-                'casef' : false,
-                'diacf' : false,
-                'substr' :
-                    {'mlen' : {'$numberInt' : '1000'}, 'ub' : {'$numberInt' : '100'}, 'lb' : {'$numberInt' : '10'}}
-            },
-            'cm' : {'$numberLong' : '2'}
-        });
         _mongocrypt_ciphertext_t ciphertext;
         _mongocrypt_ciphertext_init(&ciphertext);
         mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        mongocrypt_status_t *status = mongocrypt_status_new();
+        mc_FLE2TextSearchInsertSpec_t spec = {.v = "foobar",
+                                              .len = 6,
+                                              .substr.set = true,
+                                              .substr.value = {.mlen = 1000, .ub = 100, .lb = 10}};
         text_search_expected_token_counts counts = {0};
         counts.substrings = calculate_expected_substring_tag_count(6, 1000, 100, 10);
 
-        get_ciphertext_from_marking_json(tester, crypt, markingJSON, &ciphertext);
+        ASSERT_OK_STATUS(test_text_search_marking_to_ciphertext(tester,
+                                                                crypt,
+                                                                &ciphertext,
+                                                                MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT,
+                                                                2,
+                                                                &spec,
+                                                                status),
+                         status);
         validate_text_search_ciphertext(tester,
                                         &ciphertext,
                                         crypt,
-                                        "foobar",
+                                        &spec,
                                         MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT,
                                         2,
-                                        counts);
+                                        &counts);
 
+        mongocrypt_status_destroy(status);
         mongocrypt_destroy(crypt);
         _mongocrypt_ciphertext_cleanup(&ciphertext);
     }
 
     // Test suffix + prefix
     {
-        const char *markingJSON = RAW_STRING({
-            't' : 1,
-            'a' : 4,
-            'v' : {
-                'v' : "foobar",
-                'casef' : false,
-                'diacf' : false,
-                'suffix' : {'ub' : {'$numberInt' : '100'}, 'lb' : {'$numberInt' : '10'}},
-                'prefix' : {'ub' : {'$numberInt' : '100'}, 'lb' : {'$numberInt' : '10'}}
-            },
-            'cm' : {'$numberLong' : '2'}
-        });
         _mongocrypt_ciphertext_t ciphertext;
         _mongocrypt_ciphertext_init(&ciphertext);
         mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        mongocrypt_status_t *status = mongocrypt_status_new();
+        mc_FLE2TextSearchInsertSpec_t spec = {.v = "foobar",
+                                              .len = 6,
+                                              .suffix.set = true,
+                                              .suffix.value = {.ub = 100, .lb = 10},
+                                              .prefix.set = true,
+                                              .prefix.value = {.ub = 100, .lb = 10}};
         text_search_expected_token_counts counts = {0};
         counts.suffixes = counts.prefixes = calculate_expected_nfix_tag_count(6, 100, 10);
 
-        get_ciphertext_from_marking_json(tester, crypt, markingJSON, &ciphertext);
+        ASSERT_OK_STATUS(test_text_search_marking_to_ciphertext(tester,
+                                                                crypt,
+                                                                &ciphertext,
+                                                                MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT,
+                                                                2,
+                                                                &spec,
+                                                                status),
+                         status);
         validate_text_search_ciphertext(tester,
                                         &ciphertext,
                                         crypt,
-                                        "foobar",
+                                        &spec,
                                         MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT,
                                         2,
-                                        counts);
-
+                                        &counts);
+        mongocrypt_status_destroy(status);
         mongocrypt_destroy(crypt);
         _mongocrypt_ciphertext_cleanup(&ciphertext);
     }
 
     // Test empty string
     {
-        const char *markingJSON = RAW_STRING({
-            't' : 1,
-            'a' : 4,
-            'v' : {
-                'v' : "",
-                'casef' : false,
-                'diacf' : false,
-                'prefix' : {'ub' : {'$numberInt' : '100'}, 'lb' : {'$numberInt' : '10'}}
-            },
-            'cm' : {'$numberLong' : '2'}
-        });
         _mongocrypt_ciphertext_t ciphertext;
         _mongocrypt_ciphertext_init(&ciphertext);
         mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        mongocrypt_status_t *status = mongocrypt_status_new();
+        mc_FLE2TextSearchInsertSpec_t spec = {.v = "",
+                                              .len = 0,
+                                              .prefix.set = true,
+                                              .prefix.value = {.ub = 100, .lb = 10}};
         text_search_expected_token_counts counts = {0};
 
         // beta is 1 for empty strings
         counts.prefixes = calculate_expected_nfix_tag_count(1, 100, 10);
 
-        get_ciphertext_from_marking_json(tester, crypt, markingJSON, &ciphertext);
+        ASSERT_OK_STATUS(test_text_search_marking_to_ciphertext(tester,
+                                                                crypt,
+                                                                &ciphertext,
+                                                                MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT,
+                                                                2,
+                                                                &spec,
+                                                                status),
+                         status);
         validate_text_search_ciphertext(tester,
                                         &ciphertext,
                                         crypt,
-                                        "",
+                                        &spec,
                                         MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT,
                                         2,
-                                        counts);
+                                        &counts);
+        mongocrypt_status_destroy(status);
         mongocrypt_destroy(crypt);
         _mongocrypt_ciphertext_cleanup(&ciphertext);
     }
@@ -1571,33 +1602,37 @@ static void test_mc_marking_to_ciphertext_fle2_text_search(_mongocrypt_tester_t 
     // Test string cbc-padded length is less than lb (ie. substring/suffix/prefix tag sets will be
     // empty)
     {
-        const char *markingJSON = RAW_STRING({
-            't' : 1,
-            'a' : 4,
-            'v' : {
-                'v' : "foobar",
-                'casef' : false,
-                'diacf' : false,
-                'substr' :
-                    {'mlen' : {'$numberInt' : '1000'}, 'ub' : {'$numberInt' : '100'}, 'lb' : {'$numberInt' : '20'}},
-                'prefix' : {'ub' : {'$numberInt' : '100'}, 'lb' : {'$numberInt' : '20'}},
-                'suffix' : {'ub' : {'$numberInt' : '100'}, 'lb' : {'$numberInt' : '20'}}
-            },
-            'cm' : {'$numberLong' : '2'}
-        });
         _mongocrypt_ciphertext_t ciphertext;
         _mongocrypt_ciphertext_init(&ciphertext);
         mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        mongocrypt_status_t *status = mongocrypt_status_new();
+        mc_FLE2TextSearchInsertSpec_t spec = {.v = "foobar",
+                                              .len = 6,
+                                              .substr.set = true,
+                                              .substr.value = {.mlen = 1000, .ub = 100, .lb = 20},
+                                              .prefix.set = true,
+                                              .prefix.value = {.ub = 100, .lb = 20},
+                                              .suffix.set = true,
+                                              .suffix.value = {.ub = 100, .lb = 20}};
         text_search_expected_token_counts counts = {0};
 
-        get_ciphertext_from_marking_json(tester, crypt, markingJSON, &ciphertext);
+        ASSERT_OK_STATUS(test_text_search_marking_to_ciphertext(tester,
+                                                                crypt,
+                                                                &ciphertext,
+                                                                MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT,
+                                                                2,
+                                                                &spec,
+                                                                status),
+                         status);
+
         validate_text_search_ciphertext(tester,
                                         &ciphertext,
                                         crypt,
-                                        "foobar",
+                                        &spec,
                                         MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT,
                                         2,
-                                        counts);
+                                        &counts);
+        mongocrypt_status_destroy(status);
         mongocrypt_destroy(crypt);
         _mongocrypt_ciphertext_cleanup(&ciphertext);
     }
@@ -1608,11 +1643,19 @@ static void test_mc_marking_to_ciphertext_fle2_text_search(_mongocrypt_tester_t 
         _mongocrypt_ciphertext_init(&ciphertext);
         mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
         mongocrypt_status_t *status = mongocrypt_status_new();
-
-        ASSERT_FAILS_STATUS(
-            test_text_search_insert_marking_to_ciphertext(tester, crypt, &ciphertext, "foobar", 6, 3, status),
-            status,
-            "longer than the maximum length for substring indexing");
+        mc_FLE2TextSearchInsertSpec_t spec = {.v = "foobar",
+                                              .len = 6,
+                                              .substr.set = true,
+                                              .substr.value = {.mlen = 3, .ub = 1, .lb = 1}};
+        ASSERT_FAILS_STATUS(test_text_search_marking_to_ciphertext(tester,
+                                                                   crypt,
+                                                                   &ciphertext,
+                                                                   MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT,
+                                                                   2,
+                                                                   &spec,
+                                                                   status),
+                            status,
+                            "longer than the maximum length for substring indexing");
 
         mongocrypt_status_destroy(status);
         mongocrypt_destroy(crypt);
@@ -1626,37 +1669,46 @@ static void test_mc_marking_to_ciphertext_fle2_text_search(_mongocrypt_tester_t 
         mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
         const char *expected_msg = "String passed in was not valid UTF-8";
         mongocrypt_status_t *status = mongocrypt_status_new();
+        mc_FLE2TextSearchInsertSpec_t spec = {.v = "foob\xffr",
+                                              .len = 6,
+                                              .substr.set = true,
+                                              .substr.value = {.mlen = INT32_MAX, .ub = 1, .lb = 1}};
 
         // invalid utf-8 byte 0xff
-        ASSERT_FAILS_STATUS(test_text_search_insert_marking_to_ciphertext(tester,
-                                                                          crypt,
-                                                                          &ciphertext,
-                                                                          "foob\xffr",
-                                                                          6,
-                                                                          INT32_MAX,
-                                                                          status),
+        ASSERT_FAILS_STATUS(test_text_search_marking_to_ciphertext(tester,
+                                                                   crypt,
+                                                                   &ciphertext,
+                                                                   MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT,
+                                                                   2,
+                                                                   &spec,
+                                                                   status),
                             status,
                             expected_msg);
         _mongocrypt_status_reset(status);
+
         // embedded null byte
-        ASSERT_FAILS_STATUS(test_text_search_insert_marking_to_ciphertext(tester,
-                                                                          crypt,
-                                                                          &ciphertext,
-                                                                          "foob\x00r",
-                                                                          6,
-                                                                          INT32_MAX,
-                                                                          status),
+        spec.v = "foob\x00r";
+        ASSERT_FAILS_STATUS(test_text_search_marking_to_ciphertext(tester,
+                                                                   crypt,
+                                                                   &ciphertext,
+                                                                   MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT,
+                                                                   2,
+                                                                   &spec,
+                                                                   status),
                             status,
                             expected_msg);
         _mongocrypt_status_reset(status);
+
         // overlong encoding of 'a' (\x61)
-        ASSERT_FAILS_STATUS(test_text_search_insert_marking_to_ciphertext(tester,
-                                                                          crypt,
-                                                                          &ciphertext,
-                                                                          "foob\xE0\x81\xA1r",
-                                                                          8,
-                                                                          INT32_MAX,
-                                                                          status),
+        spec.v = "foob\xE0\x81\xA1r";
+        spec.len = 8;
+        ASSERT_FAILS_STATUS(test_text_search_marking_to_ciphertext(tester,
+                                                                   crypt,
+                                                                   &ciphertext,
+                                                                   MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT,
+                                                                   2,
+                                                                   &spec,
+                                                                   status),
                             status,
                             expected_msg);
 
@@ -1665,26 +1717,30 @@ static void test_mc_marking_to_ciphertext_fle2_text_search(_mongocrypt_tester_t 
         _mongocrypt_ciphertext_cleanup(&ciphertext);
     }
 
-    // test string is too large
+    // Test string is too large
     {
         _mongocrypt_ciphertext_t ciphertext;
         _mongocrypt_ciphertext_init(&ciphertext);
         mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
         const char *expected_msg = "String passed in was too long";
         mongocrypt_status_t *status = mongocrypt_status_new();
+        mc_FLE2TextSearchInsertSpec_t spec = {.substr.set = true,
+                                              .substr.value = {.mlen = INT32_MAX, .ub = 1, .lb = 1}};
 
         int len = (16 * 1024 * 1024) + 2;
         char *large_str = bson_malloc(len);
         memset(large_str, 'a', len);
         large_str[len - 1] = '\0';
+        spec.v = large_str;
+        spec.len = len - 1;
 
-        ASSERT_FAILS_STATUS(test_text_search_insert_marking_to_ciphertext(tester,
-                                                                          crypt,
-                                                                          &ciphertext,
-                                                                          large_str,
-                                                                          len - 1,
-                                                                          INT32_MAX,
-                                                                          status),
+        ASSERT_FAILS_STATUS(test_text_search_marking_to_ciphertext(tester,
+                                                                   crypt,
+                                                                   &ciphertext,
+                                                                   MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT,
+                                                                   2,
+                                                                   &spec,
+                                                                   status),
                             status,
                             expected_msg);
         bson_free(large_str);
@@ -1692,20 +1748,284 @@ static void test_mc_marking_to_ciphertext_fle2_text_search(_mongocrypt_tester_t 
         mongocrypt_destroy(crypt);
         _mongocrypt_ciphertext_cleanup(&ciphertext);
     }
+
+    // Test insert placeholder missing substring/suffix/prefix spec
+    {
+        _mongocrypt_ciphertext_t ciphertext;
+        _mongocrypt_ciphertext_init(&ciphertext);
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        const char *expected_msg = "missing a substring, suffix, or prefix index specification";
+        mongocrypt_status_t *status = mongocrypt_status_new();
+        mc_FLE2TextSearchInsertSpec_t spec = {.v = "foo", .len = 3};
+        ASSERT_FAILS_STATUS(test_text_search_marking_to_ciphertext(tester,
+                                                                   crypt,
+                                                                   &ciphertext,
+                                                                   MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_INSERT,
+                                                                   2,
+                                                                   &spec,
+                                                                   status),
+                            status,
+                            expected_msg);
+        mongocrypt_status_destroy(status);
+        mongocrypt_destroy(crypt);
+        _mongocrypt_ciphertext_cleanup(&ciphertext);
+    }
+
+    // Test find placeholder has multiple query specs
+    {
+        _mongocrypt_ciphertext_t ciphertext;
+        _mongocrypt_ciphertext_init(&ciphertext);
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        const char *expected_msg = "cannot contain multiple query type specifications";
+        mongocrypt_status_t *status = mongocrypt_status_new();
+        mc_FLE2TextSearchInsertSpec_t spec = {.v = "foo",
+                                              .len = 3,
+                                              .substr.set = true,
+                                              .substr.value = {.mlen = 3, .ub = 1, .lb = 1},
+                                              .prefix.set = true,
+                                              .prefix.value = {.ub = 1, .lb = 1}};
+
+        ASSERT_FAILS_STATUS(test_text_search_marking_to_ciphertext(tester,
+                                                                   crypt,
+                                                                   &ciphertext,
+                                                                   MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND,
+                                                                   2,
+                                                                   &spec,
+                                                                   status),
+                            status,
+                            expected_msg);
+        mongocrypt_status_destroy(status);
+        mongocrypt_destroy(crypt);
+        _mongocrypt_ciphertext_cleanup(&ciphertext);
+    }
+
+    // Test find placeholder has invalid UTF-8 string
+    {
+        _mongocrypt_ciphertext_t ciphertext;
+        _mongocrypt_ciphertext_init(&ciphertext);
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        const char *expected_msg = "String passed in was not valid UTF-8";
+        mongocrypt_status_t *status = mongocrypt_status_new();
+        mc_FLE2TextSearchInsertSpec_t spec = {.v = "foob\xffr",
+                                              .len = 6,
+                                              .substr.set = true,
+                                              .substr.value = {.mlen = 50, .ub = 30, .lb = 1}};
+
+        ASSERT_FAILS_STATUS(test_text_search_marking_to_ciphertext(tester,
+                                                                   crypt,
+                                                                   &ciphertext,
+                                                                   MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND,
+                                                                   2,
+                                                                   &spec,
+                                                                   status),
+                            status,
+                            expected_msg);
+        mongocrypt_status_destroy(status);
+        mongocrypt_destroy(crypt);
+        _mongocrypt_ciphertext_cleanup(&ciphertext);
+    }
+
+    // Test exact match find
+    {
+        _mongocrypt_ciphertext_t ciphertext;
+        _mongocrypt_ciphertext_init(&ciphertext);
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        mongocrypt_status_t *status = mongocrypt_status_new();
+        mc_FLE2TextSearchInsertSpec_t spec = {.v = "foo", .len = 3, .diacf = true, .casef = true};
+        ASSERT_OK_STATUS(test_text_search_marking_to_ciphertext(tester,
+                                                                crypt,
+                                                                &ciphertext,
+                                                                MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND,
+                                                                7,
+                                                                &spec,
+                                                                status),
+                         status);
+        validate_text_search_ciphertext(tester,
+                                        &ciphertext,
+                                        crypt,
+                                        &spec,
+                                        MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND,
+                                        7,
+                                        NULL);
+        _mongocrypt_ciphertext_cleanup(&ciphertext);
+        _mongocrypt_ciphertext_init(&ciphertext);
+
+        // Test empty string case
+        spec.v = "";
+        spec.len = 0;
+        ASSERT_OK_STATUS(test_text_search_marking_to_ciphertext(tester,
+                                                                crypt,
+                                                                &ciphertext,
+                                                                MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND,
+                                                                7,
+                                                                &spec,
+                                                                status),
+                         status);
+        validate_text_search_ciphertext(tester,
+                                        &ciphertext,
+                                        crypt,
+                                        &spec,
+                                        MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND,
+                                        7,
+                                        NULL);
+
+        mongocrypt_status_destroy(status);
+        mongocrypt_destroy(crypt);
+        _mongocrypt_ciphertext_cleanup(&ciphertext);
+    }
+
+    // Test substring find
+    {
+        _mongocrypt_ciphertext_t ciphertext;
+        _mongocrypt_ciphertext_init(&ciphertext);
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        mongocrypt_status_t *status = mongocrypt_status_new();
+        mc_FLE2TextSearchInsertSpec_t spec = {.v = "foo",
+                                              .len = 3,
+                                              .diacf = true,
+                                              .substr.set = true,
+                                              .substr.value = {.mlen = 300, .ub = 200, .lb = 2}};
+        ASSERT_OK_STATUS(test_text_search_marking_to_ciphertext(tester,
+                                                                crypt,
+                                                                &ciphertext,
+                                                                MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND,
+                                                                8,
+                                                                &spec,
+                                                                status),
+                         status);
+        validate_text_search_ciphertext(tester,
+                                        &ciphertext,
+                                        crypt,
+                                        &spec,
+                                        MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND,
+                                        8,
+                                        NULL);
+        _mongocrypt_ciphertext_cleanup(&ciphertext);
+        _mongocrypt_ciphertext_init(&ciphertext);
+
+        // Test empty string case
+        spec.v = "";
+        spec.len = 0;
+        ASSERT_FAILS_STATUS(test_text_search_marking_to_ciphertext(tester,
+                                                                   crypt,
+                                                                   &ciphertext,
+                                                                   MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND,
+                                                                   8,
+                                                                   &spec,
+                                                                   status),
+                            status,
+                            "string value cannot be empty");
+        mongocrypt_status_destroy(status);
+        _mongocrypt_ciphertext_cleanup(&ciphertext);
+        mongocrypt_destroy(crypt);
+    }
+
+    // Test suffix find
+    {
+        _mongocrypt_ciphertext_t ciphertext;
+        _mongocrypt_ciphertext_init(&ciphertext);
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        mongocrypt_status_t *status = mongocrypt_status_new();
+        mc_FLE2TextSearchInsertSpec_t spec = {.v = "foo",
+                                              .len = 3,
+                                              .casef = true,
+                                              .suffix.set = true,
+                                              .suffix.value = {.ub = 100, .lb = 1}};
+        ASSERT_OK_STATUS(test_text_search_marking_to_ciphertext(tester,
+                                                                crypt,
+                                                                &ciphertext,
+                                                                MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND,
+                                                                9,
+                                                                &spec,
+                                                                status),
+                         status);
+        validate_text_search_ciphertext(tester,
+                                        &ciphertext,
+                                        crypt,
+                                        &spec,
+                                        MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND,
+                                        9,
+                                        NULL);
+        _mongocrypt_ciphertext_cleanup(&ciphertext);
+        _mongocrypt_ciphertext_init(&ciphertext);
+
+        // Test empty string case
+        spec.v = "";
+        spec.len = 0;
+        ASSERT_FAILS_STATUS(test_text_search_marking_to_ciphertext(tester,
+                                                                   crypt,
+                                                                   &ciphertext,
+                                                                   MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND,
+                                                                   8,
+                                                                   &spec,
+                                                                   status),
+                            status,
+                            "string value cannot be empty");
+        mongocrypt_status_destroy(status);
+        _mongocrypt_ciphertext_cleanup(&ciphertext);
+        mongocrypt_destroy(crypt);
+    }
+
+    // Test prefix find
+    {
+        _mongocrypt_ciphertext_t ciphertext;
+        _mongocrypt_ciphertext_init(&ciphertext);
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        mongocrypt_status_t *status = mongocrypt_status_new();
+        mc_FLE2TextSearchInsertSpec_t spec = {.v = "foo",
+                                              .len = 3,
+                                              .prefix.set = true,
+                                              .prefix.value = {.ub = 300, .lb = 3}};
+        ASSERT_OK_STATUS(test_text_search_marking_to_ciphertext(tester,
+                                                                crypt,
+                                                                &ciphertext,
+                                                                MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND,
+                                                                10,
+                                                                &spec,
+                                                                status),
+                         status);
+        validate_text_search_ciphertext(tester,
+                                        &ciphertext,
+                                        crypt,
+                                        &spec,
+                                        MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND,
+                                        10,
+                                        NULL);
+        _mongocrypt_ciphertext_cleanup(&ciphertext);
+        _mongocrypt_ciphertext_init(&ciphertext);
+
+        // Test empty string case
+        spec.v = "";
+        spec.len = 0;
+        ASSERT_FAILS_STATUS(test_text_search_marking_to_ciphertext(tester,
+                                                                   crypt,
+                                                                   &ciphertext,
+                                                                   MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND,
+                                                                   8,
+                                                                   &spec,
+                                                                   status),
+                            status,
+                            "string value cannot be empty");
+        mongocrypt_status_destroy(status);
+        _mongocrypt_ciphertext_cleanup(&ciphertext);
+        mongocrypt_destroy(crypt);
+    }
 }
 
 static void test_ciphertext_len_steps_fle2_text_search(_mongocrypt_tester_t *tester) {
-    const char *markingJSONFormat = RAW_STRING({
-        't' : 1,
-        'a' : 4,
-        'v' : {
-            'v' : "%s",
-            'casef' : false,
-            'diacf' : false,
-            'suffix' : {'ub' : {'$numberInt' : '2'}, 'lb' : {'$numberInt' : '1'}}
-        },
-        'cm' : {'$numberLong' : '2'}
-    });
+#define MARKING_JSON_FORMAT                                                                                            \
+    RAW_STRING({                                                                                                       \
+        't' : 1,                                                                                                       \
+        'a' : 4,                                                                                                       \
+        'v' : {                                                                                                        \
+            'v' : "%s",                                                                                                \
+            'casef' : false,                                                                                           \
+            'diacf' : false,                                                                                           \
+            'suffix' : {'ub' : {'$numberInt' : '2'}, 'lb' : {'$numberInt' : '1'}}                                      \
+        },                                                                                                             \
+        'cm' : {'$numberLong' : '2'}                                                                                   \
+    })
+
     size_t last_len = 0;
     mongocrypt_binary_t *cmd = TEST_FILE("./test/example/cmd.json");
     mongocrypt_binary_t *key_file = TEST_BIN(16);
@@ -1715,10 +2035,10 @@ static void test_ciphertext_len_steps_fle2_text_search(_mongocrypt_tester_t *tes
     for (size_t str_len = 0; str_len < 256; str_len++) {
         char *v = bson_malloc0(str_len + 1);
         memset(v, 'a', str_len);
-        size_t bufsize = snprintf(NULL, 0, markingJSONFormat, v) + 1;
+        size_t bufsize = snprintf(NULL, 0, MARKING_JSON_FORMAT, v) + 1;
         char *markingJSON = bson_malloc(bufsize);
-        sprintf(markingJSON, markingJSONFormat, v);
-        bson_t *marking_bson = TMP_BSON(markingJSON);
+        sprintf(markingJSON, MARKING_JSON_FORMAT, v);
+        bson_t *marking_bson = TMP_BSON_STR(markingJSON);
 
         _mongocrypt_ciphertext_t ciphertext;
         _mongocrypt_ciphertext_init(&ciphertext);
@@ -1750,6 +2070,8 @@ static void test_ciphertext_len_steps_fle2_text_search(_mongocrypt_tester_t *tes
         bson_destroy(marking_bson);
         tester->bson_count--;
     }
+
+#undef MARKING_JSON_FORMAT
 }
 
 void _mongocrypt_tester_install_marking(_mongocrypt_tester_t *tester) {

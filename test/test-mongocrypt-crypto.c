@@ -44,9 +44,10 @@ static bool _test_uses_ctr(const _test_mc_crypto_roundtrip_t *test) {
         /* we just get garbage data. */                                                                                \
         ASSERT(out.len == test->plaintext.len);                                                                        \
         ASSERT(memcmp(out.data, test->plaintext.data, out.len) != 0);                                                  \
-    } else {                                                                                                           \
+    } else if (1) {                                                                                                    \
         ASSERT_FAILS_STATUS(ret, status, "HMAC validation failure");                                                   \
-    }
+    } else                                                                                                             \
+        ((void)0)
 
 static void _test_roundtrip_single(const _test_mc_crypto_roundtrip_t *test) {
     if (!_aes_ctr_is_supported_by_os && _test_uses_ctr(test)) {
@@ -283,7 +284,7 @@ typedef struct {
     const char *expect;
 } hmac_sha_256_test_t;
 
-void _test_native_crypto_hmac_sha_256(_mongocrypt_tester_t *tester) {
+static void _test_native_crypto_hmac_sha_256(_mongocrypt_tester_t *tester) {
     /* Test data generated with OpenSSL CLI:
     $ echo -n "test" | openssl dgst -mac hmac -macopt \
     hexkey:6bb2664e8d444377d3cd9566c005593b7ed8a35ab8eac9eb5ffa6e426854e5cc \

@@ -29,9 +29,10 @@ def _parse_version(version):
 
 ffi = cffi.FFI()
 
-# Generated with strip_header.py
+# Start embedding from update_binding.py
 ffi.cdef(
-    """/*
+    """
+/*
  * Copyright 2019-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -259,7 +260,6 @@ typedef enum {
     MONGOCRYPT_LOG_LEVEL_ERROR = 1,
     MONGOCRYPT_LOG_LEVEL_WARNING = 2,
     MONGOCRYPT_LOG_LEVEL_INFO = 3,
-    MONGOCRYPT_LOG_LEVEL_TRACE = 4
 } mongocrypt_log_level_t;
 
 /**
@@ -322,6 +322,16 @@ bool mongocrypt_setopt_log_handler(mongocrypt_t *crypt, mongocrypt_log_fn_t log_
  * Retrieve it with @ref mongocrypt_ctx_status
  */
 bool mongocrypt_setopt_retry_kms(mongocrypt_t *crypt, bool enable);
+
+/**
+ * Enable support for multiple collection schemas. Required to support $lookup.
+ *
+ * @param[in] crypt The @ref mongocrypt_t object.
+ * @pre @ref mongocrypt_init has not been called on @p crypt.
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_ctx_status
+ */
+bool mongocrypt_setopt_enable_multiple_collinfo(mongocrypt_t *crypt);
 
 /**
  * Configure an AWS KMS provider on the @ref mongocrypt_t object.
@@ -676,6 +686,7 @@ bool mongocrypt_ctx_setopt_algorithm(mongocrypt_ctx_t *ctx, const char *algorith
 /// String constant for setopt_algorithm "Indexed" explicit encryption
 /// String constant for setopt_algorithm "Unindexed" explicit encryption
 // DEPRECATED: support "RangePreview" has been removed in favor of "range".
+/// NOTE: "textPreview" is experimental only and may be removed in a future non-major release.
 
 /**
  * Identify the AWS KMS master key to use for creating a data key.
@@ -1456,6 +1467,33 @@ bool mongocrypt_ctx_setopt_query_type(mongocrypt_ctx_t *ctx, const char *query_t
 bool mongocrypt_ctx_setopt_algorithm_range(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *opts);
 
 /**
+ * Set options for explicit encryption with the "textPreview" algorithm.
+ *
+ * NOTE: "textPreview" is experimental only and may be removed in a future non-major release.
+ * @p opts is a BSON document of the form:
+ * {
+ *   "caseSensitive": bool,
+ * . "diacriticSensitive": bool,
+ * . "prefix": Optional{
+ * .   "strMaxQueryLength": Int32,
+ * .   "strMinQueryLength": Int32,
+ * . },
+ * . "suffix": Optional{
+ * .   "strMaxQueryLength": Int32,
+ * .   "strMinQueryLength": Int32,
+ * . },
+ * . "substring": Optional{
+ * .   "strMaxLength": Int32,
+ * .   "strMaxQueryLength": Int32,
+ * .   "strMinQueryLength": Int32,
+ * . },
+ * }
+ *
+ * "prefix" and "suffix" can both be set.
+ */
+bool mongocrypt_ctx_setopt_algorithm_text(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *opts);
+
+/**
  * Set the expiration time for the data encryption key cache. Defaults to 60 seconds if not set.
  *
  * @param[in] ctx The @ref mongocrypt_ctx_t object.
@@ -1466,8 +1504,13 @@ bool mongocrypt_setopt_key_expiration(mongocrypt_t *crypt, uint64_t cache_expira
 
 /// String constants for setopt_query_type
 // DEPRECATED: Support "rangePreview" has been removed in favor of "range".
+/// NOTE: "substringPreview" is experimental and may be removed in a future non-major release.
+/// NOTE: "suffixPreview" is experimental and may be removed in a future non-major release.
+/// NOTE: "prefixPreview" is experimental and may be removed in a future non-major release.
+
 """
 )
+# End embedding from update_binding.py
 
 
 def _to_string(cdata):

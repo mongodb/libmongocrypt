@@ -54,6 +54,14 @@
     F(ServerTextSubstringToken)                                                                                        \
     F(ServerTextSuffixToken)                                                                                           \
     F(ServerTextPrefixToken)                                                                                           \
+    F(EDCTextExactDerivedFromDataToken)                                                                                \
+    F(EDCTextSubstringDerivedFromDataToken)                                                                            \
+    F(EDCTextSuffixDerivedFromDataToken)                                                                               \
+    F(EDCTextPrefixDerivedFromDataToken)                                                                               \
+    F(ESCTextExactDerivedFromDataToken)                                                                                \
+    F(ESCTextSubstringDerivedFromDataToken)                                                                            \
+    F(ESCTextSuffixDerivedFromDataToken)                                                                               \
+    F(ESCTextPrefixDerivedFromDataToken)                                                                               \
     F(EDCTextExactDerivedFromDataTokenAndContentionFactorToken)                                                        \
     F(EDCTextSubstringDerivedFromDataTokenAndContentionFactorToken)                                                    \
     F(EDCTextSuffixDerivedFromDataTokenAndContentionFactorToken)                                                       \
@@ -222,12 +230,9 @@ static void _mc_token_test_run(_mongocrypt_tester_t *tester, const char *path) {
 
 #define TEST_TEXT(Name, Suffix) TEST_HELPER(Name, Token, Text##Suffix##Token, )
 #define TEST_TEXT_EXTRA(Name, Suffix, BaseSuffix) TEST_HELPER(Name, BaseSuffix##Token, Text##Suffix##Token, )
-#define TEST_TEXT_DERIVED_FROM_BOTH(Name)                                                                              \
-    TEST_HELPER(Name,                                                                                                  \
-                Token,                                                                                                 \
-                DerivedFromDataTokenAndContentionFactorToken,                                                          \
-                &test.value COMMA test.contentionFactor COMMA)
 #define TEST_TEXT_DERIVED_FROM_DATA(Name) TEST_HELPER(Name, Token, DerivedFromDataToken, &test.value COMMA)
+#define TEST_TEXT_DERIVED_FROM_CONTENTION(Name)                                                                        \
+    TEST_HELPER(Name, Token, TokenAndContentionFactorToken, test.contentionFactor COMMA)
 
     TEST_TEXT(EDC, Exact);
     TEST_TEXT(EDC, Substring);
@@ -244,15 +249,23 @@ static void _mc_token_test_run(_mongocrypt_tester_t *tester, const char *path) {
     TEST_TEXT_EXTRA(Server, Suffix, TokenDerivationLevel1);
     TEST_TEXT_EXTRA(Server, Prefix, TokenDerivationLevel1);
 
-    TEST_TEXT_DERIVED_FROM_BOTH(EDCTextExact);
-    TEST_TEXT_DERIVED_FROM_BOTH(EDCTextSubstring);
-    TEST_TEXT_DERIVED_FROM_BOTH(EDCTextPrefix);
-    TEST_TEXT_DERIVED_FROM_BOTH(EDCTextSuffix);
+    TEST_TEXT_DERIVED_FROM_DATA(EDCTextExact);
+    TEST_TEXT_DERIVED_FROM_DATA(EDCTextSubstring);
+    TEST_TEXT_DERIVED_FROM_DATA(EDCTextSuffix);
+    TEST_TEXT_DERIVED_FROM_DATA(EDCTextPrefix);
+    TEST_TEXT_DERIVED_FROM_CONTENTION(EDCTextExactDerivedFromData);
+    TEST_TEXT_DERIVED_FROM_CONTENTION(EDCTextSubstringDerivedFromData);
+    TEST_TEXT_DERIVED_FROM_CONTENTION(EDCTextSuffixDerivedFromData);
+    TEST_TEXT_DERIVED_FROM_CONTENTION(EDCTextPrefixDerivedFromData);
 
-    TEST_TEXT_DERIVED_FROM_BOTH(ESCTextExact);
-    TEST_TEXT_DERIVED_FROM_BOTH(ESCTextSubstring);
-    TEST_TEXT_DERIVED_FROM_BOTH(ESCTextPrefix);
-    TEST_TEXT_DERIVED_FROM_BOTH(ESCTextSuffix);
+    TEST_TEXT_DERIVED_FROM_DATA(ESCTextExact);
+    TEST_TEXT_DERIVED_FROM_DATA(ESCTextSubstring);
+    TEST_TEXT_DERIVED_FROM_DATA(ESCTextSuffix);
+    TEST_TEXT_DERIVED_FROM_DATA(ESCTextPrefix);
+    TEST_TEXT_DERIVED_FROM_CONTENTION(ESCTextExactDerivedFromData);
+    TEST_TEXT_DERIVED_FROM_CONTENTION(ESCTextSubstringDerivedFromData);
+    TEST_TEXT_DERIVED_FROM_CONTENTION(ESCTextSuffixDerivedFromData);
+    TEST_TEXT_DERIVED_FROM_CONTENTION(ESCTextPrefixDerivedFromData);
 
     TEST_TEXT_DERIVED_FROM_DATA(ServerTextExact);
     TEST_TEXT_DERIVED_FROM_DATA(ServerTextSubstring);
@@ -272,6 +285,10 @@ static void _mc_token_test_run(_mongocrypt_tester_t *tester, const char *path) {
         ESCTextSubstringDerivedFromDataTokenAndContentionFactorToken);
     mc_ESCTextExactDerivedFromDataTokenAndContentionFactorToken_destroy(
         ESCTextExactDerivedFromDataTokenAndContentionFactorToken);
+    mc_ESCTextPrefixDerivedFromDataToken_destroy(ESCTextPrefixDerivedFromDataToken);
+    mc_ESCTextSuffixDerivedFromDataToken_destroy(ESCTextSuffixDerivedFromDataToken);
+    mc_ESCTextSubstringDerivedFromDataToken_destroy(ESCTextSubstringDerivedFromDataToken);
+    mc_ESCTextExactDerivedFromDataToken_destroy(ESCTextExactDerivedFromDataToken);
     mc_EDCTextPrefixDerivedFromDataTokenAndContentionFactorToken_destroy(
         EDCTextPrefixDerivedFromDataTokenAndContentionFactorToken);
     mc_EDCTextSuffixDerivedFromDataTokenAndContentionFactorToken_destroy(
@@ -280,6 +297,10 @@ static void _mc_token_test_run(_mongocrypt_tester_t *tester, const char *path) {
         EDCTextSubstringDerivedFromDataTokenAndContentionFactorToken);
     mc_EDCTextExactDerivedFromDataTokenAndContentionFactorToken_destroy(
         EDCTextExactDerivedFromDataTokenAndContentionFactorToken);
+    mc_EDCTextPrefixDerivedFromDataToken_destroy(EDCTextPrefixDerivedFromDataToken);
+    mc_EDCTextSuffixDerivedFromDataToken_destroy(EDCTextSuffixDerivedFromDataToken);
+    mc_EDCTextSubstringDerivedFromDataToken_destroy(EDCTextSubstringDerivedFromDataToken);
+    mc_EDCTextExactDerivedFromDataToken_destroy(EDCTextExactDerivedFromDataToken);
     mc_ServerTextPrefixToken_destroy(ServerTextPrefixToken);
     mc_ServerTextSuffixToken_destroy(ServerTextSuffixToken);
     mc_ServerTextSubstringToken_destroy(ServerTextSubstringToken);

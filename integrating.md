@@ -72,8 +72,6 @@ executable included with libmongocrypt. It uses mock responses from
 mongod, mongocryptd, and KMS. Reimplement the state machine loop
 (`_run_state_machine`) in example-state-machine with your binding.
 
-To debug, configure with the cmake option `-DENABLE_TRACE=ON`, and set the environment variable `MONGOCRYPT_TRACE=ON` to log the arguments to mongocrypt functions. Note, this is insecure and should only be used for debugging.
-
 Seek help in the slack channel \#drivers-fle.
 
 ## Part 2: Integrate into Driver ##
@@ -245,16 +243,30 @@ Ensure `mongocrypt_setopt_retry_kms` is called on the `mongocrypt_t` to enable r
     c.  Write the message from `mongocrypt_kms_ctx_message` to the
         > socket.
 
-    d.  Feed the reply back with `mongocrypt_kms_ctx_feed`. Repeat
-        > until `mongocrypt_kms_ctx_bytes_needed` returns 0.
+    d.  Feed the reply back with `mongocrypt_kms_ctx_feed` or `mongocrypt_kms_ctx_feed_with_retry`. Repeat
+        until `mongocrypt_kms_ctx_bytes_needed` returns 0. If the `should_retry` outparam returns true,
+        the request may be retried by feeding the new response into the same context.
 
     If any step encounters a network error, call `mongocrypt_kms_ctx_fail`.
-    If `mongocrypt_kms_ctx_fail` returns true, continue to the next KMS context.
+    If `mongocrypt_kms_ctx_fail` returns true, retry the request by continuing to the next KMS context or by feeding the new response into the same context.
     If `mongocrypt_kms_ctx_fail` returns false, abort and report an error. Consider wrapping the error reported in `mongocrypt_kms_ctx_status` to include the last network error.
 
 2.  When done feeding all replies, call `mongocrypt_ctx_kms_done`.
 
-Note, the driver MAY fan out KMS requests in parallel. More KMS requests may be added when processing responses to retry.
+##### Retry and Iteration
+
+Call `mongocrypt_setopt_retry_kms` to enable retry behavior.
+
+There are two options for retry:
+-   Lazy retry: After processing KMS contexts, iterate again by calling `mongocrypt_ctx_next_kms_ctx`. KMS contexts
+    needing a retry will be returned.
+-   In-place retry: If a KMS context indicates retry, retry the KMS request and feed the new response to the same KMS
+    context. Use `mongocrypt_kms_ctx_feed_with_retry` and check the return of `mongocrypt_kms_ctx_fail` to check if a
+    retry is indicated.
+
+The driver MAY fan out KMS requests in parallel. It is not safe to iterate KMS contexts (i.e. call
+`mongocrypt_ctx_next_kms_ctx`) while operating on KMS contexts (e.g. calling `mongocrypt_kms_ctx_feed`). Drivers are
+recommended to do an in-place retry on KMS requests.
 
 **Applies to...**
 

@@ -17,6 +17,8 @@
 #include <mongocrypt-marking-private.h>
 
 #include "kms_message/kms_b64.h"
+#include "mc-fle2-insert-update-payload-private-v2.h"
+#include "mongocrypt-binary-private.h"
 #include "mongocrypt-crypto-private.h" // MONGOCRYPT_KEY_LEN
 #include "mongocrypt.h"
 #include "test-mongocrypt-assert-match-bson.h"
@@ -883,7 +885,7 @@ static void _init_fails(_mongocrypt_tester_t *tester, const char *json, const ch
 
     crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
     ctx = mongocrypt_ctx_new(crypt);
-    ASSERT_FAILS(mongocrypt_ctx_encrypt_init(ctx, "test", -1, TEST_BSON(json)), ctx, msg);
+    ASSERT_FAILS(mongocrypt_ctx_encrypt_init(ctx, "test", -1, TEST_BSON_STR(json)), ctx, msg);
     mongocrypt_ctx_destroy(ctx);
     mongocrypt_destroy(crypt);
 }
@@ -895,7 +897,7 @@ static void _init_ok(_mongocrypt_tester_t *tester, const char *json) {
     crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
     ctx = mongocrypt_ctx_new(crypt);
 
-    ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "test", -1, TEST_BSON(json)), ctx);
+    ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "test", -1, TEST_BSON_STR(json)), ctx);
 
     if (MONGOCRYPT_CTX_NEED_MONGO_COLLINFO == mongocrypt_ctx_state(ctx)) {
         mongocrypt_binary_t *filter;
@@ -923,10 +925,10 @@ static void _init_bypass(_mongocrypt_tester_t *tester, const char *json) {
     bin = mongocrypt_binary_new();
     crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
     ctx = mongocrypt_ctx_new(crypt);
-    ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "test", -1, TEST_BSON(json)), ctx);
+    ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "test", -1, TEST_BSON_STR(json)), ctx);
     BSON_ASSERT(MONGOCRYPT_CTX_READY == mongocrypt_ctx_state(ctx));
     ASSERT_OK(mongocrypt_ctx_finalize(ctx, bin), ctx);
-    ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TEST_BSON(json), (bin));
+    ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TEST_BSON_STR(json), (bin));
 
     mongocrypt_binary_destroy(bin);
     mongocrypt_ctx_destroy(ctx);
@@ -983,6 +985,7 @@ static void _test_encrypt_init_each_cmd(_mongocrypt_tester_t *tester) {
     _init_ok(tester, "{'compactStructuredEncryptionData': 'coll'}");
     _init_bypass(tester, "{'hello': 1}");
     _init_bypass(tester, "{'buildInfo': 1}");
+    _init_bypass(tester, "{'buildinfo': 1}");
     _init_bypass(tester, "{'getCmdLineOpts': 1}");
     _init_bypass(tester, "{'getLog': 1}");
     _init_ok(tester, "{'collMod': 'coll'}");
@@ -990,6 +993,7 @@ static void _test_encrypt_init_each_cmd(_mongocrypt_tester_t *tester) {
     _init_bypass(tester, "{'createSearchIndexes': 'coll' }");
     _init_bypass(tester, "{'dropSearchIndex': 'coll' }");
     _init_bypass(tester, "{'updateSearchIndex': 'coll' }");
+    _init_bypass(tester, "{'serverStatus': 1 }");
 }
 
 static void _test_encrypt_invalid_siblings(_mongocrypt_tester_t *tester) {
@@ -1087,7 +1091,7 @@ static void _test_explicit_encryption(_mongocrypt_tester_t *tester) {
 }
 
 /* Test with empty AWS credentials. */
-void _test_encrypt_empty_aws(_mongocrypt_tester_t *tester) {
+static void _test_encrypt_empty_aws(_mongocrypt_tester_t *tester) {
     mongocrypt_t *crypt;
     mongocrypt_ctx_t *ctx;
 
@@ -1608,10 +1612,11 @@ typedef enum {
 } _test_fle2v2_option;
 
 #define TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, data_path, rng_source, v2_failure)                            \
-    {                                                                                                                  \
+    if (1) {                                                                                                           \
         (rng_source)->pos = 0;                                                                                         \
         _test_encrypt_fle2_encryption_placeholder(tester, data_path, rng_source, NULL);                                \
-    }
+    } else                                                                                                             \
+        ((void)0)
 
 static void _test_encrypt_fle2_encryption_placeholder(_mongocrypt_tester_t *tester,
                                                       const char *data_path,
@@ -1716,28 +1721,28 @@ static void _test_encrypt_fle2_insert_payload(_mongocrypt_tester_t *tester) {
     uint8_t rng_data[] = RNG_DATA;
 
     _test_rng_data_source source = {.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-v2", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-v2", &source, NULL);
 }
 
 static void _test_encrypt_fle2_insert_payload_with_str_encode_version(_mongocrypt_tester_t *tester) {
     uint8_t rng_data[] = RNG_DATA;
 
     _test_rng_data_source source = {.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-v2-with-str-encode-version", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-v2-with-str-encode-version", &source, NULL);
 }
 
 static void _test_encrypt_fle2_insert_text_search_payload(_mongocrypt_tester_t *tester) {
     uint8_t rng_data[] = RNG_DATA;
 
     _test_rng_data_source source = {.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-text-search", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-text-search", &source, NULL);
 }
 
 static void _test_encrypt_fle2_insert_text_search_payload_with_str_encode_version(_mongocrypt_tester_t *tester) {
     uint8_t rng_data[] = RNG_DATA;
 
     _test_rng_data_source source = {.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-text-search-with-str-encode-version", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-text-search-with-str-encode-version", &source, NULL);
 }
 
 #undef RNG_DATA
@@ -1745,7 +1750,7 @@ static void _test_encrypt_fle2_insert_text_search_payload_with_str_encode_versio
 // FLE2FindEqualityPayload only uses deterministic token generation.
 static void _test_encrypt_fle2_find_payload(_mongocrypt_tester_t *tester) {
     _test_rng_data_source source = {{0}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-equality-v2", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-equality-v2", &source, NULL);
 }
 
 /* 16 bytes of random data are used for IV. This IV produces the expected test
@@ -1765,7 +1770,7 @@ static void _test_encrypt_fle2_unindexed_encrypted_payload(_mongocrypt_tester_t 
 static void _test_encrypt_fle2_insert_range_payload_int32(_mongocrypt_tester_t *tester) {
     uint8_t rng_data[] = RNG_DATA;
     _test_rng_data_source source = {.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-range/int32-v2", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-range/int32-v2", &source, NULL);
 }
 
 #undef RNG_DATA
@@ -1775,7 +1780,7 @@ static void _test_encrypt_fle2_insert_range_payload_int32(_mongocrypt_tester_t *
 static void _test_encrypt_fle2_insert_range_payload_int64(_mongocrypt_tester_t *tester) {
     uint8_t rng_data[] = RNG_DATA;
     _test_rng_data_source source = {.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-range/int64-v2", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-range/int64-v2", &source, NULL);
 }
 
 #undef RNG_DATA
@@ -1785,7 +1790,7 @@ static void _test_encrypt_fle2_insert_range_payload_int64(_mongocrypt_tester_t *
 static void _test_encrypt_fle2_insert_range_payload_date(_mongocrypt_tester_t *tester) {
     uint8_t rng_data[] = RNG_DATA;
     _test_rng_data_source source = {.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-range/date-v2", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-range/date-v2", &source, NULL);
 }
 
 #undef RNG_DATA
@@ -1795,7 +1800,7 @@ static void _test_encrypt_fle2_insert_range_payload_date(_mongocrypt_tester_t *t
 static void _test_encrypt_fle2_insert_range_payload_double(_mongocrypt_tester_t *tester) {
     uint8_t rng_data[] = RNG_DATA;
     _test_rng_data_source source = {.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-range/double-v2", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-range/double-v2", &source, NULL);
 }
 
 #undef RNG_DATA
@@ -1805,18 +1810,18 @@ static void _test_encrypt_fle2_insert_range_payload_double(_mongocrypt_tester_t 
 static void _test_encrypt_fle2_insert_range_payload_double_precision(_mongocrypt_tester_t *tester) {
     uint8_t rng_data[] = RNG_DATA;
     _test_rng_data_source source = {.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-range/double-precision-v2", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-range/double-precision-v2", &source, NULL);
 }
 
 #undef RNG_DATA
 
-#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT()
 #include "./data/fle2-insert-range/decimal128/RNG_DATA.h"
 
 static void _test_encrypt_fle2_insert_range_payload_decimal128(_mongocrypt_tester_t *tester) {
     uint8_t rng_data[] = RNG_DATA;
     _test_rng_data_source source = {.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-range/decimal128-v2", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-range/decimal128-v2", &source, NULL);
 }
 
 #undef RNG_DATA
@@ -1826,7 +1831,7 @@ static void _test_encrypt_fle2_insert_range_payload_decimal128(_mongocrypt_teste
 static void _test_encrypt_fle2_insert_range_payload_decimal128_precision(_mongocrypt_tester_t *tester) {
     uint8_t rng_data[] = RNG_DATA;
     _test_rng_data_source source = {.buf = {.data = rng_data, .len = sizeof(rng_data) - 1u}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-range/decimal128-precision-v2", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-insert-range/decimal128-precision-v2", &source, NULL);
 }
 
 #undef RNG_DATA
@@ -1835,48 +1840,48 @@ static void _test_encrypt_fle2_insert_range_payload_decimal128_precision(_mongoc
 // FLE2FindRangePayload only uses deterministic token generation.
 static void _test_encrypt_fle2_find_range_payload_int32(_mongocrypt_tester_t *tester) {
     _test_rng_data_source source = {{0}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-range/int32-v2", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-range/int32-v2", &source, NULL);
 }
 
 // FLE2FindRangePayload only uses deterministic token generation.
 static void _test_encrypt_fle2_find_range_payload_int64(_mongocrypt_tester_t *tester) {
     _test_rng_data_source source = {{0}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-range/int64-v2", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-range/int64-v2", &source, NULL);
 }
 
 // FLE2FindRangePayload only uses deterministic token generation.
 static void _test_encrypt_fle2_find_range_payload_date(_mongocrypt_tester_t *tester) {
     _test_rng_data_source source = {{0}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-range/date-v2", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-range/date-v2", &source, NULL);
 }
 
 // FLE2FindRangePayload only uses deterministic token generation.
 static void _test_encrypt_fle2_find_range_payload_double(_mongocrypt_tester_t *tester) {
     _test_rng_data_source source = {{0}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-range/double-v2", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-range/double-v2", &source, NULL);
 }
 
 // FLE2FindRangePayload only uses deterministic token generation.
 static void _test_encrypt_fle2_find_range_payload_double_precision(_mongocrypt_tester_t *tester) {
     _test_rng_data_source source = {{0}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-range/double-precision-v2", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-range/double-precision-v2", &source, NULL);
 }
 
-#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT()
 // FLE2FindRangePayload only uses deterministic token generation.
 static void _test_encrypt_fle2_find_range_payload_decimal128(_mongocrypt_tester_t *tester) {
     _test_rng_data_source source = {{0}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-range/decimal128-v2", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-range/decimal128-v2", &source, NULL);
 }
 
 // FLE2FindRangePayload only uses deterministic token generation.
 static void _test_encrypt_fle2_find_range_payload_decimal128_precision(_mongocrypt_tester_t *tester) {
     _test_rng_data_source source = {{0}};
-    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-range/decimal128-precision-v2", &source, NULL)
+    TEST_ENCRYPT_FLE2_ENCRYPTION_PLACEHOLDER(tester, "fle2-find-range/decimal128-precision-v2", &source, NULL);
 }
 #endif // MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
 
-static mongocrypt_t *_crypt_with_rng(_test_rng_data_source *rng_source, bool use_range_v2) {
+static mongocrypt_t *_crypt_with_rng(_test_rng_data_source *rng_source) {
     mongocrypt_t *crypt;
     mongocrypt_binary_t *localkey;
     /* localkey_data is the KEK used to encrypt the keyMaterial
@@ -1898,12 +1903,7 @@ static mongocrypt_t *_crypt_with_rng(_test_rng_data_source *rng_source, bool use
               crypt);
 
     mongocrypt_binary_destroy(localkey);
-    if (use_range_v2) {
-        ASSERT_OK(mongocrypt_setopt_use_range_v2(crypt), crypt);
-        ASSERT_OK(mongocrypt_init(crypt), crypt);
-    } else {
-        ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
-    }
+    ASSERT_OK(mongocrypt_init(crypt), crypt);
     return crypt;
 }
 
@@ -1915,6 +1915,7 @@ typedef struct {
     _mongocrypt_buffer_t *index_key_id;
     mc_optional_int64_t contention_factor;
     mongocrypt_binary_t *range_opts;
+    mongocrypt_binary_t *text_opts;
     const char *query_type;
     mongocrypt_binary_t *msg;
     mongocrypt_binary_t *keys_to_feed[3]; // NULL terminated list.
@@ -1922,7 +1923,6 @@ typedef struct {
     const char *expect_finalize_error;
     const char *expect_init_error;
     bool is_expression;
-    bool use_range_v2;
 } ee_testcase;
 
 static void ee_testcase_run(ee_testcase *tc) {
@@ -1933,12 +1933,9 @@ static void ee_testcase_run(ee_testcase *tc) {
     if (tc->rng_data.buf.len > 0) {
         // Use fixed data for random number generation to produce deterministic
         // results.
-        crypt = _crypt_with_rng(&tc->rng_data, tc->use_range_v2);
+        crypt = _crypt_with_rng(&tc->rng_data);
     } else {
         tester_mongocrypt_flags flags = TESTER_MONGOCRYPT_DEFAULT;
-        if (tc->use_range_v2) {
-            flags |= TESTER_MONGOCRYPT_WITH_RANGE_V2;
-        }
         crypt = _mongocrypt_tester_mongocrypt(flags);
     }
     mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
@@ -1960,6 +1957,9 @@ static void ee_testcase_run(ee_testcase *tc) {
     }
     if (tc->query_type) {
         ASSERT_OK(mongocrypt_ctx_setopt_query_type(ctx, tc->query_type, -1), ctx);
+    }
+    if (tc->text_opts) {
+        ASSERT_OK(mongocrypt_ctx_setopt_algorithm_text(ctx, tc->text_opts), ctx);
     }
     BSON_ASSERT(tc->msg);
     {
@@ -1996,6 +1996,7 @@ static void ee_testcase_run(ee_testcase *tc) {
         bool ret = mongocrypt_ctx_finalize(ctx, got);
         if (tc->expect_finalize_error) {
             ASSERT_FAILS(ret, ctx, tc->expect_finalize_error);
+            ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_ERROR);
         } else {
             ASSERT_OK(ret, ctx);
             ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(tc->expect, got);
@@ -2452,6 +2453,198 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.keys_to_feed[0] = keyABC;
         tc.expect_finalize_error = "Range option 'max' is required";
         tc.is_expression = true;
+        ee_testcase_run(&tc);
+    }
+
+    {
+        ee_testcase tc = {0};
+        tc.desc = "crossed bounds fails";
+        tc.algorithm = MONGOCRYPT_ALGORITHM_RANGE_STR;
+        tc.query_type = MONGOCRYPT_QUERY_TYPE_RANGE_STR;
+        tc.user_key_id = &keyABC_id;
+        tc.contention_factor = OPT_I64(0);
+        tc.range_opts = TEST_BSON(RAW_STRING({"min" : {"$numberInt" : "0"}, "max" : {"$numberInt" : "100"}}));
+        tc.msg = TEST_BSON(RAW_STRING({
+            "v" :
+                {"$and" : [ {"age" : {"$gt" : {"$numberInt" : "25"}}}, {"age" : {"$lt" : {"$numberInt" : "15"}}} ]}
+        }));
+        tc.keys_to_feed[0] = keyABC;
+        tc.expect_finalize_error = "must be less than or equal to range max";
+        tc.is_expression = true;
+        ee_testcase_run(&tc);
+    }
+
+    {
+        ee_testcase tc = {0};
+        tc.desc = "find suffix";
+        tc.algorithm = MONGOCRYPT_ALGORITHM_TEXTPREVIEW_STR;
+        tc.query_type = MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW_STR;
+        tc.contention_factor = OPT_I64(1);
+        tc.msg = TEST_BSON("{'v': 'abc'}");
+        tc.user_key_id = &keyABC_id;
+        tc.keys_to_feed[0] = keyABC;
+        tc.text_opts = TEST_BSON(RAW_STRING({
+            "caseSensitive" : false,
+            "diacriticSensitive" : false,
+            "suffix" : {"strMinQueryLength" : 1, "strMaxQueryLength" : 100}
+        }));
+        tc.expect = TEST_FILE("./test/data/fle2-explicit/find-suffix.json");
+        ee_testcase_run(&tc);
+    }
+
+    {
+        ee_testcase tc = {0};
+        tc.desc = "find prefix";
+        tc.algorithm = MONGOCRYPT_ALGORITHM_TEXTPREVIEW_STR;
+        tc.query_type = MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW_STR;
+        tc.contention_factor = OPT_I64(1);
+        tc.msg = TEST_BSON("{'v': 'abc'}");
+        tc.user_key_id = &keyABC_id;
+        tc.keys_to_feed[0] = keyABC;
+        tc.text_opts = TEST_BSON(RAW_STRING({
+            "caseSensitive" : false,
+            "diacriticSensitive" : false,
+            "prefix" : {"strMinQueryLength" : 1, "strMaxQueryLength" : 100}
+        }));
+        tc.expect = TEST_FILE("./test/data/fle2-explicit/find-prefix.json");
+        ee_testcase_run(&tc);
+    }
+
+    {
+        ee_testcase tc = {0};
+        tc.desc = "insert substring";
+        tc.algorithm = MONGOCRYPT_ALGORITHM_TEXTPREVIEW_STR;
+        tc.query_type = MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW_STR;
+        tc.contention_factor = OPT_I64(1);
+        tc.msg = TEST_BSON("{'v': 'abc'}");
+        tc.user_key_id = &keyABC_id;
+        tc.keys_to_feed[0] = keyABC;
+        tc.text_opts = TEST_BSON(RAW_STRING({
+            "caseSensitive" : false,
+            "diacriticSensitive" : false,
+            "substring" : {"strMaxLength" : 100, "strMinQueryLength" : 1, "strMaxQueryLength" : 100}
+        }));
+        tc.expect = TEST_FILE("./test/data/fle2-explicit/find-substring.json");
+        ee_testcase_run(&tc);
+    }
+
+    {
+        ee_testcase tc = {0};
+        tc.desc = "insert suffix";
+#include "./data/fle2-insert-text-search/RNG_DATA.h"
+        tc.rng_data = (_test_rng_data_source){.buf = {.data = (uint8_t *)RNG_DATA, .len = sizeof(RNG_DATA) - 1}};
+#undef RNG_DATA
+        tc.algorithm = MONGOCRYPT_ALGORITHM_TEXTPREVIEW_STR;
+        tc.contention_factor = OPT_I64(1);
+        tc.msg = TEST_BSON("{'v': 'abc'}");
+        tc.user_key_id = &keyABC_id;
+        tc.keys_to_feed[0] = keyABC;
+        tc.text_opts = TEST_BSON(RAW_STRING({
+            "caseSensitive" : false,
+            "diacriticSensitive" : false,
+            "suffix" : {"strMinQueryLength" : 1, "strMaxQueryLength" : 100}
+        }));
+        tc.expect = TEST_FILE("./test/data/fle2-explicit/insert-suffix.json");
+        ee_testcase_run(&tc);
+    }
+
+    {
+        ee_testcase tc = {0};
+        tc.desc = "insert prefix";
+#include "./data/fle2-insert-text-search/RNG_DATA.h"
+        tc.rng_data = (_test_rng_data_source){.buf = {.data = (uint8_t *)RNG_DATA, .len = sizeof(RNG_DATA) - 1}};
+#undef RNG_DATA
+        tc.algorithm = MONGOCRYPT_ALGORITHM_TEXTPREVIEW_STR;
+        tc.contention_factor = OPT_I64(1);
+        tc.msg = TEST_BSON("{'v': 'abc'}");
+        tc.user_key_id = &keyABC_id;
+        tc.keys_to_feed[0] = keyABC;
+        tc.text_opts = TEST_BSON(RAW_STRING({
+            "caseSensitive" : false,
+            "diacriticSensitive" : false,
+            "prefix" : {"strMinQueryLength" : 1, "strMaxQueryLength" : 100}
+        }));
+        tc.expect = TEST_FILE("./test/data/fle2-explicit/insert-prefix.json");
+        ee_testcase_run(&tc);
+    }
+
+    {
+        ee_testcase tc = {0};
+        tc.desc = "insert substring";
+#include "./data/fle2-insert-text-search/RNG_DATA.h"
+        tc.rng_data = (_test_rng_data_source){.buf = {.data = (uint8_t *)RNG_DATA, .len = sizeof(RNG_DATA) - 1}};
+#undef RNG_DATA
+        tc.algorithm = MONGOCRYPT_ALGORITHM_TEXTPREVIEW_STR;
+        tc.contention_factor = OPT_I64(1);
+        tc.msg = TEST_BSON("{'v': 'abc'}");
+        tc.user_key_id = &keyABC_id;
+        tc.keys_to_feed[0] = keyABC;
+        tc.text_opts = TEST_BSON(RAW_STRING({
+            "caseSensitive" : false,
+            "diacriticSensitive" : false,
+            "substring" : {"strMaxLength" : 100, "strMinQueryLength" : 1, "strMaxQueryLength" : 100}
+        }));
+        tc.expect = TEST_FILE("./test/data/fle2-explicit/insert-substring.json");
+        ee_testcase_run(&tc);
+    }
+
+    {
+        ee_testcase tc = {0};
+        tc.desc = "insert prefix + suffix";
+#include "./data/fle2-insert-text-search/RNG_DATA.h"
+        tc.rng_data = (_test_rng_data_source){.buf = {.data = (uint8_t *)RNG_DATA, .len = sizeof(RNG_DATA) - 1}};
+#undef RNG_DATA
+        tc.algorithm = MONGOCRYPT_ALGORITHM_TEXTPREVIEW_STR;
+        tc.contention_factor = OPT_I64(1);
+        tc.msg = TEST_BSON("{'v': 'abc'}");
+        tc.user_key_id = &keyABC_id;
+        tc.keys_to_feed[0] = keyABC;
+        tc.text_opts = TEST_BSON(RAW_STRING({
+            "caseSensitive" : false,
+            "diacriticSensitive" : false,
+            "prefix" : {"strMinQueryLength" : 1, "strMaxQueryLength" : 100},
+            "suffix" : {"strMinQueryLength" : 1, "strMaxQueryLength" : 100}
+        }));
+        tc.expect = TEST_FILE("./test/data/fle2-explicit/insert-prefix-suffix.json");
+        ee_testcase_run(&tc);
+    }
+
+    {
+        ee_testcase tc = {0};
+        tc.desc = "insert casef + diacf";
+#include "./data/fle2-insert-text-search/RNG_DATA.h"
+        tc.rng_data = (_test_rng_data_source){.buf = {.data = (uint8_t *)RNG_DATA, .len = sizeof(RNG_DATA) - 1}};
+#undef RNG_DATA
+        tc.algorithm = MONGOCRYPT_ALGORITHM_TEXTPREVIEW_STR;
+        tc.contention_factor = OPT_I64(1);
+        tc.msg = TEST_BSON("{'v': 'abc'}");
+        tc.user_key_id = &keyABC_id;
+        tc.keys_to_feed[0] = keyABC;
+        tc.text_opts = TEST_BSON(RAW_STRING({
+            "caseSensitive" : true,
+            "diacriticSensitive" : true,
+            "prefix" : {"strMinQueryLength" : 1, "strMaxQueryLength" : 100}
+        }));
+        tc.expect = TEST_FILE("./test/data/fle2-explicit/insert-casef-diacf.json");
+        ee_testcase_run(&tc);
+    }
+
+    {
+        ee_testcase tc = {0};
+        tc.desc = "find prefix on a field with prefix+suffix";
+        tc.algorithm = MONGOCRYPT_ALGORITHM_TEXTPREVIEW_STR;
+        tc.contention_factor = OPT_I64(1);
+        tc.msg = TEST_BSON("{'v': 'abc'}");
+        tc.user_key_id = &keyABC_id;
+        tc.keys_to_feed[0] = keyABC;
+        tc.query_type = MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW_STR;
+        tc.text_opts = TEST_BSON(RAW_STRING({
+            "caseSensitive" : false,
+            "diacriticSensitive" : false,
+            "prefix" : {"strMinQueryLength" : 1, "strMaxQueryLength" : 100},
+            "suffix" : {"strMinQueryLength" : 1, "strMaxQueryLength" : 100}
+        }));
+        tc.expect = TEST_FILE("./test/data/fle2-explicit/find-prefix.json");
         ee_testcase_run(&tc);
     }
 
@@ -4114,7 +4307,7 @@ static void _test_bulkWrite(_mongocrypt_tester_t *tester) {
     bson_free(local_kek);
 }
 
-// `_test_rangePreview_fails` tests that use of "rangePreview" errors when rangeV2 is opted-in.
+// `_test_rangePreview_fails` tests that use of "rangePreview" errors.
 static void _test_rangePreview_fails(_mongocrypt_tester_t *tester) {
     // local_kek is the KEK used to encrypt the keyMaterial in ./test/data/key-document-local.json
     uint8_t local_kek_raw[MONGOCRYPT_KEY_LEN] = {0};
@@ -4126,7 +4319,6 @@ static void _test_rangePreview_fails(_mongocrypt_tester_t *tester) {
     {
         mongocrypt_t *crypt = mongocrypt_new();
         mongocrypt_setopt_kms_providers(crypt, kms_providers);
-        ASSERT_OK(mongocrypt_setopt_use_range_v2(crypt), crypt);
         ASSERT_OK(mongocrypt_init(crypt), crypt);
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
         ASSERT_OK(ctx, crypt);
@@ -4141,7 +4333,6 @@ static void _test_rangePreview_fails(_mongocrypt_tester_t *tester) {
     {
         mongocrypt_t *crypt = mongocrypt_new();
         mongocrypt_setopt_kms_providers(crypt, kms_providers);
-        ASSERT_OK(mongocrypt_setopt_use_range_v2(crypt), crypt);
         ASSERT_OK(mongocrypt_init(crypt), crypt);
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
         ASSERT_OK(ctx, crypt);
@@ -4156,7 +4347,6 @@ static void _test_rangePreview_fails(_mongocrypt_tester_t *tester) {
     {
         mongocrypt_t *crypt = mongocrypt_new();
         mongocrypt_setopt_kms_providers(crypt, kms_providers);
-        ASSERT_OK(mongocrypt_setopt_use_range_v2(crypt), crypt);
         ASSERT_OK(mongocrypt_setopt_encrypted_field_config_map(
                       crypt,
                       TEST_FILE("./test/data/fle2-insert-range/int32/encrypted-field-map.json")), // Uses 'rangePreview'
@@ -4227,7 +4417,6 @@ static void autoencryption_test_run(autoencryption_test *aet) {
         }
 
         ASSERT_OK(mongocrypt_setopt_encrypted_field_config_map(crypt, aet->encrypted_field_map), crypt);
-        ASSERT_OK(mongocrypt_setopt_use_range_v2(crypt), crypt);
         ASSERT_OK(mongocrypt_init(crypt), crypt);
     }
 
@@ -4357,7 +4546,6 @@ static void _test_range_sends_cryptoParams(_mongocrypt_tester_t *tester) {
         tc.msg = TEST_BSON("{'v': 123456}");
         tc.keys_to_feed[0] = key123;
         tc.expect = TEST_FILE("./test/data/range-sends-cryptoParams/explicit-insert-int32/expected.json");
-        tc.use_range_v2 = true; // Use RangeV2 protocol.
         ee_testcase_run(&tc);
         // Check the parameters are present in the final payload.
         {
@@ -4382,7 +4570,6 @@ static void _test_range_sends_cryptoParams(_mongocrypt_tester_t *tester) {
         tc.msg = TEST_BSON("{'v': 123456}");
         tc.keys_to_feed[0] = key123;
         tc.expect = TEST_FILE("./test/data/range-sends-cryptoParams/explicit-insert-int32-defaults/expected.json");
-        tc.use_range_v2 = true; // Use RangeV2 protocol.
         ee_testcase_run(&tc);
         // Check the parameters are present in the final payload.
         {
@@ -4408,7 +4595,6 @@ static void _test_range_sends_cryptoParams(_mongocrypt_tester_t *tester) {
         tc.msg = TEST_BSON("{'v': 123456.0}");
         tc.keys_to_feed[0] = key123;
         tc.expect = TEST_FILE("./test/data/range-sends-cryptoParams/explicit-insert-double/expected.json");
-        tc.use_range_v2 = true; // Use RangeV2 protocol.
         ee_testcase_run(&tc);
         // Check the parameters are present in the final payload.
         {
@@ -4433,7 +4619,6 @@ static void _test_range_sends_cryptoParams(_mongocrypt_tester_t *tester) {
         tc.msg = TEST_FILE("./test/data/range-sends-cryptoParams/explicit-find-int32-defaults/to-encrypt.json");
         tc.keys_to_feed[0] = key123;
         tc.expect = TEST_FILE("./test/data/range-sends-cryptoParams/explicit-find-int32-defaults/expected.json");
-        tc.use_range_v2 = true; // Use RangeV2 protocol.
         ee_testcase_run(&tc);
         // Check the parameters are present in the final payload.
         {
@@ -4458,7 +4643,6 @@ static void _test_range_sends_cryptoParams(_mongocrypt_tester_t *tester) {
         tc.msg = TEST_FILE("./test/data/range-sends-cryptoParams/explicit-find-int32/to-encrypt.json");
         tc.keys_to_feed[0] = key123;
         tc.expect = TEST_FILE("./test/data/range-sends-cryptoParams/explicit-find-int32/expected.json");
-        tc.use_range_v2 = true; // Use RangeV2 protocol.
         ee_testcase_run(&tc);
         // Check the parameters are present in the final payload.
         {
@@ -5793,6 +5977,87 @@ static void _test_lookup(_mongocrypt_tester_t *tester) {
 #undef TF
 }
 
+static bool _deterministic_contention(int64_t exclusive_upper_bound, int64_t *out) {
+    ASSERT(out);
+    (void)exclusive_upper_bound;
+    *out = 1;
+    return true;
+}
+
+static void _test_deterministic_contention(_mongocrypt_tester_t *tester) {
+    mongocrypt_status_t *const status = mongocrypt_status_new();
+
+    mongocrypt_t *const crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_SKIP_INIT);
+    ASSERT_OK(mongocrypt_init(crypt), crypt);
+    _mongocrypt_opts_set_contention_factor_fn(crypt, &_deterministic_contention); // register deterministic fn wth crypt
+
+    // Expect the callback returns 1.
+    {
+        int64_t out;
+        ASSERT(crypt->opts.contention_factor_fn(4, &out));
+        ASSERT_CMPINT64(out, ==, 1);
+    }
+
+    // Start explicit encryption:
+    mongocrypt_ctx_t *const ctx = mongocrypt_ctx_new(crypt);
+
+    // Use the QE algorithm "Indexed", which uses a contention factor:
+    ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_INDEXED_STR, -1), ctx);
+
+    {
+        _mongocrypt_buffer_t keyABC_id;
+        _mongocrypt_buffer_copy_from_hex(&keyABC_id, "ABCDEFAB123498761234123456789012");
+        ASSERT_OK(mongocrypt_ctx_setopt_key_id(ctx, _mongocrypt_buffer_as_binary(&keyABC_id)), ctx);
+        _mongocrypt_buffer_cleanup(&keyABC_id);
+    }
+
+    // Set max contention factor of 4:
+    ASSERT_OK(mongocrypt_ctx_setopt_contention_factor(ctx, 4), ctx);
+
+    // Encrypt the value 123:
+    ASSERT_OK(mongocrypt_ctx_explicit_encrypt_init(ctx, TEST_BSON("{'v': 123}")), ctx);
+
+    // Expect key is needed:
+    ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+    {
+        mongocrypt_binary_t *const keyABC =
+            TEST_FILE("./test/data/keys/ABCDEFAB123498761234123456789012-local-document.json");
+        ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, keyABC), ctx);
+        ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+    }
+
+    // Expect ready to encrypt:
+    ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
+    {
+        mongocrypt_binary_t *got = mongocrypt_binary_new();
+        bool ret = mongocrypt_ctx_finalize(ctx, got);
+        ASSERT_OK(ret, ctx);
+
+        // The result is represented in a BSON document: { "v": <binary> }.
+        // Do the long-winded conversion: binary -> BSON -> buffer:
+        _mongocrypt_buffer_t got_buffer;
+        {
+            bson_t got_bson;
+            ASSERT(_mongocrypt_binary_to_bson(got, &got_bson));
+            bson_iter_t got_iter;
+            ASSERT(bson_iter_init_find(&got_iter, &got_bson, "v"));
+            ASSERT(_mongocrypt_buffer_from_binary_iter(&got_buffer, &got_iter));
+        }
+
+        // Check the contention factor in the resulting payload:
+        mc_FLE2InsertUpdatePayloadV2_t got_payload;
+        mc_FLE2InsertUpdatePayloadV2_init(&got_payload);
+        ASSERT_OK_STATUS(mc_FLE2InsertUpdatePayloadV2_parse(&got_payload, &got_buffer, status), status);
+        ASSERT_CMPINT64(got_payload.contentionFactor, ==, 1); // Set by _deterministic_contention.
+        mc_FLE2InsertUpdatePayloadV2_cleanup(&got_payload);
+        mongocrypt_binary_destroy(got);
+    }
+
+    mongocrypt_ctx_destroy(ctx);
+    mongocrypt_destroy(crypt);
+    mongocrypt_status_destroy(status);
+}
+
 void _mongocrypt_tester_install_ctx_encrypt(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_explicit_encrypt_init);
     INSTALL_TEST(_test_encrypt_init);
@@ -5866,7 +6131,7 @@ void _mongocrypt_tester_install_ctx_encrypt(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_encrypt_fle2_insert_range_payload_date);
     INSTALL_TEST(_test_encrypt_fle2_insert_range_payload_double);
     INSTALL_TEST(_test_encrypt_fle2_insert_range_payload_double_precision);
-#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT()
     INSTALL_TEST(_test_encrypt_fle2_insert_range_payload_decimal128);
     INSTALL_TEST(_test_encrypt_fle2_insert_range_payload_decimal128_precision);
 #endif
@@ -5875,7 +6140,7 @@ void _mongocrypt_tester_install_ctx_encrypt(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_encrypt_fle2_find_range_payload_date);
     INSTALL_TEST(_test_encrypt_fle2_find_range_payload_double);
     INSTALL_TEST(_test_encrypt_fle2_find_range_payload_double_precision);
-#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT()
     INSTALL_TEST(_test_encrypt_fle2_find_range_payload_decimal128);
     INSTALL_TEST(_test_encrypt_fle2_find_range_payload_decimal128_precision);
 #endif
@@ -5891,4 +6156,5 @@ void _mongocrypt_tester_install_ctx_encrypt(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_fle2_encrypted_fields_with_unmatching_str_encode_version);
     INSTALL_TEST(_test_fle2_collinfo_with_bad_str_encode_version);
     INSTALL_TEST(_test_lookup);
+    INSTALL_TEST(_test_deterministic_contention);
 }

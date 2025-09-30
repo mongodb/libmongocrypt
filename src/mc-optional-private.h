@@ -21,7 +21,7 @@
 #include <stdint.h>
 
 #include "./mc-dec128.h"
-#include "./mlib/int128.h"
+#include "./mc-mlib/int128.h"
 
 typedef struct {
     bool set;
@@ -89,7 +89,7 @@ typedef struct {
 #define OPT_DOUBLE_C(val)                                                                                              \
     { .set = true, .value = val }
 
-#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT()
 typedef struct {
     bool set;
     mc_dec128 value;

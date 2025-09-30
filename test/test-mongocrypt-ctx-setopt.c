@@ -23,66 +23,68 @@
 #include "mongocrypt.h"
 #include "test-mongocrypt.h"
 
+#define RAW_STRING(...) #__VA_ARGS__
+
 /* An orphaned UTF-8 continuation byte (10xxxxxx) is malformed UTF-8. */
 static char invalid_utf8[] = {(char)0x80, (char)0x00};
 
 /* Convenience macros for setting options */
 #define ASSERT_MASTERKEY_AWS_OK(region, region_len, cmk, cmk_len)                                                      \
-    ASSERT_OK(mongocrypt_ctx_setopt_masterkey_aws(ctx, region, region_len, cmk, cmk_len), ctx);
+    ASSERT_OK(mongocrypt_ctx_setopt_masterkey_aws(ctx, region, region_len, cmk, cmk_len), ctx)
 #define ASSERT_MASTERKEY_AWS_FAILS(region, region_len, cmk, cmk_len, msg)                                              \
-    ASSERT_FAILS(mongocrypt_ctx_setopt_masterkey_aws(ctx, region, region_len, cmk, cmk_len), ctx, msg);
+    ASSERT_FAILS(mongocrypt_ctx_setopt_masterkey_aws(ctx, region, region_len, cmk, cmk_len), ctx, msg)
 
-#define ASSERT_MASTERKEY_LOCAL_OK ASSERT_OK(mongocrypt_ctx_setopt_masterkey_local(ctx), ctx);
-#define ASSERT_MASTERKEY_LOCAL_FAILS(msg) ASSERT_FAILS(mongocrypt_ctx_setopt_masterkey_local(ctx), ctx, msg);
+#define ASSERT_MASTERKEY_LOCAL_OK ASSERT_OK(mongocrypt_ctx_setopt_masterkey_local(ctx), ctx)
+#define ASSERT_MASTERKEY_LOCAL_FAILS(msg) ASSERT_FAILS(mongocrypt_ctx_setopt_masterkey_local(ctx), ctx, msg)
 
-#define ASSERT_KEY_ENCRYPTION_KEY_OK(bin) ASSERT_OK(mongocrypt_ctx_setopt_key_encryption_key(ctx, bin), ctx);
+#define ASSERT_KEY_ENCRYPTION_KEY_OK(bin) ASSERT_OK(mongocrypt_ctx_setopt_key_encryption_key(ctx, bin), ctx)
 #define ASSERT_KEY_ENCRYPTION_KEY_FAILS(bin, msg)                                                                      \
-    ASSERT_FAILS(mongocrypt_ctx_setopt_key_encryption_key(ctx, bin), ctx, msg);
+    ASSERT_FAILS(mongocrypt_ctx_setopt_key_encryption_key(ctx, bin), ctx, msg)
 
-#define ASSERT_KEY_ID_OK(key_id) ASSERT_OK(mongocrypt_ctx_setopt_key_id(ctx, key_id), ctx);
-#define ASSERT_KEY_ID_FAILS(key_id, msg) ASSERT_FAILS(mongocrypt_ctx_setopt_key_id(ctx, key_id), ctx, msg);
+#define ASSERT_KEY_ID_OK(key_id) ASSERT_OK(mongocrypt_ctx_setopt_key_id(ctx, key_id), ctx)
+#define ASSERT_KEY_ID_FAILS(key_id, msg) ASSERT_FAILS(mongocrypt_ctx_setopt_key_id(ctx, key_id), ctx, msg)
 
-#define ASSERT_KEY_ALT_NAME_OK(key_alt_name) ASSERT_OK(mongocrypt_ctx_setopt_key_alt_name(ctx, key_alt_name), ctx);
+#define ASSERT_KEY_ALT_NAME_OK(key_alt_name) ASSERT_OK(mongocrypt_ctx_setopt_key_alt_name(ctx, key_alt_name), ctx)
 #define ASSERT_KEY_ALT_NAME_FAILS(key_alt_name, msg)                                                                   \
-    ASSERT_FAILS(mongocrypt_ctx_setopt_key_alt_name(ctx, key_alt_name), ctx, msg);
+    ASSERT_FAILS(mongocrypt_ctx_setopt_key_alt_name(ctx, key_alt_name), ctx, msg)
 
-#define ASSERT_KEY_MATERIAL_OK(key_material) ASSERT_OK(mongocrypt_ctx_setopt_key_material(ctx, key_material), ctx);
+#define ASSERT_KEY_MATERIAL_OK(key_material) ASSERT_OK(mongocrypt_ctx_setopt_key_material(ctx, key_material), ctx)
 #define ASSERT_KEY_MATERIAL_FAILS(key_material, msg)                                                                   \
-    ASSERT_FAILS(mongocrypt_ctx_setopt_key_material(ctx, key_material), ctx, msg);
+    ASSERT_FAILS(mongocrypt_ctx_setopt_key_material(ctx, key_material), ctx, msg)
 
-#define ASSERT_ALGORITHM_OK(algo, algo_len) ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, algo, algo_len), ctx);
+#define ASSERT_ALGORITHM_OK(algo, algo_len) ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, algo, algo_len), ctx)
 #define ASSERT_ALGORITHM_FAILS(algo, algo_len, msg)                                                                    \
-    ASSERT_FAILS(mongocrypt_ctx_setopt_algorithm(ctx, algo, algo_len), ctx, msg);
+    ASSERT_FAILS(mongocrypt_ctx_setopt_algorithm(ctx, algo, algo_len), ctx, msg)
 
-#define ASSERT_QUERY_TYPE_OK(qt, qt_len) ASSERT_OK(mongocrypt_ctx_setopt_query_type(ctx, qt, qt_len), ctx);
+#define ASSERT_QUERY_TYPE_OK(qt, qt_len) ASSERT_OK(mongocrypt_ctx_setopt_query_type(ctx, qt, qt_len), ctx)
 #define ASSERT_QUERY_TYPE_FAILS(qt, qt_len, msg)                                                                       \
-    ASSERT_FAILS(mongocrypt_ctx_setopt_query_type(ctx, qt, qt_len), ctx, msg);
+    ASSERT_FAILS(mongocrypt_ctx_setopt_query_type(ctx, qt, qt_len), ctx, msg)
 
 #define ASSERT_ENDPOINT_OK(endpoint, endpoint_len)                                                                     \
-    ASSERT_OK(mongocrypt_ctx_setopt_masterkey_aws_endpoint(ctx, endpoint, endpoint_len), ctx);
+    ASSERT_OK(mongocrypt_ctx_setopt_masterkey_aws_endpoint(ctx, endpoint, endpoint_len), ctx)
 #define ASSERT_ENDPOINT_FAILS(endpoint, endpoint_len, msg)                                                             \
-    ASSERT_FAILS(mongocrypt_ctx_setopt_masterkey_aws_endpoint(ctx, endpoint, endpoint_len), ctx, msg);
+    ASSERT_FAILS(mongocrypt_ctx_setopt_masterkey_aws_endpoint(ctx, endpoint, endpoint_len), ctx, msg)
 
-#define ASSERT_DATAKEY_INIT_OK ASSERT_OK(mongocrypt_ctx_datakey_init(ctx), ctx);
-#define ASSERT_DATAKEY_INIT_FAILS(msg) ASSERT_FAILS(mongocrypt_ctx_datakey_init(ctx), ctx, msg);
+#define ASSERT_DATAKEY_INIT_OK ASSERT_OK(mongocrypt_ctx_datakey_init(ctx), ctx)
+#define ASSERT_DATAKEY_INIT_FAILS(msg) ASSERT_FAILS(mongocrypt_ctx_datakey_init(ctx), ctx, msg)
 
-#define ASSERT_ENCRYPT_INIT_OK(db, db_len, cmd) ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, db, db_len, cmd), ctx);
+#define ASSERT_ENCRYPT_INIT_OK(db, db_len, cmd) ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, db, db_len, cmd), ctx)
 #define ENCRYPT_INIT_FAILS(db, db_len, cmd, msg)                                                                       \
-    ASSERT_FAILS(mongocrypt_ctx_encrypt_init(ctx, db, db_len, cmd), ctx, msg);
+    ASSERT_FAILS(mongocrypt_ctx_encrypt_init(ctx, db, db_len, cmd), ctx, msg)
 
-#define ASSERT_EX_ENCRYPT_INIT_OK(bin) ASSERT_OK(mongocrypt_ctx_explicit_encrypt_init(ctx, bin), ctx);
-#define ASSERT_EX_ENCRYPT_INIT_FAILS(bin, msg) ASSERT_FAILS(mongocrypt_ctx_explicit_encrypt_init(ctx, bin), ctx, msg);
+#define ASSERT_EX_ENCRYPT_INIT_OK(bin) ASSERT_OK(mongocrypt_ctx_explicit_encrypt_init(ctx, bin), ctx)
+#define ASSERT_EX_ENCRYPT_INIT_FAILS(bin, msg) ASSERT_FAILS(mongocrypt_ctx_explicit_encrypt_init(ctx, bin), ctx, msg)
 
 #define ASSERT_EX_ENCRYPT_EXPRESSION_INIT_OK(bin)                                                                      \
-    ASSERT_OK(mongocrypt_ctx_explicit_encrypt_expression_init(ctx, bin), ctx);
+    ASSERT_OK(mongocrypt_ctx_explicit_encrypt_expression_init(ctx, bin), ctx)
 #define ASSERT_EX_ENCRYPT_EXPRESSION_INIT_FAILS(bin, msg)                                                              \
-    ASSERT_FAILS(mongocrypt_ctx_explicit_encrypt_expression_init(ctx, bin), ctx, msg);
+    ASSERT_FAILS(mongocrypt_ctx_explicit_encrypt_expression_init(ctx, bin), ctx, msg)
 
-#define ASSERT_DECRYPT_INIT_OK(bin) ASSERT_OK(mongocrypt_ctx_decrypt_init(ctx, bin), ctx);
-#define ASSERT_DECRYPT_INIT_FAILS(bin, msg) ASSERT_FAILS(mongocrypt_ctx_decrypt_init(ctx, bin), ctx, msg);
+#define ASSERT_DECRYPT_INIT_OK(bin) ASSERT_OK(mongocrypt_ctx_decrypt_init(ctx, bin), ctx)
+#define ASSERT_DECRYPT_INIT_FAILS(bin, msg) ASSERT_FAILS(mongocrypt_ctx_decrypt_init(ctx, bin), ctx, msg)
 
-#define ASSERT_EX_DECRYPT_INIT_OK(bin) ASSERT_OK(mongocrypt_ctx_explicit_decrypt_init(ctx, bin), ctx);
-#define ASSERT_EX_DECRYPT_INIT_FAILS(bin, msg) ASSERT_FAILS(mongocrypt_ctx_explicit_decrypt_init(ctx, bin), ctx, msg);
+#define ASSERT_EX_DECRYPT_INIT_OK(bin) ASSERT_OK(mongocrypt_ctx_explicit_decrypt_init(ctx, bin), ctx)
+#define ASSERT_EX_DECRYPT_INIT_FAILS(bin, msg) ASSERT_FAILS(mongocrypt_ctx_explicit_decrypt_init(ctx, bin), ctx, msg)
 
 #define REFRESH                                                                                                        \
     do {                                                                                                               \
@@ -296,11 +298,13 @@ static void _test_setopt_key_alt_name(_mongocrypt_tester_t *tester) {
 }
 
 static void _test_setopt_key_material(_mongocrypt_tester_t *tester) {
+#define KEY_MATERIAL_PATTERN "{'keyMaterial': {'$binary': {'base64': '%s', 'subType': '00'}}%s}"
+
     /* "0123456789abcef", repeated 6 times. */
     const char *const material = "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWYwMTIzNDU2Nzg5YWJjZGVmMDEyMzQ1"
                                  "Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWYwMTIzNDU2Nzg5YWJjZGVm";
-    const char *const pattern = "{'keyMaterial': {'$binary': {'base64': '%s', 'subType': '00'}}%s}";
-    mongocrypt_binary_t *const valid = TEST_BSON(pattern, material, "");
+
+    mongocrypt_binary_t *const valid = TEST_BSON(KEY_MATERIAL_PATTERN, material, "");
 
     mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
     mongocrypt_ctx_t *ctx = NULL;
@@ -320,18 +324,19 @@ static void _test_setopt_key_material(_mongocrypt_tester_t *tester) {
 
     /* Test empty key material. */
     REFRESH;
-    ASSERT_KEY_MATERIAL_FAILS(TEST_BSON(pattern, "", ""), "keyMaterial should have length 96, but has length 0");
+    ASSERT_KEY_MATERIAL_FAILS(TEST_BSON(KEY_MATERIAL_PATTERN, "", ""),
+                              "keyMaterial should have length 96, but has length 0");
 
     /* Test too short key material. */
     REFRESH;
-    ASSERT_KEY_MATERIAL_FAILS(TEST_BSON(pattern,
+    ASSERT_KEY_MATERIAL_FAILS(TEST_BSON(KEY_MATERIAL_PATTERN,
                                         "dG9vc2hvcnQ=", /* "tooshort" */
                                         ""),
                               "keyMaterial should have length 96, but has length 8");
 
     /* Test too long key material. */
     REFRESH;
-    ASSERT_KEY_MATERIAL_FAILS(TEST_BSON(pattern,
+    ASSERT_KEY_MATERIAL_FAILS(TEST_BSON(KEY_MATERIAL_PATTERN,
                                         /* "0123456789abcdef", repeated 6 times, followed by "toolong". */
                                         "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWYwMTIzNDU2Nzg5YWJjZGVmMDEyM"
                                         "zQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWYwMTIzNDU2Nzg5YWJjZGVmdG9vbG9uZw"
@@ -351,7 +356,7 @@ static void _test_setopt_key_material(_mongocrypt_tester_t *tester) {
 
     /* Test extra key. */
     REFRESH;
-    ASSERT_KEY_MATERIAL_FAILS(TEST_BSON(pattern, material, ", 'a': 1"),
+    ASSERT_KEY_MATERIAL_FAILS(TEST_BSON(KEY_MATERIAL_PATTERN, material, ", 'a': 1"),
                               "unrecognized field, only keyMaterial expected");
 
     /* Test error propagation. */
@@ -361,6 +366,8 @@ static void _test_setopt_key_material(_mongocrypt_tester_t *tester) {
 
     mongocrypt_ctx_destroy(ctx);
     mongocrypt_destroy(crypt);
+
+#undef KEY_MATERIAL_PATTERN
 }
 
 static void _test_setopt_algorithm(_mongocrypt_tester_t *tester) {
@@ -393,7 +400,7 @@ static void _test_setopt_algorithm(_mongocrypt_tester_t *tester) {
 
     REFRESH;
     _mongocrypt_ctx_fail_w_msg(ctx, "test");
-    ASSERT_ALGORITHM_FAILS(RAND, -1, "test")
+    ASSERT_ALGORITHM_FAILS(RAND, -1, "test");
 
     /* Test case insensitive. */
     REFRESH;
@@ -435,7 +442,7 @@ static void _test_setopt_query_type(_mongocrypt_tester_t *tester) {
     /* Test with failed context. */
     REFRESH;
     _mongocrypt_ctx_fail_w_msg(ctx, "test");
-    ASSERT_QUERY_TYPE_FAILS(MONGOCRYPT_QUERY_TYPE_EQUALITY_STR, -1, "test")
+    ASSERT_QUERY_TYPE_FAILS(MONGOCRYPT_QUERY_TYPE_EQUALITY_STR, -1, "test");
 
     /* Test case insensitive. */
     REFRESH;
@@ -585,12 +592,17 @@ static void _test_setopt_for_encrypt(_mongocrypt_tester_t *tester) {
 static void _test_setopt_for_explicit_encrypt(_mongocrypt_tester_t *tester) {
     mongocrypt_t *crypt;
     mongocrypt_ctx_t *ctx = NULL;
-    mongocrypt_binary_t *bson, *uuid, *rangeopts;
+    mongocrypt_binary_t *bson, *uuid, *rangeopts, *textopts;
 
     crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
     uuid = TEST_BIN(16);
     bson = TEST_BSON("{'v': 'hello'}");
     rangeopts = TEST_BSON("{'min': 0, 'max': 1, 'sparsity': {'$numberLong': '1'}}");
+    textopts = TEST_BSON(RAW_STRING({
+        "caseSensitive" : true,
+        "diacriticSensitive" : false,
+        "prefix" : {"strMinQueryLength" : 1, "strMaxQueryLength" : 2}
+    }));
 
     /* Test required and prohibited options. */
     REFRESH;
@@ -652,7 +664,7 @@ static void _test_setopt_for_explicit_encrypt(_mongocrypt_tester_t *tester) {
 
     REFRESH;
     ASSERT_ALGORITHM_OK(RAND, -1);
-    ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "key id or key alt name required")
+    ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "key id or key alt name required");
 
     REFRESH;
     ASSERT_KEY_ID_OK(uuid);
@@ -843,7 +855,7 @@ static void _test_setopt_for_explicit_encrypt(_mongocrypt_tester_t *tester) {
     {
         // Create a crypt with rangeV2 enabled.
         mongocrypt_destroy(crypt);
-        crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT | TESTER_MONGOCRYPT_WITH_RANGE_V2);
+        crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT | TESTER_MONGOCRYPT_DEFAULT);
         REFRESH_CTX;
         /* Set key ID to get past the 'either key id or key alt name required'
          * error */
@@ -899,7 +911,7 @@ static void _test_setopt_for_explicit_encrypt(_mongocrypt_tester_t *tester) {
     // Can't use "rangePreview" algorithm or query type with range V2.
     {
         mongocrypt_destroy(crypt);
-        crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_WITH_RANGE_V2);
+        crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
         REFRESH_CTX;
         ASSERT_KEY_ID_OK(uuid);
         ASSERT_FAILS(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_RANGEPREVIEW_DEPRECATED_STR, -1),
@@ -907,7 +919,7 @@ static void _test_setopt_for_explicit_encrypt(_mongocrypt_tester_t *tester) {
                      "'rangePreview' is deprecated");
 
         mongocrypt_destroy(crypt);
-        crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_WITH_RANGE_V2);
+        crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
         REFRESH_CTX;
         ASSERT_KEY_ID_OK(uuid);
         ASSERT_FAILS(mongocrypt_ctx_setopt_query_type(ctx, MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_DEPRECATED_STR, -1),
@@ -915,55 +927,21 @@ static void _test_setopt_for_explicit_encrypt(_mongocrypt_tester_t *tester) {
                      "'rangePreview' is deprecated");
     }
 
-    /* Error if query type == "rangePreview" and algorithm == "range" for range V1. */
-    // Explanation: Algorithm "rangePreview" accepts both query type "rangePreview" (for compatibility) and "range" (new
-    // behavior), but algorithm "range" only accepts query type "range". This is because if we are using the new
-    // algorithm type, we don't need to support the deprecated name for compatibility.
+    /* It is an error to set range opts with index_type ==
+     * MONGOCRYPT_INDEX_TYPE_TEXTPREVIEW */
     {
         REFRESH;
+        /* Set key ID to get past the 'either key id or key alt name required'
+         * error */
         ASSERT_KEY_ID_OK(uuid);
         ASSERT_OK(mongocrypt_ctx_setopt_algorithm_range(ctx, rangeopts), ctx);
-        ASSERT_ALGORITHM_OK(MONGOCRYPT_ALGORITHM_RANGE_STR, -1);
-        ASSERT_QUERY_TYPE_OK(MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_DEPRECATED_STR, -1);
-        ASSERT_OK(mongocrypt_ctx_setopt_contention_factor(ctx, 0), ctx);
-        ASSERT_EX_ENCRYPT_EXPRESSION_INIT_FAILS(bson, "must match index_type");
+        ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_TEXTPREVIEW_STR, -1), ctx);
+        ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "cannot set range opts with textPreview index type");
     }
 
-    /* If query type == "range" and algorithm == "rangePreview", succeeds for range V1 */
+    /* If query type == algorithm == "range", succeeds. */
     {
         REFRESH;
-        ASSERT_KEY_ID_OK(uuid);
-        ASSERT_OK(mongocrypt_ctx_setopt_algorithm_range(ctx, rangeopts), ctx);
-        ASSERT_ALGORITHM_OK(MONGOCRYPT_ALGORITHM_RANGEPREVIEW_DEPRECATED_STR, -1);
-        ASSERT_QUERY_TYPE_OK(MONGOCRYPT_QUERY_TYPE_RANGE_STR, -1);
-        ASSERT_OK(mongocrypt_ctx_setopt_contention_factor(ctx, 0), ctx);
-        ASSERT_EX_ENCRYPT_EXPRESSION_INIT_OK(bson);
-    }
-
-    /* If query type == algorithm == "rangePreview", succeeds for range V1. */
-    {
-        REFRESH;
-        ASSERT_KEY_ID_OK(uuid);
-        ASSERT_OK(mongocrypt_ctx_setopt_algorithm_range(ctx, rangeopts), ctx);
-        ASSERT_ALGORITHM_OK(MONGOCRYPT_ALGORITHM_RANGEPREVIEW_DEPRECATED_STR, -1);
-        ASSERT_QUERY_TYPE_OK(MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_DEPRECATED_STR, -1);
-        ASSERT_OK(mongocrypt_ctx_setopt_contention_factor(ctx, 0), ctx);
-        ASSERT_EX_ENCRYPT_EXPRESSION_INIT_OK(bson);
-    }
-
-    /* If query type == algorithm == "range", succeeds for both V2 and V1. */
-    {
-        REFRESH;
-        ASSERT_KEY_ID_OK(uuid);
-        ASSERT_OK(mongocrypt_ctx_setopt_algorithm_range(ctx, rangeopts), ctx);
-        ASSERT_ALGORITHM_OK(MONGOCRYPT_ALGORITHM_RANGE_STR, -1);
-        ASSERT_QUERY_TYPE_OK(MONGOCRYPT_QUERY_TYPE_RANGE_STR, -1);
-        ASSERT_OK(mongocrypt_ctx_setopt_contention_factor(ctx, 0), ctx);
-        ASSERT_EX_ENCRYPT_EXPRESSION_INIT_OK(bson);
-
-        mongocrypt_destroy(crypt);
-        crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_WITH_RANGE_V2);
-        REFRESH_CTX;
         ASSERT_KEY_ID_OK(uuid);
         ASSERT_OK(mongocrypt_ctx_setopt_algorithm_range(ctx, rangeopts), ctx);
         ASSERT_ALGORITHM_OK(MONGOCRYPT_ALGORITHM_RANGE_STR, -1);
@@ -984,6 +962,90 @@ static void _test_setopt_for_explicit_encrypt(_mongocrypt_tester_t *tester) {
             ctx);
         ASSERT_OK(mongocrypt_ctx_setopt_contention_factor(ctx, 0), ctx);
         ASSERT_EX_ENCRYPT_EXPRESSION_INIT_FAILS(bson, "EncryptExpression may only be used for range queries.");
+    }
+
+    /* It is an error to set text opts with index_type ==
+     * MONGOCRYPT_INDEX_TYPE_NONE */
+    {
+        REFRESH;
+        /* Set key ID to get past the 'either key id or key alt name required'
+         * error */
+        ASSERT_KEY_ID_OK(uuid);
+        ASSERT_OK(mongocrypt_ctx_setopt_algorithm_text(ctx, textopts), ctx);
+        ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_UNINDEXED_STR, -1), ctx);
+        ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "cannot set text opts without textPreview index type");
+    }
+
+    /* It is an error to set text opts with index_type ==
+     * MONGOCRYPT_INDEX_TYPE_EQUALITY */
+    {
+        REFRESH;
+        /* Set key ID to get past the 'either key id or key alt name required'
+         * error */
+        ASSERT_KEY_ID_OK(uuid);
+        ASSERT_OK(mongocrypt_ctx_setopt_algorithm_text(ctx, textopts), ctx);
+        ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_INDEXED_STR, -1), ctx);
+        ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "cannot set text opts without textPreview index type");
+    }
+
+    /* It is an error to set text opts with index_type ==
+     * MONGOCRYPT_INDEX_TYPE_RANGE */
+    {
+        REFRESH;
+        /* Set key ID to get past the 'either key id or key alt name required'
+         * error */
+        ASSERT_KEY_ID_OK(uuid);
+        ASSERT_OK(mongocrypt_ctx_setopt_algorithm_text(ctx, textopts), ctx);
+        ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_RANGE_STR, -1), ctx);
+        ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "cannot set text opts without textPreview index type");
+    }
+
+    /* It is an error to set a text query_type with index_type !=
+     * MONGOCRYPT_INDEX_TYPE_TEXTPREVIEW */
+    {
+        REFRESH;
+        /* Set key ID to get past the 'either key id or key alt name required'
+         * error */
+        ASSERT_KEY_ID_OK(uuid);
+        ASSERT_OK(mongocrypt_ctx_setopt_query_type(ctx, MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW_STR, -1), ctx);
+        ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_RANGE_STR, -1), ctx);
+        ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "substringPreview query type requires textPreview index type");
+
+        REFRESH;
+        /* Set key ID to get past the 'either key id or key alt name required'
+         * error */
+        ASSERT_KEY_ID_OK(uuid);
+        ASSERT_OK(mongocrypt_ctx_setopt_query_type(ctx, MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW_STR, -1), ctx);
+        ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_INDEXED_STR, -1), ctx);
+        ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "prefixPreview query type requires textPreview index type");
+
+        REFRESH;
+        /* Set key ID to get past the 'either key id or key alt name required'
+         * error */
+        ASSERT_KEY_ID_OK(uuid);
+        ASSERT_OK(mongocrypt_ctx_setopt_query_type(ctx, MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW_STR, -1), ctx);
+        ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_RANGE_STR, -1), ctx);
+        ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "suffixPreview query type requires textPreview index type");
+    }
+
+    /* It is an error to set a text algorithm without setting text options */
+    {
+        REFRESH;
+        /* Set key ID to get past the 'either key id or key alt name required' error */
+        ASSERT_KEY_ID_OK(uuid);
+        ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_TEXTPREVIEW_STR, -1), ctx);
+        ASSERT_OK(mongocrypt_ctx_setopt_contention_factor(ctx, 0), ctx);
+        ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "text opts are required for textPreview algorithm");
+    }
+
+    /* It is an error to set a text algorithm without setting contention */
+    {
+        REFRESH;
+        /* Set key ID to get past the 'either key id or key alt name required' error */
+        ASSERT_KEY_ID_OK(uuid);
+        ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_TEXTPREVIEW_STR, -1), ctx);
+        ASSERT_OK(mongocrypt_ctx_setopt_algorithm_text(ctx, textopts), ctx);
+        ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "contention factor is required for textPreview algorithm");
     }
 
     mongocrypt_ctx_destroy(ctx);
@@ -1148,7 +1210,7 @@ static void _test_setopt_endpoint(_mongocrypt_tester_t *tester) {
 
     REFRESH;
     _mongocrypt_ctx_fail_w_msg(ctx, "test");
-    ASSERT_ENDPOINT_FAILS(RAND, -1, "test")
+    ASSERT_ENDPOINT_FAILS(RAND, -1, "test");
 
     mongocrypt_ctx_destroy(ctx);
     mongocrypt_destroy(crypt);
@@ -1169,7 +1231,7 @@ static void _test_createdatakey_with_wrong_kms_provider_helper(_mongocrypt_teste
     mongocrypt_setopt_use_need_kms_credentials_state(crypt);
     ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
     ctx = mongocrypt_ctx_new(crypt);
-    ASSERT_OK(mongocrypt_ctx_setopt_key_encryption_key(ctx, TEST_BSON(kek)), ctx);
+    ASSERT_OK(mongocrypt_ctx_setopt_key_encryption_key(ctx, TEST_BSON_STR(kek)), ctx);
     ASSERT_FAILS(mongocrypt_ctx_datakey_init(ctx), ctx, "kms provider required by datakey is not configured");
 
     mongocrypt_ctx_destroy(ctx);

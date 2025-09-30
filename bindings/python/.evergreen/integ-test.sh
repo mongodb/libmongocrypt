@@ -44,6 +44,11 @@ export PATH=$CRYPT_SHARED_DIR:$MONGODB_BINARIES:$PATH
 export TEST_CRYPT_SHARED="1"
 pytest --maxfail=10 -v -m encryption
 
+# Now test with stable pymongo.
+pip uninstall -y pymongo
+pip install pymongo
+pytest --maxfail=10 -v -m encryption
+
 popd
 deactivate
 rm -rf .venv

@@ -74,7 +74,7 @@ static void _test_FLE2FindEqualityPayloadV2_roundtrip(_mongocrypt_tester_t *test
 #undef TEST_FIND_EQ_PAYLOAD_HEX_V2
 
 static void _test_FLE2FindEqualityPayloadV2_errors(_mongocrypt_tester_t *tester) {
-    bson_t *input_bson = TMP_BSON(BSON_STR({
+    bson_t *input_bson = TMP_BSON_STR(BSON_STR({
         "d" : {"$binary" : {"base64" : "AAAA", "subType" : "00"}},
         "s" : {"$binary" : {"base64" : "AAAA", "subType" : "00"}},
         "l" : {"$binary" : {"base64" : "AAAA", "subType" : "00"}},

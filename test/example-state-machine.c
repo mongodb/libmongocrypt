@@ -28,7 +28,7 @@ static void _log_to_stderr(mongocrypt_log_level_t level, const char *message, ui
     case MONGOCRYPT_LOG_LEVEL_ERROR: fprintf(stderr, "ERROR"); break;
     case MONGOCRYPT_LOG_LEVEL_WARNING: fprintf(stderr, "WARNING"); break;
     case MONGOCRYPT_LOG_LEVEL_INFO: fprintf(stderr, "INFO"); break;
-    case MONGOCRYPT_LOG_LEVEL_TRACE: fprintf(stderr, "TRACE"); break;
+    case MONGOCRYPT_LOG_LEVEL_TRACE: fprintf(stderr, "TRACE"); break; /* UNUSED */
     default: fprintf(stderr, "UNKNOWN"); break;
     }
     fprintf(stderr, " %s\n", message);
@@ -133,9 +133,10 @@ static void _print_binary_as_text(mongocrypt_binary_t *binary) {
 #define CHECK(stmt)                                                                                                    \
     if (!stmt) {                                                                                                       \
         continue;                                                                                                      \
-    }
+    } else                                                                                                             \
+        ((void)0)
 
-void _run_state_machine(mongocrypt_ctx_t *ctx, bson_t *result) {
+static void _run_state_machine(mongocrypt_ctx_t *ctx, bson_t *result) {
     mongocrypt_binary_t *input, *output = NULL;
     bson_t tmp;
     mongocrypt_kms_ctx_t *kms;
@@ -227,11 +228,10 @@ void _run_state_machine(mongocrypt_ctx_t *ctx, bson_t *result) {
             mongocrypt_ctx_status(ctx, status);
             printf("\ngot error: %s\n", mongocrypt_status_message(status, NULL));
             abort();
-            break;
         case MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS:
             // We don't handle KMS credentials
             // fallthrough
-        default: BSON_ASSERT(0); break;
+        default: BSON_ASSERT(0);
         }
     }
 
@@ -247,7 +247,7 @@ static mongocrypt_binary_t *_iter_to_binary(bson_iter_t *iter) {
     return mongocrypt_binary_new_from_data(data, len);
 }
 
-int main() {
+int main(void) {
     bson_iter_t iter;
     bson_t result;
     bson_t key_doc;

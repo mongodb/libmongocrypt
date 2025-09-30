@@ -165,7 +165,7 @@ bool mc_getTypeInfo64(mc_getTypeInfo64_args_t args, mc_OSTType_Int64 *out, mongo
 #define exp10Double(x) pow(10, x)
 #define SCALED_DOUBLE_BOUNDS 9007199254740992.0 // 2^53
 
-uint64_t subtract_int64_t(int64_t max, int64_t min) {
+static uint64_t subtract_int64_t(int64_t max, int64_t min) {
     BSON_ASSERT(max > min);
     // If the values have the same sign, then simple subtraction
     // will work because we know max > min.
@@ -180,7 +180,7 @@ uint64_t subtract_int64_t(int64_t max, int64_t min) {
     return u_return;
 }
 
-bool ceil_log2_double(uint64_t i, uint32_t *maxBitsOut, mongocrypt_status_t *status) {
+static bool ceil_log2_double(uint64_t i, uint32_t *maxBitsOut, mongocrypt_status_t *status) {
     if (i == 0) {
         CLIENT_ERR("Invalid input to ceil_log2_double function. Input cannot be 0.");
         return false;
@@ -284,10 +284,7 @@ bool mc_canUsePrecisionModeDouble(double min,
     return true;
 }
 
-bool mc_getTypeInfoDouble(mc_getTypeInfoDouble_args_t args,
-                          mc_OSTType_Double *out,
-                          mongocrypt_status_t *status,
-                          bool use_range_v2) {
+bool mc_getTypeInfoDouble(mc_getTypeInfoDouble_args_t args, mc_OSTType_Double *out, mongocrypt_status_t *status) {
     if (args.min.set != args.max.set || args.min.set != args.precision.set) {
         CLIENT_ERR("min, max, and precision must all be set or must all be unset");
         return false;
@@ -350,7 +347,7 @@ bool mc_getTypeInfoDouble(mc_getTypeInfoDouble_args_t args,
         use_precision_mode =
             mc_canUsePrecisionModeDouble(args.min.value, args.max.value, args.precision.value, &bits_range, status);
 
-        if (!use_precision_mode && use_range_v2) {
+        if (!use_precision_mode) {
             if (!mongocrypt_status_ok(status)) {
                 return false;
             }
@@ -421,7 +418,7 @@ bool mc_getTypeInfoDouble(mc_getTypeInfoDouble_args_t args,
     return true;
 }
 
-#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
+#if MONGOCRYPT_HAVE_DECIMAL128_SUPPORT()
 /**
  * @brief There is no shipped algorithm for creating a full 128-bit integer from
  * a Decimal128, but it's easy enough to write one of our own.
@@ -604,8 +601,7 @@ bool mc_canUsePrecisionModeDecimal(mc_dec128 min,
 
 bool mc_getTypeInfoDecimal128(mc_getTypeInfoDecimal128_args_t args,
                               mc_OSTType_Decimal128 *out,
-                              mongocrypt_status_t *status,
-                              bool use_range_v2) {
+                              mongocrypt_status_t *status) {
     /// Basic param checks
     if (args.min.set != args.max.set || args.min.set != args.precision.set) {
         CLIENT_ERR("min, max, and precision must all be set or must all be unset");
@@ -673,7 +669,7 @@ bool mc_getTypeInfoDecimal128(mc_getTypeInfoDecimal128_args_t args,
         use_precision_mode =
             mc_canUsePrecisionModeDecimal(args.min.value, args.max.value, args.precision.value, &bits_range, status);
 
-        if (use_range_v2 && !use_precision_mode) {
+        if (!use_precision_mode) {
             if (!mongocrypt_status_ok(status)) {
                 return false;
             }
@@ -852,16 +848,11 @@ bool mc_getTypeInfoDecimal128(mc_getTypeInfoDecimal128_args_t args,
 #endif // defined MONGOCRYPT_HAVE_DECIMAL128_SUPPORT
 
 const int64_t mc_FLERangeSparsityDefault = 2;
-const int32_t mc_FLERangeTrimFactorDefault = 6;
+static const int32_t mc_FLERangeTrimFactorDefault = 6;
 
-int32_t trimFactorDefault(size_t maxlen, mc_optional_int32_t trimFactor, bool use_range_v2) {
+int32_t trimFactorDefault(size_t maxlen, mc_optional_int32_t trimFactor) {
     if (trimFactor.set) {
         return trimFactor.value;
-    }
-
-    if (!use_range_v2) {
-        // Preserve old default.
-        return 0;
     }
 
     if (mc_cmp_greater_su(mc_FLERangeTrimFactorDefault, maxlen - 1)) {

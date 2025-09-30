@@ -44,29 +44,32 @@
         ((void)0)
 
 #define TEST_ERROR(...)                                                                                                \
-    do {                                                                                                               \
-        TEST_STDERR_PRINTF("test error %s:%d %s(): ", __FILE__, __LINE__, __FUNCTION__);                               \
+    if (1) {                                                                                                           \
+        TEST_STDERR_PRINTF("test error %s:%d %s(): ", __FILE__, __LINE__, __func__);                                   \
         TEST_STDERR_PRINTF(__VA_ARGS__);                                                                               \
         TEST_STDERR_PRINTF("\n");                                                                                      \
         abort();                                                                                                       \
-    } while (0)
+    } else                                                                                                             \
+        ((void)0)
 
 #define ASSERT(stmt)                                                                                                   \
     if (!(stmt)) {                                                                                                     \
         TEST_ERROR("statement failed %s", #stmt);                                                                      \
-    }
+    } else                                                                                                             \
+        ((void)0)
 
 #define ASSERT_OR_PRINT_MSG(_statement, msg)                                                                           \
-    do {                                                                                                               \
+    if (1) {                                                                                                           \
         if (!(_statement)) {                                                                                           \
             TEST_ERROR("%s failed with msg: %s", #_statement, (msg));                                                  \
         }                                                                                                              \
-    } while (0)
+    } else                                                                                                             \
+        ((void)0)
 
 #define ASSERT_OR_PRINT(_statement, _err) ASSERT_OR_PRINT_MSG(_statement, mongocrypt_status_message(_err, NULL))
 
 #define ASSERT_OK_STATUS(_stmt, _status)                                                                               \
-    do {                                                                                                               \
+    if (1) {                                                                                                           \
         bool _retval = (_stmt);                                                                                        \
         bool _status_ok = mongocrypt_status_ok(_status);                                                               \
         const char *_msg = mongocrypt_status_message(_status, NULL);                                                   \
@@ -75,10 +78,11 @@
         } else if (!_status_ok) {                                                                                      \
             TEST_ERROR("%s resulted in unexpected error status: %s\n", #_stmt, _msg);                                  \
         }                                                                                                              \
-    } while (0)
+    } else                                                                                                             \
+        ((void)0)
 
 #define ASSERT_FAILS_STATUS(_stmt, _status, _msg_pattern)                                                              \
-    do {                                                                                                               \
+    if (1) {                                                                                                           \
         bool _retval = (_stmt);                                                                                        \
         bool _status_ok = mongocrypt_status_ok(_status);                                                               \
         const char *_msg = mongocrypt_status_message(_status, NULL);                                                   \
@@ -90,7 +94,8 @@
         } else if (!_found_msg) {                                                                                      \
             TEST_ERROR("'%s' does not contain '%s'\n", _msg, _msg_pattern);                                            \
         }                                                                                                              \
-    } while (0)
+    } else                                                                                                             \
+        ((void)0)
 
 #define ASSERT_OK(_stmt, _obj) ASSERT_OK_STATUS(_stmt, (_obj)->status)
 
@@ -101,7 +106,7 @@
 #define ASSERT_STATUS_CONTAINS(status, _msg_pattern) ASSERT_FAILS_STATUS(false, status, _msg_pattern)
 
 #define ASSERT_STREQUAL(_expr_a, _expr_b)                                                                              \
-    do {                                                                                                               \
+    if (1) {                                                                                                           \
         const char *_str_a = (_expr_a);                                                                                \
         const char *_str_b = (_expr_b);                                                                                \
         ASSERT(_str_a);                                                                                                \
@@ -110,47 +115,52 @@
         if (_ret != 0) {                                                                                               \
             TEST_ERROR("strings not equal:\n%s\nvs.\n%s\n", _str_a, _str_b);                                           \
         }                                                                                                              \
-    } while (0);
+    } else                                                                                                             \
+        ((void)0)
 
 #define ASSERT_STRCONTAINS(_expr_a, _expr_b)                                                                           \
-    do {                                                                                                               \
+    if (1) {                                                                                                           \
         const char *_str_a = (_expr_a);                                                                                \
         const char *_str_b = (_expr_b);                                                                                \
         char *_ret = strstr(_str_a, _str_b);                                                                           \
         if (_ret == NULL) {                                                                                            \
             TEST_ERROR("string %s does not contain %s\n", _str_a, _str_b);                                             \
         }                                                                                                              \
-    } while (0);
+    } else                                                                                                             \
+        ((void)0)
 
 #define ASSERT_STATE_EQUAL(actual, expected)                                                                           \
-    do {                                                                                                               \
+    if (1) {                                                                                                           \
         if (actual != expected) {                                                                                      \
             TEST_ERROR("actual state: %s, but expected state: %s\n",                                                   \
                        mongocrypt_ctx_state_to_string(actual),                                                         \
                        mongocrypt_ctx_state_to_string(expected));                                                      \
             abort();                                                                                                   \
         }                                                                                                              \
-    } while (0)
+    } else                                                                                                             \
+        ((void)0)
 
 #define ASSERT_CMPBYTES(expected_bytes, expected_len, actual_bytes, actual_len)                                        \
-    do {                                                                                                               \
+    if (1) {                                                                                                           \
         char *_actual_hex = data_to_hex(actual_bytes, actual_len);                                                     \
         char *_expected_hex = data_to_hex(expected_bytes, expected_len);                                               \
         ASSERT_STREQUAL(_actual_hex, _expected_hex);                                                                   \
         free(_actual_hex);                                                                                             \
         free(_expected_hex);                                                                                           \
-    } while (0)
+    } else                                                                                                             \
+        ((void)0)
 
 #define ASSERT_CMPBUF(expected, actual) ASSERT_CMPBYTES((expected).data, (expected).len, (actual).data, (actual).len)
 
 #define ASSERT_CMP_HELPER(_a, _operator, _b, fmt, type)                                                                \
-    do {                                                                                                               \
+    if (1) {                                                                                                           \
         type _a_value = (_a);                                                                                          \
         type _b_value = (_b);                                                                                          \
         if (!(_a_value _operator _b_value)) {                                                                          \
             TEST_ERROR("comparison failed: %" fmt " %s %" fmt, _a_value, #_operator, _b_value);                        \
         }                                                                                                              \
-    } while (0);
+    } else                                                                                                             \
+        ((void)0)
 
 #define ASSERT_CMPINT(a, eq, b) ASSERT_CMP_HELPER(a, eq, b, "d", int)
 #define ASSERT_CMPUINT(a, eq, b) ASSERT_CMP_HELPER(a, eq, b, "u", unsigned int)
@@ -184,7 +194,7 @@
         ((void)0)
 
 #define ASSERT_EQUAL_BSON(expected, actual)                                                                            \
-    do {                                                                                                               \
+    if (1) {                                                                                                           \
         bson_t *_expected_bson = expected, *_actual_bson = actual;                                                     \
         char *_expected_str, *_actual_str;                                                                             \
         _expected_str = bson_as_canonical_extended_json(_expected_bson, NULL);                                         \
@@ -194,10 +204,11 @@
         }                                                                                                              \
         bson_free(_actual_str);                                                                                        \
         bson_free(_expected_str);                                                                                      \
-    } while (0)
+    } else                                                                                                             \
+        ((void)0)
 
 #define ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(expected, actual)                                                          \
-    do {                                                                                                               \
+    if (1) {                                                                                                           \
         bson_t _expected_bson, _actual_bson;                                                                           \
         char *_expected_str, *_actual_str;                                                                             \
         ASSERT(_mongocrypt_binary_to_bson(expected, &_expected_bson));                                                 \
@@ -209,6 +220,7 @@
         }                                                                                                              \
         bson_free(_actual_str);                                                                                        \
         bson_free(_expected_str);                                                                                      \
-    } while (0)
+    } else                                                                                                             \
+        ((void)0)
 
 #endif /* TEST_MONGOCRYPT_ASSERT_H */

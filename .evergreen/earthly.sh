@@ -4,14 +4,7 @@
 
 set -euo pipefail
 
-: "${EARTHLY_VERSION:=0.7.8}"
-
-# Bring in the debian/ directory from the debian/unstable branch
-pushd "$(dirname "${BASH_SOURCE[0]}")/../"
-    (git remote | grep -q upstream) || git remote add upstream https://github.com/mongodb/libmongocrypt
-    git fetch upstream
-    git checkout $(git rev-parse upstream/debian/unstable) -- debian
-popd
+: "${EARTHLY_VERSION:=0.8.16}"
 
 # Calc the arch of the executable we want
 arch="$(uname -m)"
@@ -48,4 +41,4 @@ fi
 
 chmod a+x "$exe_path"
 
-"$exe_path" --buildkit-image "artifactory.corp.mongodb.com/dockerhub/earthly/buildkitd:v${EARTHLY_VERSION}" "$@"
+"$exe_path" "$@"

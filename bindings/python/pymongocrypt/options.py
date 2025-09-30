@@ -11,6 +11,8 @@ class MongoCryptOptions:
         crypt_shared_lib_path=None,
         crypt_shared_lib_required=False,
         bypass_encryption=False,
+        key_expiration_ms=None,
+        enable_multiple_collinfo=False,
     ):
         """Options for :class:`MongoCrypt`.
 
@@ -53,6 +55,11 @@ class MongoCryptOptions:
           - `crypt_shared_lib_required`: Whether to require a crypt_shared
             library.
           - `bypass_encryption`: Whether to bypass encryption.
+          - `key_expiration_ms` (int): The cache expiration time for data
+            encryption keys. Defaults to 60000. 0 means keys never expire.
+
+        .. versionadded:: 1.13
+           Added the ``key_expiration_ms`` parameter.
 
         .. versionremoved:: 1.11
            Removed the ``enable_range_v2`` parameter.
@@ -136,6 +143,11 @@ class MongoCryptOptions:
             encrypted_fields_map, bytes
         ):
             raise TypeError("encrypted_fields_map must be bytes or None")
+        if key_expiration_ms is not None:
+            if not isinstance(key_expiration_ms, int):
+                raise TypeError("key_expiration_ms must be int or None")
+            if key_expiration_ms < 0:
+                raise ValueError("key_expiration_ms must be >=0 or None")
 
         self.kms_providers = kms_providers
         self.schema_map = schema_map
@@ -144,6 +156,8 @@ class MongoCryptOptions:
         self.crypt_shared_lib_path = crypt_shared_lib_path
         self.crypt_shared_lib_required = crypt_shared_lib_required
         self.bypass_encryption = bypass_encryption
+        self.key_expiration_ms = key_expiration_ms
+        self.enable_multiple_collinfo = enable_multiple_collinfo
 
 
 class ExplicitEncryptOpts:
@@ -156,6 +170,7 @@ class ExplicitEncryptOpts:
         contention_factor=None,
         range_opts=None,
         is_expression=False,
+        text_opts=None,
     ):
         """Options for explicit encryption.
 
@@ -172,11 +187,15 @@ class ExplicitEncryptOpts:
             with the "range" algorithm encoded as a BSON document.
           - `is_expression` (boolean): True if this is an encryptExpression()
             context. Defaults to False.
+          - `text_opts` (bytes): Options for explicit encryption
+            with the "textPreview" algorithm encoded as a BSON document.
 
         .. versionchanged:: 1.3
            Added the `query_type` and `contention_factor` parameters.
         .. versionchanged:: 1.5
            Added the `range_opts` and `is_expression` parameters.
+        .. versionchanged:: 1.16
+           Added the `text_opts` parameter.
         """
         self.algorithm = algorithm
         self.key_id = key_id
@@ -198,6 +217,11 @@ class ExplicitEncryptOpts:
             )
         self.range_opts = range_opts
         self.is_expression = is_expression
+        if text_opts is not None and not isinstance(text_opts, bytes):
+            raise TypeError(
+                f"text_opts must be an bytes or None, not: {type(text_opts)}"
+            )
+        self.text_opts = text_opts
 
 
 class DataKeyOpts:

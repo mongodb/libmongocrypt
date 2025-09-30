@@ -33,13 +33,13 @@
 
 #include "mongo_crypt-v1.h"
 
-#include <mlib/macros.h>
+#include <mc-mlib/macros.h>
 
 #define MONGOCRYPT_GENERIC_ERROR_CODE 1
 
 #define CLIENT_ERR_W_CODE(code, ...) _mongocrypt_set_error(status, MONGOCRYPT_STATUS_ERROR_CLIENT, code, __VA_ARGS__)
 
-#define CLIENT_ERR(fmt, ...) CLIENT_ERR_W_CODE(MONGOCRYPT_GENERIC_ERROR_CODE, fmt, ##__VA_ARGS__)
+#define CLIENT_ERR(...) CLIENT_ERR_W_CODE(MONGOCRYPT_GENERIC_ERROR_CODE, __VA_ARGS__)
 
 #define KMS_ERR_W_CODE(code, ...) _mongocrypt_set_error(status, MONGOCRYPT_STATUS_ERROR_KMS, code, __VA_ARGS__)
 
@@ -150,6 +150,14 @@ typedef enum {
     MONGOCRYPT_FLE2_ALGORITHM_RANGE = 3,
     MONGOCRYPT_FLE2_ALGORITHM_TEXT_SEARCH = 4
 } mongocrypt_fle2_encryption_algorithm_t;
+
+typedef enum {
+    MONGOCRYPT_INDEX_TYPE_NONE = 1,
+    MONGOCRYPT_INDEX_TYPE_EQUALITY = 2,
+    MONGOCRYPT_INDEX_TYPE_RANGE = 3,
+    MONGOCRYPT_INDEX_TYPE_RANGEPREVIEW_DEPRECATED = 4,
+    MONGOCRYPT_INDEX_TYPE_TEXTPREVIEW = 5,
+} mongocrypt_index_type_t;
 
 bool _mongocrypt_validate_and_copy_string(const char *in, int32_t in_len, char **out) MONGOCRYPT_WARN_UNUSED_RESULT;
 

@@ -22,7 +22,8 @@
 #define CHECK_AND_RETURN(x)                                                                                            \
     if (!(x)) {                                                                                                        \
         return false;                                                                                                  \
-    }
+    } else                                                                                                             \
+        ((void)0)
 
 void mc_FLE2TagAndEncryptedMetadataBlock_init(mc_FLE2TagAndEncryptedMetadataBlock_t *metadata) {
     BSON_ASSERT_PARAM(metadata);
@@ -49,7 +50,7 @@ bool mc_FLE2TagAndEncryptedMetadataBlock_parse(mc_FLE2TagAndEncryptedMetadataBlo
     }
 
     mc_reader_t reader;
-    mc_reader_init_from_buffer(&reader, buf, __FUNCTION__);
+    mc_reader_init_from_buffer(&reader, buf, __func__);
 
     mc_FLE2TagAndEncryptedMetadataBlock_init(metadata);
 
@@ -70,7 +71,7 @@ bool mc_FLE2TagAndEncryptedMetadataBlock_serialize(const mc_FLE2TagAndEncryptedM
 
     _mongocrypt_buffer_resize(buf, kMetadataLen);
     mc_writer_t writer;
-    mc_writer_init_from_buffer(&writer, buf, __FUNCTION__);
+    mc_writer_init_from_buffer(&writer, buf, __func__);
 
     CHECK_AND_RETURN(mc_writer_write_buffer(&writer, &metadata->encryptedCount, kFieldLen, status));
 

@@ -1,15 +1,4 @@
-cmake_minimum_required (VERSION 3.12)
-
-# Preempt the MSVC_RUNTIME_LIBRARY properties
-if (POLICY CMP0091)
-   cmake_policy (SET CMP0091 NEW)
-elseif (DEFINED CMAKE_MSVC_RUNTIME_LIBRARY)
-   message (WARNING "The CMAKE_MSVC_RUNTIME_LIBRARY variable is set, but CMake is too old to understand it")
-endif ()
-
-if (POLICY CMP0135)
-   cmake_policy (SET CMP0135 NEW)
-endif ()
+cmake_minimum_required (VERSION 3.15...4.0)
 
 project (mongocrypt C)
 
@@ -27,20 +16,13 @@ option (ENABLE_BUILD_FOR_PPA "Maintainer-only option for preparing PPA build" OF
 option (ENABLE_ONLINE_TESTS "Enable online tests and the csfle utility. Requires libmongoc." ON)
 
 if (ENABLE_WINDOWS_STATIC_RUNTIME)
-   if (POLICY CMP0091)
-      # CMake 3.15 makes this trivial:
-      set (CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-   else ()
-      # Fix it up the old-fashioned way
-      string (REPLACE "/MDd" "" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
-      string (REPLACE "/MD" "" CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
-      string (REPLACE "/MDd" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-      string (REPLACE "/MD" "" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
-      string (APPEND CMAKE_C_FLAGS_DEBUG " /MTd")
-      string (APPEND CMAKE_CXX_FLAGS_DEBUG " /MTd")
-      string (APPEND CMAKE_C_FLAGS_RELEASE " /MT")
-      string (APPEND CMAKE_CXX_FLAGS_RELEASE " /MT")
-   endif ()
+   set (CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif ()
+
+if (MINGW)
+   # MSVCRT-based mingw-w64 GCC requires this macro to enable C99 format specifiers. This does not apply to UCRT-based
+   # mingw-w64 GCC, but apply the workaround anyways until bson-compat.h no longer requires this.
+   add_compile_definitions ("__USE_MINGW_ANSI_STDIO=1")
 endif ()
 
 list (APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
@@ -108,6 +90,7 @@ set (MONGOCRYPT_SOURCES
    src/mc-fle2-encryption-placeholder.c
    src/mc-fle2-find-equality-payload.c
    src/mc-fle2-find-equality-payload-v2.c
+   src/mc-fle2-find-text-payload.c
    src/mc-fle2-payload-iev.c
    src/mc-fle2-payload-iev-v2.c
    src/mc-fle2-payload-uev.c
@@ -115,10 +98,12 @@ set (MONGOCRYPT_SOURCES
    src/mc-fle2-payload-uev-v2.c
    src/mc-fle2-rfds.c
    src/mc-fle2-tag-and-encrypted-metadata-block.c
+   src/mc-parse-utils.c
    src/mc-range-edge-generation.c
    src/mc-range-mincover.c
    src/mc-range-encoding.c
    src/mc-rangeopts.c
+   src/mc-textopts.c
    src/mc-reader.c
    src/mc-schema-broker.c
    src/mc-str-encode-string-sets.c
@@ -199,12 +184,6 @@ else ()
    message (FATAL_ERROR "Unknown crypto provider ${MONGOCRYPT_CRYPTO}")
 endif ()
 
-set (MONGOCRYPT_ENABLE_TRACE 0)
-if (ENABLE_TRACE)
-   message (WARNING "Building with trace logging. This is highly insecure. Do not use in a production environment")
-   set (MONGOCRYPT_ENABLE_TRACE 1)
-endif ()
-
 set (BUILD_VERSION "0.0.0" CACHE STRING "Library version")
 if (BUILD_VERSION STREQUAL "0.0.0")
    if (EXISTS ${CMAKE_BINARY_DIR}/VERSION_CURRENT)
@@ -254,22 +233,22 @@ configure_file (
    "${PROJECT_BINARY_DIR}/src/mongocrypt-config.h"
 )
 
-# Define the mlib target, which is private and header-only. It is not exported
+# Define the mc-mlib target, which is private and header-only. It is not exported
 # nor are its headers installed.
-add_library (_mongo-mlib INTERFACE)
-add_library (mongo::mlib ALIAS _mongo-mlib)
-list (APPEND MLIB_DEFINITIONS MLIB_USER)
+add_library (_mongo-mc-mlib INTERFACE)
+add_library (mongo::mc-mlib ALIAS _mongo-mc-mlib)
+list (APPEND MCMLIB_DEFINITIONS MLIB_USER)
 CHECK_INCLUDE_FILE (strings.h HAVE_STRINGS_H)
 if (HAVE_STRINGS_H)
-   list (APPEND MLIB_DEFINITIONS MLIB_HAVE_STRINGS_H)
+   list (APPEND MCMLIB_DEFINITIONS MLIB_HAVE_STRINGS_H)
 endif ()
 set_property(
-   TARGET _mongo-mlib
+   TARGET _mongo-mc-mlib
    APPEND PROPERTY INTERFACE_COMPILE_DEFINITIONS
-   ${MLIB_DEFINITIONS}
+   ${MCMLIB_DEFINITIONS}
    )
 set_property(
-   TARGET _mongo-mlib
+   TARGET _mongo-mc-mlib
    APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES
    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>"
    )
@@ -292,7 +271,7 @@ target_link_libraries (
    PRIVATE
       _mongocrypt::libbson_for_shared
       kms_message_static
-      $<BUILD_INTERFACE:mongo::mlib>
+      $<BUILD_INTERFACE:mongo::mc-mlib>
    PUBLIC
       mongocrypt::platform
       ${maybe_dfp_library}
@@ -326,7 +305,7 @@ add_library (mongocrypt_static STATIC ${MONGOCRYPT_SOURCES})
 # the common case that users are setting -DCMAKE_C_FLAGS='-fPIC'
 string (FIND "${CMAKE_C_FLAGS}" "-fPIC" FPIC_LOCATION)
 if (NOT WIN32 AND ENABLE_PIC AND "${FPIC_LOCATION}" EQUAL "-1")
-   target_compile_options (mongocrypt_static PUBLIC -fPIC)
+   set_property (TARGET mongocrypt_static PROPERTY POSITION_INDEPENDENT_CODE TRUE)
    message ("Adding -fPIC to compilation of mongocrypt_static components")
 endif ()
 target_include_directories (
@@ -348,7 +327,7 @@ target_link_libraries (
    PRIVATE
       _mongocrypt::libbson_for_static
       kms_message_static
-      $<BUILD_INTERFACE:mongo::mlib>
+      $<BUILD_INTERFACE:mongo::mc-mlib>
    PUBLIC
       mongocrypt::platform
       ${maybe_dfp_library}
@@ -469,6 +448,7 @@ set (TEST_MONGOCRYPT_SOURCES
    test/test-mc-fle2-encryption-placeholder.c
    test/test-mc-fle2-find-equality-payload-v2.c
    test/test-mc-fle2-find-range-payload-v2.c
+   test/test-mc-fle2-find-text-payload.c
    test/test-mc-fle2-payload-iev.c
    test/test-mc-fle2-payload-iev-v2.c
    test/test-mc-fle2-payload-iup.c
@@ -480,6 +460,7 @@ set (TEST_MONGOCRYPT_SOURCES
    test/test-mc-range-edge-generation.c
    test/test-mc-range-mincover.c
    test/test-mc-rangeopts.c
+   test/test-mc-textopts.c
    test/test-mc-reader.c
    test/test-mc-text-search-str-encode.c
    test/test-mc-schema-broker.c
@@ -526,13 +507,15 @@ set (TEST_MONGOCRYPT_SOURCES
 add_executable (test-mongocrypt ${TEST_MONGOCRYPT_SOURCES})
 # Use the static version since it allows the test binary to use private symbols
 target_include_directories (test-mongocrypt PRIVATE ./src "${CMAKE_CURRENT_SOURCE_DIR}/kms-message/src")
-target_link_libraries (test-mongocrypt PRIVATE _mongocrypt::libbson_for_static mongocrypt_static mongo::mlib)
+target_link_libraries (test-mongocrypt PRIVATE _mongocrypt::libbson_for_static mongocrypt_static mongo::mc-mlib)
 target_include_directories (test-mongocrypt PRIVATE "${CMAKE_CURRENT_LIST_DIR}/test")
 target_compile_definitions (test-mongocrypt PRIVATE
    # Set a definition so that testcases can know where test-mongocrypt.exe was written to
    "TEST_MONGOCRYPT_OUTPUT_PATH=\"$<TARGET_FILE:test-mongocrypt>\""
    # Tell test-mongocrypt whether we have a real csfle library for testing
    TEST_MONGOCRYPT_HAVE_REAL_CRYPT_SHARED_LIB=$<BOOL:${MONGOCRYPT_TESTING_CRYPT_SHARED_FILE}>
+   # Tell test-mongocrypt the path of the libmongocrypt shared library for testing.
+   "TEST_MONGOCRYPT_MONGOCRYPT_SHARED_PATH=\"$<TARGET_FILE:mongocrypt>\""
    )
 
 add_test (
@@ -542,9 +525,9 @@ add_test (
    )
 
 foreach (test IN ITEMS path str)
-   add_executable (mlib.${test}.test src/mlib/${test}.test.c)
+   add_executable (mlib.${test}.test src/mc-mlib/${test}.test.c)
    add_test (mlib.${test} mlib.${test}.test)
-   target_link_libraries (mlib.${test}.test PRIVATE mongo::mlib)
+   target_link_libraries (mlib.${test}.test PRIVATE mongo::mc-mlib)
 endforeach ()
 
 if ("cxx_relaxed_constexpr" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
@@ -562,7 +545,7 @@ if ("cxx_relaxed_constexpr" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
       target_compile_features ("${exe_name}" PRIVATE cxx_relaxed_constexpr)
       target_link_libraries ("${exe_name}" PRIVATE
          mongocrypt
-         mongo::mlib
+         mongo::mc-mlib
          ${maybe_dfp_library}
          _mongocrypt::libbson_for_static
          )
@@ -572,7 +555,7 @@ endif ()
 
 if ("cxx_std_20" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
    add_executable (csfle-markup src/csfle-markup.cpp)
-   target_link_libraries (csfle-markup PRIVATE mongocrypt_static _mongocrypt::libbson_for_static mongo::mlib)
+   target_link_libraries (csfle-markup PRIVATE mongocrypt_static _mongocrypt::libbson_for_static mongo::mc-mlib)
    target_compile_features (csfle-markup PRIVATE cxx_std_20)
 endif ()
 
@@ -623,8 +606,8 @@ install (
    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
-# This export set is not installed, and is only to allow export() of the mlib-using targets
-install (TARGETS _mongo-mlib EXPORT _exports_for_export)
+# This export set is not installed, and is only to allow export() of the mc-mlib-using targets
+install (TARGETS _mongo-mc-mlib EXPORT _exports_for_export)
 export (EXPORT _exports_for_export)
 
 install (
@@ -639,11 +622,11 @@ install (
 set (PROJECT_VERSION "${BUILD_VERSION}")
 set (PROJECT_DESCRIPTION "The libmongocrypt client-side field level encryption library.")
 if (NOT ENABLE_BUILD_FOR_PPA)
-   set (PKG_CONFIG_STATIC_REQUIRES "libbson-static-1.0")
+   set (PKG_CONFIG_STATIC_REQUIRES "bson2-static")
 endif ()
 if (USE_SHARED_LIBBSON)
-   set (PKG_CONFIG_REQUIRES "libbson-1.0")
-   set (PKG_CONFIG_STATIC_REQUIRES "libbson-1.0")
+   set (PKG_CONFIG_REQUIRES "bson2")
+   set (PKG_CONFIG_STATIC_REQUIRES "bson2")
 endif ()
 set (PKG_CONFIG_LIBDIR "\${prefix}/${CMAKE_INSTALL_LIBDIR}")
 set (PKG_CONFIG_INCLUDEDIR "\${prefix}/${CMAKE_INSTALL_INCLUDEDIR}/mongocrypt")
@@ -712,4 +695,3 @@ install (
    COMPONENT
       Devel
 )
-

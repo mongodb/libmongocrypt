@@ -93,7 +93,7 @@ static void test_mc_FLE2RangeFindDriverSpec_parse(_mongocrypt_tester_t *tester) 
         mongocrypt_status_t *status = mongocrypt_status_new();
         mc_FLE2RangeFindDriverSpec_t rfds;
         TEST_PRINTF("running subtest: %s\n", test->desc);
-        bool ret = mc_FLE2RangeFindDriverSpec_parse(&rfds, TMP_BSON(test->in), status);
+        bool ret = mc_FLE2RangeFindDriverSpec_parse(&rfds, TMP_BSON_STR(test->in), status);
         if (!test->expectError) {
             ASSERT_OK_STATUS(ret, status);
             ASSERT_STREQUAL(test->expect.field, rfds.field);
@@ -323,19 +323,22 @@ static void test_mc_FLE2RangeFindDriverSpec_to_placeholders(_mongocrypt_tester_t
     };
 
     bson_t *range_opts_bson =
-        TMP_BSON("{'min': %d, 'max': %d, 'sparsity': {'$numberLong': '%d'}}", indexMin, indexMax, sparsity);
+        TMP_BSON("{'min': %" PRId32 ", 'max': %" PRId32 ", 'sparsity': {'$numberLong': '%" PRId64 "'}}",
+                 indexMin,
+                 indexMax,
+                 sparsity);
 
-    ASSERT_OK_STATUS(mc_RangeOpts_parse(&range_opts, range_opts_bson, true /* use_range_v2 */, status), status);
+    ASSERT_OK_STATUS(mc_RangeOpts_parse(&range_opts, range_opts_bson, status), status);
 
     for (size_t i = 0; i < sizeof(tests) / sizeof(tests[0]); i++) {
         testcase_t *test = tests + i;
         TEST_PRINTF("running subtest: %s : %s\n", test->desc, test->in);
-        ASSERT_OK_STATUS(mc_FLE2RangeFindDriverSpec_parse(&spec, TMP_BSON(test->in), status), status);
+        ASSERT_OK_STATUS(mc_FLE2RangeFindDriverSpec_parse(&spec, TMP_BSON_STR(test->in), status), status);
 
         // Create the expected document.
         bson_t *expected;
         {
-            expected = TMP_BSON(test->expected);
+            expected = TMP_BSON_STR(test->expected);
 
             _mongocrypt_buffer_t p1 = {0}, p2 = {0};
 
