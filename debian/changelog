@@ -1,6 +1,7 @@
 libmongocrypt (1.16.0-1) UNRELEASED; urgency=medium
 
   * New upstream release. (Closes: #1112313, #1113175)
+  * Update to debhelper compatibility 13
 
  -- Roberto C. Sanchez <roberto@connexer.com>  Tue, 30 Sep 2025 16:20:35 -0400
 
