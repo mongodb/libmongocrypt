@@ -1,0 +1,17 @@
+---
+ cmake/ImportBSON.cmake |    4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+--- a/cmake/ImportBSON.cmake
++++ b/cmake/ImportBSON.cmake
+@@ -75,7 +75,9 @@
+       message (STATUS "NOTE: Using system-wide libbson library. This is intended only for package maintainers.")
+       find_library (_MONGOCRYPT_SYSTEM_LIBBSON_SHARED "${CMAKE_SHARED_LIBRARY_PREFIX}bson2${CMAKE_SHARED_LIBRARY_SUFFIX}")
+       find_library (_MONGOCRYPT_SYSTEM_LIBBSON_STATIC "${CMAKE_STATIC_LIBRARY_PREFIX}bson2${CMAKE_STATIC_LIBRARY_SUFFIX}")
+-      find_path (_MONGOCRYPT_SYSTEM_LIBBSON_INCLUDE_DIR bson/bson.h PATH_SUFFIXES bson-2.1.0)
++      find_package (bson 2.0 REQUIRED)
++      get_target_property (_BSON_SHARED_INCL_DIR_PROP bson::shared INTERFACE_INCLUDE_DIRECTORIES)
++      set (_MONGOCRYPT_SYSTEM_LIBBSON_INCLUDE_DIR "${_BSON_SHARED_INCL_DIR_PROP}" CACHE FILEPATH "Internal use only")
+       add_library (bson_shared SHARED IMPORTED)
+       add_library (bson_static STATIC IMPORTED)
+       set_target_properties (bson_shared bson_static PROPERTIES
