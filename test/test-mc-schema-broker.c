@@ -767,6 +767,54 @@ static void test_mc_schema_broker_add_schemas_to_cmd(_mongocrypt_tester_t *teste
         mongocrypt_status_destroy(status);
     }
 
+    // When schemas are mixed, empty schemas are included in encryptionInformation, not csfleEncryptionSchemas.
+    {
+        mongocrypt_status_t *status = mongocrypt_status_new();
+        mc_schema_broker_t *sb = mc_schema_broker_new();
+        _mongocrypt_cache_t cache;
+        _mongocrypt_cache_collinfo_init(&cache);
+
+        mc_schema_broker_support_mixing_schemas(sb);
+
+        ASSERT_OK_STATUS(mc_schema_broker_request(sb, "db", "coll", status), status);
+        ASSERT_OK_STATUS(mc_schema_broker_request(sb, "db", "coll2", status), status);
+        ASSERT_OK_STATUS(mc_schema_broker_request(sb, "db", "coll3", status), status);
+        ASSERT(mc_schema_broker_need_more_schemas(sb));
+        // Satisfy db.coll with a CSFLE schema (JSON schema):
+        ASSERT_OK_STATUS(mc_schema_broker_satisfy_from_collinfo(sb, collinfo_jsonSchema, &cache, status), status);
+        // Satisfy db.coll2 with a QE schema (encryptedFields):
+        ASSERT_OK_STATUS(mc_schema_broker_satisfy_from_collinfo(sb, collinfo_encryptedFields2, &cache, status), status);
+        // Satisfy db.coll3 with an empty schema
+        ASSERT_OK_STATUS(mc_schema_broker_satisfy_remaining_with_empty_schemas(sb, &cache, status), status);
+        ASSERT(!mc_schema_broker_need_more_schemas(sb));
+
+        bson_t *cmd = TMP_BSON(BSON_STR({"find" : "coll"}));
+        ASSERT_OK_STATUS(mc_schema_broker_add_schemas_to_cmd(sb, cmd, MC_CMD_SCHEMAS_FOR_MONGOCRYPTD, status), status);
+        // Expect db.coll3 is only included in encryptionInformation, not csfleEncryptionSchemas:
+        bson_t *expect =
+            TMP_BSONF(BSON_STR({
+                          "find" : "coll",
+                          "encryptionInformation" : {
+                              "type" : 1,
+                              "schema" : {
+                                  "db.coll2" : MC_BSON,
+                                  "db.coll3" : {
+                                      "escCollection" : "enxcol_.coll3.esc",
+                                      "ecocCollection" : "enxcol_.coll3.ecoc",
+                                      "fields" : []
+                                  }
+                              }
+                          },
+                          "csfleEncryptionSchemas" : {"db.coll" : {"jsonSchema" : MC_BSON, "isRemoteSchema" : true}}
+                      }),
+                      encryptedFields2,
+                      jsonSchema);
+        ASSERT_EQUAL_BSON(expect, cmd);
+        _mongocrypt_cache_cleanup(&cache);
+        mc_schema_broker_destroy(sb);
+        mongocrypt_status_destroy(status);
+    }
+
     // Adds one QE schema with `encryptionInformation`.
     {
         mongocrypt_status_t *status = mongocrypt_status_new();
