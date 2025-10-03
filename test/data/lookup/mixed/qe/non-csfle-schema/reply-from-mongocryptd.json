@@ -11,6 +11,16 @@
           "localField": "joinme",
           "foreignField": "joinme"
         }
+      },
+      {
+        "$match": {
+          "encryptedUnindexed": {
+            "$binary": {
+              "base64": "A1wAAAAQdAACAAAAEGEAAgAAAAVraQAQAAAABLidjY8vGEA7mCm87trxCkIFa3UAEAAAAAS4nY2PLxhAO5gpvO7a8QpCAnYABAAAAGZvbwASY20AAAAAAAAAAAAA",
+              "subType": "06"
+            }
+          }
+        }
       }
     ],
     "cursor": {},

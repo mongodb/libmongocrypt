@@ -5795,6 +5795,13 @@ static void _test_lookup(_mongocrypt_tester_t *tester) {
             ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
         }
 
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+        {
+            mongocrypt_binary_t *to_feed = TF("key-doc.json");
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, to_feed), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
         ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
         {
             mongocrypt_binary_t *expect = TF("cmd-to-mongod.json");

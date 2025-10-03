@@ -8,6 +8,11 @@
         "foreignField": "joinme",
         "as": "matched"
       }
+    },
+    {
+      "$match": {
+        "encryptedUnindexed": "foo"
+      }
     }
   ],
   "cursor": {}
