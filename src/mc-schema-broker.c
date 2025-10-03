@@ -931,7 +931,7 @@ fail:
 // insert_csfleEncryptionSchemas appends schema information to a command for CSFLE.
 // Only consumed by query analysis (mongocryptd/crypt_shared).
 // For one JSON schema, use `jsonSchema` for backwards compatibility.
-// For multiple JSON schemas, use `csfleEncryptionSchemas` (added in server 8.2).
+// For multiple JSON schemas, use `csfleEncryptionSchemas` (added in server 8.1).
 static bool insert_csfleEncryptionSchemas(const mc_schema_broker_t *sb,
                                           bson_t *cmd /* in/out */,
                                           mc_cmd_target_t cmd_target,
