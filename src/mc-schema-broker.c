@@ -928,6 +928,16 @@ fail:
     return ok;
 }
 
+static bool any_entry_includes_encryptedFields(mc_schema_entry_t *head) {
+    for (mc_schema_entry_t *se = head; se != NULL; se = se->next) {
+        if (se->encryptedFields.set) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 // insert_csfleEncryptionSchemas appends schema information to a command for CSFLE.
 // Only consumed by query analysis (mongocryptd/crypt_shared).
 // For one JSON schema, use `jsonSchema` for backwards compatibility.
@@ -976,8 +986,10 @@ static bool insert_csfleEncryptionSchemas(const mc_schema_broker_t *sb,
         return false;
     }
 
+    const bool skip_empty_schemas = any_entry_includes_encryptedFields(sb->ll);
+
     for (mc_schema_entry_t *se = sb->ll; se != NULL; se = se->next) {
-        if (se->encryptedFields.set) {
+        if (se->encryptedFields.set || (!se->jsonSchema.set && skip_empty_schemas)) {
             continue;
         }
 
