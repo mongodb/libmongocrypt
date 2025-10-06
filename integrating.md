@@ -45,7 +45,7 @@ attached files.
 
 libmongocrypt describes all API that needs to be called from your driver
 in the main public header
-[mongocrypt.h](https://github.com/10gen/libmongocrypt/blob/master/src/mongocrypt.h).
+[mongocrypt.h](https://github.com/mongodb/libmongocrypt/blob/master/src/mongocrypt.h).
 
 There are many types and functions in mongocrypt.h to bind. Consider as
 a first step binding to only `mongocrypt_version`.
@@ -67,7 +67,7 @@ API. Here are a few things to keep in mind:
 Once you have full bindings for the API, it\'s time to do a sanity
 check. The crux of libmongocrypt\'s API is the state machine represented
 by `mongocrypt_ctx_t`. This state machine is exercised in the
-[example-state-machine](https://github.com/10gen/libmongocrypt/blob/master/test/example-state-machine.c)
+[example-state-machine](https://github.com/mongodb/libmongocrypt/blob/master/test/example-state-machine.c)
 executable included with libmongocrypt. It uses mock responses from
 mongod, mongocryptd, and KMS. Reimplement the state machine loop
 (`_run_state_machine`) in example-state-machine with your binding.
