@@ -82,17 +82,16 @@ support client side encryption.
 See the [driver spec](https://github.com/mongodb/specifications/blob/master/source/client-side-encryption/client-side-encryption.md)
 for a reference of the user-facing API. libmongocrypt is needed for:
 
--   Automatic encryption/decryption
--   Explicit encryption/decryption
--   KeyVault (explicit encryption/decryption + createDataKey)
+-   Automatic encryption/decryption (enabled with `AutoEncryptionOpts`)
+-   ClientEncryption (explicit encryption/decryption + key management)
 
 It is recommended to start by integrating libmongocrypt to support
 automatic encryption/decryption. Then reuse the implementation to
-implement the KeyVault.
+implement the ClientEncryption.
 
 A MongoClient enabled with client side encryption MUST have one shared
 `mongocrypt_t` handle (important because keys + JSON Schemas are cached
-in this handle). Each KeyVault also has its own `mongocrypt_t`.
+in this handle). Each ClientEncryption also has its own `mongocrypt_t`.
 
 Any encryption or decryption operation is done by creating a
 `mongocrypt_ctx_t` and initializing it for the appropriate operation.
