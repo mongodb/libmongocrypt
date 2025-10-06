@@ -72,7 +72,7 @@ executable included with libmongocrypt. It uses mock responses from
 mongod, mongocryptd, and KMS. Reimplement the state machine loop
 (`_run_state_machine`) in example-state-machine with your binding.
 
-Seek help in the slack channel \#drivers-fle.
+Seek help in the slack channel \#dbx-encryption.
 
 ## Part 2: Integrate into Driver ##
 
