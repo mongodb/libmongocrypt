@@ -39,7 +39,7 @@ For example, Java can accomplish this with
 Node.js with [add-ons](https://nodejs.org/api/addons.html), etc.
 
 The libmongocrypt library files (.so/.dll) are pre-built on its
-[Evergreen project](https://evergreen.mongodb.com/waterfall/libmongocrypt). Click
+[Evergreen project](https://spruce.mongodb.com/project/libmongocrypt/waterfall). Click
 the variant\'s \"built-and-test-and-upload\" tasks to download the
 attached files.
 
