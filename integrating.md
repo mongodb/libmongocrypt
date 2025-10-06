@@ -315,4 +315,3 @@ Exit the state machine loop.
 
 All contexts.
 
-Seek help in the slack channel \#drivers-fle.
