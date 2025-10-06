@@ -2,7 +2,7 @@
 
 libmongocrypt is a C library meant to assist drivers in supporting
 client side encryption. libmongocrypt acts as a state machine and the
-driver is responsible for I/O between mongod, mongocryptd, and KMS.
+driver is responsible for I/O between mongod, mongocryptd, crypt_shared, and KMS.
 
 There are two major parts to integrating libmongocrypt into your driver:
 
