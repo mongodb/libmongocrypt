@@ -109,14 +109,14 @@ following:
 
 ### Initializing ###
 
-There are five different types of `mongocrypt_ctx_t`\'s, distinguished
-by how they are initialized:
+Call one of the following on a `mongocrypt_ctx_t`:
 
 -   auto encrypt (`mongocrypt_ctx_encrypt_init`)
 -   auto decrypt (`mongocrypt_ctx_decrypt_init`)
 -   explicit encrypt (`mongocrypt_ctx_explicit_encrypt_init`)
 -   explicit decrypt (`mongocrypt_ctx_explicit_decrypt_init`)
 -   create data key (`mongocrypt_ctx_datakey_init`)
+-   rewrap data key (`mongocrypt_ctx_rewrap_many_datakey_init`)
 
 ### State Machine ###
 
