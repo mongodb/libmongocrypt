@@ -192,10 +192,10 @@ if (BUILD_VERSION STREQUAL "0.0.0")
       file (STRINGS ${PROJECT_SOURCE_DIR}/VERSION_CURRENT BUILD_VERSION)
       message (STATUS "File VERSION_CURRENT contained BUILD_VERSION ${BUILD_VERSION}")
    else ()
-      find_package (PythonInterp)
-      if (PYTHONINTERP_FOUND)
+      find_package (Python3 COMPONENTS Interpreter)
+      if (TARGET Python3::Interpreter)
          execute_process (
-            COMMAND ${PYTHON_EXECUTABLE} etc/calc_release_version.py
+            COMMAND "${Python3_EXECUTABLE}" etc/calc_release_version.py
             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
             OUTPUT_VARIABLE CALC_RELEASE_VERSION
             RESULT_VARIABLE CALC_RELEASE_VERSION_RESULT
