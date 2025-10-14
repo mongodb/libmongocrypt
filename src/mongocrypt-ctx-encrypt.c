@@ -17,7 +17,9 @@
 #include "mc-efc-private.h"
 #include "mc-fle-blob-subtype-private.h"
 #include "mc-fle2-rfds-private.h"
+#include "mc-schema-broker-private.h"
 #include "mc-tokens-private.h"
+#include "mongocrypt-buffer-private.h"
 #include "mongocrypt-ciphertext-private.h"
 #include "mongocrypt-crypto-private.h"
 #include "mongocrypt-ctx-private.h"
@@ -139,10 +141,9 @@ static int _fle2_collect_keys_for_encrypted_fields(mongocrypt_ctx_t *ctx) {
     BSON_ASSERT_PARAM(ctx);
 
     const mc_EncryptedFieldConfig_t *efc =
-        mc_schema_broker_get_encryptedFields(ectx->sb, ectx->target_coll, ctx->status);
+        mc_schema_broker_maybe_get_encryptedFields(ectx->sb, ectx->target_coll, ctx->status);
     if (!efc) {
-        _mongocrypt_ctx_fail(ctx);
-        return -1;
+        return 0;
     }
 
     for (const mc_EncryptedField_t *field = efc->fields; field != NULL && field->keyAltName; field = field->next) {
@@ -179,7 +180,6 @@ static bool _mongo_feed_collinfo(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in)
     return true;
 }
 
-static bool _try_run_csfle_marking(mongocrypt_ctx_t *ctx);
 
 static bool _mongo_done_collinfo(mongocrypt_ctx_t *ctx) {
     _mongocrypt_ctx_encrypt_t *ectx;
@@ -245,6 +245,7 @@ static bool _create_markings_cmd_bson(mongocrypt_ctx_t *ctx, bson_t *out) {
     // used to send the command.
     bson_copy_to_excluding_noinit(&bson_view, out, "$db", NULL);
     if (!mc_schema_broker_add_schemas_to_cmd(ectx->sb,
+                                             &ctx->kb,
                                              out,
                                              ctx->crypt->csfle.okay ? MC_CMD_SCHEMAS_FOR_CRYPT_SHARED
                                                                     : MC_CMD_SCHEMAS_FOR_MONGOCRYPTD,
@@ -498,7 +499,7 @@ fail:
  * to generate the markings by passing a special command to a mongocryptd daemon
  * process. Instead, we'll do it ourselves here, if possible.
  */
-static bool _try_run_csfle_marking(mongocrypt_ctx_t *ctx) {
+bool _try_run_csfle_marking(mongocrypt_ctx_t *ctx) {
     BSON_ASSERT_PARAM(ctx);
 
     BSON_ASSERT(ctx->state == MONGOCRYPT_CTX_NEED_MONGO_MARKINGS
@@ -1168,6 +1169,18 @@ static bool _fle2_finalize(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
     // single target collection. For other commands, encryptedFields may not be on the target collection.
     const mc_EncryptedFieldConfig_t *target_efc =
         mc_schema_broker_get_encryptedFields(ectx->sb, ectx->target_coll, NULL);
+    // TODO I think here we have everything needed to rewrite the target encryptedFields with keyID
+    // note: kb->key_requests contains only the keyAltName for returned key?
+
+    for (mc_EncryptedField_t *f = target_efc->fields; f != NULL; f = f->next) {
+        if (f->keyId.data == NULL) {
+            BSON_ASSERT(f->keyAltName);
+            bson_value_t key_alt_name;
+            _mongocrypt_buffer_t _unused;
+            _bson_value_from_string(f->keyAltName, &key_alt_name);
+            BSON_ASSERT(_mongocrypt_key_broker_decrypted_key_by_name(&ctx->kb, &key_alt_name, &_unused, &f->keyId));
+        }
+    }    
 
     moe_result result = must_omit_encryptionInformation(command_name, &converted, target_efc, ctx->status);
     if (!result.ok) {
@@ -1184,7 +1197,7 @@ static bool _fle2_finalize(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
 
     /* Append a new 'encryptionInformation'. */
     if (!result.must_omit) {
-        if (!mc_schema_broker_add_schemas_to_cmd(ectx->sb, &converted, MC_CMD_SCHEMAS_FOR_SERVER, ctx->status)) {
+        if (!mc_schema_broker_add_schemas_to_cmd(ectx->sb, &ctx->kb, &converted, MC_CMD_SCHEMAS_FOR_SERVER, ctx->status)) {
             bson_destroy(&converted);
             return _mongocrypt_ctx_fail(ctx);
         }
@@ -2729,6 +2742,8 @@ static bool mongocrypt_ctx_encrypt_ismaster_done(mongocrypt_ctx_t *ctx) {
     const int need_keys = _fle2_collect_keys_for_encrypted_fields(ctx);
     if (need_keys == -1) {
         return false;
+    } else if (need_keys == 1) {
+        ctx->need_keys_for_encryptedFields = true;
     }
 
     if (ctx->state == MONGOCRYPT_CTX_NEED_MONGO_MARKINGS) {

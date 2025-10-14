@@ -592,7 +592,7 @@ static void test_mc_schema_broker_add_schemas_to_cmd(_mongocrypt_tester_t *teste
         ASSERT(!mc_schema_broker_need_more_schemas(sb));
 
         bson_t *cmd = TMP_BSON(BSON_STR({"find" : "coll"}));
-        ASSERT_OK_STATUS(mc_schema_broker_add_schemas_to_cmd(sb, cmd, MC_CMD_SCHEMAS_FOR_MONGOCRYPTD, status), status);
+        ASSERT_OK_STATUS(mc_schema_broker_add_schemas_to_cmd(sb, NULL, cmd, MC_CMD_SCHEMAS_FOR_MONGOCRYPTD, status), status);
         bson_t *expect =
             TMP_BSONF(BSON_STR({"find" : "coll", "jsonSchema" : MC_BSON, "isRemoteSchema" : false}), jsonSchema);
         ASSERT_EQUAL_BSON(expect, cmd);
@@ -613,7 +613,7 @@ static void test_mc_schema_broker_add_schemas_to_cmd(_mongocrypt_tester_t *teste
         ASSERT(!mc_schema_broker_need_more_schemas(sb));
 
         bson_t *cmd = TMP_BSON(BSON_STR({"find" : "coll"}));
-        ASSERT_OK_STATUS(mc_schema_broker_add_schemas_to_cmd(sb, cmd, MC_CMD_SCHEMAS_FOR_MONGOCRYPTD, status), status);
+        ASSERT_OK_STATUS(mc_schema_broker_add_schemas_to_cmd(sb, NULL, cmd, MC_CMD_SCHEMAS_FOR_MONGOCRYPTD, status), status);
         bson_t *expect = TMP_BSONF(BSON_STR({
                                        "find" : "coll",
                                        "csfleEncryptionSchemas" : {
@@ -640,7 +640,7 @@ static void test_mc_schema_broker_add_schemas_to_cmd(_mongocrypt_tester_t *teste
         ASSERT(!mc_schema_broker_need_more_schemas(sb));
 
         bson_t *cmd = TMP_BSON(BSON_STR({"find" : "coll"}));
-        ASSERT_OK_STATUS(mc_schema_broker_add_schemas_to_cmd(sb, cmd, MC_CMD_SCHEMAS_FOR_MONGOCRYPTD, status), status);
+        ASSERT_OK_STATUS(mc_schema_broker_add_schemas_to_cmd(sb, NULL, cmd, MC_CMD_SCHEMAS_FOR_MONGOCRYPTD, status), status);
         bson_t *expect = TMP_BSON(BSON_STR({"find" : "coll", "jsonSchema" : {}, "isRemoteSchema" : true}));
         ASSERT_EQUAL_BSON(expect, cmd);
 
@@ -665,7 +665,7 @@ static void test_mc_schema_broker_add_schemas_to_cmd(_mongocrypt_tester_t *teste
         ASSERT(!mc_schema_broker_need_more_schemas(sb));
 
         bson_t *cmd = TMP_BSON(BSON_STR({"find" : "coll"}));
-        ASSERT_OK_STATUS(mc_schema_broker_add_schemas_to_cmd(sb, cmd, MC_CMD_SCHEMAS_FOR_MONGOCRYPTD, status), status);
+        ASSERT_OK_STATUS(mc_schema_broker_add_schemas_to_cmd(sb, NULL, cmd, MC_CMD_SCHEMAS_FOR_MONGOCRYPTD, status), status);
         bson_t *expect = TMP_BSONF(BSON_STR({
                                        "find" : "coll",
                                        "csfleEncryptionSchemas" : {
@@ -693,7 +693,7 @@ static void test_mc_schema_broker_add_schemas_to_cmd(_mongocrypt_tester_t *teste
         ASSERT(!mc_schema_broker_need_more_schemas(sb));
 
         bson_t *cmd = TMP_BSON(BSON_STR({"find" : "coll"}));
-        ASSERT_OK_STATUS(mc_schema_broker_add_schemas_to_cmd(sb, cmd, MC_CMD_SCHEMAS_FOR_MONGOCRYPTD, status), status);
+        ASSERT_OK_STATUS(mc_schema_broker_add_schemas_to_cmd(sb, NULL, cmd, MC_CMD_SCHEMAS_FOR_MONGOCRYPTD, status), status);
         bson_t *expect = TMP_BSON(BSON_STR({
             "find" : "coll",
             "csfleEncryptionSchemas" : {
@@ -724,7 +724,7 @@ static void test_mc_schema_broker_add_schemas_to_cmd(_mongocrypt_tester_t *teste
         ASSERT(!mc_schema_broker_need_more_schemas(sb));
 
         bson_t *cmd = TMP_BSON(BSON_STR({"find" : "coll"}));
-        ASSERT_FAILS_STATUS(mc_schema_broker_add_schemas_to_cmd(sb, cmd, MC_CMD_SCHEMAS_FOR_MONGOCRYPTD, status),
+        ASSERT_FAILS_STATUS(mc_schema_broker_add_schemas_to_cmd(sb, NULL, cmd, MC_CMD_SCHEMAS_FOR_MONGOCRYPTD, status),
                             status,
                             "'coll2' has an encryptedFields configured, but collection 'coll' has a JSON schema");
         _mongocrypt_cache_cleanup(&cache);
@@ -743,7 +743,7 @@ static void test_mc_schema_broker_add_schemas_to_cmd(_mongocrypt_tester_t *teste
         ASSERT(!mc_schema_broker_need_more_schemas(sb));
 
         bson_t *cmd = TMP_BSON(BSON_STR({"find" : "coll"}));
-        ASSERT_OK_STATUS(mc_schema_broker_add_schemas_to_cmd(sb, cmd, MC_CMD_SCHEMAS_FOR_SERVER, status), status);
+        ASSERT_OK_STATUS(mc_schema_broker_add_schemas_to_cmd(sb, NULL, cmd, MC_CMD_SCHEMAS_FOR_SERVER, status), status);
         bson_t *expect = TMP_BSONF(
             BSON_STR({"find" : "coll", "encryptionInformation" : {"type" : 1, "schema" : {"db.coll" : MC_BSON}}}),
             encryptedFields);
@@ -765,7 +765,7 @@ static void test_mc_schema_broker_add_schemas_to_cmd(_mongocrypt_tester_t *teste
         ASSERT(!mc_schema_broker_need_more_schemas(sb));
 
         bson_t *cmd = TMP_BSON(BSON_STR({"find" : "coll"}));
-        ASSERT_OK_STATUS(mc_schema_broker_add_schemas_to_cmd(sb, cmd, MC_CMD_SCHEMAS_FOR_SERVER, status), status);
+        ASSERT_OK_STATUS(mc_schema_broker_add_schemas_to_cmd(sb, NULL, cmd, MC_CMD_SCHEMAS_FOR_SERVER, status), status);
         bson_t *expect =
             TMP_BSONF(BSON_STR({
                           "find" : "coll",
@@ -790,7 +790,7 @@ static void test_mc_schema_broker_add_schemas_to_cmd(_mongocrypt_tester_t *teste
         ASSERT(!mc_schema_broker_need_more_schemas(sb));
 
         bson_t *cmd = TMP_BSON(BSON_STR({"find" : "coll"}));
-        ASSERT_OK_STATUS(mc_schema_broker_add_schemas_to_cmd(sb, cmd, MC_CMD_SCHEMAS_FOR_SERVER, status), status);
+        ASSERT_OK_STATUS(mc_schema_broker_add_schemas_to_cmd(sb, NULL, cmd, MC_CMD_SCHEMAS_FOR_SERVER, status), status);
         bson_t *expect = TMP_BSON(BSON_STR({"find" : "coll"}));
         ASSERT_EQUAL_BSON(expect, cmd);
 
@@ -809,7 +809,7 @@ static void test_mc_schema_broker_add_schemas_to_cmd(_mongocrypt_tester_t *teste
         ASSERT(!mc_schema_broker_need_more_schemas(sb));
 
         bson_t *cmd = TMP_BSON(BSON_STR({"bulkWrite" : "coll", "nsInfo" : [ {"ns" : "db.coll"} ]}));
-        ASSERT_OK_STATUS(mc_schema_broker_add_schemas_to_cmd(sb, cmd, MC_CMD_SCHEMAS_FOR_SERVER, status), status);
+        ASSERT_OK_STATUS(mc_schema_broker_add_schemas_to_cmd(sb, NULL, cmd, MC_CMD_SCHEMAS_FOR_SERVER, status), status);
         bson_t *expect = TMP_BSONF(
             BSON_STR({
                 "bulkWrite" : "coll",
@@ -834,7 +834,7 @@ static void test_mc_schema_broker_add_schemas_to_cmd(_mongocrypt_tester_t *teste
         ASSERT(!mc_schema_broker_need_more_schemas(sb));
 
         bson_t *cmd = TMP_BSON(BSON_STR({"bulkWrite" : "coll", "nsInfo" : [ {"ns" : "db.coll"} ]}));
-        ASSERT_OK_STATUS(mc_schema_broker_add_schemas_to_cmd(sb, cmd, MC_CMD_SCHEMAS_FOR_SERVER, status), status);
+        ASSERT_OK_STATUS(mc_schema_broker_add_schemas_to_cmd(sb, NULL, cmd, MC_CMD_SCHEMAS_FOR_SERVER, status), status);
         bson_t *expect = TMP_BSON(BSON_STR({
             "bulkWrite" : "coll",
             "nsInfo" : [ {
@@ -868,7 +868,7 @@ static void test_mc_schema_broker_add_schemas_to_cmd(_mongocrypt_tester_t *teste
         ASSERT(!mc_schema_broker_need_more_schemas(sb));
 
         bson_t *cmd = TMP_BSON(BSON_STR({"explain" : {"find" : "coll"}}));
-        ASSERT_OK_STATUS(mc_schema_broker_add_schemas_to_cmd(sb, cmd, MC_CMD_SCHEMAS_FOR_MONGOCRYPTD, status), status);
+        ASSERT_OK_STATUS(mc_schema_broker_add_schemas_to_cmd(sb, NULL, cmd, MC_CMD_SCHEMAS_FOR_MONGOCRYPTD, status), status);
         bson_t *expect = TMP_BSONF(BSON_STR({
                                        "explain" : {"find" : "coll"},
                                        "encryptionInformation" : {"type" : 1, "schema" : {"db.coll" : MC_BSON}}
@@ -891,7 +891,7 @@ static void test_mc_schema_broker_add_schemas_to_cmd(_mongocrypt_tester_t *teste
         ASSERT(!mc_schema_broker_need_more_schemas(sb));
 
         bson_t *cmd = TMP_BSON(BSON_STR({"explain" : {"find" : "coll"}}));
-        ASSERT_OK_STATUS(mc_schema_broker_add_schemas_to_cmd(sb, cmd, MC_CMD_SCHEMAS_FOR_SERVER, status), status);
+        ASSERT_OK_STATUS(mc_schema_broker_add_schemas_to_cmd(sb, NULL, cmd, MC_CMD_SCHEMAS_FOR_SERVER, status), status);
         bson_t *expect = TMP_BSONF(
             BSON_STR({
                 "explain" : {"find" : "coll", "encryptionInformation" : {"type" : 1, "schema" : {"db.coll" : MC_BSON}}}
@@ -914,7 +914,7 @@ static void test_mc_schema_broker_add_schemas_to_cmd(_mongocrypt_tester_t *teste
         ASSERT(!mc_schema_broker_need_more_schemas(sb));
 
         bson_t *cmd = TMP_BSON(BSON_STR({"explain" : {"find" : "coll"}}));
-        ASSERT_OK_STATUS(mc_schema_broker_add_schemas_to_cmd(sb, cmd, MC_CMD_SCHEMAS_FOR_CRYPT_SHARED, status), status);
+        ASSERT_OK_STATUS(mc_schema_broker_add_schemas_to_cmd(sb, NULL, cmd, MC_CMD_SCHEMAS_FOR_CRYPT_SHARED, status), status);
         bson_t *expect = TMP_BSONF(
             BSON_STR({
                 "explain" : {"find" : "coll", "encryptionInformation" : {"type" : 1, "schema" : {"db.coll" : MC_BSON}}}
@@ -939,7 +939,7 @@ static void test_mc_schema_broker_add_schemas_to_cmd(_mongocrypt_tester_t *teste
         ASSERT(!mc_schema_broker_need_more_schemas(sb));
 
         bson_t *cmd = TMP_BSON(BSON_STR({"find" : "coll"}));
-        ASSERT_OK_STATUS(mc_schema_broker_add_schemas_to_cmd(sb, cmd, MC_CMD_SCHEMAS_FOR_SERVER, status), status);
+        ASSERT_OK_STATUS(mc_schema_broker_add_schemas_to_cmd(sb, NULL, cmd, MC_CMD_SCHEMAS_FOR_SERVER, status), status);
         bson_t *expect = TMP_BSONF(BSON_STR({
                                        "find" : "coll",
                                        "encryptionInformation" : {
@@ -976,7 +976,7 @@ static void test_mc_schema_broker_add_schemas_to_cmd(_mongocrypt_tester_t *teste
         ASSERT(!mc_schema_broker_need_more_schemas(sb));
 
         bson_t *cmd = TMP_BSON(BSON_STR({"find" : "coll"}));
-        ASSERT_OK_STATUS(mc_schema_broker_add_schemas_to_cmd(sb, cmd, MC_CMD_SCHEMAS_FOR_SERVER, status), status);
+        ASSERT_OK_STATUS(mc_schema_broker_add_schemas_to_cmd(sb, NULL, cmd, MC_CMD_SCHEMAS_FOR_SERVER, status), status);
         bson_t *expect = TMP_BSONF(BSON_STR({
             "find" : "coll",
             "encryptionInformation" : {

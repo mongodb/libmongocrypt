@@ -455,7 +455,7 @@ bool _mongocrypt_key_broker_filter(_mongocrypt_key_broker_t *kb, mongocrypt_bina
     /*
      * This is our final query:
      * { $or: [ { _id: { $in : [ids] }},
-     *          { keyAltName : { $in : [names] }} ] }
+     *          { keyAltNames : { $in : [names] }} ] }
      */
     filter = BCON_NEW("$or",
                       "[",
@@ -727,6 +727,7 @@ bool _mongocrypt_key_broker_add_doc(_mongocrypt_key_broker_t *kb,
         }
         if (_mongocrypt_key_alt_name_intersects(key_doc->key_alt_names, key_request->alt_name)) {
             key_request->satisfied = true;
+            _mongocrypt_buffer_copy_to(&key_doc->id, &key_request->id);
         }
     }
 

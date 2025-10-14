@@ -6065,7 +6065,7 @@ static void _test_qe_keyAltName(_mongocrypt_tester_t *tester) {
 
         // Specify a local encryptedFieldsMap with keyAltName:
         mongocrypt_binary_t *encrypted_fields_map = TEST_BSON_STR(
-            BSON_STR({"db.coll" : {"fields" : [ {"path" : "secret", "bsonType" : "string", "keyAltName" : "foo"} ]}}));
+            BSON_STR({"db.coll" : {"fields" : [ {"path" : "secret", "bsonType" : "string", "keyAltName" : "keyDocumentName"} ]}}));
         mongocrypt_setopt_encrypted_field_config_map(crypt, encrypted_fields_map);
         ASSERT_OK(mongocrypt_init(crypt), crypt);
 
@@ -6074,14 +6074,22 @@ static void _test_qe_keyAltName(_mongocrypt_tester_t *tester) {
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
 
         ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, cmd), ctx);
-
-        // TODO: expect the key is requested with keyAltName "foo".
         ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
         {
             mongocrypt_binary_t *filter = mongocrypt_binary_new();
             ASSERT_OK(mongocrypt_ctx_mongo_op(ctx, filter), ctx);
-            ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TEST_BSON_STR(BSON_STR({"keyAltName" : {"$in" : ["foo"]}})), filter);
+            ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TEST_BSON_STR(BSON_STR({ "$or" : [ { "_id" : { "$in" : [ ] } }, { "keyAltNames" : { "$in" : [ "keyDocumentName" ] } } ] })), filter);
             mongocrypt_binary_destroy(filter);
+        }
+        // check state that talks to mongocryptd, translate before then
+        _mongocrypt_tester_run_ctx_to(tester, ctx, MONGOCRYPT_CTX_DONE);
+
+        {
+        // Make the same request again and ensure that the key is fulfilled from cache (not requested again)
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, cmd), ctx);
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
+        _mongocrypt_tester_run_ctx_to(tester, ctx, MONGOCRYPT_CTX_DONE);
         }
 
         mongocrypt_ctx_destroy(ctx);
