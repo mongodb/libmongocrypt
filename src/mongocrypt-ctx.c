@@ -328,15 +328,17 @@ static bool _mongo_feed_keys(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in) {
 static bool _mongo_done_keys(mongocrypt_ctx_t *ctx) {
     BSON_ASSERT_PARAM(ctx);
 
+    const bool used_keyaltname = ctx->need_keys_for_encryptedFields;
     (void)_mongocrypt_key_broker_docs_done(&ctx->kb);
-    const bool r = _mongocrypt_ctx_state_from_key_broker(ctx);
-    if (!r) return false;
+    // const bool r = _mongocrypt_ctx_state_from_key_broker(ctx);
+    // if (!r) return false;
 
-    if (ctx->state == MONGOCRYPT_CTX_NEED_MONGO_MARKINGS) {
-        // return _try_run_csfle_marking(ctx);
-        return true;
+    if (used_keyaltname) {
+        ctx->state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
+        return _try_run_csfle_marking(ctx);
+    } else {
+        return _mongocrypt_ctx_state_from_key_broker(ctx);
     }
-    return _mongocrypt_ctx_state_from_key_broker(ctx);
 }
 
 static mongocrypt_kms_ctx_t *_next_kms_ctx(mongocrypt_ctx_t *ctx) {
@@ -889,9 +891,7 @@ bool _mongocrypt_ctx_state_from_key_broker(mongocrypt_ctx_t *ctx) {
     case KB_DONE:
         if (ctx->need_keys_for_encryptedFields) {
             ctx->need_keys_for_encryptedFields = false;
-            new_state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
-            ret = true;
-            break;
+            kb->state = KB_REQUESTING;
         }
         new_state = MONGOCRYPT_CTX_READY;
         if (kb->key_requests == NULL) {
