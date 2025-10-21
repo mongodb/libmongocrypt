@@ -2626,6 +2626,18 @@ bool mongocrypt_ctx_encrypt_init(mongocrypt_ctx_t *ctx, const char *db, int32_t 
 
     return mongocrypt_ctx_encrypt_ismaster_done(ctx);
 }
+static bool _all_key_requests_satisfied(_mongocrypt_key_broker_t *kb) {
+    key_request_t *key_request;
+
+    BSON_ASSERT_PARAM(kb);
+
+    for (key_request = kb->key_requests; NULL != key_request; key_request = key_request->next) {
+        if (!key_request->satisfied) {
+            return false;
+        }
+    }
+    return true;
+}
 
 #define WIRE_VERSION_SERVER_6 17
 #define WIRE_VERSION_SERVER_8_1 26
@@ -2758,6 +2770,9 @@ static bool mongocrypt_ctx_encrypt_ismaster_done(mongocrypt_ctx_t *ctx) {
             /* Keys may have been requested for compactionTokens.
              * Finish key requests.
              */
+             if (_all_key_requests_satisfied(&ctx->kb)) {
+                return _try_run_csfle_marking(ctx);
+             }
             _mongocrypt_key_broker_requests_done(&ctx->kb);
             return _mongocrypt_ctx_state_from_key_broker(ctx);
         }
