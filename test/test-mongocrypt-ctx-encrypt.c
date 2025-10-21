@@ -6064,8 +6064,9 @@ static void _test_qe_keyAltName(_mongocrypt_tester_t *tester) {
         mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_SKIP_INIT);
 
         // Specify a local encryptedFieldsMap with keyAltName:
-        mongocrypt_binary_t *encrypted_fields_map = TEST_BSON_STR(
-            BSON_STR({"db.coll" : {"fields" : [ {"path" : "secret", "bsonType" : "string", "keyAltName" : "keyDocumentName"} ]}}));
+        mongocrypt_binary_t *encrypted_fields_map = TEST_BSON_STR(BSON_STR({
+            "db.coll" : {"fields" : [ {"path" : "secret", "bsonType" : "string", "keyAltName" : "keyDocumentName"} ]}
+        }));
         mongocrypt_setopt_encrypted_field_config_map(crypt, encrypted_fields_map);
         ASSERT_OK(mongocrypt_init(crypt), crypt);
 
@@ -6074,22 +6075,81 @@ static void _test_qe_keyAltName(_mongocrypt_tester_t *tester) {
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
 
         ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, cmd), ctx);
+        // Keys requested to translate the keyAltNames:
         ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
         {
             mongocrypt_binary_t *filter = mongocrypt_binary_new();
             ASSERT_OK(mongocrypt_ctx_mongo_op(ctx, filter), ctx);
-            ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TEST_BSON_STR(BSON_STR({ "$or" : [ { "_id" : { "$in" : [ ] } }, { "keyAltNames" : { "$in" : [ "keyDocumentName" ] } } ] })), filter);
+            ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(
+                TEST_BSON_STR(
+                    BSON_STR({"$or" : [ {"_id" : {"$in" : []}}, {"keyAltNames" : {"$in" : ["keyDocumentName"]}} ]})),
+                filter);
             mongocrypt_binary_destroy(filter);
-        }
-        // check state that talks to mongocryptd, translate before then
-        _mongocrypt_tester_run_ctx_to(tester, ctx, MONGOCRYPT_CTX_DONE);
 
+            // Feed requested key:
+            mongocrypt_binary_t *key = TF("key-document.json");
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, key), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        // MONGOCRYPT_CTX_MARKINGS is entered to send command to mongocryptd.
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
         {
-        // Make the same request again and ensure that the key is fulfilled from cache (not requested again)
-        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
-        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, cmd), ctx);
+            mongocrypt_binary_t *cmd = mongocrypt_binary_new();
+            ASSERT_OK(mongocrypt_ctx_mongo_op(ctx, cmd), ctx);
+            // Command to mongocryptd contains keyId (not keyAltName)
+            ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TF("cmd-to-mongocryptd.json"), cmd);
+            mongocrypt_binary_destroy(cmd);
+
+            // Feed command with markings:
+            mongocrypt_binary_t *reply = TF("reply-from-mongocryptd.json");
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, reply), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
         ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
-        _mongocrypt_tester_run_ctx_to(tester, ctx, MONGOCRYPT_CTX_DONE);
+        {
+            bson_t result_bson;
+            mongocrypt_binary_t *result = mongocrypt_binary_new();
+            ASSERT_OK(mongocrypt_ctx_finalize(ctx, result), ctx);
+            ASSERT(_mongocrypt_binary_to_bson(result, &result_bson));
+            // _assert_match_bson(
+            //         TMP_BSON(BSON_STR({"insert" : "coll", "documents" : [ {"secret" : {"$$type" : "binData"}} ]})),
+            //         &result_bson);
+            mongocrypt_binary_destroy(result);
+        }
+
+        // COPY
+        ctx = mongocrypt_ctx_new(crypt);
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, cmd), ctx);
+        
+        // MONGOCRYPT_CTX_MARKINGS is entered to send command to mongocryptd.
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+        {
+            mongocrypt_binary_t *cmd = mongocrypt_binary_new();
+            ASSERT_OK(mongocrypt_ctx_mongo_op(ctx, cmd), ctx);
+            // Command to mongocryptd contains keyId (not keyAltName)
+            ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TF("cmd-to-mongocryptd.json"), cmd);
+            mongocrypt_binary_destroy(cmd);
+
+            // Feed command with markings:
+            mongocrypt_binary_t *reply = TF("reply-from-mongocryptd.json");
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, reply), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
+        {
+            mongocrypt_binary_t *result = mongocrypt_binary_new();
+            ASSERT_OK(mongocrypt_ctx_finalize(ctx, result), ctx);
+            ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(
+                // TODO: update expected result 'AAAA' with ciphertext.
+                TEST_BSON_STR(BSON_STR({
+                    "insert" : "coll",
+                    "documents" : [ {"secret" : {"$binary" : {"base64" : "EGFhYWFhYWFhYWFhYWFhYWECZsXiTFAY0XXprCZjSggTgzFb+cy0/epNKDjEMZ3HaDBjVDIXHZQH8ye3hKBoKD5pDY8SERVzu070rWOU7EIw3g==", "subType" : "06"}}} ]
+                })),
+                result);
+            mongocrypt_binary_destroy(result);
         }
 
         mongocrypt_ctx_destroy(ctx);

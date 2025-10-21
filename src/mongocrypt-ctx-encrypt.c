@@ -146,7 +146,10 @@ static int _fle2_collect_keys_for_encrypted_fields(mongocrypt_ctx_t *ctx) {
         return 0;
     }
 
-    for (const mc_EncryptedField_t *field = efc->fields; field != NULL && field->keyAltName; field = field->next) {
+    for (const mc_EncryptedField_t *field = efc->fields; field != NULL; field = field->next) {
+        if (!field->keyAltName) {
+            continue;
+        }
         need_keys = 1;
         bson_value_t keyAltName;
         _bson_value_from_string(field->keyAltName, &keyAltName);
@@ -400,6 +403,10 @@ static bool _mongo_done_markings(mongocrypt_ctx_t *ctx) {
         return mongocrypt_ctx_encrypt_ismaster_done(ctx);
     }
     (void)_mongocrypt_key_broker_requests_done(&ctx->kb);
+    // We can get here without going through NEED_MONGO_KEYS if the key is cached
+    if (ctx->need_keys_for_encryptedFields) {
+        ctx->need_keys_for_encryptedFields = false;
+    }
     return _mongocrypt_ctx_state_from_key_broker(ctx);
 }
 

@@ -329,6 +329,7 @@ static bool _mongo_done_keys(mongocrypt_ctx_t *ctx) {
     BSON_ASSERT_PARAM(ctx);
 
     const bool used_keyaltname = ctx->need_keys_for_encryptedFields;
+    ctx->need_keys_for_encryptedFields = false;
     (void)_mongocrypt_key_broker_docs_done(&ctx->kb);
     // const bool r = _mongocrypt_ctx_state_from_key_broker(ctx);
     // if (!r) return false;
@@ -890,10 +891,11 @@ bool _mongocrypt_ctx_state_from_key_broker(mongocrypt_ctx_t *ctx) {
         break;
     case KB_DONE:
         if (ctx->need_keys_for_encryptedFields) {
-            ctx->need_keys_for_encryptedFields = false;
             kb->state = KB_REQUESTING;
+            new_state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
+        } else {
+            new_state = MONGOCRYPT_CTX_READY;
         }
-        new_state = MONGOCRYPT_CTX_READY;
         if (kb->key_requests == NULL) {
             /* No key requests were ever added. */
             ctx->nothing_to_do = true; /* nothing to encrypt/decrypt */
