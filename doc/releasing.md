@@ -57,6 +57,20 @@ evergreen patch -y -p libmongocrypt -t all -v sbom -f
 
 Check the contents of the "vulnerabilities" field (if present) in the Augmented SBOM.
 
+### Join the Release Team
+
+The release process may require creating new branches, new tags, and directly
+pushing to development branches. These operations are normally restricted by
+branch protection rules.
+
+When assigned the responsibility of performing a release, submit a request to a
+repository administrator to be temporarily added to the
+[releases team](https://github.com/orgs/mongodb/teams/dbx-c-cxx-releases) on
+GitHub for the duration of the release process. The team member must be added via
+[MANA](https://mana.corp.mongodb.com/resources/68029673d39aa9f7de6399f9) (the
+GitHub team should normally be empty, meaning there should not be any member
+with the "Maintainer" role to add new users via GitHub).
+
 ### Release
 
 Do the following when releasing:
