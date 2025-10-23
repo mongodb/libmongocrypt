@@ -169,3 +169,8 @@ index 609dc0b..f7530a9 100644
      Architectures: amd64 arm64
    suites:
 ```
+
+### Leave the Release Team
+
+Remove yourself from the [releases team](https://github.com/orgs/mongodb/teams/dbx-c-cxx-releases)
+on GitHub via [MANA](https://mana.corp.mongodb.com/resources/68029673d39aa9f7de6399f9)
