@@ -16,20 +16,9 @@
 
 #include "mongocrypt-key-broker-private.h"
 #include "mongocrypt-key-private.h"
+#include "mongocrypt-private.h"
 #include "mongocrypt.h"
 #include "test-mongocrypt.h"
-
-/* Given a string, populate a bson_value_t for that string */
-static void _bson_value_from_string(char *string, bson_value_t *value) {
-    bson_t *bson;
-    bson_iter_t iter;
-
-    bson = BCON_NEW("key", string);
-    BSON_ASSERT(bson_iter_init_find(&iter, bson, "key"));
-    bson_value_copy(bson_iter_value(&iter), value);
-
-    bson_destroy(bson);
-}
 
 static void _key_broker_add_name(_mongocrypt_key_broker_t *kb, char *string) {
     bson_value_t key_name;
