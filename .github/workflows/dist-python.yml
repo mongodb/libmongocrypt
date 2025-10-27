@@ -58,7 +58,7 @@ jobs:
           git fetch origin $LIBMONGOCRYPT_VERSION
           bash ./scripts/release.sh
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: dist-${{ matrix.os }}
           path: ./bindings/python/dist/*.*
@@ -70,13 +70,13 @@ jobs:
     name: Collect dist files
     steps:
       - name: Download all workflow run artifacts
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
       - name: Flatten directory
         working-directory: .
         run: |
           find . -mindepth 2 -type f -exec mv {} . \;
           find . -type d -empty -delete
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: all-dist-${{ github.run_id }}
           path: "./*"
