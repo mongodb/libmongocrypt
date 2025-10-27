@@ -57,24 +57,11 @@ evergreen patch -y -p libmongocrypt -t all -v sbom -f
 
 Check the contents of the "vulnerabilities" field (if present) in the Augmented SBOM.
 
-### Join the Release Team
-
-The release process may require creating new branches, new tags, and directly
-pushing to development branches. These operations are normally restricted by
-branch protection rules.
-
-When assigned the responsibility of performing a release, submit a request to a
-repository administrator to be temporarily added to the
-[releases team](https://github.com/orgs/mongodb/teams/dbx-c-cxx-releases) on
-GitHub for the duration of the release process. The team member must be added via
-[MANA](https://mana.corp.mongodb.com/resources/68029673d39aa9f7de6399f9) (the
-GitHub team should normally be empty, meaning there should not be any member
-with the "Maintainer" role to add new users via GitHub).
-
 ### Release
 
 Do the following when releasing:
 - If this is a feature release (e.g. `x.y.0` or `x.0.0`), follow these steps: [Creating SSDLC static analysis reports](https://docs.google.com/document/d/1rkFL8ymbkc0k8Apky9w5pTPbvKRm68wj17mPJt2_0yo/edit).
+- Join the [releases team](https://github.com/orgs/mongodb/teams/dbx-c-cxx-releases) on GitHub via [MANA](https://mana.corp.mongodb.com/resources/68029673d39aa9f7de6399f9).
 - Check out the release branch. For a release `x.y.z`, the release branch is `rx.y`. If this is a new non-patch release (`x.y.0`), create the release branch.
 - Update CHANGELOG.md with the version being released.
 - Ensure `etc/purls.txt` is up-to-date.
@@ -103,6 +90,7 @@ Do the following when releasing:
    ./.evergreen/earthly.sh +sbom-generate-new-serial-number
    ```
    Commit resulting `etc/cyclonedx.sbom.json` and push to `rx.y`.
+- Remove yourself from the [releases team](https://github.com/orgs/mongodb/teams/dbx-c-cxx-releases) on GitHub via [MANA](https://mana.corp.mongodb.com/resources/68029673d39aa9f7de6399f9).
 - If this is a new non-patch release (e.g. `x.y.0`):
    - File a DOCSP ticket to update the installation instructions on [Install libmongocrypt](https://www.mongodb.com/docs/manual/core/csfle/reference/libmongocrypt/). ([Example](https://jira.mongodb.org/browse/DOCSP-52575))
    - Create a new Snyk reference target. The following instructions use the example branch `rx.y`:
@@ -169,8 +157,3 @@ index 609dc0b..f7530a9 100644
      Architectures: amd64 arm64
    suites:
 ```
-
-### Leave the Release Team
-
-Remove yourself from the [releases team](https://github.com/orgs/mongodb/teams/dbx-c-cxx-releases)
-on GitHub via [MANA](https://mana.corp.mongodb.com/resources/68029673d39aa9f7de6399f9).
