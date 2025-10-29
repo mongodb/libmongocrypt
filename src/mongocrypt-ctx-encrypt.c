@@ -1179,15 +1179,17 @@ static bool _fle2_finalize(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
     // TODO I think here we have everything needed to rewrite the target encryptedFields with keyID
     // note: kb->key_requests contains only the keyAltName for returned key?
 
-    for (mc_EncryptedField_t *f = target_efc->fields; f != NULL; f = f->next) {
-        if (f->keyId.data == NULL) {
-            BSON_ASSERT(f->keyAltName);
-            bson_value_t key_alt_name;
-            _mongocrypt_buffer_t _unused;
-            _bson_value_from_string(f->keyAltName, &key_alt_name);
-            BSON_ASSERT(_mongocrypt_key_broker_decrypted_key_by_name(&ctx->kb, &key_alt_name, &_unused, &f->keyId));
-        }
-    }    
+    if (target_efc) {
+        for (mc_EncryptedField_t *f = target_efc->fields; f != NULL; f = f->next) {
+            if (f->keyId.data == NULL) {
+                BSON_ASSERT(f->keyAltName);
+                bson_value_t key_alt_name;
+                _mongocrypt_buffer_t _unused;
+                _bson_value_from_string(f->keyAltName, &key_alt_name);
+                BSON_ASSERT(_mongocrypt_key_broker_decrypted_key_by_name(&ctx->kb, &key_alt_name, &_unused, &f->keyId));
+            }
+        }    
+    }
 
     moe_result result = must_omit_encryptionInformation(command_name, &converted, target_efc, ctx->status);
     if (!result.ok) {
@@ -2770,7 +2772,7 @@ static bool mongocrypt_ctx_encrypt_ismaster_done(mongocrypt_ctx_t *ctx) {
             /* Keys may have been requested for compactionTokens.
              * Finish key requests.
              */
-             if (_all_key_requests_satisfied(&ctx->kb)) {
+             if (_all_key_requests_satisfied(&ctx->kb) && ctx->need_keys_for_encryptedFields) {
                 return _try_run_csfle_marking(ctx);
              }
             _mongocrypt_key_broker_requests_done(&ctx->kb);
