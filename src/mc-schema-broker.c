@@ -619,20 +619,6 @@ mc_schema_broker_maybe_get_encryptedFields(const mc_schema_broker_t *sb, const c
     return NULL;
 }
 
-// TODO un-duplicate from test-mongocrypt-util.c
-static void bson_iter_bson(bson_iter_t *iter, bson_t *bson) {
-    uint32_t len;
-    const uint8_t *data = NULL;
-    if (BSON_ITER_HOLDS_DOCUMENT(iter)) {
-        bson_iter_document(iter, &len, &data);
-    }
-    if (BSON_ITER_HOLDS_ARRAY(iter)) {
-        bson_iter_array(iter, &len, &data);
-    }
-    BSON_ASSERT(data);
-    bson_init_static(bson, data, len);
-}
-
 static bool append_encryptedFields(const bson_t *encryptedFields,
                                    _mongocrypt_key_broker_t *kb,
                                    const char *coll,
@@ -658,7 +644,6 @@ static bool append_encryptedFields(const bson_t *encryptedFields,
         goto fail;
     }
 
-    // TODO rewriting encryptedFields goes here somewhere
     // Copy all values. Check if state collections are present.
     while (bson_iter_next(&iter)) {
         const char *iter_key = bson_iter_key(&iter);
@@ -699,7 +684,7 @@ static bool append_encryptedFields(const bson_t *encryptedFields,
             while (bson_iter_next(&arr_it)) {
                 char idx_str[32];
                 const char *idx_str_ptr;
-                int ret = bson_uint32_to_string((uint32_t)idx, &idx_str_ptr, idx_str, sizeof idx_str);
+                const size_t ret = bson_uint32_to_string((uint32_t)idx, &idx_str_ptr, idx_str, sizeof idx_str);
                 BSON_ASSERT(ret > 0 && ret <= (int)sizeof idx_str);
 
                 if (BSON_ITER_HOLDS_DOCUMENT(&arr_it)) {
