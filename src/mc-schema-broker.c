@@ -51,6 +51,7 @@ struct mc_schema_broker_t {
     char *db; // Database shared by all schemas.
     mc_schema_entry_t *ll;
     size_t ll_len;
+    bool schema_mixing_is_supported;
 };
 
 mc_schema_broker_t *mc_schema_broker_new(void) {
@@ -91,6 +92,11 @@ bool mc_schema_broker_request(mc_schema_broker_t *sb, const char *db, const char
 bool mc_schema_broker_has_multiple_requests(const mc_schema_broker_t *sb) {
     BSON_ASSERT_PARAM(sb);
     return sb->ll_len > 1;
+}
+
+void mc_schema_broker_support_mixing_schemas(mc_schema_broker_t *sb) {
+    BSON_ASSERT_PARAM(sb);
+    sb->schema_mixing_is_supported = true;
 }
 
 void mc_schema_broker_destroy(mc_schema_broker_t *sb) {
@@ -807,6 +813,11 @@ static bool append_encryptionInformation(const mc_schema_broker_t *sb,
     }
 
     for (mc_schema_entry_t *se = sb->ll; se != NULL; se = se->next) {
+        // encryptedFields is preferred over jsonSchema
+        if (!se->encryptedFields.set && se->jsonSchema.set) {
+            continue;
+        }
+
         BSON_ASSERT(se->satisfied);
         bool loop_ok = false;
         char *ns = bson_strdup_printf("%s.%s", sb->db, se->coll);
@@ -1023,10 +1034,20 @@ fail:
     return ok;
 }
 
+static bool any_entry_includes_encryptedFields(mc_schema_entry_t *head) {
+    for (mc_schema_entry_t *se = head; se != NULL; se = se->next) {
+        if (se->encryptedFields.set) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 // insert_csfleEncryptionSchemas appends schema information to a command for CSFLE.
 // Only consumed by query analysis (mongocryptd/crypt_shared).
 // For one JSON schema, use `jsonSchema` for backwards compatibility.
-// For multiple JSON schemas, use `csfleEncryptionSchemas` (added in server 8.2).
+// For multiple JSON schemas, use `csfleEncryptionSchemas` (added in server 8.1).
 static bool insert_csfleEncryptionSchemas(const mc_schema_broker_t *sb,
                                           bson_t *cmd /* in/out */,
                                           mc_cmd_target_t cmd_target,
@@ -1071,7 +1092,13 @@ static bool insert_csfleEncryptionSchemas(const mc_schema_broker_t *sb,
         return false;
     }
 
+    const bool skip_empty_schemas = any_entry_includes_encryptedFields(sb->ll);
+
     for (mc_schema_entry_t *se = sb->ll; se != NULL; se = se->next) {
+        if (se->encryptedFields.set || (!se->jsonSchema.set && skip_empty_schemas)) {
+            continue;
+        }
+
         BSON_ASSERT(se->satisfied);
 
         char *ns = bson_strdup_printf("%s.%s", sb->db, se->coll);
@@ -1152,10 +1179,15 @@ bool mc_schema_broker_add_schemas_to_cmd(mc_schema_broker_t *sb,
     }
 
     if (has_encryptedFields && has_jsonSchema) {
-        // If any collection has encryptedFields, error if any collection only has a JSON Schema.
+        if (sb->schema_mixing_is_supported) {
+            return insert_encryptionInformation(sb, cmd_name, cmd, cmd_target, status)
+                && insert_csfleEncryptionSchemas(sb, cmd, cmd_target, status);
+        }
+
         CLIENT_ERR("Collection '%s' has an encryptedFields configured, but collection '%s' has a JSON schema "
-                   "configured. This is currently not supported. To ignore the JSON schema, add an empty entry for "
-                   "'%s' to AutoEncryptionOpts.encryptedFieldsMap: \"%s\": { \"fields\": [] }",
+                   "configured. This is not supported on mongocryptd/crypt_shared versions below 8.2. To ignore the "
+                   "JSON schema, add an empty entry for '%s' to AutoEncryptionOpts.encryptedFieldsMap: \"%s\": { "
+                   "\"fields\": [] }",
                    coll_with_encryptedFields,
                    coll_with_jsonSchema,
                    coll_with_jsonSchema,

@@ -192,10 +192,10 @@ if (BUILD_VERSION STREQUAL "0.0.0")
       file (STRINGS ${PROJECT_SOURCE_DIR}/VERSION_CURRENT BUILD_VERSION)
       message (STATUS "File VERSION_CURRENT contained BUILD_VERSION ${BUILD_VERSION}")
    else ()
-      find_package (PythonInterp)
-      if (PYTHONINTERP_FOUND)
+      find_package (Python COMPONENTS Interpreter)
+      if (TARGET Python::Interpreter)
          execute_process (
-            COMMAND ${PYTHON_EXECUTABLE} etc/calc_release_version.py
+            COMMAND "${Python_EXECUTABLE}" etc/calc_release_version.py
             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
             OUTPUT_VARIABLE CALC_RELEASE_VERSION
             RESULT_VARIABLE CALC_RELEASE_VERSION_RESULT
@@ -305,7 +305,7 @@ add_library (mongocrypt_static STATIC ${MONGOCRYPT_SOURCES})
 # the common case that users are setting -DCMAKE_C_FLAGS='-fPIC'
 string (FIND "${CMAKE_C_FLAGS}" "-fPIC" FPIC_LOCATION)
 if (NOT WIN32 AND ENABLE_PIC AND "${FPIC_LOCATION}" EQUAL "-1")
-   target_compile_options (mongocrypt_static PUBLIC -fPIC)
+   set_property (TARGET mongocrypt_static PROPERTY POSITION_INDEPENDENT_CODE TRUE)
    message ("Adding -fPIC to compilation of mongocrypt_static components")
 endif ()
 target_include_directories (
@@ -622,11 +622,11 @@ install (
 set (PROJECT_VERSION "${BUILD_VERSION}")
 set (PROJECT_DESCRIPTION "The libmongocrypt client-side field level encryption library.")
 if (NOT ENABLE_BUILD_FOR_PPA)
-   set (PKG_CONFIG_STATIC_REQUIRES "libbson-static-1.0")
+   set (PKG_CONFIG_STATIC_REQUIRES "bson2-static")
 endif ()
 if (USE_SHARED_LIBBSON)
-   set (PKG_CONFIG_REQUIRES "libbson-1.0")
-   set (PKG_CONFIG_STATIC_REQUIRES "libbson-1.0")
+   set (PKG_CONFIG_REQUIRES "bson2")
+   set (PKG_CONFIG_STATIC_REQUIRES "bson2")
 endif ()
 set (PKG_CONFIG_LIBDIR "\${prefix}/${CMAKE_INSTALL_LIBDIR}")
 set (PKG_CONFIG_INCLUDEDIR "\${prefix}/${CMAKE_INSTALL_INCLUDEDIR}/mongocrypt")

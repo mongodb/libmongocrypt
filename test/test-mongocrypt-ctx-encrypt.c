@@ -3487,6 +3487,15 @@ static void _test_dollardb_preserved_fle1(_mongocrypt_tester_t *tester) {
     if (1) {                                                                                                           \
         ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);                             \
         expect_mongo_op(ctx, TEST_BSON("{'isMaster': 1}"));                                                            \
+        ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TEST_FILE("./test/data/mongocryptd-ismaster-27.json")), ctx);         \
+        ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);                                                                \
+    } else                                                                                                             \
+        ((void)0)
+
+#define expect_and_reply_to_ismaster_26(ctx)                                                                           \
+    if (1) {                                                                                                           \
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);                             \
+        expect_mongo_op(ctx, TEST_BSON("{'isMaster': 1}"));                                                            \
         ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TEST_FILE("./test/data/mongocryptd-ismaster-26.json")), ctx);         \
         ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);                                                                \
     } else                                                                                                             \
@@ -5612,6 +5621,7 @@ static void _test_lookup(_mongocrypt_tester_t *tester) {
 
 // Test $lookup with mixed: QE + CSFLE
 #define TF(suffix) TEST_FILE("./test/data/lookup/mixed/qe/csfle/" suffix)
+    // Schema mixing is supported >=8.2 (wire version >=27)
     {
         mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
@@ -5630,8 +5640,36 @@ static void _test_lookup(_mongocrypt_tester_t *tester) {
 
         ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
         {
+            expect_mongo_op(ctx, TF("cmd-to-mongocryptd.json"));
+            // Stopping here since mongocryptd is expected to error with "Cannot specify both encryptionInformation and
+            // csfleEncryptionSchemas unless csfleEncryptionSchemas only contains non-encryption JSON schema validators"
+        }
+
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+
+    // Schema mixing is unsupported <8.2 (wire version <26)
+    {
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")), ctx);
+        expect_and_reply_to_ismaster_26(ctx);
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+        {
+            expect_mongo_op(ctx, TEST_BSON(BSON_STR({"name" : {"$in" : [ "c1", "c2" ]}})));
+
+            // Feed both needed schemas.
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c1.json")), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c2.json")), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+        {
             mongocrypt_binary_t *got = mongocrypt_binary_new();
-            ASSERT_FAILS(mongocrypt_ctx_mongo_op(ctx, got), ctx, "currently not supported");
+            ASSERT_FAILS(mongocrypt_ctx_mongo_op(ctx, got), ctx, "not supported");
             mongocrypt_binary_destroy(got);
         }
 
@@ -5732,6 +5770,52 @@ static void _test_lookup(_mongocrypt_tester_t *tester) {
     }
 #undef TF
 
+// Test $lookup with mixed: QE + non-CSFLE remote JSON schema
+#define TF(suffix) TEST_FILE("./test/data/lookup/mixed/qe/non-csfle-schema/" suffix)
+    {
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")), ctx);
+        expect_and_reply_to_ismaster(ctx);
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+        {
+            expect_mongo_op(ctx, TEST_BSON(BSON_STR({"name" : {"$in" : [ "c1", "c2" ]}})));
+            // Feed both needed schemas.
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c1.json")), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c2.json")), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+        {
+            expect_mongo_op(ctx, TF("cmd-to-mongocryptd.json"));
+            mongocrypt_binary_t *to_feed = TF("reply-from-mongocryptd.json");
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, to_feed), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+        {
+            mongocrypt_binary_t *to_feed = TF("key-doc.json");
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, to_feed), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
+        {
+            mongocrypt_binary_t *expect = TF("cmd-to-mongod.json");
+            mongocrypt_binary_t *got = mongocrypt_binary_new();
+            ASSERT_OK(mongocrypt_ctx_finalize(ctx, got), ctx);
+            ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(expect, got);
+            mongocrypt_binary_destroy(got);
+        }
+
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+#undef TF
+
 // Test $lookup with mixed: CSFLE + CSFLE.
 #define TF(suffix) TEST_FILE("./test/data/lookup/mixed/csfle/csfle/" suffix)
     {
@@ -5779,6 +5863,7 @@ static void _test_lookup(_mongocrypt_tester_t *tester) {
 #undef TF
 
 #define TF(suffix) TEST_FILE("./test/data/lookup/mixed/csfle/qe/" suffix)
+    // Schema mixing is supported >=8.2 (wire version >=27)
     {
         mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
@@ -5796,8 +5881,35 @@ static void _test_lookup(_mongocrypt_tester_t *tester) {
 
         ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
         {
+            expect_mongo_op(ctx, TF("cmd-to-mongocryptd.json"));
+            // Stopping here since mongocryptd is expected to error with "Cannot specify both encryptionInformation and
+            // csfleEncryptionSchemas unless csfleEncryptionSchemas only contains non-encryption JSON schema validators"
+        }
+
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+
+    // Schema mixing is unsupported <8.2 (wire version <26)
+    {
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")), ctx);
+        expect_and_reply_to_ismaster_26(ctx);
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+        {
+            expect_mongo_op(ctx, TEST_BSON(BSON_STR({"name" : {"$in" : [ "c1", "c2" ]}})));
+            // Feed both needed schemas.
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c1.json")), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TF("collInfo-c2.json")), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_MARKINGS);
+        {
             mongocrypt_binary_t *got = mongocrypt_binary_new();
-            ASSERT_FAILS(mongocrypt_ctx_mongo_op(ctx, got), ctx, "This is currently not supported");
+            ASSERT_FAILS(mongocrypt_ctx_mongo_op(ctx, got), ctx, "not supported");
             mongocrypt_binary_destroy(got);
         }
 

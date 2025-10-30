@@ -2643,9 +2643,11 @@ static bool _all_key_requests_satisfied(_mongocrypt_key_broker_t *kb) {
 
 #define WIRE_VERSION_SERVER_6 17
 #define WIRE_VERSION_SERVER_8_1 26
+#define WIRE_VERSION_SERVER_8_2 27
 // The crypt_shared version format is defined in mongo_crypt-v1.h.
 // Example: server 6.2.1 is encoded as 0x0006000200010000
 #define CRYPT_SHARED_8_1 0x0008000100000000ull
+#define CRYPT_SHARED_8_2 0x0008000200000000ull
 
 /* mongocrypt_ctx_encrypt_ismaster_done is called when:
  * 1. The max wire version of mongocryptd is known.
@@ -2687,6 +2689,10 @@ static bool mongocrypt_ctx_encrypt_ismaster_done(mongocrypt_ctx_t *ctx) {
                 _mongocrypt_ctx_fail(ctx);
                 return false;
             }
+
+            if (ectx->ismaster.maxwireversion >= WIRE_VERSION_SERVER_8_2) {
+                mc_schema_broker_support_mixing_schemas(ectx->sb);
+            }
         }
     }
 
@@ -2703,6 +2709,10 @@ static bool mongocrypt_ctx_encrypt_ismaster_done(mongocrypt_ctx_t *ctx) {
                            version_str);
                 _mongocrypt_ctx_fail(ctx);
                 return false;
+            }
+
+            if (version >= CRYPT_SHARED_8_2) {
+                mc_schema_broker_support_mixing_schemas(ectx->sb);
             }
         }
     }

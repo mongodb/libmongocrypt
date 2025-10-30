@@ -2,7 +2,7 @@
 
 libmongocrypt is a C library meant to assist drivers in supporting
 client side encryption. libmongocrypt acts as a state machine and the
-driver is responsible for I/O between mongod, mongocryptd, and KMS.
+driver is responsible for I/O between mongod, mongocryptd, crypt_shared, and KMS.
 
 There are two major parts to integrating libmongocrypt into your driver:
 
@@ -39,13 +39,13 @@ For example, Java can accomplish this with
 Node.js with [add-ons](https://nodejs.org/api/addons.html), etc.
 
 The libmongocrypt library files (.so/.dll) are pre-built on its
-[Evergreen project](https://evergreen.mongodb.com/waterfall/libmongocrypt). Click
+[Evergreen project](https://spruce.mongodb.com/project/libmongocrypt/waterfall). Click
 the variant\'s \"built-and-test-and-upload\" tasks to download the
 attached files.
 
 libmongocrypt describes all API that needs to be called from your driver
 in the main public header
-[mongocrypt.h](https://github.com/10gen/libmongocrypt/blob/master/src/mongocrypt.h).
+[mongocrypt.h](https://github.com/mongodb/libmongocrypt/blob/master/src/mongocrypt.h).
 
 There are many types and functions in mongocrypt.h to bind. Consider as
 a first step binding to only `mongocrypt_version`.
@@ -67,12 +67,12 @@ API. Here are a few things to keep in mind:
 Once you have full bindings for the API, it\'s time to do a sanity
 check. The crux of libmongocrypt\'s API is the state machine represented
 by `mongocrypt_ctx_t`. This state machine is exercised in the
-[example-state-machine](https://github.com/10gen/libmongocrypt/blob/master/test/example-state-machine.c)
+[example-state-machine](https://github.com/mongodb/libmongocrypt/blob/master/test/example-state-machine.c)
 executable included with libmongocrypt. It uses mock responses from
 mongod, mongocryptd, and KMS. Reimplement the state machine loop
 (`_run_state_machine`) in example-state-machine with your binding.
 
-Seek help in the slack channel \#drivers-fle.
+Seek help in the slack channel \#dbx-encryption.
 
 ## Part 2: Integrate into Driver ##
 
@@ -82,17 +82,16 @@ support client side encryption.
 See the [driver spec](https://github.com/mongodb/specifications/blob/master/source/client-side-encryption/client-side-encryption.md)
 for a reference of the user-facing API. libmongocrypt is needed for:
 
--   Automatic encryption/decryption
--   Explicit encryption/decryption
--   KeyVault (explicit encryption/decryption + createDataKey)
+-   Automatic encryption/decryption (enabled with `AutoEncryptionOpts`)
+-   ClientEncryption (explicit encryption/decryption + key management)
 
 It is recommended to start by integrating libmongocrypt to support
 automatic encryption/decryption. Then reuse the implementation to
-implement the KeyVault.
+implement the ClientEncryption.
 
 A MongoClient enabled with client side encryption MUST have one shared
 `mongocrypt_t` handle (important because keys + JSON Schemas are cached
-in this handle). Each KeyVault also has its own `mongocrypt_t`.
+in this handle). Each ClientEncryption also has its own `mongocrypt_t`.
 
 Any encryption or decryption operation is done by creating a
 `mongocrypt_ctx_t` and initializing it for the appropriate operation.
@@ -109,14 +108,14 @@ following:
 
 ### Initializing ###
 
-There are five different types of `mongocrypt_ctx_t`\'s, distinguished
-by how they are initialized:
+Call one of the following on a `mongocrypt_ctx_t`:
 
 -   auto encrypt (`mongocrypt_ctx_encrypt_init`)
 -   auto decrypt (`mongocrypt_ctx_decrypt_init`)
 -   explicit encrypt (`mongocrypt_ctx_explicit_encrypt_init`)
 -   explicit decrypt (`mongocrypt_ctx_explicit_decrypt_init`)
 -   create data key (`mongocrypt_ctx_datakey_init`)
+-   rewrap data key (`mongocrypt_ctx_rewrap_many_datakey_init`)
 
 ### State Machine ###
 
@@ -315,4 +314,3 @@ Exit the state machine loop.
 
 All contexts.
 
-Seek help in the slack channel \#drivers-fle.

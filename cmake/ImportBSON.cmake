@@ -48,42 +48,6 @@
    of USE_SHARED_LIBBSON.
 ]]
 
-include (CheckCSourceCompiles)
-include (CMakePushCheckState)
-
-cmake_push_check_state ()
-   # Even though we aren't going to use the system's libbson, try to detect whether it has
-   # extra-alignment enabled. We want to match that setting as our default, for convenience
-   # purposes only.
-   find_path (SYSTEM_BSON_INCLUDE_DIR bson/bson.h PATH_SUFFIXES libbson-1.0)
-   set (_extra_alignment_default OFF)
-   if (SYSTEM_BSON_INCLUDE_DIR AND NOT DEFINED ENABLE_EXTRA_ALIGNMENT)
-      set (CMAKE_REQUIRED_INCLUDES "${SYSTEM_BSON_INCLUDE_DIR}")
-      check_c_source_compiles ([[
-         #include <bson/bson.h>
-
-         int main() { }
-      ]] HAVE_SYSTEM_LIBBSON)
-
-      if (HAVE_SYSTEM_LIBBSON)
-         # We have a libbson, check for extra alignment
-         check_c_source_compiles ([[
-            #include <bson/bson.h>
-
-            #ifndef BSON_EXTRA_ALIGN
-            #error "Not extra-aligned"
-            #endif
-
-            int main() {}
-         ]] SYSTEM_LIBBSON_IS_EXTRA_ALIGNED)
-         if (SYSTEM_LIBBSON_IS_EXTRA_ALIGNED)
-            # Extra aligned! We'll use extra alignment by default.
-            set (_extra_alignment_default ON)
-         endif ()
-      endif ()
-   endif ()
-cmake_pop_check_state ()
-
 set (init OFF)
 if (DEFINED ENABLED_SHARED_BSON)
    message (STATUS "ENABLE_SHARED_BSON is now named USE_SHARED_LIBBSON")
@@ -109,9 +73,11 @@ endif ()
 function (_import_bson)
    if (MONGOCRYPT_MONGOC_DIR STREQUAL "USE-SYSTEM" AND USE_SHARED_LIBBSON AND NOT ENABLE_ONLINE_TESTS)
       message (STATUS "NOTE: Using system-wide libbson library. This is intended only for package maintainers.")
-      find_library (_MONGOCRYPT_SYSTEM_LIBBSON_SHARED "${CMAKE_SHARED_LIBRARY_PREFIX}bson-1.0${CMAKE_SHARED_LIBRARY_SUFFIX}")
-      find_library (_MONGOCRYPT_SYSTEM_LIBBSON_STATIC "${CMAKE_STATIC_LIBRARY_PREFIX}bson-static-1.0${CMAKE_STATIC_LIBRARY_SUFFIX}")
-      find_path (_MONGOCRYPT_SYSTEM_LIBBSON_INCLUDE_DIR bson/bson.h PATH_SUFFIXES libbson-1.0)
+      find_library (_MONGOCRYPT_SYSTEM_LIBBSON_SHARED "${CMAKE_SHARED_LIBRARY_PREFIX}bson2${CMAKE_SHARED_LIBRARY_SUFFIX}")
+      find_library (_MONGOCRYPT_SYSTEM_LIBBSON_STATIC "${CMAKE_STATIC_LIBRARY_PREFIX}bson2${CMAKE_STATIC_LIBRARY_SUFFIX}")
+      find_package (bson 2.0 REQUIRED)
+      get_target_property (_BSON_SHARED_INCL_DIR_PROP bson::shared INTERFACE_INCLUDE_DIRECTORIES)
+      set (_MONGOCRYPT_SYSTEM_LIBBSON_INCLUDE_DIR "${_BSON_SHARED_INCL_DIR_PROP}" CACHE FILEPATH "Internal use only")
       add_library (bson_shared SHARED IMPORTED)
       add_library (bson_static STATIC IMPORTED)
       set_target_properties (bson_shared bson_static PROPERTIES
@@ -140,8 +106,6 @@ function (_import_bson)
       set (ENABLE_SNAPPY OFF CACHE BOOL "Toggle snappy for the mongoc subproject (not required by libmongocrypt)")
       # Disable deprecated automatic init and cleanup. (May be overridden by the user)
       set (ENABLE_AUTOMATIC_INIT_AND_CLEANUP OFF CACHE BOOL "Enable automatic init and cleanup (GCC only)")
-      # Disable over-alignment of bson types. (May be overridden by the user)
-      set (ENABLE_EXTRA_ALIGNMENT ${_extra_alignment_default} CACHE BOOL "Toggle extra alignment of bson_t")
       # We don't want the subproject to find libmongocrypt
       set (ENABLE_CLIENT_SIDE_ENCRYPTION OFF CACHE BOOL "Disable client-side encryption for the libmongoc subproject")
       # Clear `BUILD_VERSION` so C driver does not use a `BUILD_VERSION` meant for libmongocrypt.
