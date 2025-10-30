@@ -751,7 +751,7 @@ static void test_mc_schema_broker_add_schemas_to_cmd(_mongocrypt_tester_t *teste
         ASSERT(!mc_schema_broker_need_more_schemas(sb));
 
         bson_t *cmd = TMP_BSON(BSON_STR({"find" : "coll"}));
-        ASSERT_OK_STATUS(mc_schema_broker_add_schemas_to_cmd(sb, cmd, MC_CMD_SCHEMAS_FOR_MONGOCRYPTD, status), status);
+        ASSERT_OK_STATUS(mc_schema_broker_add_schemas_to_cmd(sb, NULL, cmd, MC_CMD_SCHEMAS_FOR_MONGOCRYPTD, status), status);
         // Expect command has both 'encryptionInformation' and 'csfleEncryptionSchemas':
         bson_t *expect =
             TMP_BSONF(BSON_STR({
@@ -789,7 +789,7 @@ static void test_mc_schema_broker_add_schemas_to_cmd(_mongocrypt_tester_t *teste
         ASSERT(!mc_schema_broker_need_more_schemas(sb));
 
         bson_t *cmd = TMP_BSON(BSON_STR({"find" : "coll"}));
-        ASSERT_OK_STATUS(mc_schema_broker_add_schemas_to_cmd(sb, cmd, MC_CMD_SCHEMAS_FOR_MONGOCRYPTD, status), status);
+        ASSERT_OK_STATUS(mc_schema_broker_add_schemas_to_cmd(sb, NULL, cmd, MC_CMD_SCHEMAS_FOR_MONGOCRYPTD, status), status);
         // Expect db.coll3 is only included in encryptionInformation, not csfleEncryptionSchemas:
         bson_t *expect =
             TMP_BSONF(BSON_STR({

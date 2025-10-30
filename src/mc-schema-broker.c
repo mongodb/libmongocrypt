@@ -1180,7 +1180,7 @@ bool mc_schema_broker_add_schemas_to_cmd(mc_schema_broker_t *sb,
 
     if (has_encryptedFields && has_jsonSchema) {
         if (sb->schema_mixing_is_supported) {
-            return insert_encryptionInformation(sb, cmd_name, cmd, cmd_target, status)
+            return insert_encryptionInformation(sb, kb, cmd_name, cmd, cmd_target, status)
                 && insert_csfleEncryptionSchemas(sb, cmd, cmd_target, status);
         }
 
