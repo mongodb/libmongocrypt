@@ -1,5 +1,16 @@
 # ChangeLog
 
+## 1.17.0
+
+### New features
+
+- Support mixing QE and unencrypted JSON schemas.
+
+### Fixed
+
+- Comply with CMake policy CMP0148 (use `FindPython` instead of `FindPythonInterp` and `FindPythonLibs`).
+- Fix possible resource leak in Queryable Encryption.
+
 ## 1.16.0
 
 ### Changed
