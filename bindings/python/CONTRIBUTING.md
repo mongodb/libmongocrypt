@@ -22,7 +22,7 @@ python scripts/update_binding.py
 To update the bundled version of libmongocrypt, run the following script:
 
 ```bash
-bash script/update-version.sh <new-version>
+bash scripts/update-version.sh <new-version>
 ```
 
 This will set the version in `scripts/libmongocrypt-version.sh` and update `sbom.json` to reflect

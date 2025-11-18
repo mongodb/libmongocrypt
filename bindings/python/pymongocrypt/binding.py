@@ -260,6 +260,7 @@ typedef enum {
     MONGOCRYPT_LOG_LEVEL_ERROR = 1,
     MONGOCRYPT_LOG_LEVEL_WARNING = 2,
     MONGOCRYPT_LOG_LEVEL_INFO = 3,
+    MONGOCRYPT_LOG_LEVEL_TRACE = 4
 } mongocrypt_log_level_t;
 
 /**
@@ -1133,7 +1134,24 @@ int64_t mongocrypt_kms_ctx_usleep(mongocrypt_kms_ctx_t *kms);
 bool mongocrypt_kms_ctx_feed(mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes);
 
 /**
- * Indicate a network-level failure.
+ * Feed bytes from the KMS response.
+ *
+ * Feeding more bytes than what has been returned in @ref
+ * mongocrypt_kms_ctx_bytes_needed is an error.
+ *
+ * @param[in] kms The @ref mongocrypt_kms_ctx_t.
+ * @param[in] bytes The bytes to feed. The viewed data is copied. It is valid to
+ * destroy @p bytes with @ref mongocrypt_binary_destroy immediately after.
+ * @param[out] should_retry Whether the KMS request should be retried. Retry in-place
+ * without calling @ref mongocrypt_kms_ctx_fail.
+ * @returns A boolean indicating success. If false, an error status is set.
+ * Retrieve it with @ref mongocrypt_kms_ctx_status
+ */
+bool mongocrypt_kms_ctx_feed_with_retry(mongocrypt_kms_ctx_t *kms, mongocrypt_binary_t *bytes, bool *should_retry);
+
+/**
+ * Indicate a network error. Discards all data fed to this KMS context with @ref mongocrypt_kms_ctx_feed.
+ * The @ref mongocrypt_kms_ctx_t may be reused.
  *
  * @param[in] kms The @ref mongocrypt_kms_ctx_t.
  * @return A boolean indicating whether the failed request may be retried.
