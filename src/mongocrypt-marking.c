@@ -491,6 +491,7 @@ static bool _fle2_placeholder_aes_aead_encrypt(_mongocrypt_key_broker_t *kb,
     _mongocrypt_buffer_init_size(&iv, MONGOCRYPT_IV_LEN);
     if (!_mongocrypt_random(crypto, &iv, iv.len, status)) {
         _mongocrypt_buffer_cleanup(&key);
+        _mongocrypt_buffer_cleanup(&iv);
         return false;
     }
 

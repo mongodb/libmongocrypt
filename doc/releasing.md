@@ -61,6 +61,7 @@ Check the contents of the "vulnerabilities" field (if present) in the Augmented 
 
 Do the following when releasing:
 - If this is a feature release (e.g. `x.y.0` or `x.0.0`), follow these steps: [Creating SSDLC static analysis reports](https://docs.google.com/document/d/1rkFL8ymbkc0k8Apky9w5pTPbvKRm68wj17mPJt2_0yo/edit).
+- Join the [releases team](https://github.com/orgs/mongodb/teams/dbx-c-cxx-releases) on GitHub via [MANA](https://mana.corp.mongodb.com/resources/68029673d39aa9f7de6399f9).
 - Check out the release branch. For a release `x.y.z`, the release branch is `rx.y`. If this is a new non-patch release (`x.y.0`), create the release branch.
 - Update CHANGELOG.md with the version being released.
 - Ensure `etc/purls.txt` is up-to-date.
@@ -89,6 +90,7 @@ Do the following when releasing:
    ./.evergreen/earthly.sh +sbom-generate-new-serial-number
    ```
    Commit resulting `etc/cyclonedx.sbom.json` and push to `rx.y`.
+- Remove yourself from the [releases team](https://github.com/orgs/mongodb/teams/dbx-c-cxx-releases) on GitHub via [MANA](https://mana.corp.mongodb.com/resources/68029673d39aa9f7de6399f9).
 - If this is a new non-patch release (e.g. `x.y.0`):
    - File a DOCSP ticket to update the installation instructions on [Install libmongocrypt](https://www.mongodb.com/docs/manual/core/csfle/reference/libmongocrypt/). ([Example](https://jira.mongodb.org/browse/DOCSP-52575))
    - Create a new Snyk reference target. The following instructions use the example branch `rx.y`:
