@@ -117,7 +117,7 @@ static bool _parse_field(mc_EncryptedFieldConfig_t *efc, bson_t *field, mongocry
         BSON_ASSERT(bson_iter_init_find(&field_iter, field, "keyAltName"));
     }
 
-    const char *keyAltName;
+    const char *keyAltName = "";
     if (has_keyaltname) {
         BSON_ASSERT(bson_iter_init_find(&field_iter, field, "keyAltName"));
         if (!BSON_ITER_HOLDS_UTF8(&field_iter)) {
