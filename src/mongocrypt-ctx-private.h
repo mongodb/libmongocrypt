@@ -127,6 +127,7 @@ struct _mongocrypt_ctx_t {
     _mongocrypt_opts_kms_providers_t per_ctx_kms_providers; /* owned */
     _mongocrypt_opts_kms_providers_t kms_providers;         /* not owned, is merged from per-ctx / per-mongocrypt_t */
     bool initialized;
+    bool need_keys_for_encryptedFields;
     /* nothing_to_do is set to true under these conditions:
      * 1. No keys are requested
      * 2. The command is bypassed for automatic encryption (e.g. ping).

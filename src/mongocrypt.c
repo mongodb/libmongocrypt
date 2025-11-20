@@ -1188,6 +1188,19 @@ bool _mongocrypt_needs_credentials_for_provider(mongocrypt_t *crypt,
     return (crypt->opts.kms_providers.need_credentials & (int)provider) != 0;
 }
 
+/* Given a string, populate a bson_value_t for that string */
+void _bson_value_from_string(const char *string, bson_value_t *value) {
+    bson_t *bson;
+    bson_iter_t iter;
+
+    bson = BCON_NEW("key", string);
+    BSON_ASSERT(bson_iter_init_find(&iter, bson, "key"));
+    bson_value_copy(bson_iter_value(&iter), value);
+
+    bson_destroy(bson);
+}
+
+
 void mongocrypt_setopt_bypass_query_analysis(mongocrypt_t *crypt) {
     BSON_ASSERT_PARAM(crypt);
 
