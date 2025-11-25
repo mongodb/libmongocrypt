@@ -17,6 +17,7 @@
 #include "mc-efc-private.h"
 #include "mc-fle-blob-subtype-private.h"
 #include "mc-fle2-rfds-private.h"
+#include "mc-schema-broker-private.h"
 #include "mc-tokens-private.h"
 #include "mongocrypt-ciphertext-private.h"
 #include "mongocrypt-crypto-private.h"
@@ -2582,9 +2583,11 @@ bool mongocrypt_ctx_encrypt_init(mongocrypt_ctx_t *ctx, const char *db, int32_t 
 
 #define WIRE_VERSION_SERVER_6 17
 #define WIRE_VERSION_SERVER_8_1 26
+#define WIRE_VERSION_SERVER_8_2 27
 // The crypt_shared version format is defined in mongo_crypt-v1.h.
 // Example: server 6.2.1 is encoded as 0x0006000200010000
 #define CRYPT_SHARED_8_1 0x0008000100000000ull
+#define CRYPT_SHARED_8_2 0x0008000200000000ull
 
 /* mongocrypt_ctx_encrypt_ismaster_done is called when:
  * 1. The max wire version of mongocryptd is known.
@@ -2626,6 +2629,10 @@ static bool mongocrypt_ctx_encrypt_ismaster_done(mongocrypt_ctx_t *ctx) {
                 _mongocrypt_ctx_fail(ctx);
                 return false;
             }
+
+            if (ectx->ismaster.maxwireversion >= WIRE_VERSION_SERVER_8_2) {
+                mc_schema_broker_support_mixing_schemas(ectx->sb);
+            }
         }
     }
 
@@ -2642,6 +2649,10 @@ static bool mongocrypt_ctx_encrypt_ismaster_done(mongocrypt_ctx_t *ctx) {
                            version_str);
                 _mongocrypt_ctx_fail(ctx);
                 return false;
+            }
+
+            if (version >= CRYPT_SHARED_8_2) {
+                mc_schema_broker_support_mixing_schemas(ectx->sb);
             }
         }
     }
