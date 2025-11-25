@@ -1,9 +1,9 @@
-libmongocrypt (1.17.0-1) UNRELEASED; urgency=medium
+libmongocrypt (1.17.0-1) unstable; urgency=medium
 
   * New upstream release.
   * d/patches/bson-include-dir-search.patch: dropped, included upstream
 
- -- Roberto C. Sanchez <roberto@connexer.com>  Tue, 25 Nov 2025 16:54:01 -0500
+ -- Roberto C. Sanchez <roberto@connexer.com>  Tue, 25 Nov 2025 16:59:49 -0500
 
 libmongocrypt (1.16.0-1) unstable; urgency=medium
 
