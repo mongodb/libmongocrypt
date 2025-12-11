@@ -683,10 +683,12 @@ static bool append_encryptedFields(const bson_t *encryptedFields,
             bson_iter_t arr_it;
             if (!bson_iter_init(&arr_it, &array_bson)) {
                 CLIENT_ERR("failed to iterate 'fields' array");
+                bson_append_array_end(out, &new_array);
                 goto fail;
             }
 
             size_t idx = 0;
+            bool array_loop_ok = true;
             while (bson_iter_next(&arr_it)) {
                 char idx_str[32];
                 const char *idx_str_ptr;
@@ -730,21 +732,23 @@ static bool append_encryptedFields(const bson_t *encryptedFields,
                     TRY_BSON_OR(bson_append_document(&new_array, idx_str_ptr, -1, &new_doc)) {
                         bson_destroy(&new_doc);
                         bson_free(keyAltName_dup);
-                        goto fail;
+                        array_loop_ok = false;
+                        break;
                     }
                     bson_destroy(&new_doc);
                     bson_free(keyAltName_dup);
                 } else {
                     /* Non-document elements: copy as-is. */
                     TRY_BSON_OR(BSON_APPEND_VALUE(&new_array, idx_str, bson_iter_value(&arr_it))) {
-                        goto fail;
+                        array_loop_ok = false;
+                        break;
                     }
                 }
 
                 idx++;
             }
 
-            TRY_BSON_OR(bson_append_array_end(out, &new_array)) {
+            if (!array_loop_ok || !bson_append_array_end(out, &new_array)) {
                 goto fail;
             }
         } else {
