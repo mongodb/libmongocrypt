@@ -1,0 +1,31 @@
+{
+    "insert": "coll",
+    "documents": [
+        {
+            "secret": "bar"
+        }
+    ],
+    "encryptionInformation": {
+        "type": {
+            "$numberInt": "1"
+        },
+        "schema": {
+            "db.coll": {
+                "fields": [
+                    {
+                        "path": "secret",
+                        "bsonType": "string",
+                        "keyId": {
+                            "$binary": {
+                                "base64": "YWFhYWFhYWFhYWFhYWFhYQ==",
+                                "subType": "04"
+                            }
+                        }
+                    }
+                ],
+                "escCollection": "enxcol_.coll.esc",
+                "ecocCollection": "enxcol_.coll.ecoc"
+            }
+        }
+    }
+}
