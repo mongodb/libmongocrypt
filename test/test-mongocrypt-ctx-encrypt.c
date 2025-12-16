@@ -6230,6 +6230,7 @@ static void _test_qe_keyAltName(_mongocrypt_tester_t *tester) {
             //         &result_bson);
             mongocrypt_binary_destroy(result);
         }
+        mongocrypt_ctx_destroy(ctx);
 
         // COPY
         ctx = mongocrypt_ctx_new(crypt);
@@ -6255,18 +6256,19 @@ static void _test_qe_keyAltName(_mongocrypt_tester_t *tester) {
             ASSERT_OK(mongocrypt_ctx_finalize(ctx, result), ctx);
             ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(
                 // TODO: update expected result 'AAAA' with ciphertext.
+                // clang-format off
                 TEST_BSON_STR(BSON_STR({
                     "insert" : "coll",
                     "documents" : [ {
                         "secret" : {
                             "$binary" : {
-                                "base64" : "EGFhYWFhYWFhYWFhYWFhYWECZsXiTFAY0XXprCZjSggTgzFb+cy0/"
-                                           "epNKDjEMZ3HaDBjVDIXHZQH8ye3hKBoKD5pDY8SERVzu070rWOU7EIw3g==",
+                                "base64" : "EGFhYWFhYWFhYWFhYWFhYWECZsXiTFAY0XXprCZjSggTgzFb+cy0/epNKDjEMZ3HaDBjVDIXHZQH8ye3hKBoKD5pDY8SERVzu070rWOU7EIw3g==",
                                 "subType" : "06"
                             }
                         }
                     } ]
                 })),
+                // clang-format on
                 result);
             mongocrypt_binary_destroy(result);
         }
@@ -6319,8 +6321,8 @@ static void _test_qe_keyAltName_cryptShared(_mongocrypt_tester_t *tester) {
             ASSERT_OK(mongocrypt_ctx_finalize(ctx, result), ctx);
             ASSERT(_mongocrypt_binary_to_bson(result, &result_bson));
             // _assert_match_bson(
-            //         TMP_BSON(BSON_STR({"insert" : "coll", "documents" : [ {"secret" : {"$$type" : "binData"}} ], "subType" : "06"})),
-            //         &result_bson);
+            //         TMP_BSON(BSON_STR({"insert" : "coll", "documents" : [ {"secret" : {"$$type" : "binData"}} ],
+            //         "subType" : "06"})), &result_bson);
             mongocrypt_binary_destroy(result);
         }
 

@@ -156,8 +156,10 @@ static int _fle2_collect_keys_for_encrypted_fields(mongocrypt_ctx_t *ctx) {
         if (!_mongocrypt_key_broker_request_name(&ctx->kb, &keyAltName)) {
             _mongocrypt_key_broker_status(&ctx->kb, ctx->status);
             _mongocrypt_ctx_fail(ctx);
+            bson_value_destroy(&keyAltName);
             return -1;
         }
+        bson_value_destroy(&keyAltName);
     }
 
     return need_keys;
@@ -182,7 +184,6 @@ static bool _mongo_feed_collinfo(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in)
 
     return true;
 }
-
 
 static bool _mongo_done_collinfo(mongocrypt_ctx_t *ctx) {
     _mongocrypt_ctx_encrypt_t *ectx;
@@ -1188,7 +1189,7 @@ static bool _fle2_finalize(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
                 _bson_value_from_string(f->keyAltName, &key_alt_name);
                 BSON_ASSERT(_mongocrypt_key_broker_decrypted_key_by_name(&ctx->kb, &key_alt_name, &_unused, &f->keyId));
             }
-        }    
+        }
     }
 
     moe_result result = must_omit_encryptionInformation(command_name, &converted, target_efc, ctx->status);
@@ -1206,7 +1207,11 @@ static bool _fle2_finalize(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
 
     /* Append a new 'encryptionInformation'. */
     if (!result.must_omit) {
-        if (!mc_schema_broker_add_schemas_to_cmd(ectx->sb, &ctx->kb, &converted, MC_CMD_SCHEMAS_FOR_SERVER, ctx->status)) {
+        if (!mc_schema_broker_add_schemas_to_cmd(ectx->sb,
+                                                 &ctx->kb,
+                                                 &converted,
+                                                 MC_CMD_SCHEMAS_FOR_SERVER,
+                                                 ctx->status)) {
             bson_destroy(&converted);
             return _mongocrypt_ctx_fail(ctx);
         }
@@ -2628,6 +2633,7 @@ bool mongocrypt_ctx_encrypt_init(mongocrypt_ctx_t *ctx, const char *db, int32_t 
 
     return mongocrypt_ctx_encrypt_ismaster_done(ctx);
 }
+
 static bool _all_key_requests_satisfied(_mongocrypt_key_broker_t *kb) {
     key_request_t *key_request;
 
@@ -2782,9 +2788,9 @@ static bool mongocrypt_ctx_encrypt_ismaster_done(mongocrypt_ctx_t *ctx) {
             /* Keys may have been requested for compactionTokens.
              * Finish key requests.
              */
-             if (_all_key_requests_satisfied(&ctx->kb) && ctx->need_keys_for_encryptedFields) {
+            if (_all_key_requests_satisfied(&ctx->kb) && ctx->need_keys_for_encryptedFields) {
                 return _try_run_csfle_marking(ctx);
-             }
+            }
             _mongocrypt_key_broker_requests_done(&ctx->kb);
             return _mongocrypt_ctx_state_from_key_broker(ctx);
         }

@@ -262,6 +262,7 @@ void mc_EncryptedFieldConfig_cleanup(mc_EncryptedFieldConfig_t *efc) {
         mc_EncryptedField_t *ptr_next = ptr->next;
         _mongocrypt_buffer_cleanup(&ptr->keyId);
         bson_free((char *)ptr->path);
+        bson_free((char *)ptr->keyAltName);
         bson_free(ptr);
         ptr = ptr_next;
     }

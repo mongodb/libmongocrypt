@@ -608,8 +608,9 @@ mc_schema_broker_get_encryptedFields(const mc_schema_broker_t *sb, const char *c
     return NULL;
 }
 
-const mc_EncryptedFieldConfig_t *
-mc_schema_broker_maybe_get_encryptedFields(const mc_schema_broker_t *sb, const char *coll, mongocrypt_status_t *status) {
+const mc_EncryptedFieldConfig_t *mc_schema_broker_maybe_get_encryptedFields(const mc_schema_broker_t *sb,
+                                                                            const char *coll,
+                                                                            mongocrypt_status_t *status) {
     BSON_ASSERT_PARAM(sb);
     BSON_ASSERT_PARAM(coll);
 
@@ -725,8 +726,12 @@ static bool append_encryptedFields(const bson_t *encryptedFields,
                         _mongocrypt_buffer_t unused, key_id_out;
                         bson_value_t key_alt_name_v;
                         _bson_value_from_string(keyAltName_dup, &key_alt_name_v);
-                        BSON_ASSERT(_mongocrypt_key_broker_decrypted_key_by_name(kb, &key_alt_name_v, &unused, &key_id_out));
+                        BSON_ASSERT(
+                            _mongocrypt_key_broker_decrypted_key_by_name(kb, &key_alt_name_v, &unused, &key_id_out));
                         bson_append_binary(&new_doc, "keyId", -1, key_id_out.subtype, key_id_out.data, key_id_out.len);
+                        _mongocrypt_buffer_cleanup(&unused);
+                        _mongocrypt_buffer_cleanup(&key_id_out);
+                        bson_value_destroy(&key_alt_name_v);
                     }
 
                     TRY_BSON_OR(bson_append_document(&new_array, idx_str_ptr, -1, &new_doc)) {
@@ -837,7 +842,12 @@ static bool append_encryptionInformation(const mc_schema_broker_t *sb,
             encryptedFields = &se->encryptedFields.bson;
             default_strEncodeVersion = se->encryptedFields.efc.str_encode_version;
         }
-        if (!append_encryptedFields(encryptedFields, kb, se->coll, default_strEncodeVersion, &ns_to_schema_bson, status)) {
+        if (!append_encryptedFields(encryptedFields,
+                                    kb,
+                                    se->coll,
+                                    default_strEncodeVersion,
+                                    &ns_to_schema_bson,
+                                    status)) {
             goto loop_fail;
         }
 
@@ -1170,6 +1180,8 @@ bool mc_schema_broker_add_schemas_to_cmd(mc_schema_broker_t *sb,
                     _mongocrypt_buffer_t unused;
                     _bson_value_from_string(f->keyAltName, &key_alt_name);
                     const bool r = _mongocrypt_key_broker_decrypted_key_by_name(kb, &key_alt_name, &unused, &f->keyId);
+                    bson_value_destroy(&key_alt_name);
+                    _mongocrypt_buffer_cleanup(&unused);
                     if (!r) {
                         CLIENT_ERR("Could not find key by keyAltName: %s", f->keyAltName);
                         return false;
