@@ -47,6 +47,7 @@
     #   • deb10 - Debian 10.0
     #   • deb11 - Debian 11.0
     #   • deb12 - Debian 12.0
+    #   • deb13 - Debian 13
     #   • sles15 - OpenSUSE Leap 15.0
     #   • alpine - Alpine Linux 3.18
     #
@@ -214,6 +215,10 @@ env.deb12:
     # A Debian 12.0 environment
     DO +ENV_DEBIAN --version 12.0
 
+env.deb13:
+    # A Debian 13 environment
+    DO +ENV_DEBIAN --version 13.0
+
 env.sles15:
     # An OpenSUSE Leap 15.0 environment.
     FROM +init --base=opensuse/leap:15.0
@@ -235,7 +240,8 @@ CACHE_WARMUP:
          .evergreen/ensure-ninja.sh \
          /T/
     RUN bash /T/ensure-cmake.sh
-    RUN env NINJA_EXE=/usr/local/bin/ninja \
+    ARG ninja_version
+    RUN env NINJA_VERSION=$ninja_version NINJA_EXE=/usr/local/bin/ninja \
         bash /T/ensure-ninja.sh
 
 COPY_SOURCE:
@@ -415,7 +421,8 @@ build:
 create-deb-packages-and-repos:
     ARG env
     FROM +env.$env
-    DO +CACHE_WARMUP
+    ARG ninja_version
+    DO +CACHE_WARMUP --ninja_version=$ninja_version
     DO +COPY_SOURCE
     WORKDIR /s
     RUN __install dh-make dpkg-dev apt-utils
