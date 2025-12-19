@@ -463,7 +463,7 @@ tasks:
   - func: "fetch source"
   - func: "earthly"
     vars:
-      args: +create-deb-packages-and-repos --env=${earthly_env} --packager_distro=${packager_distro} --packager_arch=${packager_arch}
+      args: +create-deb-packages-and-repos --env=${earthly_env} --packager_distro=${packager_distro} --packager_arch=${packager_arch} --ninja_version=${ninja_version}
   - func: "upload packages and repos"
 
 - name: publish-deb-packages-with-earthly
@@ -675,6 +675,8 @@ tasks:
       name: build-and-test-and-upload
     - variant: amazon2023-arm64
       name: build-and-test-and-upload
+    - variant: debian13
+      name: build-and-test-and-upload
     - variant: debian12
       name: build-and-test-and-upload
     - variant: debian11
@@ -752,6 +754,8 @@ tasks:
       vars: { variant_name: "amazon2023" }
     - func: "download tarball"
       vars: { variant_name: "amazon2023-arm64" }
+    - func: "download tarball"
+      vars: { variant_name: "debian13" }
     - func: "download tarball"
       vars: { variant_name: "debian12" }
     - func: "download tarball"
@@ -1294,6 +1298,18 @@ buildvariants:
   - name: publish-packages
     distros:
     - ubuntu2004-small
+- name: debian13
+  display_name: "Debian 13"
+  run_on: debian13-m6i-xlarge
+  expansions:
+    has_packages: true
+    packager_distro: debian13
+    packager_arch: x86_64
+  tasks:
+  - build-and-test-and-upload
+  - name: publish-packages
+    distros:
+    - ubuntu2004-small
 - name: debian12
   display_name: "Debian 12"
   run_on: debian12-large
@@ -1674,6 +1690,22 @@ buildvariants:
     packager_distro: debian11
     packager_arch: arm64
     earthly_env: deb11
+  tasks:
+  - name: build-deb-packages-with-earthly
+    # Use an arm64 distro to match the intended target architecture of .deb packages.
+    run_on: ubuntu2204-arm64-small
+  - name: publish-deb-packages-with-earthly
+    # Use a distro suitable for running curator to publish .deb packages.
+    run_on: ubuntu2004-small
+
+- name: debian13-arm64-earthly
+  display_name: "Debian 13 arm64 (via Earthly)"
+  expansions:
+    has_packages: true
+    packager_distro: debian13
+    packager_arch: arm64
+    earthly_env: deb13
+    ninja_version: 1.12.1
   tasks:
   - name: build-deb-packages-with-earthly
     # Use an arm64 distro to match the intended target architecture of .deb packages.
