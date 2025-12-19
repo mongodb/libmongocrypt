@@ -241,7 +241,8 @@ CACHE_WARMUP:
          /T/
     RUN bash /T/ensure-cmake.sh
     ARG ninja_version
-    RUN env NINJA_VERSION=$ninja_version NINJA_EXE=/usr/local/bin/ninja \
+    ENV NINJA_VERSION=$ninja_version
+    RUN env NINJA_EXE=/usr/local/bin/ninja \
         bash /T/ensure-ninja.sh
 
 COPY_SOURCE:
