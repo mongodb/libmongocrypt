@@ -6225,14 +6225,13 @@ static void _test_qe_keyAltName(_mongocrypt_tester_t *tester) {
             mongocrypt_binary_t *result = mongocrypt_binary_new();
             ASSERT_OK(mongocrypt_ctx_finalize(ctx, result), ctx);
             ASSERT(_mongocrypt_binary_to_bson(result, &result_bson));
-            // _assert_match_bson(
-            //         TMP_BSON(BSON_STR({"insert" : "coll", "documents" : [ {"secret" : {"$$type" : "binData"}} ]})),
-            //         &result_bson);
+            _assert_match_bson(
+                &result_bson,
+                TMP_BSON(BSON_STR({"insert" : "coll", "documents" : [ {"secret" : {"$$type" : "binData"}} ]})));
             mongocrypt_binary_destroy(result);
         }
         mongocrypt_ctx_destroy(ctx);
 
-        // COPY
         ctx = mongocrypt_ctx_new(crypt);
         ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, cmd), ctx);
         // MONGOCRYPT_CTX_MARKINGS is entered to send command to mongocryptd.
@@ -6252,24 +6251,13 @@ static void _test_qe_keyAltName(_mongocrypt_tester_t *tester) {
 
         ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
         {
+            bson_t result_bson;
             mongocrypt_binary_t *result = mongocrypt_binary_new();
             ASSERT_OK(mongocrypt_ctx_finalize(ctx, result), ctx);
-            ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(
-                // TODO: update expected result 'AAAA' with ciphertext.
-                // clang-format off
-                TEST_BSON_STR(BSON_STR({
-                    "insert" : "coll",
-                    "documents" : [ {
-                        "secret" : {
-                            "$binary" : {
-                                "base64" : "EGFhYWFhYWFhYWFhYWFhYWECZsXiTFAY0XXprCZjSggTgzFb+cy0/epNKDjEMZ3HaDBjVDIXHZQH8ye3hKBoKD5pDY8SERVzu070rWOU7EIw3g==",
-                                "subType" : "06"
-                            }
-                        }
-                    } ]
-                })),
-                // clang-format on
-                result);
+            ASSERT(_mongocrypt_binary_to_bson(result, &result_bson));
+            _assert_match_bson(
+                &result_bson,
+                TMP_BSON(BSON_STR({"insert" : "coll", "documents" : [ {"secret" : {"$$type" : "binData"}} ]})));
             mongocrypt_binary_destroy(result);
         }
 
@@ -6282,6 +6270,10 @@ static void _test_qe_keyAltName(_mongocrypt_tester_t *tester) {
 static void _test_qe_keyAltName_cryptShared(_mongocrypt_tester_t *tester) {
 #define TF(suffix) TEST_FILE("./test/data/qe_keyAltName/" suffix)
     {
+        if (!TEST_MONGOCRYPT_HAVE_REAL_CRYPT_SHARED_LIB) {
+            TEST_STDERR_PRINTF("No 'real' csfle library is available. The %s test is a no-op.\n", BSON_FUNC);
+            return;
+        }
         mongocrypt_t *crypt =
             _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_SKIP_INIT | TESTER_MONGOCRYPT_WITH_CRYPT_SHARED_LIB);
 
@@ -6320,11 +6312,12 @@ static void _test_qe_keyAltName_cryptShared(_mongocrypt_tester_t *tester) {
             mongocrypt_binary_t *result = mongocrypt_binary_new();
             ASSERT_OK(mongocrypt_ctx_finalize(ctx, result), ctx);
             ASSERT(_mongocrypt_binary_to_bson(result, &result_bson));
-            // _assert_match_bson(
-            //         TMP_BSON(BSON_STR({"insert" : "coll", "documents" : [ {"secret" : {"$$type" : "binData"}} ],
-            //         "subType" : "06"})), &result_bson);
+            _assert_match_bson(
+                &result_bson,
+                TMP_BSON(BSON_STR({"insert" : "coll", "documents" : [ {"secret" : {"$$type" : "binData"}} ]})));
             mongocrypt_binary_destroy(result);
         }
+        mongocrypt_ctx_destroy(ctx);
 
         // COPY
         ctx = mongocrypt_ctx_new(crypt);
