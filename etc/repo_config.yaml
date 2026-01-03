@@ -243,6 +243,19 @@ repos:
     repos:
       - apt/debian/dists/bookworm/libmongocrypt
 
+  - name: debian13
+    type: deb
+    code_name: "bookworm"
+    bucket: libmongocrypt
+    region: us-east-1
+    edition: org
+    component: main
+    architectures:
+      - amd64
+      - arm64
+    repos:
+      - apt/debian/dists/bookworm/libmongocrypt
+
   - name: ubuntu1404
     type: deb
     code_name: "trusty"
