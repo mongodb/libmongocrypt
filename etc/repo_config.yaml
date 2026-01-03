@@ -204,6 +204,7 @@ repos:
     component: main
     architectures:
       - amd64
+      - arm64
     repos:
       - apt/debian/dists/stretch/libmongocrypt
 
@@ -216,6 +217,7 @@ repos:
     component: main
     architectures:
       - amd64
+      - arm64
     repos:
       - apt/debian/dists/buster/libmongocrypt
 
@@ -228,6 +230,7 @@ repos:
     component: main
     architectures:
       - amd64
+      - arm64
     repos:
       - apt/debian/dists/bullseye/libmongocrypt
 
@@ -240,6 +243,7 @@ repos:
     component: main
     architectures:
       - amd64
+      - arm64
     repos:
       - apt/debian/dists/bookworm/libmongocrypt
 
