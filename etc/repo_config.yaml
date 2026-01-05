@@ -245,7 +245,7 @@ repos:
 
   - name: debian13
     type: deb
-    code_name: "bookworm"
+    code_name: "trixie"
     bucket: libmongocrypt
     region: us-east-1
     edition: org
