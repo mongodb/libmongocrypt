@@ -254,7 +254,7 @@ repos:
       - amd64
       - arm64
     repos:
-      - apt/debian/dists/bookworm/libmongocrypt
+      - apt/debian/dists/trixie/libmongocrypt
 
   - name: ubuntu1404
     type: deb
