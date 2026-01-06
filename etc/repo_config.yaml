@@ -245,7 +245,7 @@ repos:
 
   - name: debian13
     type: deb
-    code_name: "bookworm"
+    code_name: "trixie"
     bucket: libmongocrypt
     region: us-east-1
     edition: org
@@ -254,7 +254,7 @@ repos:
       - amd64
       - arm64
     repos:
-      - apt/debian/dists/bookworm/libmongocrypt
+      - apt/debian/dists/trixie/libmongocrypt
 
   - name: ubuntu1404
     type: deb
