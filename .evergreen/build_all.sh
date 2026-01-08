@@ -1,22 +1,18 @@
 #!/bin/bash
 # Compiles libmongocrypt dependencies and targets.
 #
-# Set extra cflags for libmongocrypt variables by setting LIBMONGOCRYPT_EXTRA_CFLAGS.
-#
+# Set extra compilation for libmongocrypt variables by setting CFLAGS and CXXFLAGS.
 
 echo "Begin compile process"
 
 . "$(dirname "${BASH_SOURCE[0]}")/setup-env.sh"
-
-# We may need some more C++ flags
-_cxxflags=""
 
 : "${CONFIGURE_ONLY:=}"
 : "${LIBMONGOCRYPT_BUILD_TYPE:=RelWithDebInfo}"
 
 if [ "$OS_NAME" = "windows" ]; then
     # Enable exception handling for MSVC
-    _cxxflags="-EHsc"
+    CXXFLAGS="${CXXFLAGS-} -EHsc"
 fi
 
 # Have CTest print test failure info to stderr
@@ -45,8 +41,6 @@ build_dir="$LIBMONGOCRYPT_DIR/cmake-build"
 common_cmake_args=(
     $ADDITIONAL_CMAKE_FLAGS
     $LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS
-    -DCMAKE_C_FLAGS="$LIBMONGOCRYPT_EXTRA_CFLAGS"
-    -DCMAKE_CXX_FLAGS="$LIBMONGOCRYPT_EXTRA_CFLAGS $_cxxflags"
     -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
     -DCMAKE_BUILD_TYPE="$LIBMONGOCRYPT_BUILD_TYPE"
     -H"$LIBMONGOCRYPT_DIR"
