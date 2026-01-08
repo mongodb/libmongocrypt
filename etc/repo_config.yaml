@@ -204,6 +204,7 @@ repos:
     component: main
     architectures:
       - amd64
+      - arm64
     repos:
       - apt/debian/dists/stretch/libmongocrypt
 
@@ -216,6 +217,7 @@ repos:
     component: main
     architectures:
       - amd64
+      - arm64
     repos:
       - apt/debian/dists/buster/libmongocrypt
 
@@ -228,6 +230,7 @@ repos:
     component: main
     architectures:
       - amd64
+      - arm64
     repos:
       - apt/debian/dists/bullseye/libmongocrypt
 
@@ -240,8 +243,22 @@ repos:
     component: main
     architectures:
       - amd64
+      - arm64
     repos:
       - apt/debian/dists/bookworm/libmongocrypt
+
+  - name: debian13
+    type: deb
+    code_name: "trixie"
+    bucket: libmongocrypt
+    region: us-east-1
+    edition: org
+    component: main
+    architectures:
+      - amd64
+      - arm64
+    repos:
+      - apt/debian/dists/trixie/libmongocrypt
 
   - name: ubuntu1404
     type: deb
