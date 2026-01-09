@@ -1,5 +1,9 @@
 # ChangeLog
 
+## 1.17.1
+
+Add package for Debian Trixie.
+
 ## 1.17.0
 
 ### New features
