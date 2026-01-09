@@ -32,7 +32,7 @@ if [[ "$OS_NAME" == "macos" ]]; then
 fi
 exe_path="$cache_dir/$exe_filename"
 
-if ! "$exe_path" --version; then
+if test -f "$exe_path" && ! "$exe_path" --version; then
     echo "Failed to execute Earthly executable, removing and re-downloading"
     rm "$exe_path"
 fi
