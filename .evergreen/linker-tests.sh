@@ -29,10 +29,6 @@ echo "Make libbson1 ..."
 run_chdir "$linker_tests_root" bash "$EVG_DIR/prep_c_driver_source.sh"
 MONGOC_DIR="$linker_tests_root/mongo-c-driver"
 
-if [ "${MACOS_UNIVERSAL-}" = "ON" ]; then
-    export CMAKE_OSX_ARCHITECTURES='arm64;x86_64'
-fi
-
 # Disable extra alignment in libbson and libmongocrypt to ensure agreement.
 # libmongocrypt disables by default, but may enable if a system install of libbson is detected with extra alignment.
 common_cmake_args=(

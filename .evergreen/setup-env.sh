@@ -5,7 +5,6 @@
 : "${ADDITIONAL_CMAKE_FLAGS:=}"
 : "${LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS:=}"
 : "${PPA_BUILD_ONLY:=}"
-: "${MACOS_UNIVERSAL:=}"
 : "${WINDOWS_32BIT:=}"
 : "${OS:=unspecified}"
 

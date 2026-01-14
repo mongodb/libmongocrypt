@@ -24,10 +24,6 @@ if [ "$PPA_BUILD_ONLY" ]; then
     ADDITIONAL_CMAKE_FLAGS="$ADDITIONAL_CMAKE_FLAGS -DENABLE_BUILD_FOR_PPA=ON"
 fi
 
-if [ "$MACOS_UNIVERSAL" = "ON" ]; then
-    export CMAKE_OSX_ARCHITECTURES='arm64;x86_64'
-fi
-
 for suffix in "dll" "dylib" "so"; do
     cand="$(abspath "$LIBMONGOCRYPT_DIR/../mongocrypt_v1.$suffix")"
     if test -f "$cand"; then
@@ -73,7 +69,7 @@ run_cmake --build "$build_dir" --target test_kms_request --config "$LIBMONGOCRYP
 run_chdir "$build_dir" run_ctest -C "$LIBMONGOCRYPT_BUILD_TYPE"
 
 # MONGOCRYPT-372, ensure macOS universal builds contain both x86_64 and arm64 architectures.
-if [ "$MACOS_UNIVERSAL" = "ON" ]; then
+if test "${CMAKE_OSX_ARCHITECTURES-}" != ''; then
     echo "Checking if libmongocrypt.dylib contains both x86_64 and arm64 architectures..."
     ARCHS=$(lipo -archs $MONGOCRYPT_INSTALL_PREFIX/lib/libmongocrypt.dylib)
     if [[ "$ARCHS" == *"x86_64"* && "$ARCHS" == *"arm64"* ]]; then

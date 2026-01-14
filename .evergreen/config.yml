@@ -1647,7 +1647,9 @@ buildvariants:
   display_name: macOS m1 (Apple LLVM)
   run_on: macos-1100-arm64
   expansions:
-    compile_env: MACOS_UNIVERSAL=ON CMAKE=/opt/homebrew/bin/cmake
+    compile_env: >-
+      CMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+      CMAKE=/opt/homebrew/bin/cmake
     # Disable Ninja to work around error "Bad CPU type in executable"
     use_ninja: OFF
   tasks:

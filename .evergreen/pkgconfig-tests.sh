@@ -16,10 +16,6 @@ mongoc_src_dir="$pkgconfig_tests_root/mongo-c-driver"
 mkdir -p "$mongoc_src_dir"
 run_chdir "$pkgconfig_tests_root" "$EVG_DIR/prep_c_driver_source.sh"
 
-if [ "$MACOS_UNIVERSAL" = "ON" ]; then
-    export CMAKE_OSX_ARCHITECTURES='arm64;x86_64'
-fi
-
 # Disable extra alignment in libbson and libmongocrypt to ensure agreement.
 # libmongocrypt disables by default, but may enable if a system install of libbson is detected with extra alignment.
 common_cmake_args=(
