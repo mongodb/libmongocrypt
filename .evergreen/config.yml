@@ -483,7 +483,9 @@ tasks:
   - func: "fetch source"
   - func: "build and test"
     vars:
-      compile_env: ${compile_env|} LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS="-DUSE_SHARED_LIBBSON=ON"
+      compile_env: >-
+        ${compile_env|}
+        USE_SHARED_LIBBSON=true
 
 - name: build-and-test-asan
   commands:

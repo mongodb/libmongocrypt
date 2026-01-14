@@ -38,12 +38,12 @@ cmake_args=(
     -D CMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE}"
     # Set the install preifx. CMake 3.29 recognizes this via environment variable
     -D CMAKE_INSTALL_PREFIX="$CMAKE_INSTALL_PREFIX"
+    # Toggle compiling with shared BSON
+    -D USE_SHARED_LIBBSON="${USE_SHARED_LIBBSON-FALSE}"
 )
 
 # shellcheck disable=SC2206
 cmake_args+=($ADDITIONAL_CMAKE_FLAGS)
-# shellcheck disable=SC2206
-cmake_args+=($LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS)
 
 : "${CONFIGURE_ONLY:=}"
 
