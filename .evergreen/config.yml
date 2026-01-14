@@ -106,7 +106,7 @@ functions:
           export LSAN_OPTIONS="suppressions=$LIBMONGOCRYPT_DIR/.lsan-suppressions"
           export VS_VERSION=${vs_version|}
           export VS_TARGET_ARCH=${vs_target_arch|amd64}
-          export USE_NINJA=${use_ninja|ON}
+          export CMAKE_GENERATOR=${CMAKE_GENERATOR|Ninja}
           env ${compile_env|} \
             bash "$EVG_DIR/env-run.sh" \
               bash "$EVG_DIR/build_all.sh"
@@ -151,7 +151,7 @@ functions:
     - command: "shell.exec"
       params:
         script: |-
-          if test "$OS_NAME" != "windows"; then export USE_NINJA=${use_ninja|ON}; fi
+          if test "$OS_NAME" != "windows"; then export CMAKE_GENERATOR=${CMAKE_GENERATOR|Ninja}; fi
           env ${compile_env|} CONFIGURE_ONLY=ON ${clang_env|CC=clang CXX=clang++} \
               bash libmongocrypt/.evergreen/build_all.sh
           ./libmongocrypt/.evergreen/clang-tidy.sh
@@ -1651,7 +1651,7 @@ buildvariants:
       CMAKE_OSX_ARCHITECTURES="arm64;x86_64"
       CMAKE=/opt/homebrew/bin/cmake
     # Disable Ninja to work around error "Bad CPU type in executable"
-    use_ninja: OFF
+    CMAKE_GENERATOR: ''
   tasks:
   - build-and-test-and-upload
   - name: test-python

@@ -37,13 +37,10 @@ common_cmake_args=(
   -DCMAKE_BUILD_TYPE=RelWithDebInfo
 )
 
-if is_true USE_NINJA; then
+if test "${CMAKE_GENERATOR-}" = Ninja; then
     export NINJA_EXE
     : "${NINJA_EXE:="$linker_tests_root/ninja$EXE_SUFFIX"}"
-    common_cmake_args+=(
-        -GNinja
-        -DCMAKE_MAKE_PROGRAM="$NINJA_EXE"
-    )
+    common_cmake_args+=(-DCMAKE_MAKE_PROGRAM="$NINJA_EXE")
     bash "$EVG_DIR/ensure-ninja.sh"
 fi
 
