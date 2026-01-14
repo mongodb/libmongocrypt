@@ -32,9 +32,10 @@ MONGOC_DIR="$linker_tests_root/mongo-c-driver"
 # Disable extra alignment in libbson and libmongocrypt to ensure agreement.
 # libmongocrypt disables by default, but may enable if a system install of libbson is detected with extra alignment.
 common_cmake_args=(
-  $ADDITIONAL_CMAKE_FLAGS
   -DENABLE_EXTRA_ALIGNMENT=OFF
   -DCMAKE_BUILD_TYPE=RelWithDebInfo
+  # Toggle building of tests
+  -D BUILD_TESTING="${BUILD_TESTING-TRUE}"
 )
 
 if test "${CMAKE_GENERATOR-}" = Ninja; then

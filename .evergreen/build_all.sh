@@ -40,10 +40,9 @@ cmake_args=(
     -D CMAKE_INSTALL_PREFIX="$CMAKE_INSTALL_PREFIX"
     # Toggle compiling with shared BSON
     -D USE_SHARED_LIBBSON="${USE_SHARED_LIBBSON-FALSE}"
+    # Toggle building of tests
+    -D BUILD_TESTING="${BUILD_TESTING-TRUE}"
 )
-
-# shellcheck disable=SC2206
-cmake_args+=($ADDITIONAL_CMAKE_FLAGS)
 
 : "${CONFIGURE_ONLY:=}"
 

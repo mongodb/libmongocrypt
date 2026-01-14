@@ -21,7 +21,8 @@ run_chdir "$pkgconfig_tests_root" "$EVG_DIR/prep_c_driver_source.sh"
 common_cmake_args=(
     -DCMAKE_BUILD_TYPE=RelWithDebInfo
     -DENABLE_EXTRA_ALIGNMENT=OFF
-    $ADDITIONAL_CMAKE_FLAGS
+    # Toggle building of tests
+    -D BUILD_TESTING="${BUILD_TESTING-TRUE}"
 )
 
 if test "${CMAKE_GENERATOR-}" = Ninja; then

@@ -2,7 +2,6 @@
 
 . "$(dirname "${BASH_SOURCE[0]}")/init.sh"
 
-: "${ADDITIONAL_CMAKE_FLAGS:=}"
 : "${PPA_BUILD_ONLY:=}"
 : "${WINDOWS_32BIT:=}"
 : "${OS:=unspecified}"
