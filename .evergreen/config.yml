@@ -1529,7 +1529,9 @@ buildvariants:
   display_name: "Ubuntu 18.04 64-bit clang7"
   run_on: ubuntu1804-test
   expansions:
-    compile_env: LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS="-DCMAKE_C_COMPILER=/opt/mongodbtoolchain/v3/bin/clang -DCMAKE_CXX_COMPILER=/opt/mongodbtoolchain/v3/bin/clang++"
+    compile_env: >-
+      CC=/opt/mongodbtoolchain/v3/bin/clang
+      CXX=/opt/mongodbtoolchain/v3/bin/clang++
   tasks:
   - build-and-test-and-upload
 - name: ubuntu1804-arm64
