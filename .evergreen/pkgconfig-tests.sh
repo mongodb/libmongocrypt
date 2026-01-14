@@ -17,7 +17,7 @@ mkdir -p "$mongoc_src_dir"
 run_chdir "$pkgconfig_tests_root" "$EVG_DIR/prep_c_driver_source.sh"
 
 if [ "$MACOS_UNIVERSAL" = "ON" ]; then
-    ADDITIONAL_CMAKE_FLAGS="$ADDITIONAL_CMAKE_FLAGS -DCMAKE_OSX_ARCHITECTURES='arm64;x86_64'"
+    export CMAKE_OSX_ARCHITECTURES='arm64;x86_64'
 fi
 
 # Disable extra alignment in libbson and libmongocrypt to ensure agreement.

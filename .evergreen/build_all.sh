@@ -25,7 +25,7 @@ if [ "$PPA_BUILD_ONLY" ]; then
 fi
 
 if [ "$MACOS_UNIVERSAL" = "ON" ]; then
-    ADDITIONAL_CMAKE_FLAGS="$ADDITIONAL_CMAKE_FLAGS -DCMAKE_OSX_ARCHITECTURES='arm64;x86_64'"
+    export CMAKE_OSX_ARCHITECTURES='arm64;x86_64'
 fi
 
 for suffix in "dll" "dylib" "so"; do
