@@ -42,6 +42,8 @@ cmake_args=(
     -D USE_SHARED_LIBBSON="${USE_SHARED_LIBBSON-FALSE}"
     # Toggle building of tests
     -D BUILD_TESTING="${BUILD_TESTING-TRUE}"
+    # Enable additional warnings-as-errors
+    -D ENABLE_MORE_WARNINGS_AS_ERRORS=TRUE
 )
 
 : "${CONFIGURE_ONLY:=}"
@@ -64,8 +66,6 @@ for suffix in "dll" "dylib" "so"; do
     fi
 done
 
-cmake_args+=("-DENABLE_MORE_WARNINGS_AS_ERRORS=ON")
-
 build_dir="$LIBMONGOCRYPT_DIR/cmake-build"
 
 if test "${CMAKE_GENERATOR-}" = Ninja; then
@@ -76,18 +76,14 @@ if test "${CMAKE_GENERATOR-}" = Ninja; then
 fi
 
 # Build and install libmongocrypt.
-run_cmake \
-    -DCMAKE_INSTALL_PREFIX="$MONGOCRYPT_INSTALL_PREFIX" \
-    "${cmake_args[@]}"
+run_cmake "${cmake_args[@]}"
 
 if [ "$CONFIGURE_ONLY" ]; then
     echo "Only running cmake";
     exit 0;
 fi
 echo "Installing libmongocrypt"
-run_cmake --build "$build_dir" --target install
-run_cmake --build "$build_dir" --target test-mongocrypt
-run_cmake --build "$build_dir" --target test_kms_request
+run_cmake --build "$build_dir" --target install test-mongocrypt test_kms_request
 run_chdir "$build_dir" run_ctest
 
 # MONGOCRYPT-372, ensure macOS universal builds contain both x86_64 and arm64 architectures.
@@ -107,19 +103,13 @@ if [ "$PPA_BUILD_ONLY" ]; then
     exit 0;
 fi
 
-if "${DEFAULT_BUILD_ONLY:-false}"; then
-    echo "Skipping nocrypto+sharedbson builds"
-    exit 0
-fi
-
 # Build and install libmongocrypt with no native crypto.
 run_cmake \
     -DDISABLE_NATIVE_CRYPTO=ON \
     "${cmake_args[@]}" \
     -DCMAKE_INSTALL_PREFIX="$MONGOCRYPT_INSTALL_PREFIX/nocrypto"
 
-run_cmake --build "$build_dir" --target install
-run_cmake --build "$build_dir" --target test-mongocrypt
+run_cmake --build "$build_dir" --target install test-mongocrypt
 run_chdir "$build_dir" run_ctest
 
 # Build and install libmongocrypt without statically linking libbson
