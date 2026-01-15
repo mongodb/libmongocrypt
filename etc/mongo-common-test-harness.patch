@@ -7,7 +7,7 @@ index e95cd8d8a4..3f3db6ce2a 100644
  set_property(TARGET mongo-mlib PROPERTY EXPORT_NAME mongo::mlib)
  
 -if(CMAKE_CXX_COMPILER)
-+if(CMAKE_CXX_COMPILER AND ENABLE_TESTS)
++if(CMAKE_CXX_COMPILER AND BUILD_TESTING)
      add_executable(mlib-ckdint-test src/mlib/ckdint.test.cpp)
      set_target_properties(mlib-ckdint-test PROPERTIES
          COMPILE_FEATURES cxx_std_11
