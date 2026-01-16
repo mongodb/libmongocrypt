@@ -30,6 +30,7 @@ export CMAKE_EXPORT_COMPILE_COMMANDS=1
 
 # Accumulate arguments that are passed to CMake
 cmake_args=(
+    --fresh
     # Set the source directory
     "-H$LIBMONGOCRYPT_DIR"
     # Set the build directory
