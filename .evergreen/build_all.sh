@@ -49,11 +49,6 @@ cmake_args=(
 
 : "${CONFIGURE_ONLY:=}"
 
-if [ "$OS_NAME" = "windows" ]; then
-    # Enable exception handling for MSVC
-    CXXFLAGS="${CXXFLAGS-} -EHsc"
-fi
-
 if [ "$PPA_BUILD_ONLY" ]; then
     # Clean-up from previous build iteration
     rm -rf -- "$LIBMONGOCRYPT_DIR"/cmake-build* "$MONGOCRYPT_INSTALL_PREFIX"
