@@ -51,7 +51,7 @@ cmake_args=(
 
 if [ "$PPA_BUILD_ONLY" ]; then
     # Clean-up from previous build iteration
-    rm -rf -- "$LIBMONGOCRYPT_DIR"/cmake-build* "$MONGOCRYPT_INSTALL_PREFIX"
+    rm -rf -- "$LIBMONGOCRYPT_DIR"/cmake-build* "$CMAKE_INSTALL_PREFIX"
     cmake_args+=(-DENABLE_BUILD_FOR_PPA=ON)
 fi
 
@@ -62,11 +62,9 @@ for suffix in "dll" "dylib" "so"; do
     fi
 done
 
-build_dir="$LIBMONGOCRYPT_DIR/cmake-build"
-
 if test "${CMAKE_GENERATOR-}" = Ninja; then
     export NINJA_EXE
-    : "${NINJA_EXE:="$build_dir/ninja$EXE_SUFFIX"}"
+    : "${NINJA_EXE:="$BINARY_DIR/ninja$EXE_SUFFIX"}"
     cmake_args+=(-DCMAKE_MAKE_PROGRAM="$NINJA_EXE")
     bash "$EVG_DIR/ensure-ninja.sh"
 fi
@@ -79,8 +77,8 @@ if [ "$CONFIGURE_ONLY" ]; then
     exit 0;
 fi
 echo "Installing libmongocrypt"
-run_cmake --build "$build_dir" --target install test-mongocrypt test_kms_request
-run_chdir "$build_dir" run_ctest
+run_cmake --build "$BINARY_DIR" --target install test-mongocrypt test_kms_request
+run_chdir "$BINARY_DIR" run_ctest
 
 # MONGOCRYPT-372, ensure macOS universal builds contain both x86_64 and arm64 architectures.
 if test "${CMAKE_OSX_ARCHITECTURES-}" != ''; then
@@ -101,19 +99,18 @@ fi
 
 # Build and install libmongocrypt with no native crypto.
 run_cmake \
-    -DDISABLE_NATIVE_CRYPTO=ON \
     "${cmake_args[@]}" \
+    -DDISABLE_NATIVE_CRYPTO=ON \
     -DCMAKE_INSTALL_PREFIX="$MONGOCRYPT_INSTALL_PREFIX/nocrypto"
 
-run_cmake --build "$build_dir" --target install test-mongocrypt
-run_chdir "$build_dir" run_ctest
+run_cmake --build "$BINARY_DIR" --target install test-mongocrypt
+run_chdir "$BINARY_DIR" run_ctest
 
 # Build and install libmongocrypt without statically linking libbson
 run_cmake \
-    -UDISABLE_NATIVE_CRYPTO \
-    -DUSE_SHARED_LIBBSON=ON \
     "${cmake_args[@]}" \
+    -DUSE_SHARED_LIBBSON=ON \
     -DCMAKE_INSTALL_PREFIX="$MONGOCRYPT_INSTALL_PREFIX/sharedbson"
 
-run_cmake --build "$build_dir" --target install
-run_chdir "$build_dir" run_ctest
+run_cmake --build "$BINARY_DIR" --target install test-mongocrypt
+run_chdir "$BINARY_DIR" run_ctest
