@@ -20,8 +20,8 @@ if test -f /proc/cpuinfo; then
         # Add two (hueristic to compensate for I/O latency)
         jobs="$(echo "$jobs+2" | bc)"
     fi
-    export MAKEFLAGS="-j$jobs ${MAKEFLAGS-}"
+    export CMAKE_BUILD_PARALLEL_LEVEL="$jobs"
 else
     # Cannot tell the best number of jobs. Provide a reasonable default.
-    export MAKEFLAGS="-j8 ${MAKEFLAGS-}"
+    export CMAKE_BUILD_PARALLEL_LEVEL="8"
 fi
