@@ -1118,7 +1118,7 @@ kms_request_kmip_prohibited_test (void)
 static int
 count_substrings (const char *big, const char *little)
 {
-   char *iter;
+   const char *iter;
    int count = 0;
 
    iter = strstr (big, little);
