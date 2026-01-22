@@ -29,10 +29,6 @@ export CMAKE_EXPORT_COMPILE_COMMANDS=1
 # Accumulate arguments that are passed to CMake
 cmake_args=(
     --fresh
-    # Set the source directory
-    "-H$LIBMONGOCRYPT_DIR"
-    # Set the build directory
-    "-B$BINARY_DIR"
     # Set the build type. CMake 3.22 recognizes this via environment variable
     -D CMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE}"
     # Set the install prefix. CMake 3.29 recognizes this via environment variable
@@ -76,7 +72,8 @@ _cmake_with_env() {
 }
 
 # Build and install libmongocrypt.
-_cmake_with_env "${cmake_args[@]}"
+_cmake_with_env "${cmake_args[@]}" \
+    -B "$BINARY_DIR" -S "$LIBMONGOCRYPT_DIR"
 
 if [ "$CONFIGURE_ONLY" ]; then
     echo "Only running cmake";
@@ -104,19 +101,17 @@ if [ "$PPA_BUILD_ONLY" ]; then
 fi
 
 # Build and install libmongocrypt with no native crypto.
-_cmake_with_env \
-    "${cmake_args[@]}" \
+_cmake_with_env "${cmake_args[@]}" \
     -DDISABLE_NATIVE_CRYPTO=ON \
-    -DCMAKE_INSTALL_PREFIX="$MONGOCRYPT_INSTALL_PREFIX/nocrypto"
-
+    -DCMAKE_INSTALL_PREFIX="$MONGOCRYPT_INSTALL_PREFIX/nocrypto" \
+    -B "$BINARY_DIR" -S "$LIBMONGOCRYPT_DIR"
 _cmake_with_env --build "$BINARY_DIR" --target install test-mongocrypt
 run_chdir "$BINARY_DIR" run_ctest
 
 # Build and install libmongocrypt without statically linking libbson
-_cmake_with_env \
-    "${cmake_args[@]}" \
+_cmake_with_env "${cmake_args[@]}" \
     -DUSE_SHARED_LIBBSON=ON \
-    -DCMAKE_INSTALL_PREFIX="$MONGOCRYPT_INSTALL_PREFIX/sharedbson"
-
+    -DCMAKE_INSTALL_PREFIX="$MONGOCRYPT_INSTALL_PREFIX/sharedbson" \
+    -B "$BINARY_DIR" -S "$LIBMONGOCRYPT_DIR"
 _cmake_with_env --build "$BINARY_DIR" --target install test-mongocrypt
 run_chdir "$BINARY_DIR" run_ctest
