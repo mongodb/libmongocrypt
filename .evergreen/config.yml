@@ -495,8 +495,7 @@ tasks:
       # Add detect_odr_violation=0 to ASAN_OPTIONS to ignore odr-violation in IntelDFP symbol: __dpml_bid_globals_table
       compile_env: >-
         ${compile_env|}
-        CFLAGS="-fsanitize=address -pthread"
-        CXXFLAGS="-fsanitize=address -pthread"
+        LIBMONGOCRYPT_COMPILE_FLAGS="-fsanitize=address -pthread"
         ASAN_OPTIONS="detect_leaks=1 detect_odr_violation=0"
 
 - name: build-and-test-ubsan
@@ -506,8 +505,7 @@ tasks:
     vars:
       compile_env: >-
         ${compile_env|}
-        CFLAGS="-fsanitize=undefined -fno-omit-frame-pointer"
-        CXXFLAGS="-fsanitize=undefined -fno-omit-frame-pointer"
+        LIBMONGOCRYPT_COMPILE_FLAGS="-fsanitize=undefined -fno-omit-frame-pointer"
         UBSAN_OPTIONS="halt_on_error=1,print_stacktrace=1"
 
 
@@ -519,8 +517,7 @@ tasks:
     vars:
       compile_env: >-
         ${compile_env|}
-        CFLAGS="-fsanitize=address"
-        CXXFLAGS="-fsanitize=address"
+        LIBMONGOCRYPT_COMPILE_FLAGS="-fsanitize=address"
 
 - name: test-python
   depends_on:
@@ -1362,7 +1359,7 @@ buildvariants:
   run_on: rhel62-small
   expansions:
     compile_env: >-
-      CFLAGS="-D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS"
+      LIBMONGOCRYPT_COMPILE_FLAGS="-D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS"
       BUILD_TESTING=OFF
   tasks:
   - build-and-test-and-upload

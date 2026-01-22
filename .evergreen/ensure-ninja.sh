@@ -69,7 +69,8 @@ _build_ninja() {
     tar -x -f "$src_tgz" -C "$extract_dir" --strip-components=1
 
     log "Building Ninja from source"
-    # Clear any CFLAGS or CXXFLAGS values from the parent environment.
+    # Clear any CFLAGS or CXXFLAGS values from the parent environment, as Ninja doesn't handle them
+    # correctly.
     CFLAGS="" CXXFLAGS="" run_chdir "$build_out_dir" run_python "$extract_dir/configure.py" --bootstrap
     test -f "$expect_exe" || fail "Bootstrap did not generate the expected executable [$expect_exe]"
 

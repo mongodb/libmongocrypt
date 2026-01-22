@@ -116,10 +116,10 @@ _build_cmake() {
     tar -x -f "$src_tgz" -C "$src_dir" --strip-components 1
 
     log "Bootstrapping CMake build ..."
-    CFLAGS="" CXXFLAGS="" run_chdir "$src_dir" bash "./bootstrap" --prefix="$CMAKE_CACHE_DIR" --parallel=10
+    run_chdir "$src_dir" bash "./bootstrap" --prefix="$CMAKE_CACHE_DIR" --parallel=10
 
     log "Building CMake"
-    CFLAGS="" CXXFLAGS="" make -C "$src_dir"
+    make -C "$src_dir"
 
     log "Installing result ..."
     make -C "$src_dir" install
