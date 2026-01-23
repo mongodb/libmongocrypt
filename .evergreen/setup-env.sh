@@ -2,20 +2,9 @@
 
 . "$(dirname "${BASH_SOURCE[0]}")/init.sh"
 
-: "${ADDITIONAL_CMAKE_FLAGS:=}"
-: "${LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS:=}"
-: "${LIBMONGOCRYPT_EXTRA_CFLAGS:=}"
 : "${PPA_BUILD_ONLY:=}"
-: "${MACOS_UNIVERSAL:=}"
 : "${WINDOWS_32BIT:=}"
 : "${OS:=unspecified}"
-
-IS_MULTICONF=OFF
-if test "$OS_NAME" = "windows" && is_false USE_NINJA; then
-    IS_MULTICONF=ON
-fi
-
-: "$IS_MULTICONF"  # Silence shellcheck
 
 evergreen_root="$(dirname "$LIBMONGOCRYPT_DIR")"
 
@@ -31,8 +20,8 @@ if test -f /proc/cpuinfo; then
         # Add two (hueristic to compensate for I/O latency)
         jobs="$(echo "$jobs+2" | bc)"
     fi
-    export MAKEFLAGS="-j$jobs ${MAKEFLAGS-}"
+    export CMAKE_BUILD_PARALLEL_LEVEL="$jobs"
 else
     # Cannot tell the best number of jobs. Provide a reasonable default.
-    export MAKEFLAGS="-j8 ${MAKEFLAGS-}"
+    export CMAKE_BUILD_PARALLEL_LEVEL="8"
 fi

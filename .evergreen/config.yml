@@ -106,7 +106,7 @@ functions:
           export LSAN_OPTIONS="suppressions=$LIBMONGOCRYPT_DIR/.lsan-suppressions"
           export VS_VERSION=${vs_version|}
           export VS_TARGET_ARCH=${vs_target_arch|amd64}
-          export USE_NINJA=${use_ninja|ON}
+          export CMAKE_GENERATOR=${CMAKE_GENERATOR|Ninja}
           env ${compile_env|} \
             bash "$EVG_DIR/env-run.sh" \
               bash "$EVG_DIR/build_all.sh"
@@ -151,7 +151,7 @@ functions:
     - command: "shell.exec"
       params:
         script: |-
-          if test "$OS_NAME" != "windows"; then export USE_NINJA=${use_ninja|ON}; fi
+          if test "$OS_NAME" != "windows"; then export CMAKE_GENERATOR=${CMAKE_GENERATOR|Ninja}; fi
           env ${compile_env|} CONFIGURE_ONLY=ON ${clang_env|CC=clang CXX=clang++} \
               bash libmongocrypt/.evergreen/build_all.sh
           ./libmongocrypt/.evergreen/clang-tidy.sh
@@ -483,7 +483,9 @@ tasks:
   - func: "fetch source"
   - func: "build and test"
     vars:
-      compile_env: ${compile_env|} LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS="-DUSE_SHARED_LIBBSON=ON"
+      compile_env: >-
+        ${compile_env|}
+        USE_SHARED_LIBBSON=true
 
 - name: build-and-test-asan
   commands:
@@ -493,7 +495,7 @@ tasks:
       # Add detect_odr_violation=0 to ASAN_OPTIONS to ignore odr-violation in IntelDFP symbol: __dpml_bid_globals_table
       compile_env: >-
         ${compile_env|}
-        LIBMONGOCRYPT_EXTRA_CFLAGS="-fsanitize=address -pthread"
+        LIBMONGOCRYPT_COMPILE_FLAGS="-fsanitize=address -pthread"
         ASAN_OPTIONS="detect_leaks=1 detect_odr_violation=0"
 
 - name: build-and-test-ubsan
@@ -503,9 +505,9 @@ tasks:
     vars:
       compile_env: >-
         ${compile_env|}
-        LIBMONGOCRYPT_EXTRA_CFLAGS="-fsanitize=undefined -fno-omit-frame-pointer"
+        LIBMONGOCRYPT_COMPILE_FLAGS="-fsanitize=undefined -fno-omit-frame-pointer"
         UBSAN_OPTIONS="halt_on_error=1,print_stacktrace=1"
-        
+
 
 - name: build-and-test-asan-mac
   commands:
@@ -513,7 +515,9 @@ tasks:
   - func: "build and test"
     # Exclude leak detection. clang on macos-11-amd64 reports: "detect_leaks is not supported on this platform"
     vars:
-      compile_env: ${compile_env|} LIBMONGOCRYPT_EXTRA_CFLAGS="-fsanitize=address"
+      compile_env: >-
+        ${compile_env|}
+        LIBMONGOCRYPT_COMPILE_FLAGS="-fsanitize=address"
 
 - name: test-python
   depends_on:
@@ -1354,7 +1358,9 @@ buildvariants:
   display_name: "RHEL 6.2 64-bit"
   run_on: rhel62-small
   expansions:
-    compile_env: CFLAGS="-D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS" ADDITIONAL_CMAKE_FLAGS="-DENABLE_TESTS=OFF -DBUILD_TESTING=OFF"
+    compile_env: >-
+      LIBMONGOCRYPT_COMPILE_FLAGS="-D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS"
+      BUILD_TESTING=OFF
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
@@ -1524,7 +1530,9 @@ buildvariants:
   display_name: "Ubuntu 18.04 64-bit clang7"
   run_on: ubuntu1804-test
   expansions:
-    compile_env: LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS="-DCMAKE_C_COMPILER=/opt/mongodbtoolchain/v3/bin/clang -DCMAKE_CXX_COMPILER=/opt/mongodbtoolchain/v3/bin/clang++"
+    compile_env: >-
+      CC=/opt/mongodbtoolchain/v3/bin/clang
+      CXX=/opt/mongodbtoolchain/v3/bin/clang++
   tasks:
   - build-and-test-and-upload
 - name: ubuntu1804-arm64
@@ -1642,9 +1650,11 @@ buildvariants:
   display_name: macOS m1 (Apple LLVM)
   run_on: macos-1100-arm64
   expansions:
-    compile_env: MACOS_UNIVERSAL=ON CMAKE=/opt/homebrew/bin/cmake
+    compile_env: >-
+      CMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+      CMAKE=/opt/homebrew/bin/cmake
     # Disable Ninja to work around error "Bad CPU type in executable"
-    use_ninja: OFF
+    CMAKE_GENERATOR: ''
   tasks:
   - build-and-test-and-upload
   - name: test-python
