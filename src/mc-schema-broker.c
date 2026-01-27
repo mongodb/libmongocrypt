@@ -1175,7 +1175,7 @@ bool mc_schema_broker_add_schemas_to_cmd(mc_schema_broker_t *sb,
             has_encryptedFields = true;
             coll_with_encryptedFields = it->coll;
             for (mc_EncryptedField_t *f = it->encryptedFields.efc.fields; f != NULL; f = f->next) {
-                if (f->keyAltName) {
+                if (f->keyAltName && _mongocrypt_buffer_empty(&f->keyId)) {
                     bson_value_t key_alt_name;
                     _mongocrypt_buffer_t unused;
                     _bson_value_from_string(f->keyAltName, &key_alt_name);
