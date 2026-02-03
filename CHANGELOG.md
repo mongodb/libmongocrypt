@@ -1,5 +1,11 @@
 # ChangeLog
 
+## 1.17.2
+
+### Fixed
+
+- Fix build warning with GCC 16
+
 ## 1.17.1
 
 Add package for Debian Trixie.
