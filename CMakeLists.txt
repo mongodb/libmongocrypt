@@ -15,10 +15,6 @@ option (ENABLE_PIC
 option (ENABLE_BUILD_FOR_PPA "Maintainer-only option for preparing PPA build" OFF)
 option (ENABLE_ONLINE_TESTS "Enable online tests and the csfle utility. Requires libmongoc." ON)
 
-if (ENABLE_WINDOWS_STATIC_RUNTIME)
-   set (CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-endif ()
-
 if (MINGW)
    # MSVCRT-based mingw-w64 GCC requires this macro to enable C99 format specifiers. This does not apply to UCRT-based
    # mingw-w64 GCC, but apply the workaround anyways until bson-compat.h no longer requires this.
