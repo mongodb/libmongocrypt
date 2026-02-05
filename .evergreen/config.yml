@@ -83,7 +83,8 @@ functions:
         role_arn: ${upload_arn}
         remote_file: '${project}/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt.tar.gz'
         bucket: ${upload_bucket}
-        permissions: public-read
+        permissions: private
+        visibility: signed
         local_file: 'libmongocrypt.tar.gz'
         content_type: '${content_type|application/x-gzip}'
     - command: s3.put
@@ -91,7 +92,8 @@ functions:
         role_arn: ${upload_arn}
         remote_file: '${project}/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix_copy}/libmongocrypt.tar.gz'
         bucket: ${upload_bucket}
-        permissions: public-read
+        permissions: private
+        visibility: signed
         local_file: 'libmongocrypt.tar.gz'
         content_type: '${content_type|application/x-gzip}'
 
@@ -139,7 +141,8 @@ functions:
         role_arn: ${upload_arn}
         remote_file: '${project}/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt-distro-packages.tar.gz'
         bucket: ${upload_bucket}
-        permissions: public-read
+        permissions: private
+        visibility: signed
         local_file: 'libmongocrypt-distro-packages.tar.gz'
         content_type: '${content_type|application/x-gzip}'
         optional: true
@@ -323,7 +326,8 @@ functions:
         local_file: release-files.tgz
         remote_file: '${project}/python-release/${branch_name}/${libmongocrypt_s3_suffix}/${task_id}-${execution}-release-files.tar.gz'
         bucket: ${upload_bucket}
-        permissions: public-read
+        permissions: private
+        visibility: signed
         content_type: ${content_type|application/gzip}
         display_name: Release Python files
 
@@ -374,7 +378,8 @@ functions:
         local_file: release-files-all.tgz
         remote_file: '${project}/python-release/${branch_name}/${libmongocrypt_s3_suffix}/${task_id}-${execution}-release-files-all.tar.gz'
         bucket: ${upload_bucket}
-        permissions: public-read
+        permissions: private
+        visibility: signed
         content_type: ${content_type|application/gzip}
         display_name: Release Python files all
   earthly:
@@ -429,7 +434,8 @@ functions:
         bucket: ${upload_bucket}
         content_type: application/json
         local_file: libmongocrypt/cyclonedx.augmented.sbom.json
-        permissions: public-read
+        permissions: private
+        visibility: signed
         remote_file: ${project}/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix}/sbom/cyclonedx.augmented.sbom.json
 
 tasks:
@@ -635,7 +641,8 @@ tasks:
         role_arn: ${upload_arn}
         remote_file: 'libmongocrypt/java/${revision}/libmongocrypt-java.tar.gz'
         bucket: ${upload_bucket}
-        permissions: public-read
+        permissions: private
+        visibility: signed
         local_file: 'libmongocrypt-java.tar.gz'
         content_type: '${content_type|application/x-gzip}'
     - command: s3.put
@@ -643,7 +650,8 @@ tasks:
         role_arn: ${upload_arn}
         remote_file: 'libmongocrypt/java/${tag_upload_location}/libmongocrypt-java.tar.gz'
         bucket: ${upload_bucket}
-        permissions: public-read
+        permissions: private
+        visibility: signed
         optional: true
         display_name: 'libmongocrypt-java-${tag_upload_location}.tar.gz'
         local_file: 'libmongocrypt-java-${tag_upload_location}.tar.gz'
@@ -828,7 +836,8 @@ tasks:
         role_arn: ${upload_arn}
         remote_file: 'libmongocrypt/all/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt-all.tar.gz'
         bucket: ${upload_bucket}
-        permissions: public-read
+        permissions: private
+        visibility: signed
         local_file: 'libmongocrypt-all.tar.gz'
         content_type: '${content_type|application/x-gzip}'
     - command: s3.put
@@ -836,7 +845,8 @@ tasks:
         role_arn: ${upload_arn}
         remote_file: 'libmongocrypt/all/${branch_name}/${libmongocrypt_s3_suffix_copy}/libmongocrypt-all.tar.gz'
         bucket: ${upload_bucket}
-        permissions: public-read
+        permissions: private
+        visibility: signed
         local_file: 'libmongocrypt-all.tar.gz'
         content_type: '${content_type|application/x-gzip}'
     - command: s3.put
@@ -844,7 +854,8 @@ tasks:
         role_arn: ${upload_arn}
         remote_file: 'libmongocrypt/all/${tag_upload_location}/libmongocrypt-all.tar.gz'
         bucket: ${upload_bucket}
-        permissions: public-read
+        permissions: private
+        visibility: signed
         optional: true # Do not fail task if `local_file` does not exist. `local_file` only exists for tagged release.
         display_name: 'libmongocrypt-all-${tag_upload_location}.tar.gz'
         local_file: 'libmongocrypt-all-${tag_upload_location}.tar.gz'
@@ -854,7 +865,8 @@ tasks:
         role_arn: ${upload_arn}
         remote_file: 'libmongocrypt/all/latest/stable/libmongocrypt-all.tar.gz'
         bucket: ${upload_bucket}
-        permissions: public-read
+        permissions: private
+        visibility: signed
         optional: true # Do not fail task if `local_file` does not exist. `local_file` only exists for stable release.
         display_name: 'stable/libmongocrypt-all-${tag_upload_location}.tar.gz'
         local_file: 'stable/libmongocrypt-all-${tag_upload_location}.tar.gz'
@@ -864,7 +876,8 @@ tasks:
         role_arn: ${upload_arn}
         remote_file: 'libmongocrypt/all/latest/unstable/libmongocrypt-all.tar.gz'
         bucket: ${upload_bucket}
-        permissions: public-read
+        permissions: private
+        visibility: signed
         optional: true # Do not fail task if `local_file` does not exist. `local_file` only exists for unstable release.
         display_name: 'unstable/libmongocrypt-all-${tag_upload_location}.tar.gz'
         local_file: 'unstable/libmongocrypt-all-${tag_upload_location}.tar.gz'
@@ -948,7 +961,8 @@ tasks:
         remote_file: 'libmongocrypt/windows/latest_release/libmongocrypt${upload_suffix}.tar.gz'
         display_name: (Deprecated) libmongocrypt${upload_suffix}.tar.gz
         bucket: ${upload_bucket}
-        permissions: public-read
+        permissions: private
+        visibility: signed
         local_file: 'libmongocrypt_upload.tar.gz'
         content_type: 'application/x-gzip'
     - command: s3.put # Upload tarball for GitHub Release.
@@ -957,7 +971,8 @@ tasks:
         remote_file: '${project}/${build_variant}/${branch_name}/${revision}/${version_id}/libmongocrypt-windows-x86_64-${libmongocrypt_release_version}.tar.gz'
         display_name: libmongocrypt-windows-x86_64-${libmongocrypt_release_version}.tar.gz
         bucket: ${upload_bucket}
-        permissions: public-read
+        permissions: private
+        visibility: signed
         local_file: 'libmongocrypt_upload.tar.gz'
         content_type: 'application/x-gzip'
     - command: shell.exec
@@ -976,7 +991,8 @@ tasks:
         remote_file: '${project}/${build_variant}/${branch_name}/${revision}/${version_id}/libmongocrypt-windows-x86_64-${libmongocrypt_release_version}.asc'
         display_name: libmongocrypt-windows-x86_64-${libmongocrypt_release_version}.asc
         bucket: ${upload_bucket}
-        permissions: public-read
+        permissions: private
+        visibility: signed
         local_file: 'libmongocrypt/libmongocrypt_upload.asc'
         content_type: 'application/pgp-signature'
 
@@ -1002,7 +1018,8 @@ tasks:
         local_file: deb.tar.gz
         remote_file: libmongocrypt/${branch_name}/${revision}/${version_id}/${build_id}/${execution}/debian-packages.tar.gz
         bucket: ${upload_bucket}
-        permissions: public-read
+        permissions: private
+        visibility: signed
         content_type: ${content_type|application/x-gzip}
         display_name: "deb.tar.gz"
 
@@ -1026,7 +1043,8 @@ tasks:
         local_file: deb.tar.gz
         remote_file: libmongocrypt/${branch_name}/${revision}/${version_id}/${build_id}/${execution}/debian-packages-i386.tar.gz
         bucket: ${upload_bucket}
-        permissions: public-read
+        permissions: private
+        visibility: signed
         content_type: ${content_type|application/x-gzip}
         display_name: "deb.tar.gz"
 
