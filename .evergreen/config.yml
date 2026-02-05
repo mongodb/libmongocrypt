@@ -1125,7 +1125,7 @@ pre:
         # If we are a non-patch build in the libmongocrypt-release project, we upload to a restricted
         # CDN S3 bucket. Otherwise, we upload to a less restricted bucket for convenience. The corresponding
         # role_arn_... values come from EVG project configuration variables stored on the EVG server
-        if test "${is_patch}" = 'true' || "${project_name}" != 'libmongocrypt-release'; then
+        if test "${is_patch}" = 'true' || "${project}" != 'libmongocrypt-release'; then
           upload_bucket='mciuploads'
           upload_arn='${role_arn_for_mciuploads}'
         else
