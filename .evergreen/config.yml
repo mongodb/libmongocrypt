@@ -328,6 +328,10 @@ functions:
         display_name: Release Python files
 
   "download and merge python releases":
+    - command: ec2.assume_role
+      type: setup
+      params:
+        role_arn: ${upload_arn}
     - command: shell.exec
       params:
         silent: true
@@ -341,15 +345,13 @@ functions:
           [default]
           region = us-east-1
           EOF
-
-          cat <<EOF >> ~/.aws/credentials
-          [default]
-          aws_access_key_id = ${aws_key}
-          aws_secret_access_key = ${aws_secret}
-          EOF
     - command: shell.exec
       params:
         shell: "bash"
+        include_expansions_in_env: &aws-params-env
+          - AWS_ACCESS_KEY_ID
+          - AWS_SECRET_ACCESS_KEY
+          - AWS_SESSION_TOKEN
         script: |
           set -o xtrace
           # Download all the release files.
@@ -394,10 +396,7 @@ functions:
       type: setup
       params:
         binary: bash
-        include_expansions_in_env:
-          - AWS_ACCESS_KEY_ID
-          - AWS_SECRET_ACCESS_KEY
-          - AWS_SESSION_TOKEN
+        include_expansions_in_env: *aws-params-env
         args:
           - -c
           - |
