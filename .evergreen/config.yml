@@ -324,17 +324,20 @@ functions:
       params:
         # The upload of this component uses the less restricted bucket because it is only
         # used for transferring temporary files until they are later merged in the next build step
-        aws_key: '${aws_key}'
-        aws_secret: '${aws_secret}'
+        role_arn: ${upload_arn}
         local_file: release-files.tgz
         remote_file: '${project}/python-release/${branch_name}/${libmongocrypt_s3_suffix}/${task_id}-${execution}-release-files.tar.gz'
-        bucket: mciuploads
+        bucket: ${upload_bucket}
         permissions: private
         visibility: signed
         content_type: ${content_type|application/gzip}
         display_name: Release Python files
 
   "download and merge python releases":
+    - command: ec2.assume_role
+      type: setup
+      params:
+        role_arn: ${upload_arn}
     - command: shell.exec
       params:
         silent: true
@@ -348,21 +351,17 @@ functions:
           [default]
           region = us-east-1
           EOF
-
-          cat <<EOF >> ~/.aws/credentials
-          [default]
-          aws_access_key_id = ${aws_key}
-          aws_secret_access_key = ${aws_secret}
-          EOF
     - command: shell.exec
       params:
         shell: "bash"
-        # This script downloads from the less restricted bucket to the location that was pushed by the
-        # `upload python release` step
+        include_expansions_in_env: &aws-params-env
+          - AWS_ACCESS_KEY_ID
+          - AWS_SECRET_ACCESS_KEY
+          - AWS_SESSION_TOKEN
         script: |
           set -o xtrace
           # Download all the release files.
-          aws s3 cp --recursive s3://mciuploads/${project}/python-release/${branch_name}/${libmongocrypt_s3_suffix}/ release/
+          aws s3 cp --recursive s3://${upload_bucket}/${project}/python-release/${branch_name}/${libmongocrypt_s3_suffix}/ release/
           # Combine releases into one directory.
           ls -la release/
           mkdir releases
@@ -405,10 +404,7 @@ functions:
       type: setup
       params:
         binary: bash
-        include_expansions_in_env:
-          - AWS_ACCESS_KEY_ID
-          - AWS_SECRET_ACCESS_KEY
-          - AWS_SESSION_TOKEN
+        include_expansions_in_env: *aws-params-env
         args:
           - -c
           - |
