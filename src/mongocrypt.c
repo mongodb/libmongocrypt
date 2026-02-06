@@ -393,7 +393,7 @@ static _loaded_csfle _try_load_csfle(const char *filepath, mongocrypt_status_t *
         /* Symbol names are qualified by the lib name and version: */                                                  \
         const char *symname = "mongo_crypt_v1_" #Name;                                                                 \
         MC_BEGIN_CAST_FUNCTION_TYPE_STRICT_IGNORE                                                                      \
-        vtable.Name = (RetType(*)(__VA_ARGS__))mcr_dll_sym(lib, symname);                                              \
+        vtable.Name = (RetType (*)(__VA_ARGS__))mcr_dll_sym(lib, symname);                                             \
         MC_END_CAST_FUNCTION_TYPE_STRICT_IGNORE                                                                        \
         if (vtable.Name == NULL) {                                                                                     \
             /* The requested symbol is not present */                                                                  \
@@ -1199,7 +1199,6 @@ void _bson_value_from_string(const char *string, bson_value_t *value) {
 
     bson_destroy(bson);
 }
-
 
 void mongocrypt_setopt_bypass_query_analysis(mongocrypt_t *crypt) {
     BSON_ASSERT_PARAM(crypt);
