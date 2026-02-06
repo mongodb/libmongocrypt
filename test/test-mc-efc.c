@@ -90,7 +90,7 @@ static void _test_efc(_mongocrypt_tester_t *tester) {
         _load_test_file(tester, "./test/data/efc/efc-missingKeyId.json", &efc_bson);
         ASSERT_FAILS_STATUS(mc_EncryptedFieldConfig_parse(&efc, &efc_bson, status),
                             status,
-                            "unable to find 'keyId' in 'field' document");
+                            "unable to find 'keyId' or 'keyAltName' in 'field' document");
         mc_EncryptedFieldConfig_cleanup(&efc);
         _mongocrypt_status_reset(status);
     }
