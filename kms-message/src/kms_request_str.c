@@ -143,6 +143,7 @@ kms_request_str_reserve (kms_request_str_t *str, size_t size)
 
       str->size = next_size;
       str->str = realloc (str->str, next_size);
+      KMS_ASSERT(str->str);
    }
 
    return str->str != NULL;
