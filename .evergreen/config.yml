@@ -322,10 +322,13 @@ functions:
           - "*"
     - command: s3.put
       params:
-        role_arn: ${upload_arn}
+        # The upload of this component uses the less restricted bucket because it is only
+        # used for transferring temporary files until they are later merged in the next build step
+        aws_key: '${aws_key}'
+        aws_secret: '${aws_secret}'
         local_file: release-files.tgz
         remote_file: '${project}/python-release/${branch_name}/${libmongocrypt_s3_suffix}/${task_id}-${execution}-release-files.tar.gz'
-        bucket: ${upload_bucket}
+        bucket: mciuploads
         permissions: private
         visibility: signed
         content_type: ${content_type|application/gzip}
@@ -354,10 +357,12 @@ functions:
     - command: shell.exec
       params:
         shell: "bash"
+        # This script downloads from the less restricted bucket to the location that was pushed by the
+        # `upload python release` step
         script: |
           set -o xtrace
           # Download all the release files.
-          aws s3 cp --recursive s3://${upload_bucket}/${project}/python-release/${branch_name}/${libmongocrypt_s3_suffix}/ release/
+          aws s3 cp --recursive s3://mciuploads/${project}/python-release/${branch_name}/${libmongocrypt_s3_suffix}/ release/
           # Combine releases into one directory.
           ls -la release/
           mkdir releases
@@ -375,6 +380,7 @@ functions:
         role_arn: ${upload_arn}
         local_file: release-files-all.tgz
         remote_file: '${project}/python-release/${branch_name}/${libmongocrypt_s3_suffix}/${task_id}-${execution}-release-files-all.tar.gz'
+        # The merged results are placed in the CDN bucket for releases
         bucket: ${upload_bucket}
         permissions: private
         visibility: signed
