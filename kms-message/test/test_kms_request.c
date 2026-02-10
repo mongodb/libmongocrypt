@@ -114,7 +114,7 @@ realloc_buffer (char **buffer, size_t *n, size_t len)
 
    } else {
       *buffer = realloc (*buffer, len);
-      KMS_ASSERT (*buffer);
+      KMS_ASSERT(*buffer);
    }
 
    *n = len;
