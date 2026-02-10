@@ -422,6 +422,7 @@ static char *build_random_string_to_fold(uint32_t folded_len, uint32_t unfolded_
     uint32_t len = (uint32_t)(ptr - str);
     // ptr points to the final null character, include that in the final string.
     str = realloc(str, len + 1);
+    ASSERT(str);
 
     // Make sure we did everything right.
     ASSERT_CMPUINT32(unfolded_len, ==, get_utf8_codepoint_length(str, len));
