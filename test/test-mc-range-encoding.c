@@ -15,7 +15,6 @@
  */
 #include "test-mongocrypt.h"
 
-#include "mc-check-conversions-private.h"
 #include "mc-range-encoding-private.h"
 
 #include <float.h> // DBL_MAX
