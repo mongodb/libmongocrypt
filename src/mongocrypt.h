@@ -435,6 +435,10 @@ bool mongocrypt_setopt_encrypted_field_config_map(mongocrypt_t *crypt, mongocryp
  * the path string is literal "$SYSTEM", then libmongocrypt will defer to the
  * system's library resolution mechanism to find the crypt_shared library.
  *
+ * @warning Use of "$SYSTEM" will search system directories for the
+ * mongo_crypt_v1.(dll,so,dylib) following the search behavior of LoadLibrary
+ * on Windows and dlopen on Unix. Ensure secure deployment of the library.
+ *
  * @note If no crypt_shared dynamic library is found in any of the directories
  * specified by the search paths loaded here, @ref mongocrypt_init() will still
  * succeed and continue to operate without crypt_shared.
