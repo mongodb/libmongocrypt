@@ -16,7 +16,6 @@
 
 #include "mc-fle2-rfds-private.h"
 
-#include "mc-check-conversions-private.h"
 #include "mc-fle-blob-subtype-private.h" // MC_SUBTYPE_FLE2EncryptionPlaceholder
 #include "mongocrypt-private.h"          // CLIENT_ERR
 

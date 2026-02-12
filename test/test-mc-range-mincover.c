@@ -17,7 +17,6 @@
 #include "test-mongocrypt.h"
 
 #include "mc-array-private.h"
-#include "mc-check-conversions-private.h"
 #include "mc-optional-private.h"
 #include "mc-range-encoding-private.h"
 #include "mc-range-mincover-private.h"
