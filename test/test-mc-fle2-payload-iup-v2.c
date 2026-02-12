@@ -228,24 +228,65 @@ static void _test_mc_FLE2InsertUpdatePayloadV2_parses_crypto_params(_mongocrypt_
 }
 
 static void _test_mc_FLE2InsertUpdatePayloadV2_parse_errors(_mongocrypt_tester_t *tester) {
-    bson_t *input_bson = TMP_BSON_STR(BSON_STR({
-        "d" : {"$binary" : {"base64" : "AAAA", "subType" : "00"}}, //
-        "t" : "wrong type!"
-    }));
-    _mongocrypt_buffer_t input_buf;
-    _mongocrypt_buffer_init_size(&input_buf, 1 + input_bson->len);
-    input_buf.data[0] = (uint8_t)MC_SUBTYPE_FLE2InsertUpdatePayloadV2;
-    memcpy(input_buf.data + 1, bson_get_data(input_bson), input_bson->len);
+    // Test wrong type for 't':
+    {
+        bson_t *input_bson = TMP_BSON_STR(BSON_STR({
+            "d" : {"$binary" : {"base64" : "AAAA", "subType" : "00"}}, //
+            "t" : "wrong type!"
+        }));
+        _mongocrypt_buffer_t input_buf;
+        _mongocrypt_buffer_init_size(&input_buf, 1 + input_bson->len);
+        input_buf.data[0] = (uint8_t)MC_SUBTYPE_FLE2InsertUpdatePayloadV2;
+        memcpy(input_buf.data + 1, bson_get_data(input_bson), input_bson->len);
 
-    mc_FLE2InsertUpdatePayloadV2_t payload;
-    mc_FLE2InsertUpdatePayloadV2_init(&payload);
-    mongocrypt_status_t *status = mongocrypt_status_new();
-    ASSERT_FAILS_STATUS(mc_FLE2InsertUpdatePayloadV2_parse(&payload, &input_buf, status),
-                        status,
-                        "Field 't' expected to hold an int32");
-    mc_FLE2InsertUpdatePayloadV2_cleanup(&payload);
-    mongocrypt_status_destroy(status);
-    _mongocrypt_buffer_cleanup(&input_buf);
+        mc_FLE2InsertUpdatePayloadV2_t payload;
+        mc_FLE2InsertUpdatePayloadV2_init(&payload);
+        mongocrypt_status_t *status = mongocrypt_status_new();
+        ASSERT_FAILS_STATUS(mc_FLE2InsertUpdatePayloadV2_parse(&payload, &input_buf, status),
+                            status,
+                            "Field 't' expected to hold an int32");
+        mc_FLE2InsertUpdatePayloadV2_cleanup(&payload);
+        mongocrypt_status_destroy(status);
+        _mongocrypt_buffer_cleanup(&input_buf);
+    }
+
+    // Test negative 'k':
+    {
+        bson_t *input_bson = TMP_BSON_STR(BSON_STR({"k" : {"$numberLong" : "-1"}}));
+        _mongocrypt_buffer_t input_buf;
+        _mongocrypt_buffer_init_size(&input_buf, 1 + input_bson->len);
+        input_buf.data[0] = (uint8_t)MC_SUBTYPE_FLE2InsertUpdatePayloadV2;
+        memcpy(input_buf.data + 1, bson_get_data(input_bson), input_bson->len);
+
+        mc_FLE2InsertUpdatePayloadV2_t payload;
+        mc_FLE2InsertUpdatePayloadV2_init(&payload);
+        mongocrypt_status_t *status = mongocrypt_status_new();
+        ASSERT_FAILS_STATUS(mc_FLE2InsertUpdatePayloadV2_parse(&payload, &input_buf, status),
+                            status,
+                            "contention must be non-negative");
+        mc_FLE2InsertUpdatePayloadV2_cleanup(&payload);
+        mongocrypt_status_destroy(status);
+        _mongocrypt_buffer_cleanup(&input_buf);
+    }
+
+    // Test negative 'sp':
+    {
+        bson_t *input_bson = TMP_BSON_STR(BSON_STR({"sp" : {"$numberLong" : "-1"}}));
+        _mongocrypt_buffer_t input_buf;
+        _mongocrypt_buffer_init_size(&input_buf, 1 + input_bson->len);
+        input_buf.data[0] = (uint8_t)MC_SUBTYPE_FLE2InsertUpdatePayloadV2;
+        memcpy(input_buf.data + 1, bson_get_data(input_bson), input_bson->len);
+
+        mc_FLE2InsertUpdatePayloadV2_t payload;
+        mc_FLE2InsertUpdatePayloadV2_init(&payload);
+        mongocrypt_status_t *status = mongocrypt_status_new();
+        ASSERT_FAILS_STATUS(mc_FLE2InsertUpdatePayloadV2_parse(&payload, &input_buf, status),
+                            status,
+                            "sparsity must be non-negative");
+        mc_FLE2InsertUpdatePayloadV2_cleanup(&payload);
+        mongocrypt_status_destroy(status);
+        _mongocrypt_buffer_cleanup(&input_buf);
+    }
 }
 
 void _mongocrypt_tester_install_fle2_payload_iup_v2(_mongocrypt_tester_t *tester) {
