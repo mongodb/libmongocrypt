@@ -80,26 +80,6 @@ const char *tmp_json(const bson_t *bson) {
     return (const char *)storage;
 }
 
-const char *tmp_buf(const _mongocrypt_buffer_t *buf) {
-    static char storage[1024];
-    size_t i, n;
-
-    BSON_ASSERT_PARAM(buf);
-
-    memset(storage, 0, 1024);
-    /* capped at two characters per byte, minus 1 for trailing \0 */
-    n = sizeof(storage) / 2 - 1;
-    if (buf->len < n) {
-        n = buf->len;
-    }
-
-    for (i = 0; i < n; i++) {
-        bson_snprintf(storage + (i * 2), 3, "%02x", buf->data[i]);
-    }
-
-    return (const char *)storage;
-}
-
 static void _mongocrypt_do_init(void) {
     (void)kms_message_init();
     _native_crypto_init();
