@@ -185,7 +185,7 @@ bool mc_schema_broker_append_listCollections_filter(const mc_schema_broker_t *sb
 
             char idx_str[32];
             int ret = bson_snprintf(idx_str, sizeof idx_str, "%zu", idx);
-            BSON_ASSERT(ret > 0 && ret <= (int)sizeof idx_str);
+            BSON_ASSERT(ret > 0 && ret < (int)sizeof idx_str);
 
             TRY_BSON_OR(BSON_APPEND_UTF8(&in_array, idx_str, se->coll)) {
                 return false;

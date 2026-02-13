@@ -85,14 +85,14 @@ bson_t *util_bin_to_bson(mongocrypt_binary_t *bin) {
 static void _prefix_mongocryptd_error(bson_error_t *error) {
     char buf[sizeof(error->message)];
 
-    bson_snprintf(buf, sizeof(buf), "mongocryptd error: %s:", error->message);
+    BSON_ASSERT(0 < bson_snprintf(buf, sizeof(buf), "mongocryptd error: %s:", error->message)); // Truncation OK.
     memcpy(error->message, buf, sizeof(buf));
 }
 
 static void _prefix_keyvault_error(bson_error_t *error) {
     char buf[sizeof(error->message)];
 
-    bson_snprintf(buf, sizeof(buf), "key vault error: %s:", error->message);
+    BSON_ASSERT(0 < bson_snprintf(buf, sizeof(buf), "key vault error: %s:", error->message)); // Truncation OK.
     memcpy(error->message, buf, sizeof(buf));
 }
 
