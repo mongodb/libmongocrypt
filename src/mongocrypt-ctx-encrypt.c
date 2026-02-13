@@ -29,6 +29,7 @@
 #include "mongocrypt-traverse-util-private.h"
 #include "mongocrypt-util-private.h" // mc_iter_document_as_bson
 #include "mongocrypt.h"
+#include <bson/bson.h>
 
 /* Construct the list collections command to send. */
 static bool _mongo_op_collinfo(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
@@ -1780,6 +1781,7 @@ static bool _try_schema_from_create_or_collMod_cmd(mongocrypt_ctx_t *ctx) {
 
     ectx = (_mongocrypt_ctx_encrypt_t *)ctx;
     const char *cmd_name = ectx->cmd_name;
+    // note translate here
 
     if (0 != strcmp(cmd_name, "create") && 0 != strcmp(cmd_name, "collMod")) {
         return true;
@@ -2609,6 +2611,32 @@ bool mongocrypt_ctx_encrypt_init(mongocrypt_ctx_t *ctx, const char *db, int32_t 
                                                   "configured to support encrypting a "
                                                   "command with multiple collections");
             }
+        }
+    }
+
+    if (0 == strcmp(ectx->cmd_name, "create")) {
+        bson_t cmd_bson;
+        if (!_mongocrypt_binary_to_bson(cmd, &cmd_bson)) {
+            return false;
+        }
+
+        bson_iter_t iter;
+        if (bson_iter_init_find(&iter, &cmd_bson, "encryptedFields")) {
+            uint32_t doc_len = 0;
+            const uint8_t *doc_data = NULL;
+            bson_iter_document(&iter, &doc_len, &doc_data);
+            bson_t encryptedFields_bson;
+            bson_init_static(&encryptedFields_bson, doc_data, doc_len);
+
+            bson_t *encrypted_fields_map = bson_new();
+            bson_append_document(encrypted_fields_map, ectx->target_ns, -1, &encryptedFields_bson);
+
+            mongocrypt_binary_t efc_view;
+            efc_view.data = (uint8_t *)bson_get_data(encrypted_fields_map);
+            efc_view.len = encrypted_fields_map->len;
+            _mongocrypt_buffer_copy_from_binary(&ctx->crypt->opts.encrypted_field_config_map, &efc_view);
+            bson_destroy(encrypted_fields_map);
+            bson_destroy(&encryptedFields_bson);
         }
     }
 

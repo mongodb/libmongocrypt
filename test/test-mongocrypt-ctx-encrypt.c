@@ -6342,6 +6342,11 @@ static void _test_qe_keyAltName_create(_mongocrypt_tester_t *tester) {
 #define TF(suffix) TEST_FILE("./test/data/qe_keyAltName/create/" suffix)
     {
         mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_SKIP_INIT);
+        // // Specify a local encryptedFieldsMap with keyAltName:
+        // mongocrypt_binary_t *encrypted_fields_map = TEST_BSON_STR(BSON_STR({
+        //     "db.coll" : {"fields" : [ {"path" : "secret", "bsonType" : "string", "keyAltName" : "keyDocumentName"} ]}
+        // }));
+        // mongocrypt_setopt_encrypted_field_config_map(crypt, encrypted_fields_map);
 
         ASSERT_OK(mongocrypt_init(crypt), crypt);
 
@@ -6350,6 +6355,7 @@ static void _test_qe_keyAltName_create(_mongocrypt_tester_t *tester) {
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
 
         ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, cmd), ctx);
+        expect_and_reply_to_ismaster(ctx);
         // Keys requested to translate the keyAltNames:
         ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
         {
