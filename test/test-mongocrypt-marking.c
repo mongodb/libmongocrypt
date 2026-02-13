@@ -2037,7 +2037,7 @@ static void test_ciphertext_len_steps_fle2_text_search(_mongocrypt_tester_t *tes
         memset(v, 'a', str_len);
         size_t bufsize = snprintf(NULL, 0, MARKING_JSON_FORMAT, v) + 1;
         char *markingJSON = bson_malloc(bufsize);
-        sprintf(markingJSON, MARKING_JSON_FORMAT, v);
+        bson_snprintf(markingJSON, bufsize, MARKING_JSON_FORMAT, v);
         bson_t *marking_bson = TMP_BSON_STR(markingJSON);
 
         _mongocrypt_ciphertext_t ciphertext;

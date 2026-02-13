@@ -43,7 +43,7 @@ char *data_to_hex(const uint8_t *buf, size_t len) {
     size_t i;
 
     for (i = 0; i < len; i++) {
-        p += sprintf(p, "%02x", buf[i]);
+        p += bson_snprintf(p, 3, "%02x", buf[i]);
     }
 
     *p = '\0';

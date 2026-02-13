@@ -35,7 +35,7 @@ hexlify (const uint8_t *buf, size_t len)
    size_t i;
 
    for (i = 0; i < len; i++) {
-      p += sprintf (p, "%02x", buf[i]);
+      p += snprintf (p, 3, "%02x", buf[i]);
    }
 
    *p = '\0';
