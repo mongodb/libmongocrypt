@@ -75,7 +75,7 @@ const char *tmp_json(const bson_t *bson) {
 
     memset(storage, 0, 1024);
     json = bson_as_canonical_extended_json(bson, NULL);
-    bson_snprintf(storage, sizeof(storage), "%s", json);
+    BSON_ASSERT(0 < bson_snprintf(storage, sizeof(storage), "%s", json)); // Truncation OK.
     bson_free(json);
     return (const char *)storage;
 }

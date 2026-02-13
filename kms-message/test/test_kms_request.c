@@ -99,7 +99,8 @@ test_file_path (const char *path, const char *suffix)
    char *r;
    char *test_name = last_segment (path);
    char file_path[PATH_MAX];
-   snprintf (file_path, PATH_MAX, "%s/%s.%s", path, test_name, suffix);
+   int ret = snprintf (file_path, PATH_MAX, "%s/%s.%s", path, test_name, suffix);
+   KMS_ASSERT (ret > 0 && ret < PATH_MAX);
    r = strdup (file_path);
    free (test_name);
    return r;

@@ -302,7 +302,7 @@ kms_request_str_append_escaped (kms_request_str_t *str,
          ++out;
          ++str->len;
       } else {
-         snprintf ((char *) out, 4, "%%%02X", *in);
+         KMS_ASSERT (3 == snprintf ((char *) out, 4, "%%%02X", *in));
          out += 3;
          str->len += 3;
       }
