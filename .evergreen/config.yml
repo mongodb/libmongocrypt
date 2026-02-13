@@ -1025,6 +1025,14 @@ tasks:
         permissions: public-read
         content_type: ${content_type|application/x-gzip}
         display_name: "deb.tar.gz"
+  allowed_requesters:
+    - ad_hoc
+    - commit
+    - # github_merge_queue
+    - # github_pr
+    - # github_tag
+    - patch
+    - trigger
 
 - name: debian-package-build-i386
   run_on: *deb-package-build-run_on
@@ -1065,6 +1073,14 @@ tasks:
     - func: earthly
       vars:
         args: +rpm-runtime-test
+  allowed_requesters:
+    - ad_hoc
+    - commit
+    - # github_merge_queue
+    - # github_pr
+    - # github_tag
+    - patch
+    - trigger
 
 - name: check-format
   tags: [misc]
