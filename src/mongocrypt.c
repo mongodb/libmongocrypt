@@ -218,47 +218,6 @@ bool mongocrypt_setopt_key_expiration(mongocrypt_t *crypt, uint64_t cache_expira
     return true;
 }
 
-char *_mongocrypt_new_string_from_bytes(const void *in, int len) {
-    const int max_bytes = 100;
-    const int chars_per_byte = 2;
-    int out_size = max_bytes * chars_per_byte;
-    const unsigned char *src = in;
-    char *out;
-    char *ret;
-
-    out_size += len > max_bytes ? (int)sizeof("...") : 1 /* for null */;
-    out = bson_malloc0((size_t)out_size);
-    BSON_ASSERT(out);
-
-    ret = out;
-
-    for (int i = 0; i < len && i < max_bytes; i++, out += chars_per_byte) {
-        sprintf(out, "%02X", src[i]);
-    }
-
-    sprintf(out, (len > max_bytes) ? "..." : "");
-    return ret;
-}
-
-char *_mongocrypt_new_json_string_from_binary(mongocrypt_binary_t *binary) {
-    bson_t bson;
-    uint32_t len;
-
-    BSON_ASSERT_PARAM(binary);
-
-    if (!_mongocrypt_binary_to_bson(binary, &bson) || !bson_validate(&bson, BSON_VALIDATE_NONE, NULL)) {
-        char *hex;
-        char *full_str;
-
-        BSON_ASSERT(binary->len <= (uint32_t)INT_MAX);
-        hex = _mongocrypt_new_string_from_bytes(binary->data, (int)binary->len);
-        full_str = bson_strdup_printf("(malformed) %s", hex);
-        bson_free(hex);
-        return full_str;
-    }
-    return bson_as_canonical_extended_json(&bson, (size_t *)&len);
-}
-
 bool mongocrypt_setopt_schema_map(mongocrypt_t *crypt, mongocrypt_binary_t *schema_map) {
     ASSERT_MONGOCRYPT_PARAM_UNINIT(crypt);
 
