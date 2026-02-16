@@ -258,6 +258,136 @@ static bool _create_markings_cmd_bson(mongocrypt_ctx_t *ctx, bson_t *out) {
         return _mongocrypt_ctx_fail(ctx);
     }
 
+    if (0 == strcmp(ectx->cmd_name, "create")) {
+        // Translate keyAltName to keyId in encryptedFields
+        bson_iter_t iter;
+        if (bson_iter_init_find(&iter, out, "encryptedFields") && BSON_ITER_HOLDS_DOCUMENT(&iter)) {
+            uint32_t ef_len = 0;
+            const uint8_t *ef_data = NULL;
+            bson_iter_document(&iter, &ef_len, &ef_data);
+            bson_t ef_bson;
+            bson_init_static(&ef_bson, ef_data, ef_len);
+
+            bson_iter_t ef_iter;
+            if (bson_iter_init_find(&ef_iter, &ef_bson, "fields") && BSON_ITER_HOLDS_ARRAY(&ef_iter)) {
+                uint32_t fields_len = 0;
+                const uint8_t *fields_data = NULL;
+                bson_iter_array(&ef_iter, &fields_len, &fields_data);
+                bson_t fields_bson;
+                bson_init_static(&fields_bson, fields_data, fields_len);
+
+                // Build a new encryptedFields document with keyAltName replaced by keyId
+                bson_t new_ef;
+                bson_init(&new_ef);
+
+                // Copy all fields from encryptedFields except "fields"
+                bson_iter_t copy_iter;
+                if (bson_iter_init(&copy_iter, &ef_bson)) {
+                    while (bson_iter_next(&copy_iter)) {
+                        const char *key = bson_iter_key(&copy_iter);
+                        if (0 != strcmp(key, "fields")) {
+                            bson_append_value(&new_ef, key, -1, bson_iter_value(&copy_iter));
+                        }
+                    }
+                }
+
+                // Process the fields array
+                bson_t new_fields;
+                BSON_APPEND_ARRAY_BEGIN(&new_ef, "fields", &new_fields);
+
+                bson_iter_t field_iter;
+                if (bson_iter_init(&field_iter, &fields_bson)) {
+                    size_t idx = 0;
+                    while (bson_iter_next(&field_iter)) {
+                        char idx_str[32];
+                        const char *idx_str_ptr;
+                        const size_t ret =
+                            bson_uint32_to_string((uint32_t)idx, &idx_str_ptr, idx_str, sizeof idx_str);
+                        BSON_ASSERT(ret > 0 && ret <= (int)sizeof idx_str);
+
+                        if (BSON_ITER_HOLDS_DOCUMENT(&field_iter)) {
+                            uint32_t field_doc_len = 0;
+                            const uint8_t *field_doc_data = NULL;
+                            bson_iter_document(&field_iter, &field_doc_len, &field_doc_data);
+                            bson_t field_doc;
+                            bson_init_static(&field_doc, field_doc_data, field_doc_len);
+
+                            bson_t new_field_doc;
+                            bson_init(&new_field_doc);
+
+                            // Check if this field has keyAltName
+                            char *keyAltName_dup = NULL;
+                            bson_iter_t field_doc_iter;
+                            if (bson_iter_init(&field_doc_iter, &field_doc)) {
+                                if (bson_iter_find(&field_doc_iter, "keyAltName")
+                                    && BSON_ITER_HOLDS_UTF8(&field_doc_iter)) {
+                                    const char *kan = bson_iter_utf8(&field_doc_iter, NULL);
+                                    if (kan) {
+                                        keyAltName_dup = bson_strdup(kan);
+                                    }
+                                }
+                            }
+
+                            // Copy all fields except keyAltName
+                            bson_copy_to_excluding_noinit(&field_doc, &new_field_doc, "keyAltName", NULL);
+
+                            // If keyAltName was present, translate it to keyId
+                            if (keyAltName_dup) {
+                                _mongocrypt_buffer_t unused, key_id_out;
+                                bson_value_t key_alt_name_v;
+                                _bson_value_from_string(keyAltName_dup, &key_alt_name_v);
+                                if (!_mongocrypt_key_broker_decrypted_key_by_name(&ctx->kb,
+                                                                                   &key_alt_name_v,
+                                                                                   &unused,
+                                                                                   &key_id_out)) {
+                                    bson_value_destroy(&key_alt_name_v);
+                                    bson_free(keyAltName_dup);
+                                    bson_destroy(&new_field_doc);
+                                    bson_destroy(&new_fields);
+                                    bson_destroy(&new_ef);
+                                    _mongocrypt_key_broker_status(&ctx->kb, ctx->status);
+                                    return _mongocrypt_ctx_fail(ctx);
+                                }
+                                bson_append_binary(&new_field_doc,
+                                                   "keyId",
+                                                   -1,
+                                                   key_id_out.subtype,
+                                                   key_id_out.data,
+                                                   key_id_out.len);
+                                _mongocrypt_buffer_cleanup(&unused);
+                                _mongocrypt_buffer_cleanup(&key_id_out);
+                                bson_value_destroy(&key_alt_name_v);
+                            }
+
+                            bson_append_document(&new_fields, idx_str_ptr, -1, &new_field_doc);
+                            bson_destroy(&new_field_doc);
+                            bson_free(keyAltName_dup);
+                        } else {
+                            // Non-document elements: copy as-is
+                            BSON_APPEND_VALUE(&new_fields, idx_str_ptr, bson_iter_value(&field_iter));
+                        }
+
+                        idx++;
+                    }
+                }
+
+                bson_append_array_end(&new_ef, &new_fields);
+
+                // Replace encryptedFields in out
+                bson_t temp_out;
+                bson_init(&temp_out);
+                bson_copy_to_excluding_noinit(out, &temp_out, "encryptedFields", NULL);
+                bson_append_document(&temp_out, "encryptedFields", -1, &new_ef);
+
+                // Replace out with temp_out
+                bson_destroy(out);
+                bson_steal(out, &temp_out);
+
+                bson_destroy(&new_ef);
+            }
+        }
+    }
+
     return true;
 }
 

@@ -1211,7 +1211,7 @@ bool mc_schema_broker_add_schemas_to_cmd(mc_schema_broker_t *sb,
         return false;
     }
 
-    if (has_encryptedFields && (0 != strcmp(cmd_name, "create"))) {
+    if (has_encryptedFields) {
         // Use encryptionInformation.
         return insert_encryptionInformation(sb, kb, cmd_name, cmd, cmd_target, status);
     }
