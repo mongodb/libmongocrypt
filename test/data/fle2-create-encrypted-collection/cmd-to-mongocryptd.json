@@ -1,19 +1,5 @@
 {
     "create": "coll",
-    "encryptedFields": {
-      "fields": [
-         {
-            "path": "encrypted",
-            "bsonType": "int",
-            "queries": {
-               "queryType": "equality",
-               "contention": {
-                     "$numberLong": "0"
-               }
-            }
-         }
-      ]
-   },
    "encryptionInformation": {
         "type": 1,
         "schema": {
@@ -40,5 +26,19 @@
                 ]
             }
         }
-    }
+    },
+    "encryptedFields": {
+      "fields": [
+         {
+            "path": "encrypted",
+            "bsonType": "int",
+            "queries": {
+               "queryType": "equality",
+               "contention": {
+                     "$numberLong": "0"
+               }
+            }
+         }
+      ]
+   }
 }

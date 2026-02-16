@@ -1839,7 +1839,6 @@ static bool _try_schema_from_create_or_collMod_cmd(mongocrypt_ctx_t *ctx) {
 
     ectx = (_mongocrypt_ctx_encrypt_t *)ctx;
     const char *cmd_name = ectx->cmd_name;
-    // note translate here
 
     if (0 != strcmp(cmd_name, "create") && 0 != strcmp(cmd_name, "collMod")) {
         return true;
@@ -2672,7 +2671,8 @@ bool mongocrypt_ctx_encrypt_init(mongocrypt_ctx_t *ctx, const char *db, int32_t 
         }
     }
 
-    if (0 == strcmp(ectx->cmd_name, "create")) {
+    if (0 == strcmp(ectx->cmd_name, "create")
+        && _mongocrypt_buffer_empty(&ctx->crypt->opts.encrypted_field_config_map)) {
         bson_t cmd_bson;
         if (!_mongocrypt_binary_to_bson(cmd, &cmd_bson)) {
             return false;
