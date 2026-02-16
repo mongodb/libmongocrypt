@@ -332,7 +332,7 @@ static bool _mongo_done_keys(mongocrypt_ctx_t *ctx) {
     ctx->need_keys_for_encryptedFields = false;
     (void)_mongocrypt_key_broker_docs_done(&ctx->kb);
 
-    if (used_keyaltname) {
+    if (used_keyaltname && !ctx->crypt->opts.bypass_query_analysis) {
         ctx->kb.state = KB_REQUESTING;
         ctx->state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
         return _try_run_csfle_marking(ctx);

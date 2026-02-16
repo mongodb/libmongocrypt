@@ -6342,12 +6342,6 @@ static void _test_qe_keyAltName_create(_mongocrypt_tester_t *tester) {
 #define TF(suffix) TEST_FILE("./test/data/qe_keyAltName/create/" suffix)
     {
         mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_SKIP_INIT);
-        // // Specify a local encryptedFieldsMap with keyAltName:
-        // mongocrypt_binary_t *encrypted_fields_map = TEST_BSON_STR(BSON_STR({
-        //     "db.coll" : {"fields" : [ {"path" : "secret", "bsonType" : "string", "keyAltName" : "keyDocumentName"} ]}
-        // }));
-        // mongocrypt_setopt_encrypted_field_config_map(crypt, encrypted_fields_map);
-
         ASSERT_OK(mongocrypt_init(crypt), crypt);
 
         mongocrypt_binary_t *cmd = TF("cmd.json");
@@ -6453,8 +6447,8 @@ static void _test_qe_keyAltName_bypassQueryAnalysis(_mongocrypt_tester_t *tester
             ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
         }
 
-        // Expect mongocryptd/crypt_shared to be bypassed, but enters state MONGOCRYPT_CTX_NEED_MONGO_MARKINGS.
-        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY); // Fails!
+        // Expect mongocryptd/crypt_shared to be bypassed
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
         {
             bson_t result_bson;
             mongocrypt_binary_t *result = mongocrypt_binary_new();
