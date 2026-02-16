@@ -6392,7 +6392,7 @@ static void _test_qe_keyAltName_create(_mongocrypt_tester_t *tester) {
         {
             mongocrypt_binary_t *result = mongocrypt_binary_new();
             ASSERT_OK(mongocrypt_ctx_finalize(ctx, result), ctx);
-            ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(result, TF("cmd-to-mongod.json"));
+            ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(TF("cmd-to-mongod.json"), result);
             mongocrypt_binary_destroy(result);
         }
 

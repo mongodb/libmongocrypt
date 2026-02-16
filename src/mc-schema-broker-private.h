@@ -130,4 +130,18 @@ bool mc_schema_broker_add_schemas_to_cmd(mc_schema_broker_t *sb,
                                          bson_t *cmd /* in and out */,
                                          mc_cmd_target_t cmd_target,
                                          mongocrypt_status_t *status);
+
+// mc_translate_fields_keyAltName_to_keyId processes a "fields" array from encryptedFields,
+// translating keyAltName to keyId for each field document.
+//
+// @param fields_bson The fields array to process
+// @param kb The key broker to use for keyAltName to keyId translation
+// @param out The output array to append translated fields to
+// @param status Output status
+// @return true on success, false on error
+bool mc_translate_fields_keyAltName_to_keyId(const bson_t *fields_bson,
+                                             _mongocrypt_key_broker_t *kb,
+                                             bson_t *out,
+                                             mongocrypt_status_t *status);
+
 #endif // MC_SCHEMA_BROKER_PRIVATE_H

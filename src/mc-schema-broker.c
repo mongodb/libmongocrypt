@@ -626,6 +626,92 @@ const mc_EncryptedFieldConfig_t *mc_schema_broker_maybe_get_encryptedFields(cons
     return NULL;
 }
 
+bool mc_translate_fields_keyAltName_to_keyId(const bson_t *fields_bson,
+                                             _mongocrypt_key_broker_t *kb,
+                                             bson_t *out,
+                                             mongocrypt_status_t *status) {
+    BSON_ASSERT_PARAM(fields_bson);
+    BSON_ASSERT_PARAM(kb);
+    BSON_ASSERT_PARAM(out);
+
+    bson_iter_t arr_it;
+    if (!bson_iter_init(&arr_it, fields_bson)) {
+        CLIENT_ERR("failed to iterate 'fields' array");
+        return false;
+    }
+
+    size_t idx = 0;
+    while (bson_iter_next(&arr_it)) {
+        char idx_str[32];
+        const char *idx_str_ptr;
+        const size_t ret = bson_uint32_to_string((uint32_t)idx, &idx_str_ptr, idx_str, sizeof idx_str);
+        BSON_ASSERT(ret > 0 && ret <= (int)sizeof idx_str);
+
+        if (BSON_ITER_HOLDS_DOCUMENT(&arr_it)) {
+            uint32_t doc_len = 0;
+            const uint8_t *doc_data = NULL;
+            bson_iter_document(&arr_it, &doc_len, &doc_data);
+            bson_t elem_doc;
+            bson_init_static(&elem_doc, doc_data, doc_len);
+
+            bson_t new_doc;
+            char *keyAltName_dup = NULL;
+
+            /* Extract keyAltName (if present) and strdup it so caller can
+             * derive a keyId from it. */
+            bson_iter_t doc_it2;
+            if (bson_iter_init(&doc_it2, &elem_doc)) {
+                if (bson_iter_find(&doc_it2, "keyAltName") && BSON_ITER_HOLDS_UTF8(&doc_it2)) {
+                    const char *kan = bson_iter_utf8(&doc_it2, NULL);
+                    if (kan) {
+                        keyAltName_dup = bson_strdup(kan);
+                    }
+                }
+            }
+
+            bson_init(&new_doc);
+            /* Copy elem_doc into new_doc excluding "keyAltName". */
+            bson_copy_to_excluding_noinit(&elem_doc, &new_doc, "keyAltName", NULL);
+
+            if (keyAltName_dup) {
+                _mongocrypt_buffer_t unused, key_id_out;
+                bson_value_t key_alt_name_v;
+                _bson_value_from_string(keyAltName_dup, &key_alt_name_v);
+                if (!_mongocrypt_key_broker_decrypted_key_by_name(kb, &key_alt_name_v, &unused, &key_id_out)) {
+                    bson_value_destroy(&key_alt_name_v);
+                    bson_free(keyAltName_dup);
+                    bson_destroy(&new_doc);
+                    _mongocrypt_key_broker_status(kb, status);
+                    return false;
+                }
+                bson_append_binary(&new_doc, "keyId", -1, key_id_out.subtype, key_id_out.data, key_id_out.len);
+                _mongocrypt_buffer_cleanup(&unused);
+                _mongocrypt_buffer_cleanup(&key_id_out);
+                bson_value_destroy(&key_alt_name_v);
+            }
+
+            if (!bson_append_document(out, idx_str_ptr, -1, &new_doc)) {
+                bson_destroy(&new_doc);
+                bson_free(keyAltName_dup);
+                CLIENT_ERR("failed to append field document");
+                return false;
+            }
+            bson_destroy(&new_doc);
+            bson_free(keyAltName_dup);
+        } else {
+            /* Non-document elements: copy as-is. */
+            if (!BSON_APPEND_VALUE(out, idx_str_ptr, bson_iter_value(&arr_it))) {
+                CLIENT_ERR("failed to append field value");
+                return false;
+            }
+        }
+
+        idx++;
+    }
+
+    return true;
+}
+
 static bool append_encryptedFields(const bson_t *encryptedFields,
                                    _mongocrypt_key_broker_t *kb,
                                    const char *coll,
@@ -681,79 +767,12 @@ static bool append_encryptedFields(const bson_t *encryptedFields,
                 goto fail;
             }
 
-            bson_iter_t arr_it;
-            if (!bson_iter_init(&arr_it, &array_bson)) {
-                CLIENT_ERR("failed to iterate 'fields' array");
+            if (!mc_translate_fields_keyAltName_to_keyId(&array_bson, kb, &new_array, status)) {
                 bson_append_array_end(out, &new_array);
                 goto fail;
             }
 
-            size_t idx = 0;
-            bool array_loop_ok = true;
-            while (bson_iter_next(&arr_it)) {
-                char idx_str[32];
-                const char *idx_str_ptr;
-                const size_t ret = bson_uint32_to_string((uint32_t)idx, &idx_str_ptr, idx_str, sizeof idx_str);
-                BSON_ASSERT(ret > 0 && ret <= (int)sizeof idx_str);
-
-                if (BSON_ITER_HOLDS_DOCUMENT(&arr_it)) {
-                    uint32_t doc_len = 0;
-                    const uint8_t *doc_data = NULL;
-                    bson_iter_document(&arr_it, &doc_len, &doc_data);
-                    bson_t elem_doc;
-                    bson_init_static(&elem_doc, doc_data, doc_len);
-
-                    bson_t new_doc;
-                    char *keyAltName_dup = NULL;
-
-                    /* Extract keyAltName (if present) and strdup it so caller can
-                     * derive a keyId from it. */
-                    bson_iter_t doc_it2;
-                    if (bson_iter_init(&doc_it2, &elem_doc)) {
-                        if (bson_iter_find(&doc_it2, "keyAltName") && BSON_ITER_HOLDS_UTF8(&doc_it2)) {
-                            const char *kan = bson_iter_utf8(&doc_it2, NULL);
-                            if (kan) {
-                                keyAltName_dup = bson_strdup(kan);
-                            }
-                        }
-                    }
-
-                    bson_init(&new_doc);
-                    /* Copy elem_doc into new_doc excluding "keyAltName". */
-                    bson_copy_to_excluding_noinit(&elem_doc, &new_doc, "keyAltName", NULL);
-
-                    if (keyAltName_dup) {
-                        _mongocrypt_buffer_t unused, key_id_out;
-                        bson_value_t key_alt_name_v;
-                        _bson_value_from_string(keyAltName_dup, &key_alt_name_v);
-                        BSON_ASSERT(
-                            _mongocrypt_key_broker_decrypted_key_by_name(kb, &key_alt_name_v, &unused, &key_id_out));
-                        bson_append_binary(&new_doc, "keyId", -1, key_id_out.subtype, key_id_out.data, key_id_out.len);
-                        _mongocrypt_buffer_cleanup(&unused);
-                        _mongocrypt_buffer_cleanup(&key_id_out);
-                        bson_value_destroy(&key_alt_name_v);
-                    }
-
-                    TRY_BSON_OR(bson_append_document(&new_array, idx_str_ptr, -1, &new_doc)) {
-                        bson_destroy(&new_doc);
-                        bson_free(keyAltName_dup);
-                        array_loop_ok = false;
-                        break;
-                    }
-                    bson_destroy(&new_doc);
-                    bson_free(keyAltName_dup);
-                } else {
-                    /* Non-document elements: copy as-is. */
-                    TRY_BSON_OR(BSON_APPEND_VALUE(&new_array, idx_str, bson_iter_value(&arr_it))) {
-                        array_loop_ok = false;
-                        break;
-                    }
-                }
-
-                idx++;
-            }
-
-            if (!array_loop_ok || !bson_append_array_end(out, &new_array)) {
+            if (!bson_append_array_end(out, &new_array)) {
                 goto fail;
             }
         } else {

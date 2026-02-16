@@ -1,14 +1,7 @@
 {
-    "insert": "coll",
-    "documents": [
-        {
-            "secret": "bar"
-        }
-    ],
-    "encryptionInformation": {
-        "type": {
-            "$numberInt": "1"
-        },
+    "create": "coll",
+   "encryptionInformation": {
+        "type": 1,
         "schema": {
             "db.coll": {
                 "fields": [
@@ -27,5 +20,19 @@
                 "ecocCollection": "enxcol_.coll.ecoc"
             }
         }
-    }
+    },
+    "encryptedFields": {
+      "fields": [
+         {
+            "path": "secret",
+            "bsonType": "string",
+            "keyId": {
+                "$binary": {
+                    "base64": "YWFhYWFhYWFhYWFhYWFhYQ==",
+                    "subType": "04"
+                }
+            }
+         }
+      ]
+   }
 }
