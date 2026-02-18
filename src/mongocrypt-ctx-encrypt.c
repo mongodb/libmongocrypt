@@ -508,13 +508,23 @@ static bool _try_run_csfle_marking(mongocrypt_ctx_t *ctx) {
         goto fail_create_cmd;
     }
 
+    const char *version_str = ctx->crypt->csfle.get_version_str();
+    // Examples:
+    // mongo_crypt_v1-dev-8.0.0
+    // mongo_crypt_v1-dev-8.1.0-alpha3-245-ge1c2344
+    // Strip leading prefix.
+    if (strstr(version_str, "mongo_crypt_v1-dev-") == version_str) {
+        version_str += strlen("mongo_crypt_v1-dev-");
+    }
+
 #define CHECK_CSFLE_ERROR(Func, FailLabel)                                                                             \
     if (1) {                                                                                                           \
         if (csfle.status_get_error(status)) {                                                                          \
             _mongocrypt_set_error(ctx->status,                                                                         \
                                   MONGOCRYPT_STATUS_ERROR_CRYPT_SHARED,                                                \
                                   MONGOCRYPT_GENERIC_ERROR_CODE,                                                       \
-                                  "csfle " #Func " failed: %s [Error %d, code %d]",                                    \
+                                  "[crypt_shared %s] " #Func " failed: %s [Error %d, code %d]",                        \
+                                  version_str,                                                                         \
                                   csfle.status_get_explanation(status),                                                \
                                   csfle.status_get_error(status),                                                      \
                                   csfle.status_get_code(status));                                                      \
