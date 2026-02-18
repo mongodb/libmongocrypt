@@ -206,7 +206,6 @@ static void _test_error_includes_version(_mongocrypt_tester_t *tester) {
         return;
     }
 
-#define CRYPT_SHARED_8_1 0x0008000100000000ull
     mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_WITH_CRYPT_SHARED_LIB);
     const char *version_str = crypt->csfle.get_version_str();
     // Strip leading mongo_crypt_v1-dev-
