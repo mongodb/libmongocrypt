@@ -1,6 +1,7 @@
 #include "mongocrypt.h"
 
 #include "mongocrypt-util-private.h"
+#include "test-mongocrypt-assert.h"
 #include "test-mongocrypt.h"
 
 static mongocrypt_t *get_test_mongocrypt(_mongocrypt_tester_t *tester) {
@@ -199,6 +200,32 @@ static void _test_loading_libmongocrypt_fails(_mongocrypt_tester_t *tester) {
     mongocrypt_destroy(crypt);
 }
 
+static void _test_error_includes_version(_mongocrypt_tester_t *tester) {
+    if (!TEST_MONGOCRYPT_HAVE_REAL_CRYPT_SHARED_LIB) {
+        TEST_STDERR_PRINTF("No 'real' csfle library is available. The %s test is a no-op.\n", BSON_FUNC);
+        return;
+    }
+
+#define CRYPT_SHARED_8_1 0x0008000100000000ull
+    mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_WITH_CRYPT_SHARED_LIB);
+    const char *version_str = crypt->csfle.get_version_str();
+    // Strip leading mongo_crypt_v1-dev-
+    if (strstr(version_str, "mongo_crypt_v1-dev-") == version_str) {
+        version_str += strlen("mongo_crypt_v1-dev-");
+    }
+
+    mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+    mongocrypt_binary_t *cmd = TEST_BSON(BSON_STR({"insert" : "test", "bad_field" : 1}));
+    ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, cmd), ctx);
+    ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_COLLINFO);
+    ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, TEST_FILE("./test/example/collection-info.json")), ctx);
+    char *pattern = bson_strdup_printf("[crypt_shared %s] \"analyze_query\" failed", version_str);
+    ASSERT_FAILS(mongocrypt_ctx_mongo_done(ctx), ctx, pattern);
+    bson_free(pattern);
+    mongocrypt_ctx_destroy(ctx);
+    mongocrypt_destroy(crypt);
+}
+
 void _mongocrypt_tester_install_csfle_lib(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_csfle_no_paths);
     INSTALL_TEST(_test_csfle_not_found);
@@ -212,4 +239,5 @@ void _mongocrypt_tester_install_csfle_lib(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_override_error_includes_reason);
     INSTALL_TEST(_test_lookup_version_check);
     INSTALL_TEST(_test_loading_libmongocrypt_fails);
+    INSTALL_TEST(_test_error_includes_version);
 }
