@@ -279,23 +279,15 @@ static bool _create_markings_cmd_bson(mongocrypt_ctx_t *ctx, bson_t *out) {
                 // Build a new encryptedFields document with keyAltName replaced by keyId
                 bson_t new_ef;
                 bson_init(&new_ef);
-
                 // Copy all fields from encryptedFields except "fields"
-                bson_iter_t copy_iter;
-                if (bson_iter_init(&copy_iter, &ef_bson)) {
-                    while (bson_iter_next(&copy_iter)) {
-                        const char *key = bson_iter_key(&copy_iter);
-                        if (0 != strcmp(key, "fields")) {
-                            bson_append_value(&new_ef, key, -1, bson_iter_value(&copy_iter));
-                        }
-                    }
-                }
+                bson_copy_to_excluding_noinit(&ef_bson, &new_ef, "fields", NULL);
 
                 // Process the fields array using the shared helper function
                 bson_t new_fields;
                 BSON_APPEND_ARRAY_BEGIN(&new_ef, "fields", &new_fields);
 
-                if (!mc_translate_fields_keyAltName_to_keyId(&fields_bson, &ctx->kb, &new_fields, ctx->status)) {
+                const int translated_keyAltName = mc_translate_fields_keyAltName_to_keyId(&fields_bson, &ctx->kb, &new_fields, ctx->status);
+                if (translated_keyAltName == -1) {
                     bson_destroy(&new_fields);
                     bson_destroy(&new_ef);
                     return _mongocrypt_ctx_fail(ctx);
@@ -303,15 +295,18 @@ static bool _create_markings_cmd_bson(mongocrypt_ctx_t *ctx, bson_t *out) {
 
                 bson_append_array_end(&new_ef, &new_fields);
 
-                // Replace encryptedFields in out
-                bson_t temp_out;
-                bson_init(&temp_out);
-                bson_copy_to_excluding_noinit(out, &temp_out, "encryptedFields", NULL);
-                bson_append_document(&temp_out, "encryptedFields", -1, &new_ef);
+                // Replace encryptedFields in out if we translated a keyAltName
+                // Done conditionally to avoid reordering encryptedFields and encryptionInformation in existing tests
+                if (translated_keyAltName == 1) {
+                    bson_t temp_out;
+                    bson_init(&temp_out);
+                    bson_copy_to_excluding_noinit(out, &temp_out, "encryptedFields", NULL);
+                    bson_append_document(&temp_out, "encryptedFields", -1, &new_ef);
 
-                // Replace out with temp_out
-                bson_destroy(out);
-                bson_steal(out, &temp_out);
+                    // Replace out with temp_out
+                    bson_destroy(out);
+                    bson_steal(out, &temp_out);
+                }
 
                 bson_destroy(&new_ef);
             }

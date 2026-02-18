@@ -626,18 +626,19 @@ const mc_EncryptedFieldConfig_t *mc_schema_broker_maybe_get_encryptedFields(cons
     return NULL;
 }
 
-bool mc_translate_fields_keyAltName_to_keyId(const bson_t *fields_bson,
+int mc_translate_fields_keyAltName_to_keyId(const bson_t *fields_bson,
                                              _mongocrypt_key_broker_t *kb,
                                              bson_t *out,
                                              mongocrypt_status_t *status) {
     BSON_ASSERT_PARAM(fields_bson);
     BSON_ASSERT_PARAM(kb);
     BSON_ASSERT_PARAM(out);
+    int found_keyAltName = 0;
 
     bson_iter_t arr_it;
     if (!bson_iter_init(&arr_it, fields_bson)) {
         CLIENT_ERR("failed to iterate 'fields' array");
-        return false;
+        return -1;
     }
 
     size_t idx = 0;
@@ -662,6 +663,7 @@ bool mc_translate_fields_keyAltName_to_keyId(const bson_t *fields_bson,
             bson_iter_t doc_it2;
             if (bson_iter_init(&doc_it2, &elem_doc)) {
                 if (bson_iter_find(&doc_it2, "keyAltName") && BSON_ITER_HOLDS_UTF8(&doc_it2)) {
+                    found_keyAltName = 1;
                     const char *kan = bson_iter_utf8(&doc_it2, NULL);
                     if (kan) {
                         keyAltName_dup = bson_strdup(kan);
@@ -682,7 +684,7 @@ bool mc_translate_fields_keyAltName_to_keyId(const bson_t *fields_bson,
                     bson_free(keyAltName_dup);
                     bson_destroy(&new_doc);
                     _mongocrypt_key_broker_status(kb, status);
-                    return false;
+                    return -1;
                 }
                 bson_append_binary(&new_doc, "keyId", -1, key_id_out.subtype, key_id_out.data, key_id_out.len);
                 _mongocrypt_buffer_cleanup(&unused);
@@ -694,7 +696,7 @@ bool mc_translate_fields_keyAltName_to_keyId(const bson_t *fields_bson,
                 bson_destroy(&new_doc);
                 bson_free(keyAltName_dup);
                 CLIENT_ERR("failed to append field document");
-                return false;
+                return -1;
             }
             bson_destroy(&new_doc);
             bson_free(keyAltName_dup);
@@ -702,14 +704,14 @@ bool mc_translate_fields_keyAltName_to_keyId(const bson_t *fields_bson,
             /* Non-document elements: copy as-is. */
             if (!BSON_APPEND_VALUE(out, idx_str_ptr, bson_iter_value(&arr_it))) {
                 CLIENT_ERR("failed to append field value");
-                return false;
+                return -1;
             }
         }
 
         idx++;
     }
 
-    return true;
+    return found_keyAltName;
 }
 
 static bool append_encryptedFields(const bson_t *encryptedFields,
