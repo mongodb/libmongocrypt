@@ -707,7 +707,6 @@ int mc_translate_fields_keyAltName_to_keyId(const bson_t *fields_bson,
                 return -1;
             }
         }
-
         idx++;
     }
 
