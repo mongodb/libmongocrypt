@@ -769,7 +769,8 @@ static bool append_encryptedFields(const bson_t *encryptedFields,
                 goto fail;
             }
 
-            if (!mc_translate_fields_keyAltName_to_keyId(&array_bson, kb, &new_array, status)) {
+            const int translated_keyAltName = mc_translate_fields_keyAltName_to_keyId(&array_bson, kb, &new_array, status);
+            if (translated_keyAltName == -1) {
                 bson_append_array_end(out, &new_array);
                 goto fail;
             }
