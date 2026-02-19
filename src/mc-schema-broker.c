@@ -756,7 +756,7 @@ static bool append_encryptedFields(const bson_t *encryptedFields,
         }
         /* Special-case the "fields" array: copy each element but omit the
          * "keyAltName" key from each subdocument. For other keys, copy as-is. */
-        if (0 == strcmp(iter_key, "fields") && BSON_ITER_HOLDS_ARRAY(&iter)) {
+        if (0 == strcmp(iter_key, "fields") && BSON_ITER_HOLDS_ARRAY(&iter) && kb) {
             uint32_t array_len = 0;
             const uint8_t *array_data = NULL;
             bson_t array_bson;
