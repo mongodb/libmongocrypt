@@ -103,7 +103,7 @@ bool mc_schema_broker_need_more_schemas(const mc_schema_broker_t *sb);
 const mc_EncryptedFieldConfig_t *
 mc_schema_broker_get_encryptedFields(const mc_schema_broker_t *sb, const char *coll, mongocrypt_status_t *status);
 
-// mc_schema_broker_get_encryptedFields returns encryptedFields for a collection if any exists.
+// mc_schema_broker_maybe_get_encryptedFields returns encryptedFields for a collection if any exists.
 //
 // Returns NULL if none is found.
 const mc_EncryptedFieldConfig_t *

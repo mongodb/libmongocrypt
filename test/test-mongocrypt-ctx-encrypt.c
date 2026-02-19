@@ -6179,7 +6179,7 @@ static void _test_qe_keyAltName(_mongocrypt_tester_t *tester) {
         mongocrypt_binary_t *encrypted_fields_map = TEST_BSON_STR(BSON_STR({
             "db.coll" : {"fields" : [ {"path" : "secret", "bsonType" : "string", "keyAltName" : "keyDocumentName"} ]}
         }));
-        mongocrypt_setopt_encrypted_field_config_map(crypt, encrypted_fields_map);
+        ASSERT_OK(mongocrypt_setopt_encrypted_field_config_map(crypt, encrypted_fields_map), crypt);
         ASSERT_OK(mongocrypt_init(crypt), crypt);
 
         mongocrypt_binary_t *cmd = TEST_BSON_STR(BSON_STR({"insert" : "coll", "documents" : [ {"secret" : "bar"} ]}));
@@ -6232,6 +6232,7 @@ static void _test_qe_keyAltName(_mongocrypt_tester_t *tester) {
         }
         mongocrypt_ctx_destroy(ctx);
 
+        // Encrypt again to test flow where key is cached.
         ctx = mongocrypt_ctx_new(crypt);
         ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, cmd), ctx);
         // MONGOCRYPT_CTX_MARKINGS is entered to send command to mongocryptd.
@@ -6319,7 +6320,7 @@ static void _test_qe_keyAltName_cryptShared(_mongocrypt_tester_t *tester) {
         }
         mongocrypt_ctx_destroy(ctx);
 
-        // COPY
+        // Encrypt again to test flow where key is cached.
         ctx = mongocrypt_ctx_new(crypt);
         ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, cmd), ctx);
 
