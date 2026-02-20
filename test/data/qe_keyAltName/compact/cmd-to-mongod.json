@@ -1,72 +1,11 @@
 {
     "compactStructuredEncryptionData": "coll",
-    "encryptionInformation": {
-        "type": {
-            "$numberInt": "1"
-        },
-        "schema": {
-            "db.coll": {
-                "escCollection": "esc",
-                "ecocCollection": "ecoc",
-                "fields": [
-                    {
-                        "keyId": {
-                            "$binary": {
-                                "base64": "EjRWeBI0mHYSNBI0VniQEg==",
-                                "subType": "04"
-                            }
-                        },
-                        "path": "encrypted",
-                        "bsonType": "string",
-                        "queries": {
-                            "queryType": "equality",
-                            "contention": 0
-                        }
-                    },
-                    {
-                        "keyId": {
-                            "$binary": {
-                                "base64": "q83vqxI0mHYSNBI0VniQEg==",
-                                "subType": "04"
-                            }
-                        },
-                        "path": "nested.encrypted",
-                        "bsonType": "string",
-                        "queries": {
-                            "queryType": "equality",
-                            "contention": 0
-                        }
-                    },
-                    {
-                        "keyId": {
-                            "$binary": {
-                                "base64": "EjRWeBI0mHYSNBI0VniQEw==",
-                                "subType": "04"
-                            }
-                        },
-                        "path": "nested.notindexed",
-                        "bsonType": "string"
-                    },
-                    {
-                        "keyId": {
-                            "$binary": {
-                                "base64": "EjRWeBI0mHYSNBI0VniQEw==",
-                                "subType": "04"
-                            }
-                        },
-                        "path": "rangeField",
-                        "bsonType": "int",
-                        "queries": {
-                            "queryType": "range",
-                            "contention": 0,
-                            "sparsity": 1
-                        }
-                    }
-                ]
+    "compactionTokens": {
+        "secret": {
+            "$binary": {
+                "base64" : "PZsCLRX3GB1seYw7TB452mz1LjJQq1P+hH1cX0ECbO0=",
+                "subType" : "00"
             }
         }
-    },
-    "compactionTokens": {
-        "TODO": "fill in with test result"
     }
 }

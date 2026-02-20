@@ -125,7 +125,17 @@ static bool _fle2_collect_keys_for_compaction(mongocrypt_ctx_t *ctx) {
     }
 
     for (const mc_EncryptedField_t *field = efc->fields; field != NULL; field = field->next) {
-        if (!_mongocrypt_key_broker_request_id(&ctx->kb, &field->keyId)) {
+        if (field->keyAltName) {
+            bson_value_t keyAltName;
+            _bson_value_from_string(field->keyAltName, &keyAltName);
+            if (!_mongocrypt_key_broker_request_name(&ctx->kb, &keyAltName)) {
+                _mongocrypt_key_broker_status(&ctx->kb, ctx->status);
+                _mongocrypt_ctx_fail(ctx);
+                bson_value_destroy(&keyAltName);
+                return -1;
+            }
+            bson_value_destroy(&keyAltName);
+        } else if (!_mongocrypt_key_broker_request_id(&ctx->kb, &field->keyId)) {
             _mongocrypt_key_broker_status(&ctx->kb, ctx->status);
             _mongocrypt_ctx_fail(ctx);
             return false;
