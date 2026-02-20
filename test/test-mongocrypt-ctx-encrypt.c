@@ -6467,6 +6467,56 @@ static void _test_qe_keyAltName_bypassQueryAnalysis(_mongocrypt_tester_t *tester
 #undef TF
 }
 
+static void _test_qe_keyAltName_compact(_mongocrypt_tester_t *tester) {
+#define TF(suffix) TEST_FILE("./test/data/qe_keyAltName/compact/" suffix)
+    {
+        mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_SKIP_INIT);
+
+        // Specify a local encryptedFieldsMap with keyAltName:
+        mongocrypt_binary_t *encrypted_fields_map = TEST_BSON_STR(BSON_STR({
+            "db.coll" : {"fields" : [ {"path" : "secret", "bsonType" : "string", "keyAltName" : "keyDocumentName"} ]}
+        }));
+        mongocrypt_setopt_encrypted_field_config_map(crypt, encrypted_fields_map);
+
+        ASSERT_OK(mongocrypt_init(crypt), crypt);
+
+        mongocrypt_binary_t *cmd = TF("cmd.json");
+
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, cmd), ctx);
+        // Keys requested to translate the keyAltNames:
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+        {
+            mongocrypt_binary_t *filter = mongocrypt_binary_new();
+            ASSERT_OK(mongocrypt_ctx_mongo_op(ctx, filter), ctx);
+            ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(
+                TEST_BSON_STR(
+                    BSON_STR({"$or" : [ {"_id" : {"$in" : []}}, {"keyAltNames" : {"$in" : ["keyDocumentName"]}} ]})),
+                filter);
+            mongocrypt_binary_destroy(filter);
+
+            // Feed requested key:
+            mongocrypt_binary_t *key = TF("key-document.json");
+            ASSERT_OK(mongocrypt_ctx_mongo_feed(ctx, key), ctx);
+            ASSERT_OK(mongocrypt_ctx_mongo_done(ctx), ctx);
+        }
+
+        // Expect mongocryptd/crypt_shared to be bypassed since compact skips it?
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
+        {
+            mongocrypt_binary_t *result = mongocrypt_binary_new();
+            ASSERT_OK(mongocrypt_ctx_finalize(ctx, result), ctx);
+            ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(result, TF("cmd-to-mongod.json"));
+            mongocrypt_binary_destroy(result);
+        }
+
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+#undef TF
+}
+
 void _mongocrypt_tester_install_ctx_encrypt(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_explicit_encrypt_init);
     INSTALL_TEST(_test_encrypt_init);
@@ -6570,4 +6620,5 @@ void _mongocrypt_tester_install_ctx_encrypt(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_qe_keyAltName_cryptShared);
     INSTALL_TEST(_test_qe_keyAltName_create);
     INSTALL_TEST(_test_qe_keyAltName_bypassQueryAnalysis);
+    INSTALL_TEST(_test_qe_keyAltName_compact);
 }
