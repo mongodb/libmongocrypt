@@ -335,7 +335,7 @@ static bool _mongo_done_keys(mongocrypt_ctx_t *ctx) {
     bool is_compact = false;
     if (ctx->type == _MONGOCRYPT_TYPE_ENCRYPT) {
         _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *)ctx;
-        if (0 == strcmp(ectx->cmd_name, "compactStructuredEncryptionData")) {
+        if (ectx->cmd_name && 0 == strcmp(ectx->cmd_name, "compactStructuredEncryptionData")) {
             is_compact = true;
         }
     }
