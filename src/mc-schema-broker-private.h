@@ -19,6 +19,7 @@
 
 #include "mc-efc-private.h" // mc_EncryptedFieldConfig_t
 #include "mongocrypt-cache-collinfo-private.h"
+#include "mongocrypt-key-broker-private.h"
 #include "mongocrypt.h"
 #include <bson/bson.h>
 
@@ -102,6 +103,12 @@ bool mc_schema_broker_need_more_schemas(const mc_schema_broker_t *sb);
 const mc_EncryptedFieldConfig_t *
 mc_schema_broker_get_encryptedFields(const mc_schema_broker_t *sb, const char *coll, mongocrypt_status_t *status);
 
+// mc_schema_broker_maybe_get_encryptedFields returns encryptedFields for a collection if any exists.
+//
+// Returns NULL if none is found.
+const mc_EncryptedFieldConfig_t *
+mc_schema_broker_maybe_get_encryptedFields(const mc_schema_broker_t *sb, const char *coll, mongocrypt_status_t *status);
+
 typedef enum {
     MC_CMD_SCHEMAS_FOR_CRYPT_SHARED, // target the crypt_shared library.
     MC_CMD_SCHEMAS_FOR_MONGOCRYPTD,  // target mongocryptd process.
@@ -118,8 +125,23 @@ typedef enum {
 // - encryptionInformation: for QE.
 //
 // Set cmd_target to the intended command destination. This impacts if/how schema information is added.
-bool mc_schema_broker_add_schemas_to_cmd(const mc_schema_broker_t *sb,
+bool mc_schema_broker_add_schemas_to_cmd(mc_schema_broker_t *sb,
+                                         _mongocrypt_key_broker_t *kb,
                                          bson_t *cmd /* in and out */,
                                          mc_cmd_target_t cmd_target,
                                          mongocrypt_status_t *status);
+
+// mc_translate_fields_keyAltName_to_keyId processes a "fields" array from encryptedFields,
+// translating keyAltName to keyId for each field document.
+//
+// @param fields_bson The fields array to process
+// @param kb The key broker to use for keyAltName to keyId translation
+// @param out The output array to append translated fields to
+// @param status Output status
+// @return -1 on error, 0 if keyAltName was not found, 1 on success
+int mc_translate_fields_keyAltName_to_keyId(const bson_t *fields_bson,
+                                             _mongocrypt_key_broker_t *kb,
+                                             bson_t *out,
+                                             mongocrypt_status_t *status);
+
 #endif // MC_SCHEMA_BROKER_PRIVATE_H

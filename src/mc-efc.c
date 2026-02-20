@@ -85,18 +85,46 @@ static bool _parse_field(mc_EncryptedFieldConfig_t *efc, bson_t *field, mongocry
     BSON_ASSERT_PARAM(efc);
     BSON_ASSERT_PARAM(field);
 
-    if (!bson_iter_init_find(&field_iter, field, "keyId")) {
-        CLIENT_ERR("unable to find 'keyId' in 'field' document");
+    bool has_keyid = false;
+    bool has_keyaltname = false;
+    if (bson_iter_init_find(&field_iter, field, "keyId")) {
+        has_keyid = true;
+    }
+    if (bson_iter_init_find(&field_iter, field, "keyAltName")) {
+        has_keyaltname = true;
+    }
+    if (!(has_keyid || has_keyaltname)) {
+        CLIENT_ERR("unable to find 'keyId' or 'keyAltName' in 'field' document");
         return false;
     }
-    if (!BSON_ITER_HOLDS_BINARY(&field_iter)) {
-        CLIENT_ERR("expected 'fields.keyId' to be type binary, got: %d", (int)bson_iter_type(&field_iter));
+    if (has_keyid && has_keyaltname) {
+        CLIENT_ERR("only one of 'keyId' or 'keyAltName may be in 'field' document");
         return false;
     }
+
     _mongocrypt_buffer_t field_keyid;
-    if (!_mongocrypt_buffer_from_uuid_iter(&field_keyid, &field_iter)) {
-        CLIENT_ERR("unable to parse uuid key from 'fields.keyId'");
-        return false;
+    if (has_keyid) {
+        BSON_ASSERT(bson_iter_init_find(&field_iter, field, "keyId"));
+        if (!BSON_ITER_HOLDS_BINARY(&field_iter)) {
+            CLIENT_ERR("expected 'fields.keyId' to be type binary, got: %d", (int)bson_iter_type(&field_iter));
+            return false;
+        }
+        if (!_mongocrypt_buffer_from_uuid_iter(&field_keyid, &field_iter)) {
+            CLIENT_ERR("unable to parse uuid key from 'fields.keyId'");
+            return false;
+        }
+    } else if (has_keyaltname) {
+        BSON_ASSERT(bson_iter_init_find(&field_iter, field, "keyAltName"));
+    }
+
+    const char *keyAltName = "";
+    if (has_keyaltname) {
+        BSON_ASSERT(bson_iter_init_find(&field_iter, field, "keyAltName"));
+        if (!BSON_ITER_HOLDS_UTF8(&field_iter)) {
+            CLIENT_ERR("expected 'fields.keyAltName' to be type UTF-8, got: %d", (int)bson_iter_type(&field_iter));
+            return false;
+        }
+        keyAltName = bson_iter_utf8(&field_iter, NULL);
     }
 
     const char *field_path;
@@ -151,7 +179,12 @@ static bool _parse_field(mc_EncryptedFieldConfig_t *efc, bson_t *field, mongocry
 
     /* Prepend a new mc_EncryptedField_t */
     mc_EncryptedField_t *ef = bson_malloc0(sizeof(mc_EncryptedField_t));
-    _mongocrypt_buffer_copy_to(&field_keyid, &ef->keyId);
+    if (has_keyid) {
+        _mongocrypt_buffer_copy_to(&field_keyid, &ef->keyId);
+    }
+    if (has_keyaltname) {
+        ef->keyAltName = bson_strdup(keyAltName);
+    }
     ef->path = bson_strdup(field_path);
     ef->next = efc->fields;
     ef->supported_queries = query_types;
@@ -229,6 +262,7 @@ void mc_EncryptedFieldConfig_cleanup(mc_EncryptedFieldConfig_t *efc) {
         mc_EncryptedField_t *ptr_next = ptr->next;
         _mongocrypt_buffer_cleanup(&ptr->keyId);
         bson_free((char *)ptr->path);
+        bson_free((char *)ptr->keyAltName);
         bson_free(ptr);
         ptr = ptr_next;
     }

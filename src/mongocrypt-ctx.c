@@ -15,6 +15,7 @@
  */
 
 #include <bson/bson.h>
+#include <stdbool.h>
 
 #include "mc-mlib/str.h"
 #include "mc-textopts-private.h"
@@ -22,6 +23,7 @@
 #include "mongocrypt-ctx-private.h"
 #include "mongocrypt-key-broker-private.h"
 #include "mongocrypt-private.h"
+#include "mongocrypt.h"
 
 bool _mongocrypt_ctx_fail_w_msg(mongocrypt_ctx_t *ctx, const char *msg) {
     BSON_ASSERT_PARAM(ctx);
@@ -326,8 +328,25 @@ static bool _mongo_feed_keys(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in) {
 static bool _mongo_done_keys(mongocrypt_ctx_t *ctx) {
     BSON_ASSERT_PARAM(ctx);
 
+    const bool used_keyaltname = ctx->need_keys_for_encryptedFields;
+    ctx->need_keys_for_encryptedFields = false;
     (void)_mongocrypt_key_broker_docs_done(&ctx->kb);
-    return _mongocrypt_ctx_state_from_key_broker(ctx);
+
+    bool is_compact = false;
+    if (ctx->type == _MONGOCRYPT_TYPE_ENCRYPT) {
+        _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *)ctx;
+        if (ectx->cmd_name && 0 == strcmp(ectx->cmd_name, "compactStructuredEncryptionData")) {
+            is_compact = true;
+        }
+    }
+
+    if (used_keyaltname && !ctx->crypt->opts.bypass_query_analysis && !is_compact) {
+        ctx->kb.state = KB_REQUESTING;
+        ctx->state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
+        return _try_run_csfle_marking(ctx);
+    } else {
+        return _mongocrypt_ctx_state_from_key_broker(ctx);
+    }
 }
 
 static mongocrypt_kms_ctx_t *_next_kms_ctx(mongocrypt_ctx_t *ctx) {
@@ -878,7 +897,12 @@ bool _mongocrypt_ctx_state_from_key_broker(mongocrypt_ctx_t *ctx) {
         ret = true;
         break;
     case KB_DONE:
-        new_state = MONGOCRYPT_CTX_READY;
+        if (ctx->need_keys_for_encryptedFields) {
+            kb->state = KB_REQUESTING;
+            new_state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
+        } else {
+            new_state = MONGOCRYPT_CTX_READY;
+        }
         if (kb->key_requests == NULL) {
             /* No key requests were ever added. */
             ctx->nothing_to_do = true; /* nothing to encrypt/decrypt */
