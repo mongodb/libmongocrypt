@@ -19,7 +19,7 @@
 
 /* FLE Blob Subtype is the first byte of a BSON Binary Subtype 6.
  * These are defined by the EncryptedBinDataType enum in:
- * https://github.com/mongodb/mongo/blob/2f4ed6f765c1ba6b3e857d06e91842e6065eb87b/src/mongo/crypto/fle_field_schema.idl
+ * https://github.com/mongodb/mongo/blob/0d51c5cb6571a14e690c4774bb069d1990fd35b6/src/mongo/crypto/fle_field_schema.idl
  */
 
 typedef enum {
