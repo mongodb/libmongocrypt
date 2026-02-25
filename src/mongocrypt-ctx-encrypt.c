@@ -1249,9 +1249,11 @@ static bool _fle2_finalize(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
             if (f->keyId.data == NULL) {
                 BSON_ASSERT(f->keyAltName);
                 bson_value_t key_alt_name;
-                _mongocrypt_buffer_t _unused;
+                _mongocrypt_buffer_t _unused = {0};
                 _bson_value_from_string(f->keyAltName, &key_alt_name);
                 BSON_ASSERT(_mongocrypt_key_broker_decrypted_key_by_name(&ctx->kb, &key_alt_name, &_unused, &f->keyId));
+                bson_value_destroy(&key_alt_name);
+                _mongocrypt_buffer_cleanup(&_unused);
             }
         }
     }
