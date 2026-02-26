@@ -80,20 +80,20 @@ functions:
         include: [./**]
     - command: s3.put
       params:
-        aws_key: '${aws_key}'
-        aws_secret: '${aws_secret}'
+        role_arn: ${upload_arn}
         remote_file: '${project}/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt.tar.gz'
-        bucket: mciuploads
-        permissions: public-read
+        bucket: ${upload_bucket}
+        permissions: private
+        visibility: signed
         local_file: 'libmongocrypt.tar.gz'
         content_type: '${content_type|application/x-gzip}'
     - command: s3.put
       params:
-        aws_key: '${aws_key}'
-        aws_secret: '${aws_secret}'
+        role_arn: ${upload_arn}
         remote_file: '${project}/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix_copy}/libmongocrypt.tar.gz'
-        bucket: mciuploads
-        permissions: public-read
+        bucket: ${upload_bucket}
+        permissions: private
+        visibility: signed
         local_file: 'libmongocrypt.tar.gz'
         content_type: '${content_type|application/x-gzip}'
 
@@ -138,11 +138,11 @@ functions:
         include: [./**]
     - command: s3.put
       params:
-        aws_key: '${aws_key}'
-        aws_secret: '${aws_secret}'
+        role_arn: ${upload_arn}
         remote_file: '${project}/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt-distro-packages.tar.gz'
-        bucket: mciuploads
-        permissions: public-read
+        bucket: ${upload_bucket}
+        permissions: private
+        visibility: signed
         local_file: 'libmongocrypt-distro-packages.tar.gz'
         content_type: '${content_type|application/x-gzip}'
         optional: true
@@ -224,10 +224,9 @@ functions:
   "download tarball":
     - command: s3.get
       params:
-        aws_key: '${aws_key}'
-        aws_secret: '${aws_secret}'
+        role_arn: ${upload_arn}
         remote_file: '${project}/${variant_name}/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt.tar.gz'
-        bucket: mciuploads
+        bucket: ${upload_bucket}
         extract_to: all/${variant_name}
 
   "setup packaging credentials":
@@ -323,16 +322,22 @@ functions:
           - "*"
     - command: s3.put
       params:
-        aws_key: ${aws_key}
-        aws_secret: ${aws_secret}
+        # The upload of this component uses the less restricted bucket because it is only
+        # used for transferring temporary files until they are later merged in the next build step
+        role_arn: ${upload_arn}
         local_file: release-files.tgz
         remote_file: '${project}/python-release/${branch_name}/${libmongocrypt_s3_suffix}/${task_id}-${execution}-release-files.tar.gz'
-        bucket: mciuploads
-        permissions: public-read
+        bucket: ${upload_bucket}
+        permissions: private
+        visibility: signed
         content_type: ${content_type|application/gzip}
         display_name: Release Python files
 
   "download and merge python releases":
+    - command: ec2.assume_role
+      type: setup
+      params:
+        role_arn: ${upload_arn}
     - command: shell.exec
       params:
         silent: true
@@ -346,19 +351,17 @@ functions:
           [default]
           region = us-east-1
           EOF
-
-          cat <<EOF >> ~/.aws/credentials
-          [default]
-          aws_access_key_id = ${aws_key}
-          aws_secret_access_key = ${aws_secret}
-          EOF
     - command: shell.exec
       params:
         shell: "bash"
+        include_expansions_in_env: &aws-params-env
+          - AWS_ACCESS_KEY_ID
+          - AWS_SECRET_ACCESS_KEY
+          - AWS_SESSION_TOKEN
         script: |
           set -o xtrace
           # Download all the release files.
-          aws s3 cp --recursive s3://mciuploads/${project}/python-release/${branch_name}/${libmongocrypt_s3_suffix}/ release/
+          aws s3 cp --recursive s3://${upload_bucket}/${project}/python-release/${branch_name}/${libmongocrypt_s3_suffix}/ release/
           # Combine releases into one directory.
           ls -la release/
           mkdir releases
@@ -373,12 +376,13 @@ functions:
           - "*"
     - command: s3.put
       params:
-        aws_key: ${aws_key}
-        aws_secret: ${aws_secret}
+        role_arn: ${upload_arn}
         local_file: release-files-all.tgz
         remote_file: '${project}/python-release/${branch_name}/${libmongocrypt_s3_suffix}/${task_id}-${execution}-release-files-all.tar.gz'
-        bucket: mciuploads
-        permissions: public-read
+        # The merged results are placed in the CDN bucket for releases
+        bucket: ${upload_bucket}
+        permissions: private
+        visibility: signed
         content_type: ${content_type|application/gzip}
         display_name: Release Python files all
   earthly:
@@ -400,10 +404,7 @@ functions:
       type: setup
       params:
         binary: bash
-        include_expansions_in_env:
-          - AWS_ACCESS_KEY_ID
-          - AWS_SECRET_ACCESS_KEY
-          - AWS_SESSION_TOKEN
+        include_expansions_in_env: *aws-params-env
         args:
           - -c
           - |
@@ -432,12 +433,12 @@ functions:
       type: test
       params:
         display_name: Augmented SBOM
-        aws_key: ${aws_key}
-        aws_secret: ${aws_secret}
-        bucket: mciuploads
+        role_arn: ${upload_arn}
+        bucket: ${upload_bucket}
         content_type: application/json
         local_file: libmongocrypt/cyclonedx.augmented.sbom.json
-        permissions: public-read
+        permissions: private
+        visibility: signed
         remote_file: ${project}/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix}/sbom/cyclonedx.augmented.sbom.json
 
 tasks:
@@ -640,20 +641,20 @@ tasks:
           fi
     - command: s3.put
       params:
-        aws_key: '${aws_key}'
-        aws_secret: '${aws_secret}'
+        role_arn: ${upload_arn}
         remote_file: 'libmongocrypt/java/${revision}/libmongocrypt-java.tar.gz'
-        bucket: mciuploads
-        permissions: public-read
+        bucket: ${upload_bucket}
+        permissions: private
+        visibility: signed
         local_file: 'libmongocrypt-java.tar.gz'
         content_type: '${content_type|application/x-gzip}'
     - command: s3.put
       params:
-        aws_key: '${aws_key}'
-        aws_secret: '${aws_secret}'
+        role_arn: ${upload_arn}
         remote_file: 'libmongocrypt/java/${tag_upload_location}/libmongocrypt-java.tar.gz'
-        bucket: mciuploads
-        permissions: public-read
+        bucket: ${upload_bucket}
+        permissions: private
+        visibility: signed
         optional: true
         display_name: 'libmongocrypt-java-${tag_upload_location}.tar.gz'
         local_file: 'libmongocrypt-java-${tag_upload_location}.tar.gz'
@@ -835,51 +836,51 @@ tasks:
           fi
     - command: s3.put
       params:
-        aws_key: '${aws_key}'
-        aws_secret: '${aws_secret}'
+        role_arn: ${upload_arn}
         remote_file: 'libmongocrypt/all/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt-all.tar.gz'
-        bucket: mciuploads
-        permissions: public-read
+        bucket: ${upload_bucket}
+        permissions: private
+        visibility: signed
         local_file: 'libmongocrypt-all.tar.gz'
         content_type: '${content_type|application/x-gzip}'
     - command: s3.put
       params:
-        aws_key: '${aws_key}'
-        aws_secret: '${aws_secret}'
+        role_arn: ${upload_arn}
         remote_file: 'libmongocrypt/all/${branch_name}/${libmongocrypt_s3_suffix_copy}/libmongocrypt-all.tar.gz'
-        bucket: mciuploads
-        permissions: public-read
+        bucket: ${upload_bucket}
+        permissions: private
+        visibility: signed
         local_file: 'libmongocrypt-all.tar.gz'
         content_type: '${content_type|application/x-gzip}'
     - command: s3.put
       params:
-        aws_key: '${aws_key}'
-        aws_secret: '${aws_secret}'
+        role_arn: ${upload_arn}
         remote_file: 'libmongocrypt/all/${tag_upload_location}/libmongocrypt-all.tar.gz'
-        bucket: mciuploads
-        permissions: public-read
+        bucket: ${upload_bucket}
+        permissions: private
+        visibility: signed
         optional: true # Do not fail task if `local_file` does not exist. `local_file` only exists for tagged release.
         display_name: 'libmongocrypt-all-${tag_upload_location}.tar.gz'
         local_file: 'libmongocrypt-all-${tag_upload_location}.tar.gz'
         content_type: '${content_type|application/x-gzip}'
     - command: s3.put
       params:
-        aws_key: '${aws_key}'
-        aws_secret: '${aws_secret}'
+        role_arn: ${upload_arn}
         remote_file: 'libmongocrypt/all/latest/stable/libmongocrypt-all.tar.gz'
-        bucket: mciuploads
-        permissions: public-read
+        bucket: ${upload_bucket}
+        permissions: private
+        visibility: signed
         optional: true # Do not fail task if `local_file` does not exist. `local_file` only exists for stable release.
         display_name: 'stable/libmongocrypt-all-${tag_upload_location}.tar.gz'
         local_file: 'stable/libmongocrypt-all-${tag_upload_location}.tar.gz'
         content_type: '${content_type|application/x-gzip}'
     - command: s3.put
       params:
-        aws_key: '${aws_key}'
-        aws_secret: '${aws_secret}'
+        role_arn: ${upload_arn}
         remote_file: 'libmongocrypt/all/latest/unstable/libmongocrypt-all.tar.gz'
-        bucket: mciuploads
-        permissions: public-read
+        bucket: ${upload_bucket}
+        permissions: private
+        visibility: signed
         optional: true # Do not fail task if `local_file` does not exist. `local_file` only exists for unstable release.
         display_name: 'unstable/libmongocrypt-all-${tag_upload_location}.tar.gz'
         local_file: 'unstable/libmongocrypt-all-${tag_upload_location}.tar.gz'
@@ -931,10 +932,9 @@ tasks:
         file: libmongocrypt/expansions.yml
     - command: s3.get # Download Windows build.
       params:
-        aws_key: '${aws_key}'
-        aws_secret: '${aws_secret}'
+        role_arn: ${upload_arn}
         remote_file: '${project}/windows-test/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt.tar.gz'
-        bucket: mciuploads
+        bucket: ${upload_bucket}
         extract_to: libmongocrypt_download
     - command: shell.exec
       params:
@@ -960,22 +960,22 @@ tasks:
       # Documentation now refers to the GitHub release page, which includes the per-release tarball.
       # The fixed URL upload is kept to avoid possibly breaking expectations. Consider removing in the future.
       params:
-        aws_key: '${aws_key}'
-        aws_secret: '${aws_secret}'
+        role_arn: ${upload_arn}
         remote_file: 'libmongocrypt/windows/latest_release/libmongocrypt${upload_suffix}.tar.gz'
         display_name: (Deprecated) libmongocrypt${upload_suffix}.tar.gz
-        bucket: mciuploads
-        permissions: public-read
+        bucket: ${upload_bucket}
+        permissions: private
+        visibility: signed
         local_file: 'libmongocrypt_upload.tar.gz'
         content_type: 'application/x-gzip'
     - command: s3.put # Upload tarball for GitHub Release.
       params:
-        aws_key: '${aws_key}'
-        aws_secret: '${aws_secret}'
+        role_arn: ${upload_arn}
         remote_file: '${project}/${build_variant}/${branch_name}/${revision}/${version_id}/libmongocrypt-windows-x86_64-${libmongocrypt_release_version}.tar.gz'
         display_name: libmongocrypt-windows-x86_64-${libmongocrypt_release_version}.tar.gz
-        bucket: mciuploads
-        permissions: public-read
+        bucket: ${upload_bucket}
+        permissions: private
+        visibility: signed
         local_file: 'libmongocrypt_upload.tar.gz'
         content_type: 'application/x-gzip'
     - command: shell.exec
@@ -990,12 +990,12 @@ tasks:
         args: --secret garasign_username=${garasign_username} --secret garasign_password=${garasign_password} +sign --file_to_sign=libmongocrypt_upload.tar.gz --output_file=libmongocrypt_upload.asc
     - command: s3.put # Upload signature for GitHub Release.
       params:
-        aws_key: '${aws_key}'
-        aws_secret: '${aws_secret}'
+        role_arn: ${upload_arn}
         remote_file: '${project}/${build_variant}/${branch_name}/${revision}/${version_id}/libmongocrypt-windows-x86_64-${libmongocrypt_release_version}.asc'
         display_name: libmongocrypt-windows-x86_64-${libmongocrypt_release_version}.asc
-        bucket: mciuploads
-        permissions: public-read
+        bucket: ${upload_bucket}
+        permissions: private
+        visibility: signed
         local_file: 'libmongocrypt/libmongocrypt_upload.asc'
         content_type: 'application/pgp-signature'
 
@@ -1017,12 +1017,12 @@ tasks:
           bash .evergreen/debian_package_build.sh --is-patch=${is_patch}
     - command: s3.put
       params:
-        aws_key: ${aws_key}
-        aws_secret: ${aws_secret}
+        role_arn: ${upload_arn}
         local_file: deb.tar.gz
         remote_file: libmongocrypt/${branch_name}/${revision}/${version_id}/${build_id}/${execution}/debian-packages.tar.gz
-        bucket: mciuploads
-        permissions: public-read
+        bucket: ${upload_bucket}
+        permissions: private
+        visibility: signed
         content_type: ${content_type|application/x-gzip}
         display_name: "deb.tar.gz"
   allowed_requesters:
@@ -1050,12 +1050,12 @@ tasks:
           bash .evergreen/debian_package_build.sh --arch=i386 --is-patch=${is_patch}
     - command: s3.put
       params:
-        aws_key: ${aws_key}
-        aws_secret: ${aws_secret}
+        role_arn: ${upload_arn}
         local_file: deb.tar.gz
         remote_file: libmongocrypt/${branch_name}/${revision}/${version_id}/${build_id}/${execution}/debian-packages-i386.tar.gz
-        bucket: mciuploads
-        permissions: public-read
+        bucket: ${upload_bucket}
+        permissions: private
+        visibility: signed
         content_type: ${content_type|application/x-gzip}
         display_name: "deb.tar.gz"
 
@@ -1158,15 +1158,29 @@ pre:
           REMOTE_SUFFIX_COPY="latest-${branch_name}"
         fi
 
+        # If we are a non-patch build in the libmongocrypt-release project, we upload to a restricted
+        # CDN S3 bucket. Otherwise, we upload to a less restricted bucket for convenience. The corresponding
+        # role_arn_... values come from EVG project configuration variables stored on the EVG server
+        if test "${is_patch}" = 'true' || "${project}" != 'libmongocrypt-release'; then
+          upload_bucket='mciuploads'
+          upload_arn='${role_arn_for_mciuploads}'
+        else
+          upload_bucket='cdn-origin-libmongocrypt'
+          upload_arn='${role_arn_for_release}'
+        fi
+
         PROJECT_DIRECTORY="$(pwd)"
         echo "libmongocrypt_s3_suffix: $REMOTE_SUFFIX"
         echo "libmongocrypt_s3_suffix_copy: $REMOTE_SUFFIX_COPY"
         echo "project_directory: $PROJECT_DIRECTORY"
+        echo "Upload S3 bucket: $upload_bucket"
 
         cat <<EOT > expansion.yml
         libmongocrypt_s3_suffix: "$REMOTE_SUFFIX"
         libmongocrypt_s3_suffix_copy: "$REMOTE_SUFFIX_COPY"
         project_directory: "$PROJECT_DIRECTORY"
+        upload_bucket: "$upload_bucket"
+        upload_arn: "$upload_arn"
         EOT
   - command: expansions.update
     params:
