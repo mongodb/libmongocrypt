@@ -2678,33 +2678,6 @@ bool mongocrypt_ctx_encrypt_init(mongocrypt_ctx_t *ctx, const char *db, int32_t 
         }
     }
 
-    if (0 == strcmp(ectx->cmd_name, "create")
-        && _mongocrypt_buffer_empty(&ctx->crypt->opts.encrypted_field_config_map)) {
-        bson_t cmd_bson;
-        if (!_mongocrypt_binary_to_bson(cmd, &cmd_bson)) {
-            return false;
-        }
-
-        bson_iter_t iter;
-        if (bson_iter_init_find(&iter, &cmd_bson, "encryptedFields")) {
-            uint32_t doc_len = 0;
-            const uint8_t *doc_data = NULL;
-            bson_iter_document(&iter, &doc_len, &doc_data);
-            bson_t encryptedFields_bson;
-            bson_init_static(&encryptedFields_bson, doc_data, doc_len);
-
-            bson_t *encrypted_fields_map = bson_new();
-            bson_append_document(encrypted_fields_map, ectx->target_ns, -1, &encryptedFields_bson);
-
-            mongocrypt_binary_t efc_view;
-            efc_view.data = (uint8_t *)bson_get_data(encrypted_fields_map);
-            efc_view.len = encrypted_fields_map->len;
-            _mongocrypt_buffer_copy_from_binary(&ctx->crypt->opts.encrypted_field_config_map, &efc_view);
-            bson_destroy(encrypted_fields_map);
-            bson_destroy(&encryptedFields_bson);
-        }
-    }
-
     if (ctx->opts.kek.provider.aws.region || ctx->opts.kek.provider.aws.cmk) {
         return _mongocrypt_ctx_fail_w_msg(ctx, "aws masterkey options must not be set");
     }

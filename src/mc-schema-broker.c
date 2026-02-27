@@ -545,6 +545,26 @@ bool mc_schema_broker_satisfy_from_create_or_collMod(mc_schema_broker_t *sb,
         return true;
     }
 
+    if (bson_iter_init_find(&iter, cmd, "encryptedFields")) {
+        if (!_mongocrypt_buffer_copy_from_document_iter(&found->encryptedFields.buf, &iter)) {
+            CLIENT_ERR("failed to read schema from schema map for collection: %s", coll);
+            return false;
+        }
+
+        if (!_mongocrypt_buffer_to_bson(&found->encryptedFields.buf, &found->encryptedFields.bson)) {
+            CLIENT_ERR("unable to create BSON from schema map for collection: %s", coll);
+            return false;
+        }
+
+        if (!mc_EncryptedFieldConfig_parse(&found->encryptedFields.efc, &found->encryptedFields.bson, status)) {
+            return false;
+        }
+
+        found->encryptedFields.set = true;
+        found->satisfied = true;
+        return true;
+    }
+
     // Command does not have a schema. Not an error.
     return true;
 }
