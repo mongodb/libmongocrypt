@@ -1,0 +1,12 @@
+{
+    "create": "coll",
+    "encryptedFields": {
+        "fields": [
+            {
+                "path": "secret",
+                "bsonType": "string",
+                "keyAltName": "keyDocumentName"
+            }
+        ]
+    }
+}

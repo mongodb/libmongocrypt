@@ -1,0 +1,17 @@
+{
+    "create": "coll",
+    "encryptedFields": {
+        "fields": [
+            {
+                "path": "secret",
+                "bsonType": "string",
+                "keyId": {
+                    "$binary": {
+                        "base64": "YWFhYWFhYWFhYWFhYWFhYQ==",
+                        "subType": "04"
+                    }
+                }
+            }
+        ]
+    }
+}

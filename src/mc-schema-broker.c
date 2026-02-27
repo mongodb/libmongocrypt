@@ -17,6 +17,7 @@
 #include "mc-schema-broker-private.h"
 
 #include "mc-efc-private.h" // mc_EncryptedFieldConfig_t
+#include "mongocrypt-buffer-private.h"
 #include "mongocrypt-cache-collinfo-private.h"
 #include "mongocrypt-key-broker-private.h"
 #include "mongocrypt-private.h"
@@ -607,7 +608,113 @@ mc_schema_broker_get_encryptedFields(const mc_schema_broker_t *sb, const char *c
     return NULL;
 }
 
+const mc_EncryptedFieldConfig_t *mc_schema_broker_maybe_get_encryptedFields(const mc_schema_broker_t *sb,
+                                                                            const char *coll,
+                                                                            mongocrypt_status_t *status) {
+    BSON_ASSERT_PARAM(sb);
+    BSON_ASSERT_PARAM(coll);
+
+    for (const mc_schema_entry_t *it = sb->ll; it != NULL; it = it->next) {
+        if (0 != strcmp(it->coll, coll)) {
+            continue;
+        }
+        if (!it->encryptedFields.set) {
+            return NULL;
+        }
+        return &it->encryptedFields.efc;
+    }
+    return NULL;
+}
+
+int mc_translate_fields_keyAltName_to_keyId(const bson_t *fields_bson,
+                                             _mongocrypt_key_broker_t *kb,
+                                             bson_t *out,
+                                             mongocrypt_status_t *status) {
+    BSON_ASSERT_PARAM(fields_bson);
+    BSON_ASSERT_PARAM(kb);
+    BSON_ASSERT_PARAM(out);
+    int found_keyAltName = 0;
+
+    bson_iter_t arr_it;
+    if (!bson_iter_init(&arr_it, fields_bson)) {
+        CLIENT_ERR("failed to iterate 'fields' array");
+        return -1;
+    }
+
+    size_t idx = 0;
+    while (bson_iter_next(&arr_it)) {
+        char idx_str[32];
+        const char *idx_str_ptr;
+        const size_t ret = bson_uint32_to_string((uint32_t)idx, &idx_str_ptr, idx_str, sizeof idx_str);
+        BSON_ASSERT(ret > 0 && ret <= (int)sizeof idx_str);
+
+        if (BSON_ITER_HOLDS_DOCUMENT(&arr_it)) {
+            uint32_t doc_len = 0;
+            const uint8_t *doc_data = NULL;
+            bson_iter_document(&arr_it, &doc_len, &doc_data);
+            bson_t elem_doc;
+            bson_init_static(&elem_doc, doc_data, doc_len);
+
+            bson_t new_doc;
+            char *keyAltName_dup = NULL;
+
+            /* Extract keyAltName (if present) and strdup it so caller can
+             * derive a keyId from it. */
+            bson_iter_t doc_it2;
+            if (bson_iter_init(&doc_it2, &elem_doc)) {
+                if (bson_iter_find(&doc_it2, "keyAltName") && BSON_ITER_HOLDS_UTF8(&doc_it2)) {
+                    found_keyAltName = 1;
+                    const char *kan = bson_iter_utf8(&doc_it2, NULL);
+                    if (kan) {
+                        keyAltName_dup = bson_strdup(kan);
+                    }
+                }
+            }
+
+            bson_init(&new_doc);
+            /* Copy elem_doc into new_doc excluding "keyAltName". */
+            bson_copy_to_excluding_noinit(&elem_doc, &new_doc, "keyAltName", NULL);
+
+            if (keyAltName_dup) {
+                _mongocrypt_buffer_t unused, key_id_out;
+                bson_value_t key_alt_name_v;
+                _bson_value_from_string(keyAltName_dup, &key_alt_name_v);
+                if (!_mongocrypt_key_broker_decrypted_key_by_name(kb, &key_alt_name_v, &unused, &key_id_out)) {
+                    bson_value_destroy(&key_alt_name_v);
+                    bson_free(keyAltName_dup);
+                    bson_destroy(&new_doc);
+                    _mongocrypt_key_broker_status(kb, status);
+                    return -1;
+                }
+                bson_append_binary(&new_doc, "keyId", -1, key_id_out.subtype, key_id_out.data, key_id_out.len);
+                _mongocrypt_buffer_cleanup(&unused);
+                _mongocrypt_buffer_cleanup(&key_id_out);
+                bson_value_destroy(&key_alt_name_v);
+            }
+
+            if (!bson_append_document(out, idx_str_ptr, -1, &new_doc)) {
+                bson_destroy(&new_doc);
+                bson_free(keyAltName_dup);
+                CLIENT_ERR("failed to append field document");
+                return -1;
+            }
+            bson_destroy(&new_doc);
+            bson_free(keyAltName_dup);
+        } else {
+            /* Non-document elements: copy as-is. */
+            if (!BSON_APPEND_VALUE(out, idx_str_ptr, bson_iter_value(&arr_it))) {
+                CLIENT_ERR("failed to append field value");
+                return -1;
+            }
+        }
+        idx++;
+    }
+
+    return found_keyAltName;
+}
+
 static bool append_encryptedFields(const bson_t *encryptedFields,
+                                   _mongocrypt_key_broker_t *kb,
                                    const char *coll,
                                    uint8_t default_strEncodeVersion,
                                    bson_t *out,
@@ -633,7 +740,8 @@ static bool append_encryptedFields(const bson_t *encryptedFields,
 
     // Copy all values. Check if state collections are present.
     while (bson_iter_next(&iter)) {
-        if (strcmp(bson_iter_key(&iter), "escCollection") == 0) {
+        const char *iter_key = bson_iter_key(&iter);
+        if (strcmp(iter_key, "escCollection") == 0) {
             has_escCollection = true;
         }
         if (strcmp(bson_iter_key(&iter), "ecocCollection") == 0) {
@@ -645,8 +753,34 @@ static bool append_encryptedFields(const bson_t *encryptedFields,
         if (strcmp(bson_iter_key(&iter), "strEncodeVersion") == 0) {
             has_strEncodeVersion = true;
         }
-        TRY_BSON_OR(BSON_APPEND_VALUE(out, bson_iter_key(&iter), bson_iter_value(&iter))) {
-            goto fail;
+        /* Special-case the "fields" array: copy each element but omit the
+         * "keyAltName" key from each subdocument. For other keys, copy as-is. */
+        if (0 == strcmp(iter_key, "fields") && BSON_ITER_HOLDS_ARRAY(&iter) && kb) {
+            uint32_t array_len = 0;
+            const uint8_t *array_data = NULL;
+            bson_t array_bson;
+
+            bson_iter_array(&iter, &array_len, &array_data);
+            bson_init_static(&array_bson, array_data, array_len);
+
+            bson_t new_array;
+            TRY_BSON_OR(BSON_APPEND_ARRAY_BEGIN(out, "fields", &new_array)) {
+                goto fail;
+            }
+
+            const int translated_keyAltName = mc_translate_fields_keyAltName_to_keyId(&array_bson, kb, &new_array, status);
+            if (translated_keyAltName == -1) {
+                bson_append_array_end(out, &new_array);
+                goto fail;
+            }
+
+            if (!bson_append_array_end(out, &new_array)) {
+                goto fail;
+            }
+        } else {
+            TRY_BSON_OR(BSON_APPEND_VALUE(out, iter_key, bson_iter_value(&iter))) {
+                goto fail;
+            }
         }
     }
 
@@ -687,6 +821,7 @@ fail:
 }
 
 static bool append_encryptionInformation(const mc_schema_broker_t *sb,
+                                         _mongocrypt_key_broker_t *kb,
                                          const char *cmd_name,
                                          bson_t *out,
                                          mongocrypt_status_t *status) {
@@ -728,7 +863,12 @@ static bool append_encryptionInformation(const mc_schema_broker_t *sb,
             encryptedFields = &se->encryptedFields.bson;
             default_strEncodeVersion = se->encryptedFields.efc.str_encode_version;
         }
-        if (!append_encryptedFields(encryptedFields, se->coll, default_strEncodeVersion, &ns_to_schema_bson, status)) {
+        if (!append_encryptedFields(encryptedFields,
+                                    kb,
+                                    se->coll,
+                                    default_strEncodeVersion,
+                                    &ns_to_schema_bson,
+                                    status)) {
             goto loop_fail;
         }
 
@@ -778,6 +918,7 @@ static const char *get_cmd_name(const bson_t *cmd, mongocrypt_status_t *status) 
 }
 
 static bool insert_encryptionInformation(const mc_schema_broker_t *sb,
+                                         _mongocrypt_key_broker_t *kb,
                                          const char *cmd_name,
                                          bson_t *cmd /* in and out */,
                                          mc_cmd_target_t cmd_target,
@@ -841,7 +982,7 @@ static bool insert_encryptionInformation(const mc_schema_broker_t *sb,
                 goto fail;
             }
             // And append `encryptionInformation`.
-            if (!append_encryptionInformation(sb, cmd_name, &nsInfo_array_0, status)) {
+            if (!append_encryptionInformation(sb, kb, cmd_name, &nsInfo_array_0, status)) {
                 goto fail;
             }
             if (!bson_append_document_end(&nsInfo_array, &nsInfo_array_0)) {
@@ -891,7 +1032,7 @@ static bool insert_encryptionInformation(const mc_schema_broker_t *sb,
             bson_copy_to(&tmp, &explain);
         }
 
-        if (!append_encryptionInformation(sb, cmd_name, &explain, status)) {
+        if (!append_encryptionInformation(sb, kb, cmd_name, &explain, status)) {
             goto fail;
         }
 
@@ -914,7 +1055,7 @@ static bool insert_encryptionInformation(const mc_schema_broker_t *sb,
     //    "<command name>": { ... }
     //    "encryptionInformation": {}
     // }
-    if (!append_encryptionInformation(sb, cmd_name, cmd, status)) {
+    if (!append_encryptionInformation(sb, kb, cmd_name, cmd, status)) {
         goto fail;
     }
 
@@ -1032,7 +1173,8 @@ static bool insert_csfleEncryptionSchemas(const mc_schema_broker_t *sb,
     return true;
 }
 
-bool mc_schema_broker_add_schemas_to_cmd(const mc_schema_broker_t *sb,
+bool mc_schema_broker_add_schemas_to_cmd(mc_schema_broker_t *sb,
+                                         _mongocrypt_key_broker_t *kb,
                                          bson_t *cmd /* in and out */,
                                          mc_cmd_target_t cmd_target,
                                          mongocrypt_status_t *status) {
@@ -1053,6 +1195,20 @@ bool mc_schema_broker_add_schemas_to_cmd(const mc_schema_broker_t *sb,
         if (it->encryptedFields.set) {
             has_encryptedFields = true;
             coll_with_encryptedFields = it->coll;
+            for (mc_EncryptedField_t *f = it->encryptedFields.efc.fields; f != NULL; f = f->next) {
+                if (f->keyAltName && _mongocrypt_buffer_empty(&f->keyId)) {
+                    bson_value_t key_alt_name;
+                    _mongocrypt_buffer_t unused;
+                    _bson_value_from_string(f->keyAltName, &key_alt_name);
+                    const bool r = _mongocrypt_key_broker_decrypted_key_by_name(kb, &key_alt_name, &unused, &f->keyId);
+                    bson_value_destroy(&key_alt_name);
+                    _mongocrypt_buffer_cleanup(&unused);
+                    if (!r) {
+                        CLIENT_ERR("Could not find key by keyAltName: %s", f->keyAltName);
+                        return false;
+                    }
+                }
+            }
         } else if (it->jsonSchema.set) {
             has_jsonSchema = true;
             coll_with_jsonSchema = it->coll;
@@ -1061,7 +1217,7 @@ bool mc_schema_broker_add_schemas_to_cmd(const mc_schema_broker_t *sb,
 
     if (has_encryptedFields && has_jsonSchema) {
         if (sb->schema_mixing_is_supported) {
-            return insert_encryptionInformation(sb, cmd_name, cmd, cmd_target, status)
+            return insert_encryptionInformation(sb, kb, cmd_name, cmd, cmd_target, status)
                 && insert_csfleEncryptionSchemas(sb, cmd, cmd_target, status);
         }
 
@@ -1078,7 +1234,7 @@ bool mc_schema_broker_add_schemas_to_cmd(const mc_schema_broker_t *sb,
 
     if (has_encryptedFields) {
         // Use encryptionInformation.
-        return insert_encryptionInformation(sb, cmd_name, cmd, cmd_target, status);
+        return insert_encryptionInformation(sb, kb, cmd_name, cmd, cmd_target, status);
     }
 
     if (has_jsonSchema) {
@@ -1089,7 +1245,7 @@ bool mc_schema_broker_add_schemas_to_cmd(const mc_schema_broker_t *sb,
     // Collections have no QE or CSFLE schemas.
     if (0 == strcmp(cmd_name, "bulkWrite")) {
         // "bulkWrite" does not support the jsonSchema field. Use encryptionInformation with empty schemas.
-        return insert_encryptionInformation(sb, cmd_name, cmd, cmd_target, status);
+        return insert_encryptionInformation(sb, kb, cmd_name, cmd, cmd_target, status);
     }
 
     // Use csfleEncryptionSchemas / jsonSchema with empty schemas.
