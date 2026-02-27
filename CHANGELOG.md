@@ -1,5 +1,12 @@
 # ChangeLog
 
+## Unreleased
+
+
+### Changed
+
+- Final release packages in the PPA are now available by specifying `release` in the repository configuration in place of the major/minor version (e.g., `1.17`). Details in `README.md`.
+
 ## 1.17.2
 
 ### Fixed
