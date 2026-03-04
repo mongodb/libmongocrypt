@@ -643,10 +643,7 @@ int mc_translate_fields_keyAltName_to_keyId(const bson_t *fields_bson,
 
     size_t idx = 0;
     while (bson_iter_next(&arr_it)) {
-        char idx_str[32];
-        const char *idx_str_ptr;
-        const size_t ret = bson_uint32_to_string((uint32_t)idx, &idx_str_ptr, idx_str, sizeof idx_str);
-        BSON_ASSERT(ret > 0 && ret <= (int)sizeof idx_str);
+        const char *idx_str_ptr = bson_iter_key(&arr_it);
 
         if (BSON_ITER_HOLDS_DOCUMENT(&arr_it)) {
             uint32_t doc_len = 0;

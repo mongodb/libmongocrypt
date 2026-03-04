@@ -132,7 +132,7 @@ static bool _fle2_collect_keys_for_compaction(mongocrypt_ctx_t *ctx) {
                 _mongocrypt_key_broker_status(&ctx->kb, ctx->status);
                 _mongocrypt_ctx_fail(ctx);
                 bson_value_destroy(&keyAltName);
-                return -1;
+                return false;
             }
             bson_value_destroy(&keyAltName);
         } else if (!_mongocrypt_key_broker_request_id(&ctx->kb, &field->keyId)) {
