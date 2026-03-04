@@ -711,12 +711,14 @@ int mc_translate_fields_keyAltName_to_keyId(const bson_t *fields_bson,
             }
             bson_t new_doc = BSON_INITIALIZER;
             if (!translate_field_keyAltName_to_keyId(&elem_doc, &new_doc, kb, &found_keyAltName, status)) {
+                bson_destroy(&new_doc);
                 return -1;
             }
             TRY_BSON_OR(bson_append_document(out, idx_str, -1, &new_doc)) {
                 bson_destroy(&new_doc);
                 return -1;
             }
+            bson_destroy(&new_doc);
         } else {
             /* Non-document elements: copy as-is. */
             if (!BSON_APPEND_VALUE(out, idx_str, bson_iter_value(&arr_it))) {
