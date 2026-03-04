@@ -227,6 +227,20 @@ bool mc_EncryptedFieldConfig_parse(mc_EncryptedFieldConfig_t *efc,
         all_supported_queries |= efc->fields->supported_queries;
     }
 
+    // Check for duplicate keyAltName values
+    for (mc_EncryptedField_t *field1 = efc->fields; field1 != NULL; field1 = field1->next) {
+        if (field1->keyAltName) {
+            for (mc_EncryptedField_t *field2 = field1->next; field2 != NULL; field2 = field2->next) {
+                if (field2->keyAltName) {
+                    if (strcmp(field1->keyAltName, field2->keyAltName) == 0) {
+                        CLIENT_ERR("duplicate keyAltName '%s' found in encrypted field config", field1->keyAltName);
+                        return false;
+                    }
+                }
+            }
+        }
+    }
+
     if (!bson_iter_init_find(&iter, efc_bson, "strEncodeVersion")) {
         if (all_supported_queries
             & (SUPPORTS_SUBSTRING_PREVIEW_QUERIES | SUPPORTS_SUFFIX_PREVIEW_QUERIES

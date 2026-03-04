@@ -4981,6 +4981,25 @@ static void _test_fle2_encrypted_field_config_with_bad_str_encode_version(_mongo
     mongocrypt_destroy(crypt);
 }
 
+static void _test_fle2_encrypted_field_config_with_duplicate_keyaltname(_mongocrypt_tester_t *tester) {
+    mongocrypt_t *crypt = mongocrypt_new();
+
+    ASSERT_OK(mongocrypt_setopt_kms_provider_aws(crypt, "example", -1, "example", -1), crypt);
+    ASSERT_OK(mongocrypt_setopt_encrypted_field_config_map(
+                  crypt,
+                  TEST_FILE("./test/data/fle2-duplicate-keyaltname/encrypted-field-config-map.json")),
+              crypt);
+    ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
+
+    mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+    ASSERT_FAILS(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TEST_FILE("./test/data/fle2-insert-v2/cmd.json")),
+                 ctx,
+                 "duplicate keyAltName 'duplicateKey' found in encrypted field config");
+
+    mongocrypt_ctx_destroy(ctx);
+    mongocrypt_destroy(crypt);
+}
+
 static void _test_fle2_encrypted_fields_with_unmatching_str_encode_version(_mongocrypt_tester_t *tester) {
     mongocrypt_t *crypt = mongocrypt_new();
 
@@ -6612,6 +6631,7 @@ void _mongocrypt_tester_install_ctx_encrypt(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_encrypt_retry);
     INSTALL_TEST(_test_does_not_warn_for_empty_local_schema);
     INSTALL_TEST(_test_fle2_encrypted_field_config_with_bad_str_encode_version);
+    INSTALL_TEST(_test_fle2_encrypted_field_config_with_duplicate_keyaltname);
     INSTALL_TEST(_test_fle2_encrypted_fields_with_unmatching_str_encode_version);
     INSTALL_TEST(_test_fle2_collinfo_with_bad_str_encode_version);
     INSTALL_TEST(_test_lookup);
