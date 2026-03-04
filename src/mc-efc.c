@@ -80,17 +80,17 @@ _parse_supported_query_types(bson_iter_t *iter, supported_query_type_flags *out,
 /* _parse_field parses and prepends one field document to efc->fields. */
 static bool _parse_field(mc_EncryptedFieldConfig_t *efc, bson_t *field, mongocrypt_status_t *status) {
     supported_query_type_flags query_types = SUPPORTS_NO_QUERIES;
-    bson_iter_t field_iter;
+    bson_iter_t field_iter, keyid_iter, keyaltname_iter;
 
     BSON_ASSERT_PARAM(efc);
     BSON_ASSERT_PARAM(field);
 
     bool has_keyid = false;
     bool has_keyaltname = false;
-    if (bson_iter_init_find(&field_iter, field, "keyId")) {
+    if (bson_iter_init_find(&keyid_iter, field, "keyId")) {
         has_keyid = true;
     }
-    if (bson_iter_init_find(&field_iter, field, "keyAltName")) {
+    if (bson_iter_init_find(&keyaltname_iter, field, "keyAltName")) {
         has_keyaltname = true;
     }
     if (!(has_keyid || has_keyaltname)) {
@@ -104,27 +104,23 @@ static bool _parse_field(mc_EncryptedFieldConfig_t *efc, bson_t *field, mongocry
 
     _mongocrypt_buffer_t field_keyid;
     if (has_keyid) {
-        BSON_ASSERT(bson_iter_init_find(&field_iter, field, "keyId"));
-        if (!BSON_ITER_HOLDS_BINARY(&field_iter)) {
-            CLIENT_ERR("expected 'fields.keyId' to be type binary, got: %d", (int)bson_iter_type(&field_iter));
+        if (!BSON_ITER_HOLDS_BINARY(&keyid_iter)) {
+            CLIENT_ERR("expected 'fields.keyId' to be type binary, got: %d", (int)bson_iter_type(&keyid_iter));
             return false;
         }
-        if (!_mongocrypt_buffer_from_uuid_iter(&field_keyid, &field_iter)) {
+        if (!_mongocrypt_buffer_from_uuid_iter(&field_keyid, &keyid_iter)) {
             CLIENT_ERR("unable to parse uuid key from 'fields.keyId'");
             return false;
         }
-    } else if (has_keyaltname) {
-        BSON_ASSERT(bson_iter_init_find(&field_iter, field, "keyAltName"));
     }
 
     const char *keyAltName = "";
     if (has_keyaltname) {
-        BSON_ASSERT(bson_iter_init_find(&field_iter, field, "keyAltName"));
-        if (!BSON_ITER_HOLDS_UTF8(&field_iter)) {
-            CLIENT_ERR("expected 'fields.keyAltName' to be type UTF-8, got: %d", (int)bson_iter_type(&field_iter));
+        if (!BSON_ITER_HOLDS_UTF8(&keyaltname_iter)) {
+            CLIENT_ERR("expected 'fields.keyAltName' to be type UTF-8, got: %d", (int)bson_iter_type(&keyaltname_iter));
             return false;
         }
-        keyAltName = bson_iter_utf8(&field_iter, NULL);
+        keyAltName = bson_iter_utf8(&keyaltname_iter, NULL);
     }
 
     const char *field_path;
