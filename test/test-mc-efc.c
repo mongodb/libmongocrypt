@@ -90,7 +90,7 @@ static void _test_efc(_mongocrypt_tester_t *tester) {
         _load_test_file(tester, "./test/data/efc/efc-missingKeyId.json", &efc_bson);
         ASSERT_FAILS_STATUS(mc_EncryptedFieldConfig_parse(&efc, &efc_bson, status),
                             status,
-                            "unable to find 'keyId' in 'field' document");
+                            "unable to find 'keyId' or 'keyAltName' in 'field' document");
         mc_EncryptedFieldConfig_cleanup(&efc);
         _mongocrypt_status_reset(status);
     }
@@ -145,6 +145,15 @@ static void _test_efc(_mongocrypt_tester_t *tester) {
         ASSERT_FAILS_STATUS(mc_EncryptedFieldConfig_parse(&efc, &efc_bson, status),
                             status,
                             "'strEncodeVersion' of 99 is not supported");
+        mc_EncryptedFieldConfig_cleanup(&efc);
+        _mongocrypt_status_reset(status);
+    }
+
+    {
+        _load_test_file(tester, "./test/data/efc/efc-duplicateKeyAltName.json", &efc_bson);
+        ASSERT_FAILS_STATUS(mc_EncryptedFieldConfig_parse(&efc, &efc_bson, status),
+                            status,
+                            "duplicate keyAltName 'myKeyAltName' found in encrypted field config");
         mc_EncryptedFieldConfig_cleanup(&efc);
         _mongocrypt_status_reset(status);
     }

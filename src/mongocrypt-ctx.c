@@ -15,6 +15,7 @@
  */
 
 #include <bson/bson.h>
+#include <stdbool.h>
 
 #include "mc-mlib/str.h"
 #include "mc-textopts-private.h"
@@ -22,6 +23,7 @@
 #include "mongocrypt-ctx-private.h"
 #include "mongocrypt-key-broker-private.h"
 #include "mongocrypt-private.h"
+#include "mongocrypt.h"
 
 bool _mongocrypt_ctx_fail_w_msg(mongocrypt_ctx_t *ctx, const char *msg) {
     BSON_ASSERT_PARAM(ctx);
@@ -878,7 +880,12 @@ bool _mongocrypt_ctx_state_from_key_broker(mongocrypt_ctx_t *ctx) {
         ret = true;
         break;
     case KB_DONE:
-        new_state = MONGOCRYPT_CTX_READY;
+        if (kb->need_keys_for_encryptedFields) {
+            kb->state = KB_REQUESTING;
+            new_state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
+        } else {
+            new_state = MONGOCRYPT_CTX_READY;
+        }
         if (kb->key_requests == NULL) {
             /* No key requests were ever added. */
             ctx->nothing_to_do = true; /* nothing to encrypt/decrypt */

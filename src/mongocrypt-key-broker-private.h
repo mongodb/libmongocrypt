@@ -106,6 +106,7 @@ typedef struct {
 
     key_returned_t *decryptor_iter;
     mc_mapof_kmsid_to_authrequest_t *auth_requests;
+    bool need_keys_for_encryptedFields;
 } _mongocrypt_key_broker_t;
 
 void _mongocrypt_key_broker_init(_mongocrypt_key_broker_t *kb, mongocrypt_t *crypt);
