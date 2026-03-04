@@ -140,8 +140,8 @@ bool mc_schema_broker_add_schemas_to_cmd(mc_schema_broker_t *sb,
 // @param status Output status
 // @return -1 on error, 0 if keyAltName was not found, 1 on success
 int mc_translate_fields_keyAltName_to_keyId(const bson_t *fields_bson,
-                                             _mongocrypt_key_broker_t *kb,
-                                             bson_t *out,
-                                             mongocrypt_status_t *status);
+                                            _mongocrypt_key_broker_t *kb,
+                                            bson_t *out,
+                                            mongocrypt_status_t *status);
 
 #endif // MC_SCHEMA_BROKER_PRIVATE_H

@@ -296,7 +296,8 @@ static bool _create_markings_cmd_bson(mongocrypt_ctx_t *ctx, bson_t *out) {
                 bson_t new_fields;
                 BSON_APPEND_ARRAY_BEGIN(&new_ef, "fields", &new_fields);
 
-                const int translated_keyAltName = mc_translate_fields_keyAltName_to_keyId(&fields_bson, &ctx->kb, &new_fields, ctx->status);
+                const int translated_keyAltName =
+                    mc_translate_fields_keyAltName_to_keyId(&fields_bson, &ctx->kb, &new_fields, ctx->status);
                 if (translated_keyAltName == -1) {
                     bson_destroy(&new_fields);
                     bson_destroy(&new_ef);
