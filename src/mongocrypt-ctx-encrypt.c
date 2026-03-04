@@ -471,10 +471,35 @@ static bool _mongo_done_markings(mongocrypt_ctx_t *ctx) {
     }
     (void)_mongocrypt_key_broker_requests_done(&ctx->kb);
     // We can get here without going through NEED_MONGO_KEYS if the key is cached
-    if (ctx->need_keys_for_encryptedFields) {
-        ctx->need_keys_for_encryptedFields = false;
+    if (ctx->kb.need_keys_for_encryptedFields) {
+        ctx->kb.need_keys_for_encryptedFields = false;
     }
     return _mongocrypt_ctx_state_from_key_broker(ctx);
+}
+
+static bool _mongo_done_keys(mongocrypt_ctx_t *ctx) {
+    _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *)ctx;
+
+    BSON_ASSERT_PARAM(ctx);
+
+    const bool used_keyaltname = ctx->kb.need_keys_for_encryptedFields;
+    ctx->kb.need_keys_for_encryptedFields = false;
+    (void)_mongocrypt_key_broker_docs_done(&ctx->kb);
+
+    bool is_compact_or_cleanup = false;
+    if (ectx->cmd_name
+        && (0 == strcmp(ectx->cmd_name, "compactStructuredEncryptionData")
+            || 0 == strcmp(ectx->cmd_name, "cleanupStructuredEncryptionData"))) {
+        is_compact_or_cleanup = true;
+    }
+
+    if (used_keyaltname && !ctx->crypt->opts.bypass_query_analysis && !is_compact_or_cleanup) {
+        ctx->kb.state = KB_REQUESTING;
+        ctx->state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
+        return _try_run_csfle_marking(ctx);
+    } else {
+        return _mongocrypt_ctx_state_from_key_broker(ctx);
+    }
 }
 
 /**
@@ -2606,6 +2631,7 @@ bool mongocrypt_ctx_encrypt_init(mongocrypt_ctx_t *ctx, const char *db, int32_t 
     ctx->vtable.mongo_op_markings = _mongo_op_markings;
     ctx->vtable.mongo_feed_markings = _mongo_feed_markings;
     ctx->vtable.mongo_done_markings = _mongo_done_markings;
+    ctx->vtable.mongo_done_keys = _mongo_done_keys;
     ctx->vtable.finalize = _finalize;
     ctx->vtable.cleanup = _cleanup;
     ectx->bypass_query_analysis = ctx->crypt->opts.bypass_query_analysis;
@@ -2846,7 +2872,7 @@ static bool mongocrypt_ctx_encrypt_ismaster_done(mongocrypt_ctx_t *ctx) {
     if (need_keys == -1) {
         return false;
     } else if (need_keys == 1) {
-        ctx->need_keys_for_encryptedFields = true;
+        ctx->kb.need_keys_for_encryptedFields = true;
     }
 
     if (ctx->state == MONGOCRYPT_CTX_NEED_MONGO_MARKINGS) {
@@ -2854,7 +2880,7 @@ static bool mongocrypt_ctx_encrypt_ismaster_done(mongocrypt_ctx_t *ctx) {
             /* Keys may have been requested for compactionTokens.
              * Finish key requests.
              */
-            if (_all_key_requests_satisfied(&ctx->kb) && ctx->need_keys_for_encryptedFields) {
+            if (_all_key_requests_satisfied(&ctx->kb) && ctx->kb.need_keys_for_encryptedFields) {
                 return _try_run_csfle_marking(ctx);
             }
             _mongocrypt_key_broker_requests_done(&ctx->kb);

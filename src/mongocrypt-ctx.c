@@ -328,27 +328,8 @@ static bool _mongo_feed_keys(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in) {
 static bool _mongo_done_keys(mongocrypt_ctx_t *ctx) {
     BSON_ASSERT_PARAM(ctx);
 
-    const bool used_keyaltname = ctx->need_keys_for_encryptedFields;
-    ctx->need_keys_for_encryptedFields = false;
     (void)_mongocrypt_key_broker_docs_done(&ctx->kb);
-
-    bool is_compact_or_cleanup = false;
-    if (ctx->type == _MONGOCRYPT_TYPE_ENCRYPT) {
-        _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *)ctx;
-        if (ectx->cmd_name
-            && (0 == strcmp(ectx->cmd_name, "compactStructuredEncryptionData")
-                || 0 == strcmp(ectx->cmd_name, "cleanupStructuredEncryptionData"))) {
-            is_compact_or_cleanup = true;
-        }
-    }
-
-    if (used_keyaltname && !ctx->crypt->opts.bypass_query_analysis && !is_compact_or_cleanup) {
-        ctx->kb.state = KB_REQUESTING;
-        ctx->state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
-        return _try_run_csfle_marking(ctx);
-    } else {
-        return _mongocrypt_ctx_state_from_key_broker(ctx);
-    }
+    return _mongocrypt_ctx_state_from_key_broker(ctx);
 }
 
 static mongocrypt_kms_ctx_t *_next_kms_ctx(mongocrypt_ctx_t *ctx) {
@@ -899,7 +880,7 @@ bool _mongocrypt_ctx_state_from_key_broker(mongocrypt_ctx_t *ctx) {
         ret = true;
         break;
     case KB_DONE:
-        if (ctx->need_keys_for_encryptedFields) {
+        if (kb->need_keys_for_encryptedFields) {
             kb->state = KB_REQUESTING;
             new_state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
         } else {
