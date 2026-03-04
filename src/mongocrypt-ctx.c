@@ -332,15 +332,17 @@ static bool _mongo_done_keys(mongocrypt_ctx_t *ctx) {
     ctx->need_keys_for_encryptedFields = false;
     (void)_mongocrypt_key_broker_docs_done(&ctx->kb);
 
-    bool is_compact = false;
+    bool is_compact_or_cleanup = false;
     if (ctx->type == _MONGOCRYPT_TYPE_ENCRYPT) {
         _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *)ctx;
-        if (ectx->cmd_name && 0 == strcmp(ectx->cmd_name, "compactStructuredEncryptionData")) {
-            is_compact = true;
+        if (ectx->cmd_name
+            && (0 == strcmp(ectx->cmd_name, "compactStructuredEncryptionData")
+                || 0 == strcmp(ectx->cmd_name, "cleanupStructuredEncryptionData"))) {
+            is_compact_or_cleanup = true;
         }
     }
 
-    if (used_keyaltname && !ctx->crypt->opts.bypass_query_analysis && !is_compact) {
+    if (used_keyaltname && !ctx->crypt->opts.bypass_query_analysis && !is_compact_or_cleanup) {
         ctx->kb.state = KB_REQUESTING;
         ctx->state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
         return _try_run_csfle_marking(ctx);
