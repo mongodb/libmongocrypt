@@ -478,29 +478,74 @@ static bool _mongo_done_markings(mongocrypt_ctx_t *ctx) {
     return _mongocrypt_ctx_state_from_key_broker(ctx);
 }
 
-static bool _mongo_done_keys(mongocrypt_ctx_t *ctx) {
+// needs_markings returns true if the operation needs markings from mongocryptd or crypt_shared.
+static bool needs_markings(mongocrypt_ctx_t *ctx) {
+    BSON_ASSERT_PARAM(ctx);
+
     _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *)ctx;
+    BSON_ASSERT(ectx->cmd_name);
+    if ((0 == strcmp(ectx->cmd_name, "compactStructuredEncryptionData")
+         || 0 == strcmp(ectx->cmd_name, "cleanupStructuredEncryptionData"))) {
+        return false;
+    }
+
+    if (ctx->crypt->opts.bypass_query_analysis) {
+        return false;
+    }
+
+    return true;
+}
+
+static bool _mongo_done_keys(mongocrypt_ctx_t *ctx) {
+    BSON_ASSERT_PARAM(ctx);
+
+    (void)_mongocrypt_key_broker_docs_done(&ctx->kb);
+
+    if (ctx->kb.state == KB_DONE) {
+        // Requested keys are complete and do not require KMS.
+
+        const bool translated_keyAltNames = ctx->kb.need_keys_for_encryptedFields;
+        ctx->kb.need_keys_for_encryptedFields = false;
+
+        if (translated_keyAltNames && needs_markings(ctx)) {
+            // keyAltName translation is done.
+            // Restart key broker to request additional keys for encrypting values:
+            _mongocrypt_key_broker_restart(&ctx->kb);
+            ctx->state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
+            return true;
+        }
+    }
+
+    return _mongocrypt_ctx_state_from_key_broker(ctx);
+}
+
+static bool _kms_done(mongocrypt_ctx_t *ctx) {
+    _mongocrypt_opts_kms_providers_t *kms_providers;
 
     BSON_ASSERT_PARAM(ctx);
 
-    const bool used_keyaltname = ctx->kb.need_keys_for_encryptedFields;
-    ctx->kb.need_keys_for_encryptedFields = false;
-    (void)_mongocrypt_key_broker_docs_done(&ctx->kb);
+    kms_providers = _mongocrypt_ctx_kms_providers(ctx);
 
-    bool is_compact_or_cleanup = false;
-    if (ectx->cmd_name
-        && (0 == strcmp(ectx->cmd_name, "compactStructuredEncryptionData")
-            || 0 == strcmp(ectx->cmd_name, "cleanupStructuredEncryptionData"))) {
-        is_compact_or_cleanup = true;
+    if (!_mongocrypt_key_broker_kms_done(&ctx->kb, kms_providers)) {
+        BSON_ASSERT(!_mongocrypt_key_broker_status(&ctx->kb, ctx->status));
+        return _mongocrypt_ctx_fail(ctx);
     }
 
-    if (used_keyaltname && !ctx->crypt->opts.bypass_query_analysis && !is_compact_or_cleanup) {
-        ctx->kb.state = KB_REQUESTING;
-        ctx->state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
-        return _try_run_csfle_marking(ctx);
-    } else {
-        return _mongocrypt_ctx_state_from_key_broker(ctx);
+    if (ctx->kb.state == KB_DONE) {
+        // Requested keys are complete and do not require KMS.
+
+        const bool translated_keyAltNames = ctx->kb.need_keys_for_encryptedFields;
+        ctx->kb.need_keys_for_encryptedFields = false;
+
+        if (translated_keyAltNames && needs_markings(ctx)) {
+            // keyAltName translation is done.
+            // Restart key broker to request additional keys for encrypting values:
+            _mongocrypt_key_broker_restart(&ctx->kb);
+            ctx->state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
+            return true;
+        }
     }
+    return _mongocrypt_ctx_state_from_key_broker(ctx);
 }
 
 /**
@@ -2633,6 +2678,7 @@ bool mongocrypt_ctx_encrypt_init(mongocrypt_ctx_t *ctx, const char *db, int32_t 
     ctx->vtable.mongo_feed_markings = _mongo_feed_markings;
     ctx->vtable.mongo_done_markings = _mongo_done_markings;
     ctx->vtable.mongo_done_keys = _mongo_done_keys;
+    ctx->vtable.kms_done = _kms_done;
     ctx->vtable.finalize = _finalize;
     ctx->vtable.cleanup = _cleanup;
     ectx->bypass_query_analysis = ctx->crypt->opts.bypass_query_analysis;
