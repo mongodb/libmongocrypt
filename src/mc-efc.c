@@ -105,7 +105,8 @@ static bool _parse_field(mc_EncryptedFieldConfig_t *efc, bson_t *field, mongocry
     _mongocrypt_buffer_t field_keyid;
     if (has_keyid) {
         if (!BSON_ITER_HOLDS_BINARY(&keyid_iter)) {
-            CLIENT_ERR("expected 'fields.keyId' to be type binary, got: %d", (int)bson_iter_type(&keyid_iter));
+            CLIENT_ERR("expected 'fields.keyId' to be type binary, got: %s",
+                       mc_bson_type_to_string(bson_iter_type(&keyid_iter)));
             return false;
         }
         if (!_mongocrypt_buffer_from_uuid_iter(&field_keyid, &keyid_iter)) {

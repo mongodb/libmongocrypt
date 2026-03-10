@@ -547,12 +547,12 @@ bool mc_schema_broker_satisfy_from_create_or_collMod(mc_schema_broker_t *sb,
 
     if (bson_iter_init_find(&iter, cmd, "encryptedFields")) {
         if (!_mongocrypt_buffer_copy_from_document_iter(&found->encryptedFields.buf, &iter)) {
-            CLIENT_ERR("failed to read schema from schema map for collection: %s", coll);
+            CLIENT_ERR("failed to read encryptedFields from command: %s", cmd_name);
             return false;
         }
 
         if (!_mongocrypt_buffer_to_bson(&found->encryptedFields.buf, &found->encryptedFields.bson)) {
-            CLIENT_ERR("unable to create BSON from schema map for collection: %s", coll);
+            CLIENT_ERR("unable to create BSON from encryptedFields for command: %s", cmd_name);
             return false;
         }
 
@@ -771,15 +771,16 @@ static bool append_encryptedFields(const bson_t *encryptedFields,
         if (strcmp(bson_iter_key(&iter), "strEncodeVersion") == 0) {
             has_strEncodeVersion = true;
         }
-        /* Special-case the "fields" array: copy each element but omit the
-         * "keyAltName" key from each subdocument. For other keys, copy as-is. */
+        /* Special-case the "fields" array: translate any "keyAltName" to "keyId" */
         if (0 == strcmp(iter_key, "fields") && BSON_ITER_HOLDS_ARRAY(&iter) && kb) {
             uint32_t array_len = 0;
             const uint8_t *array_data = NULL;
             bson_t array_bson;
 
             bson_iter_array(&iter, &array_len, &array_data);
-            bson_init_static(&array_bson, array_data, array_len);
+            TRY_BSON_OR(bson_init_static(&array_bson, array_data, array_len)) {
+                goto fail;
+            }
 
             bson_t new_array;
             TRY_BSON_OR(BSON_APPEND_ARRAY_BEGIN(out, "fields", &new_array)) {
@@ -793,7 +794,7 @@ static bool append_encryptedFields(const bson_t *encryptedFields,
                 goto fail;
             }
 
-            if (!bson_append_array_end(out, &new_array)) {
+            TRY_BSON_OR (bson_append_array_end(out, &new_array)) {
                 goto fail;
             }
         } else {
