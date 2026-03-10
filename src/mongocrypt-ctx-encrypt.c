@@ -472,8 +472,8 @@ static bool _mongo_done_markings(mongocrypt_ctx_t *ctx) {
     }
     (void)_mongocrypt_key_broker_requests_done(&ctx->kb);
     // We can get here without going through NEED_MONGO_KEYS if the key is cached
-    if (ctx->kb.need_keys_for_encryptedFields) {
-        ctx->kb.need_keys_for_encryptedFields = false;
+    if (ectx->need_keys_for_encryptedFields) {
+        ectx->need_keys_for_encryptedFields = false;
     }
     return _mongocrypt_ctx_state_from_key_broker(ctx);
 }
@@ -497,6 +497,8 @@ static bool needs_markings(mongocrypt_ctx_t *ctx) {
 }
 
 static bool _mongo_done_keys(mongocrypt_ctx_t *ctx) {
+    _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *)ctx;
+
     BSON_ASSERT_PARAM(ctx);
 
     (void)_mongocrypt_key_broker_docs_done(&ctx->kb);
@@ -504,8 +506,8 @@ static bool _mongo_done_keys(mongocrypt_ctx_t *ctx) {
     if (ctx->kb.state == KB_DONE) {
         // Requested keys are complete and do not require KMS.
 
-        const bool translated_keyAltNames = ctx->kb.need_keys_for_encryptedFields;
-        ctx->kb.need_keys_for_encryptedFields = false;
+        const bool translated_keyAltNames = ectx->need_keys_for_encryptedFields;
+        ectx->need_keys_for_encryptedFields = false;
 
         if (translated_keyAltNames && needs_markings(ctx)) {
             // keyAltName translation is done.
@@ -520,6 +522,7 @@ static bool _mongo_done_keys(mongocrypt_ctx_t *ctx) {
 }
 
 static bool _kms_done(mongocrypt_ctx_t *ctx) {
+    _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *)ctx;
     _mongocrypt_opts_kms_providers_t *kms_providers;
 
     BSON_ASSERT_PARAM(ctx);
@@ -534,8 +537,8 @@ static bool _kms_done(mongocrypt_ctx_t *ctx) {
     if (ctx->kb.state == KB_DONE) {
         // Requested keys are complete and do not require KMS.
 
-        const bool translated_keyAltNames = ctx->kb.need_keys_for_encryptedFields;
-        ctx->kb.need_keys_for_encryptedFields = false;
+        const bool translated_keyAltNames = ectx->need_keys_for_encryptedFields;
+        ectx->need_keys_for_encryptedFields = false;
 
         if (translated_keyAltNames && needs_markings(ctx)) {
             // keyAltName translation is done.
@@ -2919,7 +2922,7 @@ static bool mongocrypt_ctx_encrypt_ismaster_done(mongocrypt_ctx_t *ctx) {
     if (need_keys == -1) {
         return false;
     } else if (need_keys == 1) {
-        ctx->kb.need_keys_for_encryptedFields = true;
+        ectx->need_keys_for_encryptedFields = true;
     }
 
     if (ctx->state == MONGOCRYPT_CTX_NEED_MONGO_MARKINGS) {
@@ -2927,7 +2930,7 @@ static bool mongocrypt_ctx_encrypt_ismaster_done(mongocrypt_ctx_t *ctx) {
             /* Keys may have been requested for compactionTokens or keyAltName
              * Finish key requests.
              */
-            if (_all_key_requests_satisfied(&ctx->kb) && ctx->kb.need_keys_for_encryptedFields) {
+            if (_all_key_requests_satisfied(&ctx->kb) && ectx->need_keys_for_encryptedFields) {
                 return _try_run_csfle_marking(ctx);
             }
             _mongocrypt_key_broker_requests_done(&ctx->kb);

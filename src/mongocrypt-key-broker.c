@@ -104,7 +104,6 @@ void _mongocrypt_key_broker_init(_mongocrypt_key_broker_t *kb, mongocrypt_t *cry
     kb->state = KB_REQUESTING;
     kb->status = mongocrypt_status_new();
     kb->auth_requests = mc_mapof_kmsid_to_authrequest_new();
-    kb->need_keys_for_encryptedFields = false;
 }
 
 /*
