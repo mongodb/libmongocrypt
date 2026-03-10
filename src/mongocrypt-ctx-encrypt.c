@@ -2924,7 +2924,7 @@ static bool mongocrypt_ctx_encrypt_ismaster_done(mongocrypt_ctx_t *ctx) {
 
     if (ctx->state == MONGOCRYPT_CTX_NEED_MONGO_MARKINGS) {
         if (ectx->bypass_query_analysis || need_keys == 1) {
-            /* Keys may have been requested for compactionTokens.
+            /* Keys may have been requested for compactionTokens or keyAltName
              * Finish key requests.
              */
             if (_all_key_requests_satisfied(&ctx->kb) && ctx->kb.need_keys_for_encryptedFields) {
