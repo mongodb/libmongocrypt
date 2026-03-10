@@ -880,12 +880,7 @@ bool _mongocrypt_ctx_state_from_key_broker(mongocrypt_ctx_t *ctx) {
         ret = true;
         break;
     case KB_DONE:
-        if (kb->need_keys_for_encryptedFields) {
-            kb->state = KB_REQUESTING;
-            new_state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
-        } else {
-            new_state = MONGOCRYPT_CTX_READY;
-        }
+        new_state = MONGOCRYPT_CTX_READY;
         if (kb->key_requests == NULL) {
             /* No key requests were ever added. */
             ctx->nothing_to_do = true; /* nothing to encrypt/decrypt */
