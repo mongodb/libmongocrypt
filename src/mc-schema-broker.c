@@ -794,7 +794,7 @@ static bool append_encryptedFields(const bson_t *encryptedFields,
                 goto fail;
             }
 
-            TRY_BSON_OR (bson_append_array_end(out, &new_array)) {
+            TRY_BSON_OR(bson_append_array_end(out, &new_array)) {
                 goto fail;
             }
         } else {
