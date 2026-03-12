@@ -196,6 +196,8 @@ static bool _mongo_feed_collinfo(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in)
     return true;
 }
 
+static bool _try_run_csfle_marking(mongocrypt_ctx_t *ctx);
+
 static bool _mongo_done_collinfo(mongocrypt_ctx_t *ctx) {
     _mongocrypt_ctx_encrypt_t *ectx;
 

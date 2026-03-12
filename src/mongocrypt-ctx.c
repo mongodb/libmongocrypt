@@ -15,7 +15,6 @@
  */
 
 #include <bson/bson.h>
-#include <stdbool.h>
 
 #include "mc-mlib/str.h"
 #include "mc-textopts-private.h"
@@ -23,7 +22,6 @@
 #include "mongocrypt-ctx-private.h"
 #include "mongocrypt-key-broker-private.h"
 #include "mongocrypt-private.h"
-#include "mongocrypt.h"
 
 bool _mongocrypt_ctx_fail_w_msg(mongocrypt_ctx_t *ctx, const char *msg) {
     BSON_ASSERT_PARAM(ctx);
