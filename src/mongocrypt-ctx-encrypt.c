@@ -647,7 +647,7 @@ fail:
  * to generate the markings by passing a special command to a mongocryptd daemon
  * process. Instead, we'll do it ourselves here, if possible.
  */
-bool _try_run_csfle_marking(mongocrypt_ctx_t *ctx) {
+static bool _try_run_csfle_marking(mongocrypt_ctx_t *ctx) {
     BSON_ASSERT_PARAM(ctx);
 
     BSON_ASSERT(ctx->state == MONGOCRYPT_CTX_NEED_MONGO_MARKINGS
