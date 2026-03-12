@@ -302,7 +302,12 @@ functions:
           curl -L -O http://boxes.10gen.com/build/curator/curator-dist-rhel70-$CURATOR_RELEASE.tar.gz
           tar -zxvf curator-dist-rhel70-$CURATOR_RELEASE.tar.gz
           ./curator version
-          ./curator repo submit --config etc/repo_config.yaml --distro ${packager_distro} --edition org --version $pkg_version --arch ${packager_arch} --service https://barque.corp.mongodb.com/ --packages https://mciuploads.s3.amazonaws.com/${project}/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt-distro-packages.tar.gz
+          if "${project}" = 'libmongocrypt-release'; then
+            package_url_prefix="https://downloads.mongodb.org"
+          else
+            package_url_prefix="https://mciuploads.s3.amazonaws.com"
+          fi
+          ./curator repo submit --config etc/repo_config.yaml --distro ${packager_distro} --edition org --version $pkg_version --arch ${packager_arch} --service https://barque.corp.mongodb.com/ --packages $package_url_prefix/${project}/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt-distro-packages.tar.gz
 
   "build python release":
     - command: shell.exec
@@ -322,8 +327,6 @@ functions:
           - "*"
     - command: s3.put
       params:
-        # The upload of this component uses the less restricted bucket because it is only
-        # used for transferring temporary files until they are later merged in the next build step
         role_arn: ${upload_arn}
         local_file: release-files.tgz
         remote_file: '${project}/python-release/${branch_name}/${libmongocrypt_s3_suffix}/${task_id}-${execution}-release-files.tar.gz'
