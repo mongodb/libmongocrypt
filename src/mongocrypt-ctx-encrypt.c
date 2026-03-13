@@ -516,7 +516,7 @@ static bool _mongo_done_keys(mongocrypt_ctx_t *ctx) {
             // Restart key broker to request additional keys for encrypting values:
             _mongocrypt_key_broker_restart(&ctx->kb);
             ctx->state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
-            return true;
+            return _try_run_csfle_marking(ctx);
         }
     }
 
@@ -547,7 +547,7 @@ static bool _kms_done(mongocrypt_ctx_t *ctx) {
             // Restart key broker to request additional keys for encrypting values:
             _mongocrypt_key_broker_restart(&ctx->kb);
             ctx->state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
-            return true;
+            return _try_run_csfle_marking(ctx);
         }
     }
     return _mongocrypt_ctx_state_from_key_broker(ctx);
