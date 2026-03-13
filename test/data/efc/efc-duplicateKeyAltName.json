@@ -1,0 +1,29 @@
+{
+    "escCollection": "fle2.basic.esc",
+    "ecocCollection": "fle2.basic.ecoc",
+    "fields": [
+        {
+            "keyAltName": "myKeyAltName",
+            "path": "firstName",
+            "bsonType": "string",
+            "queries": {
+                "queryType": "equality",
+                "contention": {
+                    "$numberLong": "0"
+                }
+            }
+        },
+        {
+            "keyAltName": "myKeyAltName",
+            "path": "lastName",
+            "bsonType": "string",
+            "queries": {
+                "queryType": "equality",
+                "contention": {
+                    "$numberLong": "0"
+                }
+            }
+        }
+    ]
+}
+

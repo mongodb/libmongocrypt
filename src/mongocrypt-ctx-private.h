@@ -195,6 +195,10 @@ typedef struct {
 
     // cmd_name is the first BSON field in original_cmd for auto encryption.
     const char *cmd_name;
+
+    // need_keys_for_encryptedFields is set to true when keys are requested for
+    // keyAltName translation in encryptedFields.
+    bool need_keys_for_encryptedFields;
 } _mongocrypt_ctx_encrypt_t;
 
 // `_mongocrypt_ctx_encrypt_t` inherits extended alignment from libbson. To dynamically allocate, use
