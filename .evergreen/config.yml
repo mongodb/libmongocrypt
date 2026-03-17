@@ -1168,10 +1168,12 @@ pre:
         # role_arn_... values come from EVG project configuration variables stored on the EVG server
         if test "${is_patch}" = 'true' || "${project}" != 'libmongocrypt-release'; then
           echo "Using upload bucket: mciuploads"
+          echo "Uploads will be available to download at https://mciuploads.s3.amazonaws.com/<remote_file>"
           upload_bucket='mciuploads'
           upload_arn='${role_arn_for_mciuploads}'
         else
           echo "Using upload bucket: cdn-origin-libmongocrypt"
+          echo "Uploads will be available to download at https://downloads.mongodb.org/<remote_file>"
           upload_bucket='cdn-origin-libmongocrypt'
           upload_arn='${role_arn_for_release}'
         fi
