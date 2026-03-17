@@ -305,7 +305,7 @@ functions:
           curl -L -O http://boxes.10gen.com/build/curator/curator-dist-rhel70-$CURATOR_RELEASE.tar.gz
           tar -zxvf curator-dist-rhel70-$CURATOR_RELEASE.tar.gz
           ./curator version
-          if "${project}" = 'libmongocrypt-release'; then
+          if [ "${project}" = 'libmongocrypt-release' ]; then
             package_url_prefix="https://downloads.mongodb.org"
           else
             package_url_prefix="https://mciuploads.s3.amazonaws.com"
