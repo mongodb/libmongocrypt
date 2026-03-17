@@ -81,6 +81,7 @@ functions:
     - command: s3.put
       params:
         role_arn: ${upload_arn}
+        skip_existing: true
         remote_file: 'libmongocrypt/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt.tar.gz'
         bucket: ${upload_bucket}
         permissions: private
@@ -90,6 +91,7 @@ functions:
     - command: s3.put
       params:
         role_arn: ${upload_arn}
+        skip_existing: true
         remote_file: 'libmongocrypt/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix_copy}/libmongocrypt.tar.gz'
         bucket: ${upload_bucket}
         permissions: private
@@ -139,6 +141,7 @@ functions:
     - command: s3.put
       params:
         role_arn: ${upload_arn}
+        skip_existing: true
         remote_file: 'libmongocrypt/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt-distro-packages.tar.gz'
         bucket: ${upload_bucket}
         permissions: private
@@ -328,6 +331,7 @@ functions:
     - command: s3.put
       params:
         role_arn: ${upload_arn}
+        skip_existing: true
         local_file: release-files.tgz
         remote_file: 'libmongocrypt/python-release/${branch_name}/${libmongocrypt_s3_suffix}/${task_id}-${execution}-release-files.tar.gz'
         bucket: ${upload_bucket}
@@ -380,6 +384,7 @@ functions:
     - command: s3.put
       params:
         role_arn: ${upload_arn}
+        skip_existing: true
         local_file: release-files-all.tgz
         remote_file: 'libmongocrypt/python-release/${branch_name}/${libmongocrypt_s3_suffix}/${task_id}-${execution}-release-files-all.tar.gz'
         # The merged results are placed in the CDN bucket for releases
@@ -437,6 +442,7 @@ functions:
       params:
         display_name: Augmented SBOM
         role_arn: ${upload_arn}
+        skip_existing: true
         bucket: ${upload_bucket}
         content_type: application/json
         local_file: libmongocrypt/cyclonedx.augmented.sbom.json
@@ -645,6 +651,7 @@ tasks:
     - command: s3.put
       params:
         role_arn: ${upload_arn}
+        skip_existing: true
         remote_file: 'libmongocrypt/java/${revision}/libmongocrypt-java.tar.gz'
         bucket: ${upload_bucket}
         permissions: private
@@ -654,6 +661,7 @@ tasks:
     - command: s3.put
       params:
         role_arn: ${upload_arn}
+        skip_existing: true
         remote_file: 'libmongocrypt/java/${tag_upload_location}/libmongocrypt-java.tar.gz'
         bucket: ${upload_bucket}
         permissions: private
@@ -840,6 +848,7 @@ tasks:
     - command: s3.put
       params:
         role_arn: ${upload_arn}
+        skip_existing: true
         remote_file: 'libmongocrypt/all/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt-all.tar.gz'
         bucket: ${upload_bucket}
         permissions: private
@@ -849,6 +858,7 @@ tasks:
     - command: s3.put
       params:
         role_arn: ${upload_arn}
+        skip_existing: true
         remote_file: 'libmongocrypt/all/${branch_name}/${libmongocrypt_s3_suffix_copy}/libmongocrypt-all.tar.gz'
         bucket: ${upload_bucket}
         permissions: private
@@ -858,6 +868,7 @@ tasks:
     - command: s3.put
       params:
         role_arn: ${upload_arn}
+        skip_existing: true
         remote_file: 'libmongocrypt/all/${tag_upload_location}/libmongocrypt-all.tar.gz'
         bucket: ${upload_bucket}
         permissions: private
@@ -869,6 +880,7 @@ tasks:
     - command: s3.put
       params:
         role_arn: ${upload_arn}
+        skip_existing: true
         remote_file: 'libmongocrypt/all/latest/stable/libmongocrypt-all.tar.gz'
         bucket: ${upload_bucket}
         permissions: private
@@ -880,6 +892,7 @@ tasks:
     - command: s3.put
       params:
         role_arn: ${upload_arn}
+        skip_existing: true
         remote_file: 'libmongocrypt/all/latest/unstable/libmongocrypt-all.tar.gz'
         bucket: ${upload_bucket}
         permissions: private
@@ -964,6 +977,7 @@ tasks:
       # The fixed URL upload is kept to avoid possibly breaking expectations. Consider removing in the future.
       params:
         role_arn: ${upload_arn}
+        skip_existing: true
         remote_file: 'libmongocrypt/windows/latest_release/libmongocrypt${upload_suffix}.tar.gz'
         display_name: (Deprecated) libmongocrypt${upload_suffix}.tar.gz
         bucket: ${upload_bucket}
@@ -974,6 +988,7 @@ tasks:
     - command: s3.put # Upload tarball for GitHub Release.
       params:
         role_arn: ${upload_arn}
+        skip_existing: true
         remote_file: 'libmongocrypt/${build_variant}/${branch_name}/${revision}/${version_id}/libmongocrypt-windows-x86_64-${libmongocrypt_release_version}.tar.gz'
         display_name: libmongocrypt-windows-x86_64-${libmongocrypt_release_version}.tar.gz
         bucket: ${upload_bucket}
@@ -994,6 +1009,7 @@ tasks:
     - command: s3.put # Upload signature for GitHub Release.
       params:
         role_arn: ${upload_arn}
+        skip_existing: true
         remote_file: 'libmongocrypt/${build_variant}/${branch_name}/${revision}/${version_id}/libmongocrypt-windows-x86_64-${libmongocrypt_release_version}.asc'
         display_name: libmongocrypt-windows-x86_64-${libmongocrypt_release_version}.asc
         bucket: ${upload_bucket}
@@ -1021,6 +1037,7 @@ tasks:
     - command: s3.put
       params:
         role_arn: ${upload_arn}
+        skip_existing: true
         local_file: deb.tar.gz
         remote_file: libmongocrypt/${branch_name}/${revision}/${version_id}/${build_id}/${execution}/debian-packages.tar.gz
         bucket: ${upload_bucket}
@@ -1046,6 +1063,7 @@ tasks:
     - command: s3.put
       params:
         role_arn: ${upload_arn}
+        skip_existing: true
         local_file: deb.tar.gz
         remote_file: libmongocrypt/${branch_name}/${revision}/${version_id}/${build_id}/${execution}/debian-packages-i386.tar.gz
         bucket: ${upload_bucket}
