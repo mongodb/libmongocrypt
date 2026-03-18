@@ -13,6 +13,8 @@ set -eu
 : "${BINARY_DIR:="$LIBMONGOCRYPT_DIR/cmake-build"}"
 # Additional compilation flags that apply only to the libmongocrypt build
 : "${LIBMONGOCRYPT_COMPILE_FLAGS:=}"
+# Additional CMake flags that apply only to the libmongocrypt build. (Used by the C driver)
+: "${LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS:=}"
 
 # Control the build configuration that is generated.
 export CMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE:-RelWithDebInfo}"
@@ -40,6 +42,9 @@ cmake_args=(
     # Enable additional warnings-as-errors
     -D ENABLE_MORE_WARNINGS_AS_ERRORS=TRUE
 )
+
+# shellcheck disable=SC2206
+cmake_args+=($LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS)
 
 : "${CONFIGURE_ONLY:=}"
 
