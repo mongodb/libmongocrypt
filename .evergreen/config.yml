@@ -84,8 +84,8 @@ functions:
         skip_existing: true
         remote_file: 'libmongocrypt/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt.tar.gz'
         bucket: ${upload_bucket}
-        permissions: private
-        visibility: signed
+        permissions: ${upload_permissions}
+        visibility: ${upload_visibility}
         local_file: 'libmongocrypt.tar.gz'
         content_type: '${content_type|application/x-gzip}'
     - command: s3.put
@@ -94,8 +94,8 @@ functions:
         skip_existing: true
         remote_file: 'libmongocrypt/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix_copy}/libmongocrypt.tar.gz'
         bucket: ${upload_bucket}
-        permissions: private
-        visibility: signed
+        permissions: ${upload_permissions}
+        visibility: ${upload_visibility}
         local_file: 'libmongocrypt.tar.gz'
         content_type: '${content_type|application/x-gzip}'
 
@@ -144,8 +144,8 @@ functions:
         skip_existing: true
         remote_file: 'libmongocrypt/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt-distro-packages.tar.gz'
         bucket: ${upload_bucket}
-        permissions: private
-        visibility: signed
+        permissions: ${upload_permissions}
+        visibility: ${upload_visibility}
         local_file: 'libmongocrypt-distro-packages.tar.gz'
         content_type: '${content_type|application/x-gzip}'
         optional: true
@@ -335,8 +335,8 @@ functions:
         local_file: release-files.tgz
         remote_file: 'libmongocrypt/python-release/${branch_name}/${libmongocrypt_s3_suffix}/${task_id}-${execution}-release-files.tar.gz'
         bucket: ${upload_bucket}
-        permissions: private
-        visibility: signed
+        permissions: ${upload_permissions}
+        visibility: ${upload_visibility}
         content_type: ${content_type|application/gzip}
         display_name: Release Python files
 
@@ -389,8 +389,8 @@ functions:
         remote_file: 'libmongocrypt/python-release/${branch_name}/${libmongocrypt_s3_suffix}/${task_id}-${execution}-release-files-all.tar.gz'
         # The merged results are placed in the CDN bucket for releases
         bucket: ${upload_bucket}
-        permissions: private
-        visibility: signed
+        permissions: ${upload_permissions}
+        visibility: ${upload_visibility}
         content_type: ${content_type|application/gzip}
         display_name: Release Python files all
   earthly:
@@ -446,8 +446,8 @@ functions:
         bucket: ${upload_bucket}
         content_type: application/json
         local_file: libmongocrypt/cyclonedx.augmented.sbom.json
-        permissions: private
-        visibility: signed
+        permissions: ${upload_permissions}
+        visibility: ${upload_visibility}
         remote_file: libmongocrypt/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix}/sbom/cyclonedx.augmented.sbom.json
 
 tasks:
@@ -654,8 +654,8 @@ tasks:
         skip_existing: true
         remote_file: 'libmongocrypt/java/${revision}/libmongocrypt-java.tar.gz'
         bucket: ${upload_bucket}
-        permissions: private
-        visibility: signed
+        permissions: ${upload_permissions}
+        visibility: ${upload_visibility}
         local_file: 'libmongocrypt-java.tar.gz'
         content_type: '${content_type|application/x-gzip}'
     - command: s3.put
@@ -664,8 +664,8 @@ tasks:
         skip_existing: true
         remote_file: 'libmongocrypt/java/${tag_upload_location}/libmongocrypt-java.tar.gz'
         bucket: ${upload_bucket}
-        permissions: private
-        visibility: signed
+        permissions: ${upload_permissions}
+        visibility: ${upload_visibility}
         optional: true
         display_name: 'libmongocrypt-java-${tag_upload_location}.tar.gz'
         local_file: 'libmongocrypt-java-${tag_upload_location}.tar.gz'
@@ -851,8 +851,8 @@ tasks:
         skip_existing: true
         remote_file: 'libmongocrypt/all/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt-all.tar.gz'
         bucket: ${upload_bucket}
-        permissions: private
-        visibility: signed
+        permissions: ${upload_permissions}
+        visibility: ${upload_visibility}
         local_file: 'libmongocrypt-all.tar.gz'
         content_type: '${content_type|application/x-gzip}'
     - command: s3.put
@@ -861,8 +861,8 @@ tasks:
         skip_existing: true
         remote_file: 'libmongocrypt/all/${branch_name}/${libmongocrypt_s3_suffix_copy}/libmongocrypt-all.tar.gz'
         bucket: ${upload_bucket}
-        permissions: private
-        visibility: signed
+        permissions: ${upload_permissions}
+        visibility: ${upload_visibility}
         local_file: 'libmongocrypt-all.tar.gz'
         content_type: '${content_type|application/x-gzip}'
     - command: s3.put
@@ -871,8 +871,8 @@ tasks:
         skip_existing: true
         remote_file: 'libmongocrypt/all/${tag_upload_location}/libmongocrypt-all.tar.gz'
         bucket: ${upload_bucket}
-        permissions: private
-        visibility: signed
+        permissions: ${upload_permissions}
+        visibility: ${upload_visibility}
         optional: true # Do not fail task if `local_file` does not exist. `local_file` only exists for tagged release.
         display_name: 'libmongocrypt-all-${tag_upload_location}.tar.gz'
         local_file: 'libmongocrypt-all-${tag_upload_location}.tar.gz'
@@ -883,8 +883,8 @@ tasks:
         skip_existing: true
         remote_file: 'libmongocrypt/all/latest/stable/libmongocrypt-all.tar.gz'
         bucket: ${upload_bucket}
-        permissions: private
-        visibility: signed
+        permissions: ${upload_permissions}
+        visibility: ${upload_visibility}
         optional: true # Do not fail task if `local_file` does not exist. `local_file` only exists for stable release.
         display_name: 'stable/libmongocrypt-all-${tag_upload_location}.tar.gz'
         local_file: 'stable/libmongocrypt-all-${tag_upload_location}.tar.gz'
@@ -895,8 +895,8 @@ tasks:
         skip_existing: true
         remote_file: 'libmongocrypt/all/latest/unstable/libmongocrypt-all.tar.gz'
         bucket: ${upload_bucket}
-        permissions: private
-        visibility: signed
+        permissions: ${upload_permissions}
+        visibility: ${upload_visibility}
         optional: true # Do not fail task if `local_file` does not exist. `local_file` only exists for unstable release.
         display_name: 'unstable/libmongocrypt-all-${tag_upload_location}.tar.gz'
         local_file: 'unstable/libmongocrypt-all-${tag_upload_location}.tar.gz'
@@ -981,8 +981,8 @@ tasks:
         remote_file: 'libmongocrypt/windows/latest_release/libmongocrypt${upload_suffix}.tar.gz'
         display_name: (Deprecated) libmongocrypt${upload_suffix}.tar.gz
         bucket: ${upload_bucket}
-        permissions: private
-        visibility: signed
+        permissions: ${upload_permissions}
+        visibility: ${upload_visibility}
         local_file: 'libmongocrypt_upload.tar.gz'
         content_type: 'application/x-gzip'
     - command: s3.put # Upload tarball for GitHub Release.
@@ -992,8 +992,8 @@ tasks:
         remote_file: 'libmongocrypt/${build_variant}/${branch_name}/${revision}/${version_id}/libmongocrypt-windows-x86_64-${libmongocrypt_release_version}.tar.gz'
         display_name: libmongocrypt-windows-x86_64-${libmongocrypt_release_version}.tar.gz
         bucket: ${upload_bucket}
-        permissions: private
-        visibility: signed
+        permissions: ${upload_permissions}
+        visibility: ${upload_visibility}
         local_file: 'libmongocrypt_upload.tar.gz'
         content_type: 'application/x-gzip'
     - command: shell.exec
@@ -1013,8 +1013,8 @@ tasks:
         remote_file: 'libmongocrypt/${build_variant}/${branch_name}/${revision}/${version_id}/libmongocrypt-windows-x86_64-${libmongocrypt_release_version}.asc'
         display_name: libmongocrypt-windows-x86_64-${libmongocrypt_release_version}.asc
         bucket: ${upload_bucket}
-        permissions: private
-        visibility: signed
+        permissions: ${upload_permissions}
+        visibility: ${upload_visibility}
         local_file: 'libmongocrypt/libmongocrypt_upload.asc'
         content_type: 'application/pgp-signature'
 
@@ -1041,8 +1041,8 @@ tasks:
         local_file: deb.tar.gz
         remote_file: libmongocrypt/${branch_name}/${revision}/${version_id}/${build_id}/${execution}/debian-packages.tar.gz
         bucket: ${upload_bucket}
-        permissions: private
-        visibility: signed
+        permissions: ${upload_permissions}
+        visibility: ${upload_visibility}
         content_type: ${content_type|application/x-gzip}
         display_name: "deb.tar.gz"
   allowed_requesters:
@@ -1075,8 +1075,8 @@ tasks:
         local_file: deb.tar.gz
         remote_file: libmongocrypt/${branch_name}/${revision}/${version_id}/${build_id}/${execution}/debian-packages-i386.tar.gz
         bucket: ${upload_bucket}
-        permissions: private
-        visibility: signed
+        permissions: ${upload_permissions}
+        visibility: ${upload_visibility}
         content_type: ${content_type|application/x-gzip}
         display_name: "deb.tar.gz"
 
@@ -1182,16 +1182,20 @@ pre:
         # If we are a non-patch build in the libmongocrypt-release project, we upload to a restricted
         # CDN S3 bucket. Otherwise, we upload to a less restricted bucket for convenience. The corresponding
         # role_arn_... values come from EVG project configuration variables stored on the EVG server
-        if test "${is_patch}" = 'true' || "${project}" != 'libmongocrypt-release'; then
+        if test "${is_patch}" = 'true' || test "${project}" != 'libmongocrypt-release'; then
           echo "Using upload bucket: mciuploads"
           echo "Uploads will be available to download at https://mciuploads.s3.amazonaws.com/<remote_file>"
           upload_bucket='mciuploads'
           upload_arn='${role_arn_for_mciuploads}'
+          upload_permissions='public-read'
+          upload_visibility='public'
         else
           echo "Using upload bucket: cdn-origin-libmongocrypt"
           echo "Uploads will be available to download at https://downloads.mongodb.org/<remote_file>"
           upload_bucket='cdn-origin-libmongocrypt'
           upload_arn='${role_arn_for_release}'
+          upload_permissions='private'
+          upload_visibility='signed'
         fi
 
         PROJECT_DIRECTORY="$(pwd)"
@@ -1206,6 +1210,8 @@ pre:
         project_directory: "$PROJECT_DIRECTORY"
         upload_bucket: "$upload_bucket"
         upload_arn: "$upload_arn"
+        upload_permissions: "$upload_permissions"
+        upload_visibility: "$upload_visibility"
         EOT
   - command: expansions.update
     params:
