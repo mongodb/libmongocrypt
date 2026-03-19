@@ -137,7 +137,7 @@ extrepo search libmongocrypt
 In order to enable the repository, execute this command:
 
 ```
-sudo extrepo enable libmongocrypt
+sudo extrepo enable libmongocrypt-release
 ```
 
 Once the repository is configured, continue with package installation.
