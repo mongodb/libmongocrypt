@@ -27,6 +27,8 @@ export CMAKE_INSTALL_PREFIX="${MONGOCRYPT_INSTALL_PREFIX-}"
 export CTEST_OUTPUT_ON_FAILURE=1
 # Generate a compilation database for use by other tools
 export CMAKE_EXPORT_COMPILE_COMMANDS=1
+# Permit skipping build of tests.
+BUILD_TESTING="${BUILD_TESTING-TRUE}"
 
 # Accumulate arguments that are passed to CMake
 cmake_args=(
@@ -38,7 +40,7 @@ cmake_args=(
     # Toggle compiling with shared BSON
     -D USE_SHARED_LIBBSON="${USE_SHARED_LIBBSON-FALSE}"
     # Toggle building of tests
-    -D BUILD_TESTING="${BUILD_TESTING-TRUE}"
+    -D BUILD_TESTING="${BUILD_TESTING:?}"
     # Enable additional warnings-as-errors
     -D ENABLE_MORE_WARNINGS_AS_ERRORS=TRUE
 )
@@ -85,8 +87,7 @@ if [ "$CONFIGURE_ONLY" ]; then
     exit 0;
 fi
 echo "Installing libmongocrypt"
-_cmake_with_env --build "$BINARY_DIR" --target install test-mongocrypt test_kms_request
-run_chdir "$BINARY_DIR" run_ctest
+_cmake_with_env --build "$BINARY_DIR" --target install
 
 # MONGOCRYPT-372, ensure macOS universal builds contain both x86_64 and arm64 architectures.
 if test "${CMAKE_OSX_ARCHITECTURES-}" != ''; then
@@ -99,6 +100,14 @@ if test "${CMAKE_OSX_ARCHITECTURES-}" != ''; then
         exit 1
     fi
 fi
+
+if [[ "${BUILD_TESTING:?}" =~ ^(0|OFF|NO|FALSE|n|off|no|false)$ ]]; then
+    echo "Skipping tests since BUILD_TESTING is false"
+    exit 0;
+fi
+
+_cmake_with_env --build "$BINARY_DIR" --target test-mongocrypt test_kms_request
+run_chdir "$BINARY_DIR" run_ctest
 
 if [ "$PPA_BUILD_ONLY" ]; then
     echo "Only building/installing for PPA";
