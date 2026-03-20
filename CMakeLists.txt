@@ -499,6 +499,8 @@ set (TEST_MONGOCRYPT_SOURCES
    test/test-unicode-fold.c
    )
 
+if (BUILD_TESTING)
+
 # Define test-mongocrypt
 add_executable (test-mongocrypt ${TEST_MONGOCRYPT_SOURCES})
 # Use the static version since it allows the test binary to use private symbols
@@ -548,6 +550,8 @@ if ("cxx_relaxed_constexpr" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
       add_test ("${test_name}" "${exe_name}")
    endforeach ()
 endif ()
+
+endif () # BUILD_TESTING
 
 if ("cxx_std_20" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
    add_executable (csfle-markup src/csfle-markup.cpp)
