@@ -29,6 +29,8 @@ export CTEST_OUTPUT_ON_FAILURE=1
 export CMAKE_EXPORT_COMPILE_COMMANDS=1
 # Permit skipping build of tests.
 BUILD_TESTING="${BUILD_TESTING-TRUE}"
+# Build nocrypto and sharedbson variants (true by defualt).
+BUILD_MONGOCRYPT_VARIANTS="${BUILD_MONGOCRYPT_VARIANTS:-TRUE}"
 
 # Accumulate arguments that are passed to CMake
 cmake_args=(
@@ -104,6 +106,11 @@ fi
 
 if [ "$PPA_BUILD_ONLY" ]; then
     echo "Only building/installing for PPA";
+    exit 0;
+fi
+
+if [ "${BUILD_MONGOCRYPT_VARIANTS:?}" != "TRUE" ]; then
+    echo "Skipping build of libmongocrypt variants";
     exit 0;
 fi
 
