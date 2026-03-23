@@ -88,6 +88,7 @@ if [ "$CONFIGURE_ONLY" ]; then
 fi
 echo "Installing libmongocrypt"
 _cmake_with_env --build "$BINARY_DIR" --target install
+run_chdir "$BINARY_DIR" run_ctest
 
 # MONGOCRYPT-372, ensure macOS universal builds contain both x86_64 and arm64 architectures.
 if test "${CMAKE_OSX_ARCHITECTURES-}" != ''; then
@@ -101,14 +102,6 @@ if test "${CMAKE_OSX_ARCHITECTURES-}" != ''; then
     fi
 fi
 
-if [[ "${BUILD_TESTING:?}" =~ ^(0|OFF|NO|FALSE|n|off|no|false)$ ]]; then
-    echo "Skipping tests since BUILD_TESTING is false"
-    exit 0;
-fi
-
-_cmake_with_env --build "$BINARY_DIR" --target test-mongocrypt test_kms_request
-run_chdir "$BINARY_DIR" run_ctest
-
 if [ "$PPA_BUILD_ONLY" ]; then
     echo "Only building/installing for PPA";
     exit 0;
@@ -119,7 +112,7 @@ _cmake_with_env "${cmake_args[@]}" \
     -DDISABLE_NATIVE_CRYPTO=ON \
     -DCMAKE_INSTALL_PREFIX="$MONGOCRYPT_INSTALL_PREFIX/nocrypto" \
     -B "$BINARY_DIR" -S "$LIBMONGOCRYPT_DIR"
-_cmake_with_env --build "$BINARY_DIR" --target install test-mongocrypt
+_cmake_with_env --build "$BINARY_DIR" --target install
 run_chdir "$BINARY_DIR" run_ctest
 
 # Build and install libmongocrypt without statically linking libbson
@@ -127,5 +120,5 @@ _cmake_with_env "${cmake_args[@]}" \
     -DUSE_SHARED_LIBBSON=ON \
     -DCMAKE_INSTALL_PREFIX="$MONGOCRYPT_INSTALL_PREFIX/sharedbson" \
     -B "$BINARY_DIR" -S "$LIBMONGOCRYPT_DIR"
-_cmake_with_env --build "$BINARY_DIR" --target install test-mongocrypt
+_cmake_with_env --build "$BINARY_DIR" --target install
 run_chdir "$BINARY_DIR" run_ctest
