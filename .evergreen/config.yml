@@ -98,6 +98,14 @@ functions:
         visibility: ${upload_visibility}
         local_file: 'libmongocrypt.tar.gz'
         content_type: '${content_type|application/x-gzip}'
+    - command: papertrail.trace
+      params:
+        key_id: ${papertrail_key_id}
+        secret_key: ${papertrail_secret_key}
+        product: ${papertrail_project} # libmongocrypt-dev or libmongocrypt-release
+        version: ${tag_upload_location!|*revision} # Use ${tag_upload_location} if non-empty, otherwise ${revision}.
+        filenames:
+            - 'libmongocrypt.tar.gz'
 
   "build and test":
     - command: "shell.exec"
@@ -147,6 +155,14 @@ functions:
         visibility: ${upload_visibility}
         local_file: 'libmongocrypt-distro-packages.tar.gz'
         content_type: '${content_type|application/x-gzip}'
+    - command: papertrail.trace
+      params:
+        key_id: ${papertrail_key_id}
+        secret_key: ${papertrail_secret_key}
+        product: ${papertrail_project} # libmongocrypt-dev or libmongocrypt-release
+        version: ${tag_upload_location!|*revision} # Use ${tag_upload_location} if non-empty, otherwise ${revision}.
+        filenames:
+          - 'libmongocrypt-distro-packages.tar.gz'
 
   "run clang-tidy":
     - command: "shell.exec"
@@ -332,6 +348,14 @@ functions:
         visibility: ${upload_visibility}
         content_type: ${content_type|application/gzip}
         display_name: Release Python files
+    - command: papertrail.trace
+      params:
+        key_id: ${papertrail_key_id}
+        secret_key: ${papertrail_secret_key}
+        product: ${papertrail_project} # libmongocrypt-dev or libmongocrypt-release
+        version: ${tag_upload_location!|*revision} # Use ${tag_upload_location} if non-empty, otherwise ${revision}.
+        filenames:
+          - release-files.tgz
 
   "download and merge python releases":
     - command: ec2.assume_role
@@ -386,6 +410,14 @@ functions:
         visibility: ${upload_visibility}
         content_type: ${content_type|application/gzip}
         display_name: Release Python files all
+    - command: papertrail.trace
+      params:
+        key_id: ${papertrail_key_id}
+        secret_key: ${papertrail_secret_key}
+        product: ${papertrail_project} # libmongocrypt-dev or libmongocrypt-release
+        version: ${tag_upload_location!|*revision} # Use ${tag_upload_location} if non-empty, otherwise ${revision}.
+        filenames:
+          - release-files-all.tgz
   earthly:
     - command: shell.exec
       params:
@@ -667,6 +699,14 @@ tasks:
         display_name: 'libmongocrypt-java-${tag_upload_location}.tar.gz'
         local_file: 'libmongocrypt-java-${tag_upload_location}.tar.gz'
         content_type: '${content_type|application/x-gzip}'
+    - command: papertrail.trace
+      params:
+        key_id: ${papertrail_key_id}
+        secret_key: ${papertrail_secret_key}
+        product: ${papertrail_project} # libmongocrypt-dev or libmongocrypt-release
+        version: ${tag_upload_location!|*revision} # Use ${tag_upload_location} if non-empty, otherwise ${revision}.
+        filenames:
+          - libmongocrypt-java.tar.gz
 
 - name: upload-all
   depends_on:
@@ -898,6 +938,14 @@ tasks:
         display_name: 'unstable/libmongocrypt-all-${tag_upload_location}.tar.gz'
         local_file: 'unstable/libmongocrypt-all-${tag_upload_location}.tar.gz'
         content_type: '${content_type|application/x-gzip}'
+    - command: papertrail.trace
+      params:
+        key_id: ${papertrail_key_id}
+        secret_key: ${papertrail_secret_key}
+        product: ${papertrail_project} # libmongocrypt-dev or libmongocrypt-release
+        version: ${tag_upload_location!|*revision} # Use ${tag_upload_location} if non-empty, otherwise ${revision}.
+        filenames:
+          - libmongocrypt-all.tar.gz
 
 - name: publish-packages
   depends_on: build-packages
@@ -1014,6 +1062,14 @@ tasks:
         visibility: ${upload_visibility}
         local_file: 'libmongocrypt/libmongocrypt_upload.asc'
         content_type: 'application/pgp-signature'
+    - command: papertrail.trace
+      params:
+        key_id: ${papertrail_key_id}
+        secret_key: ${papertrail_secret_key}
+        product: ${papertrail_project} # libmongocrypt-dev or libmongocrypt-release
+        version: ${tag_upload_location!|*revision} # Use ${tag_upload_location} if non-empty, otherwise ${revision}.
+        filenames:
+          - libmongocrypt_upload.tar.gz
 
 - name: debian-package-build
   run_on: &deb-package-build-run_on
@@ -1042,6 +1098,14 @@ tasks:
         visibility: ${upload_visibility}
         content_type: ${content_type|application/x-gzip}
         display_name: "deb.tar.gz"
+    - command: papertrail.trace
+      params:
+        key_id: ${papertrail_key_id}
+        secret_key: ${papertrail_secret_key}
+        product: ${papertrail_project} # libmongocrypt-dev or libmongocrypt-release
+        version: ${tag_upload_location!|*revision} # Use ${tag_upload_location} if non-empty, otherwise ${revision}.
+        filenames:
+          - deb.tar.gz
   allowed_requesters:
     - ad_hoc
     - commit
@@ -1076,6 +1140,14 @@ tasks:
         visibility: ${upload_visibility}
         content_type: ${content_type|application/x-gzip}
         display_name: "deb.tar.gz"
+    - command: papertrail.trace
+      params:
+        key_id: ${papertrail_key_id}
+        secret_key: ${papertrail_secret_key}
+        product: ${papertrail_project} # libmongocrypt-dev or libmongocrypt-release
+        version: ${tag_upload_location!|*revision} # Use ${tag_upload_location} if non-empty, otherwise ${revision}.
+        filenames:
+          - deb.tar.gz
 
 - name: rpm-package-build
   tags: [packaging]
@@ -1195,6 +1267,12 @@ pre:
           upload_visibility='signed'
         fi
 
+        if test "${project}" = 'libmongocrypt'; then
+          papertrail_project='libmongocrypt-dev'
+        else
+          papertrail_project='libmongocrypt-release'
+        fi
+
         PROJECT_DIRECTORY="$(pwd)"
         echo "libmongocrypt_s3_suffix: $REMOTE_SUFFIX"
         echo "libmongocrypt_s3_suffix_copy: $REMOTE_SUFFIX_COPY"
@@ -1209,6 +1287,7 @@ pre:
         upload_arn: "$upload_arn"
         upload_permissions: "$upload_permissions"
         upload_visibility: "$upload_visibility"
+        papertrail_project: "$papertrail_project"
         EOT
   - command: expansions.update
     params:
