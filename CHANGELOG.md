@@ -1,5 +1,21 @@
 # ChangeLog
 
+## Unreleased
+
+
+### Changed
+
+- Final release packages in the PPA are now available by specifying `release` in the repository configuration in place of the major/minor version (e.g., `1.17`). Details in `README.md`.
+
+### Removed
+
+- The configure-time CMake parameter `ENABLE_WINDOWS_STATIC_RUNTIME` has been
+  removed. Users that need the static MSVCRT library should instead set the
+  [`CMAKE_MSVC_RUNTIME_LIBRARY`][msvcrt] built-in CMake parameter when
+  configuring libmongocrypt.
+
+[msvcrt]: https://cmake.org/cmake/help/latest/variable/CMAKE_MSVC_RUNTIME_LIBRARY.html
+
 ## 1.17.1
 
 Add package for Debian Trixie.
@@ -202,7 +218,7 @@ This release makes backwards breaking changes to Queryable Encryption (QE) behav
 ## Warnings
 - This release has a severe bug in the context returned by `mongocrypt_ctx_rewrap_many_datakey_init` that may result in data corruption. Please upgrade to 1.5.2 before using `mongocrypt_ctx_rewrap_many_datakey_init`.
 ## Fixed
-- Update to use new payload for FLE 2.0 find. 
+- Update to use new payload for FLE 2.0 find.
 - Require contention factor.
 ## 1.5.0-rc2
 ### Fixed
@@ -222,7 +238,7 @@ This release makes backwards breaking changes to Queryable Encryption (QE) behav
 ## 1.5.0-rc0
 ## Fixed
 - Account for shared library rename.
-- Update to use new payload for FLE 2.0 find. 
+- Update to use new payload for FLE 2.0 find.
 
 ## 1.5.0-alpha2
 ## New Features

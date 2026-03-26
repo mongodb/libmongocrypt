@@ -19,6 +19,7 @@
 #include "mc-fle2-rfds-private.h"
 #include "mc-schema-broker-private.h"
 #include "mc-tokens-private.h"
+#include "mongocrypt-buffer-private.h"
 #include "mongocrypt-ciphertext-private.h"
 #include "mongocrypt-crypto-private.h"
 #include "mongocrypt-ctx-private.h"
@@ -28,6 +29,7 @@
 #include "mongocrypt-traverse-util-private.h"
 #include "mongocrypt-util-private.h" // mc_iter_document_as_bson
 #include "mongocrypt.h"
+#include <bson/bson.h>
 
 /* Construct the list collections command to send. */
 static bool _mongo_op_collinfo(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
@@ -123,7 +125,17 @@ static bool _fle2_collect_keys_for_compaction(mongocrypt_ctx_t *ctx) {
     }
 
     for (const mc_EncryptedField_t *field = efc->fields; field != NULL; field = field->next) {
-        if (!_mongocrypt_key_broker_request_id(&ctx->kb, &field->keyId)) {
+        if (field->keyAltName) {
+            bson_value_t keyAltName;
+            _bson_value_from_string(field->keyAltName, &keyAltName);
+            if (!_mongocrypt_key_broker_request_name(&ctx->kb, &keyAltName)) {
+                _mongocrypt_key_broker_status(&ctx->kb, ctx->status);
+                _mongocrypt_ctx_fail(ctx);
+                bson_value_destroy(&keyAltName);
+                return false;
+            }
+            bson_value_destroy(&keyAltName);
+        } else if (!_mongocrypt_key_broker_request_id(&ctx->kb, &field->keyId)) {
             _mongocrypt_key_broker_status(&ctx->kb, ctx->status);
             _mongocrypt_ctx_fail(ctx);
             return false;
@@ -131,6 +143,37 @@ static bool _fle2_collect_keys_for_compaction(mongocrypt_ctx_t *ctx) {
     }
 
     return true;
+}
+
+// Return value: 1 = keys needed, 0 = no keys needed, -1 = error
+static int _fle2_collect_keys_for_encrypted_fields(mongocrypt_ctx_t *ctx) {
+    int need_keys = 0;
+    _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *)ctx;
+    BSON_ASSERT_PARAM(ctx);
+
+    const mc_EncryptedFieldConfig_t *efc =
+        mc_schema_broker_maybe_get_encryptedFields(ectx->sb, ectx->target_coll, ctx->status);
+    if (!efc) {
+        return 0;
+    }
+
+    for (const mc_EncryptedField_t *field = efc->fields; field != NULL; field = field->next) {
+        if (!field->keyAltName) {
+            continue;
+        }
+        need_keys = 1;
+        bson_value_t keyAltName;
+        _bson_value_from_string(field->keyAltName, &keyAltName);
+        if (!_mongocrypt_key_broker_request_name(&ctx->kb, &keyAltName)) {
+            _mongocrypt_key_broker_status(&ctx->kb, ctx->status);
+            _mongocrypt_ctx_fail(ctx);
+            bson_value_destroy(&keyAltName);
+            return -1;
+        }
+        bson_value_destroy(&keyAltName);
+    }
+
+    return need_keys;
 }
 
 static bool _mongo_feed_collinfo(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *in) {
@@ -219,11 +262,68 @@ static bool _create_markings_cmd_bson(mongocrypt_ctx_t *ctx, bson_t *out) {
     // used to send the command.
     bson_copy_to_excluding_noinit(&bson_view, out, "$db", NULL);
     if (!mc_schema_broker_add_schemas_to_cmd(ectx->sb,
+                                             &ctx->kb,
                                              out,
                                              ctx->crypt->csfle.okay ? MC_CMD_SCHEMAS_FOR_CRYPT_SHARED
                                                                     : MC_CMD_SCHEMAS_FOR_MONGOCRYPTD,
                                              ctx->status)) {
         return _mongocrypt_ctx_fail(ctx);
+    }
+
+    if (0 == strcmp(ectx->cmd_name, "create")) {
+        // Translate keyAltName to keyId in encryptedFields
+        bson_iter_t iter;
+        if (bson_iter_init_find(&iter, out, "encryptedFields") && BSON_ITER_HOLDS_DOCUMENT(&iter)) {
+            uint32_t ef_len = 0;
+            const uint8_t *ef_data = NULL;
+            bson_iter_document(&iter, &ef_len, &ef_data);
+            bson_t ef_bson;
+            bson_init_static(&ef_bson, ef_data, ef_len);
+
+            bson_iter_t ef_iter;
+            if (bson_iter_init_find(&ef_iter, &ef_bson, "fields") && BSON_ITER_HOLDS_ARRAY(&ef_iter)) {
+                uint32_t fields_len = 0;
+                const uint8_t *fields_data = NULL;
+                bson_iter_array(&ef_iter, &fields_len, &fields_data);
+                bson_t fields_bson;
+                bson_init_static(&fields_bson, fields_data, fields_len);
+
+                // Build a new encryptedFields document with keyAltName replaced by keyId
+                bson_t new_ef;
+                bson_init(&new_ef);
+                // Copy all fields from encryptedFields except "fields"
+                bson_copy_to_excluding_noinit(&ef_bson, &new_ef, "fields", NULL);
+
+                // Process the fields array using the shared helper function
+                bson_t new_fields;
+                BSON_APPEND_ARRAY_BEGIN(&new_ef, "fields", &new_fields);
+
+                const int translated_keyAltName =
+                    mc_translate_fields_keyAltName_to_keyId(&fields_bson, &ctx->kb, &new_fields, ctx->status);
+                if (translated_keyAltName == -1) {
+                    bson_destroy(&new_fields);
+                    bson_destroy(&new_ef);
+                    return _mongocrypt_ctx_fail(ctx);
+                }
+
+                bson_append_array_end(&new_ef, &new_fields);
+
+                // Replace encryptedFields in out if we translated a keyAltName
+                // Done conditionally to avoid reordering encryptedFields and encryptionInformation in existing tests
+                if (translated_keyAltName == 1) {
+                    bson_t temp_out;
+                    bson_init(&temp_out);
+                    bson_copy_to_excluding_noinit(out, &temp_out, "encryptedFields", NULL);
+                    bson_append_document(&temp_out, "encryptedFields", -1, &new_ef);
+
+                    // Replace out with temp_out
+                    bson_destroy(out);
+                    bson_steal(out, &temp_out);
+                }
+
+                bson_destroy(&new_ef);
+            }
+        }
     }
 
     return true;
@@ -373,6 +473,83 @@ static bool _mongo_done_markings(mongocrypt_ctx_t *ctx) {
         return mongocrypt_ctx_encrypt_ismaster_done(ctx);
     }
     (void)_mongocrypt_key_broker_requests_done(&ctx->kb);
+    // We can get here without going through NEED_MONGO_KEYS if the key is cached
+    if (ectx->need_keys_for_encryptedFields) {
+        ectx->need_keys_for_encryptedFields = false;
+    }
+    return _mongocrypt_ctx_state_from_key_broker(ctx);
+}
+
+// needs_markings returns true if the operation needs markings from mongocryptd or crypt_shared.
+static bool needs_markings(mongocrypt_ctx_t *ctx) {
+    BSON_ASSERT_PARAM(ctx);
+
+    _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *)ctx;
+    BSON_ASSERT(ectx->cmd_name);
+    if ((0 == strcmp(ectx->cmd_name, "compactStructuredEncryptionData")
+         || 0 == strcmp(ectx->cmd_name, "cleanupStructuredEncryptionData"))) {
+        return false;
+    }
+
+    if (ctx->crypt->opts.bypass_query_analysis) {
+        return false;
+    }
+
+    return true;
+}
+
+static bool _mongo_done_keys(mongocrypt_ctx_t *ctx) {
+    _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *)ctx;
+
+    BSON_ASSERT_PARAM(ctx);
+
+    (void)_mongocrypt_key_broker_docs_done(&ctx->kb);
+
+    if (ctx->kb.state == KB_DONE) {
+        // Requested keys are complete and do not require KMS.
+
+        const bool translated_keyAltNames = ectx->need_keys_for_encryptedFields;
+        ectx->need_keys_for_encryptedFields = false;
+
+        if (translated_keyAltNames && needs_markings(ctx)) {
+            // keyAltName translation is done.
+            // Restart key broker to request additional keys for encrypting values:
+            _mongocrypt_key_broker_restart(&ctx->kb);
+            ctx->state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
+            return true;
+        }
+    }
+
+    return _mongocrypt_ctx_state_from_key_broker(ctx);
+}
+
+static bool _kms_done(mongocrypt_ctx_t *ctx) {
+    _mongocrypt_ctx_encrypt_t *ectx = (_mongocrypt_ctx_encrypt_t *)ctx;
+    _mongocrypt_opts_kms_providers_t *kms_providers;
+
+    BSON_ASSERT_PARAM(ctx);
+
+    kms_providers = _mongocrypt_ctx_kms_providers(ctx);
+
+    if (!_mongocrypt_key_broker_kms_done(&ctx->kb, kms_providers)) {
+        BSON_ASSERT(!_mongocrypt_key_broker_status(&ctx->kb, ctx->status));
+        return _mongocrypt_ctx_fail(ctx);
+    }
+
+    if (ctx->kb.state == KB_DONE) {
+        // Requested keys are complete and do not require KMS.
+
+        const bool translated_keyAltNames = ectx->need_keys_for_encryptedFields;
+        ectx->need_keys_for_encryptedFields = false;
+
+        if (translated_keyAltNames && needs_markings(ctx)) {
+            // keyAltName translation is done.
+            // Restart key broker to request additional keys for encrypting values:
+            _mongocrypt_key_broker_restart(&ctx->kb);
+            ctx->state = MONGOCRYPT_CTX_NEED_MONGO_MARKINGS;
+            return true;
+        }
+    }
     return _mongocrypt_ctx_state_from_key_broker(ctx);
 }
 
@@ -508,13 +685,23 @@ static bool _try_run_csfle_marking(mongocrypt_ctx_t *ctx) {
         goto fail_create_cmd;
     }
 
+    const char *version_str = ctx->crypt->csfle.get_version_str();
+    // Examples:
+    // mongo_crypt_v1-dev-8.0.0
+    // mongo_crypt_v1-dev-8.1.0-alpha3-245-ge1c2344
+    // Strip leading prefix.
+    if (strstr(version_str, "mongo_crypt_v1-dev-") == version_str) {
+        version_str += strlen("mongo_crypt_v1-dev-");
+    }
+
 #define CHECK_CSFLE_ERROR(Func, FailLabel)                                                                             \
     if (1) {                                                                                                           \
         if (csfle.status_get_error(status)) {                                                                          \
             _mongocrypt_set_error(ctx->status,                                                                         \
                                   MONGOCRYPT_STATUS_ERROR_CRYPT_SHARED,                                                \
                                   MONGOCRYPT_GENERIC_ERROR_CODE,                                                       \
-                                  "csfle " #Func " failed: %s [Error %d, code %d]",                                    \
+                                  "[crypt_shared %s] " #Func " failed: %s [Error %d, code %d]",                        \
+                                  version_str,                                                                         \
                                   csfle.status_get_explanation(status),                                                \
                                   csfle.status_get_error(status),                                                      \
                                   csfle.status_get_code(status));                                                      \
@@ -1143,6 +1330,20 @@ static bool _fle2_finalize(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
     const mc_EncryptedFieldConfig_t *target_efc =
         mc_schema_broker_get_encryptedFields(ectx->sb, ectx->target_coll, NULL);
 
+    if (target_efc) {
+        for (mc_EncryptedField_t *f = target_efc->fields; f != NULL; f = f->next) {
+            if (f->keyId.data == NULL) {
+                BSON_ASSERT(f->keyAltName);
+                bson_value_t key_alt_name;
+                _mongocrypt_buffer_t _unused = {0};
+                _bson_value_from_string(f->keyAltName, &key_alt_name);
+                BSON_ASSERT(_mongocrypt_key_broker_decrypted_key_by_name(&ctx->kb, &key_alt_name, &_unused, &f->keyId));
+                bson_value_destroy(&key_alt_name);
+                _mongocrypt_buffer_cleanup(&_unused);
+            }
+        }
+    }
+
     moe_result result = must_omit_encryptionInformation(command_name, &converted, target_efc, ctx->status);
     if (!result.ok) {
         bson_destroy(&converted);
@@ -1158,7 +1359,11 @@ static bool _fle2_finalize(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *out) {
 
     /* Append a new 'encryptionInformation'. */
     if (!result.must_omit) {
-        if (!mc_schema_broker_add_schemas_to_cmd(ectx->sb, &converted, MC_CMD_SCHEMAS_FOR_SERVER, ctx->status)) {
+        if (!mc_schema_broker_add_schemas_to_cmd(ectx->sb,
+                                                 &ctx->kb,
+                                                 &converted,
+                                                 MC_CMD_SCHEMAS_FOR_SERVER,
+                                                 ctx->status)) {
             bson_destroy(&converted);
             return _mongocrypt_ctx_fail(ctx);
         }
@@ -2487,6 +2692,8 @@ bool mongocrypt_ctx_encrypt_init(mongocrypt_ctx_t *ctx, const char *db, int32_t 
     ctx->vtable.mongo_op_markings = _mongo_op_markings;
     ctx->vtable.mongo_feed_markings = _mongo_feed_markings;
     ctx->vtable.mongo_done_markings = _mongo_done_markings;
+    ctx->vtable.mongo_done_keys = _mongo_done_keys;
+    ctx->vtable.kms_done = _kms_done;
     ctx->vtable.finalize = _finalize;
     ctx->vtable.cleanup = _cleanup;
     ectx->bypass_query_analysis = ctx->crypt->opts.bypass_query_analysis;
@@ -2579,6 +2786,19 @@ bool mongocrypt_ctx_encrypt_init(mongocrypt_ctx_t *ctx, const char *db, int32_t 
     }
 
     return mongocrypt_ctx_encrypt_ismaster_done(ctx);
+}
+
+static bool _all_key_requests_satisfied(_mongocrypt_key_broker_t *kb) {
+    key_request_t *key_request;
+
+    BSON_ASSERT_PARAM(kb);
+
+    for (key_request = kb->key_requests; NULL != key_request; key_request = key_request->next) {
+        if (!key_request->satisfied) {
+            return false;
+        }
+    }
+    return true;
 }
 
 #define WIRE_VERSION_SERVER_6 17
@@ -2710,11 +2930,21 @@ static bool mongocrypt_ctx_encrypt_ismaster_done(mongocrypt_ctx_t *ctx) {
         return false;
     }
 
+    const int need_keys = _fle2_collect_keys_for_encrypted_fields(ctx);
+    if (need_keys == -1) {
+        return false;
+    } else if (need_keys == 1) {
+        ectx->need_keys_for_encryptedFields = true;
+    }
+
     if (ctx->state == MONGOCRYPT_CTX_NEED_MONGO_MARKINGS) {
-        if (ectx->bypass_query_analysis) {
-            /* Keys may have been requested for compactionTokens.
+        if (ectx->bypass_query_analysis || need_keys == 1) {
+            /* Keys may have been requested for compactionTokens or keyAltName
              * Finish key requests.
              */
+            if (_all_key_requests_satisfied(&ctx->kb) && ectx->need_keys_for_encryptedFields) {
+                return _try_run_csfle_marking(ctx);
+            }
             _mongocrypt_key_broker_requests_done(&ctx->kb);
             return _mongocrypt_ctx_state_from_key_broker(ctx);
         }
