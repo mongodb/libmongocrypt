@@ -432,7 +432,6 @@ create-deb-packages-and-repos:
     RUN env \
         WORKDIR=/s \
         PYTHON=python3 \
-        HAS_PACKAGES=true \
         PACKAGER_DISTRO=$packager_distro \
         PACKAGER_ARCH=$packager_arch \
         bash libmongocrypt/.evergreen/create-packages-and-repos.sh
