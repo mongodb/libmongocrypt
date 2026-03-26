@@ -75,7 +75,7 @@ functions:
   "tar and upload libmongocrypt libraries":
     - command: archive.targz_pack
       params:
-        target: libmongocrypt.tar.gz
+        target: libmongocrypt-${build_variant}-${tag_upload_location!|*revision}.tar.gz
         source_dir: install/libmongocrypt
         include: [./**]
     - command: s3.put
@@ -86,7 +86,7 @@ functions:
         bucket: ${upload_bucket}
         permissions: ${upload_permissions}
         visibility: ${upload_visibility}
-        local_file: 'libmongocrypt.tar.gz'
+        local_file: 'libmongocrypt-${build_variant}-${tag_upload_location!|*revision}.tar.gz'
         content_type: '${content_type|application/x-gzip}'
     - command: s3.put
       params:
@@ -96,7 +96,7 @@ functions:
         bucket: ${upload_bucket}
         permissions: ${upload_permissions}
         visibility: ${upload_visibility}
-        local_file: 'libmongocrypt.tar.gz'
+        local_file: 'libmongocrypt-${build_variant}-${tag_upload_location!|*revision}.tar.gz'
         content_type: '${content_type|application/x-gzip}'
     - command: papertrail.trace
       params:
@@ -105,7 +105,7 @@ functions:
         product: ${papertrail_project} # libmongocrypt-dev or libmongocrypt-release
         version: ${tag_upload_location!|*revision} # Use ${tag_upload_location} if non-empty, otherwise ${revision}.
         filenames:
-            - 'libmongocrypt.tar.gz'
+            - 'libmongocrypt-${build_variant}-${tag_upload_location!|*revision}.tar.gz'
 
   "build and test":
     - command: "shell.exec"
@@ -142,7 +142,7 @@ functions:
   "upload packages and repos":
     - command: archive.targz_pack
       params:
-        target: libmongocrypt-distro-packages.tar.gz
+        target: libmongocrypt-distro-packages-${tag_upload_location!|*revision}.tar.gz
         source_dir: libmongocrypt/repo
         include: [./**]
     - command: s3.put
@@ -153,7 +153,7 @@ functions:
         bucket: ${upload_bucket}
         permissions: ${upload_permissions}
         visibility: ${upload_visibility}
-        local_file: 'libmongocrypt-distro-packages.tar.gz'
+        local_file: 'libmongocrypt-distro-packages-${tag_upload_location!|*revision}.tar.gz'
         content_type: '${content_type|application/x-gzip}'
     - command: papertrail.trace
       params:
@@ -162,7 +162,7 @@ functions:
         product: ${papertrail_project} # libmongocrypt-dev or libmongocrypt-release
         version: ${tag_upload_location!|*revision} # Use ${tag_upload_location} if non-empty, otherwise ${revision}.
         filenames:
-          - 'libmongocrypt-distro-packages.tar.gz'
+          - 'libmongocrypt-distro-packages-${tag_upload_location!|*revision}.tar.gz'
 
   "run clang-tidy":
     - command: "shell.exec"
@@ -333,7 +333,7 @@ functions:
   "upload python release":
     - command: archive.targz_pack
       params:
-        target: "release-files.tgz"
+        target: "release-files-${tag_upload_location!|*revision}.tgz"
         source_dir: "libmongocrypt/bindings/python/dist"
         include:
           - "*"
@@ -341,7 +341,7 @@ functions:
       params:
         role_arn: ${upload_arn}
         skip_existing: true
-        local_file: release-files.tgz
+        local_file: release-files-${tag_upload_location!|*revision}.tgz
         remote_file: 'libmongocrypt/python-release/${branch_name}/${libmongocrypt_s3_suffix}/${task_id}-${execution}-release-files.tar.gz'
         bucket: ${upload_bucket}
         permissions: ${upload_permissions}
@@ -355,7 +355,7 @@ functions:
         product: ${papertrail_project} # libmongocrypt-dev or libmongocrypt-release
         version: ${tag_upload_location!|*revision} # Use ${tag_upload_location} if non-empty, otherwise ${revision}.
         filenames:
-          - release-files.tgz
+          - release-files-${tag_upload_location!|*revision}.tgz
 
   "download and merge python releases":
     - command: ec2.assume_role
@@ -394,7 +394,7 @@ functions:
           done
     - command: archive.targz_pack
       params:
-        target: "release-files-all.tgz"
+        target: "release-files-all-${tag_upload_location!|*revision}.tgz"
         source_dir: "releases/"
         include:
           - "*"
@@ -402,7 +402,7 @@ functions:
       params:
         role_arn: ${upload_arn}
         skip_existing: true
-        local_file: release-files-all.tgz
+        local_file: release-files-all-${tag_upload_location!|*revision}.tgz
         remote_file: 'libmongocrypt/python-release/${branch_name}/${libmongocrypt_s3_suffix}/${task_id}-${execution}-release-files-all.tar.gz'
         # The merged results are placed in the CDN bucket for releases
         bucket: ${upload_bucket}
@@ -417,7 +417,7 @@ functions:
         product: ${papertrail_project} # libmongocrypt-dev or libmongocrypt-release
         version: ${tag_upload_location!|*revision} # Use ${tag_upload_location} if non-empty, otherwise ${revision}.
         filenames:
-          - release-files-all.tgz
+          - release-files-all-${tag_upload_location!|*revision}.tgz
   earthly:
     - command: shell.exec
       params:
@@ -665,7 +665,7 @@ tasks:
       vars: { variant_name: "macos" }
     - command: archive.targz_pack
       params:
-        target: libmongocrypt-java.tar.gz
+        target: libmongocrypt-java-${revision}.tar.gz
         source_dir: all
         include: [./**]
     - command: shell.exec
@@ -675,7 +675,7 @@ tasks:
           if [ -n "${tag_upload_location}" ]; then
             # the "fetch source" step detected a release tag on HEAD, so we
             # prepare a local file for upload to a location based on the tag
-            cp -a libmongocrypt-java.tar.gz libmongocrypt-java-${tag_upload_location}.tar.gz
+            cp -a libmongocrypt-java-${revision}.tar.gz libmongocrypt-java-${tag_upload_location}.tar.gz
           fi
     - command: s3.put
       params:
@@ -685,7 +685,7 @@ tasks:
         bucket: ${upload_bucket}
         permissions: ${upload_permissions}
         visibility: ${upload_visibility}
-        local_file: 'libmongocrypt-java.tar.gz'
+        local_file: 'libmongocrypt-java-${revision}.tar.gz'
         content_type: '${content_type|application/x-gzip}'
     - command: s3.put
       params:
@@ -706,7 +706,7 @@ tasks:
         product: ${papertrail_project} # libmongocrypt-dev or libmongocrypt-release
         version: ${tag_upload_location!|*revision} # Use ${tag_upload_location} if non-empty, otherwise ${revision}.
         filenames:
-          - libmongocrypt-java.tar.gz
+          - libmongocrypt-java-${tag_upload_location!|*revision}.tar.gz
 
 - name: upload-all
   depends_on:
@@ -861,7 +861,7 @@ tasks:
       vars: { variant_name: "alpine-arm64-earthly" }
     - command: archive.targz_pack
       params:
-        target: libmongocrypt-all.tar.gz
+        target: libmongocrypt-all-${tag_upload_location!|*revision}.tar.gz
         source_dir: all
         include: [./**]
     - command: shell.exec
@@ -871,15 +871,15 @@ tasks:
           if [ -n "${tag_upload_location}" ]; then
             # the "fetch source" step detected a release tag on HEAD, so we
             # prepare a local file for upload to a location based on the tag
-            cp -a libmongocrypt-all.tar.gz libmongocrypt-all-${tag_upload_location}.tar.gz
+            cp -a libmongocrypt-all-${tag_upload_location!|*revision}.tar.gz libmongocrypt-all-${tag_upload_location}.tar.gz
 
             if [[ "$tag_upload_location" = *-* ]]; then
               # Unstable release, like 1.1.0-beta1 or 1.0.1-rc0.
               mkdir unstable
-              cp -a libmongocrypt-all.tar.gz unstable/libmongocrypt-all-${tag_upload_location}.tar.gz
+              cp -a libmongocrypt-all-${tag_upload_location!|*revision}.tar.gz unstable/libmongocrypt-all-${tag_upload_location}.tar.gz
             else
               mkdir stable
-              cp -a libmongocrypt-all.tar.gz stable/libmongocrypt-all-${tag_upload_location}.tar.gz
+              cp -a libmongocrypt-all-${tag_upload_location!|*revision}.tar.gz stable/libmongocrypt-all-${tag_upload_location}.tar.gz
             fi
           fi
     - command: s3.put
@@ -890,7 +890,7 @@ tasks:
         bucket: ${upload_bucket}
         permissions: ${upload_permissions}
         visibility: ${upload_visibility}
-        local_file: 'libmongocrypt-all.tar.gz'
+        local_file: 'libmongocrypt-all-${tag_upload_location!|*revision}.tar.gz'
         content_type: '${content_type|application/x-gzip}'
     - command: s3.put
       params:
@@ -900,7 +900,7 @@ tasks:
         bucket: ${upload_bucket}
         permissions: ${upload_permissions}
         visibility: ${upload_visibility}
-        local_file: 'libmongocrypt-all.tar.gz'
+        local_file: 'libmongocrypt-all-${tag_upload_location!|*revision}.tar.gz'
         content_type: '${content_type|application/x-gzip}'
     - command: s3.put
       params:
@@ -945,7 +945,7 @@ tasks:
         product: ${papertrail_project} # libmongocrypt-dev or libmongocrypt-release
         version: ${tag_upload_location!|*revision} # Use ${tag_upload_location} if non-empty, otherwise ${revision}.
         filenames:
-          - libmongocrypt-all.tar.gz
+          - libmongocrypt-all-${tag_upload_location!|*revision}.tar.gz
 
 - name: publish-packages
   depends_on: build-packages
@@ -1011,7 +1011,7 @@ tasks:
           mv libmongocrypt_download/include/mongocrypt libmongocrypt_upload/include
     - command: archive.targz_pack
       params:
-        target: libmongocrypt_upload.tar.gz
+        target: libmongocrypt-windows-x86_64-${tag_upload_location!|*revision}.tar.gz
         source_dir: libmongocrypt_upload
         include: [./**]
     - command: s3.put
@@ -1028,7 +1028,7 @@ tasks:
         bucket: ${upload_bucket}
         permissions: ${upload_permissions}
         visibility: ${upload_visibility}
-        local_file: 'libmongocrypt_upload.tar.gz'
+        local_file: 'libmongocrypt-windows-x86_64-${tag_upload_location!|*revision}.tar.gz'
         content_type: 'application/x-gzip'
     - command: s3.put # Upload tarball for GitHub Release.
       params:
@@ -1039,7 +1039,7 @@ tasks:
         bucket: ${upload_bucket}
         permissions: ${upload_permissions}
         visibility: ${upload_visibility}
-        local_file: 'libmongocrypt_upload.tar.gz'
+        local_file: 'libmongocrypt-windows-x86_64-${tag_upload_location!|*revision}.tar.gz'
         content_type: 'application/x-gzip'
     - command: shell.exec
       params:
@@ -1047,10 +1047,10 @@ tasks:
         script: |-
           set -o errexit
           # Copy file to sign into `libmongocrypt` directory to be used by Earthly.
-          cp libmongocrypt_upload.tar.gz libmongocrypt
+          cp libmongocrypt-windows-x86_64-${tag_upload_location!|*revision}.tar.gz libmongocrypt
     - func: "earthly" # Sign tarball.
       vars:
-        args: --secret garasign_username=${garasign_username} --secret garasign_password=${garasign_password} +sign --file_to_sign=libmongocrypt_upload.tar.gz --output_file=libmongocrypt_upload.asc
+        args: --secret garasign_username=${garasign_username} --secret garasign_password=${garasign_password} +sign --file_to_sign=libmongocrypt-windows-x86_64-${tag_upload_location!|*revision}.tar.gz --output_file=libmongocrypt_upload.asc
     - command: s3.put # Upload signature for GitHub Release.
       params:
         role_arn: ${upload_arn}
@@ -1069,7 +1069,7 @@ tasks:
         product: ${papertrail_project} # libmongocrypt-dev or libmongocrypt-release
         version: ${tag_upload_location!|*revision} # Use ${tag_upload_location} if non-empty, otherwise ${revision}.
         filenames:
-          - libmongocrypt_upload.tar.gz
+          - libmongocrypt-windows-x86_64-${tag_upload_location!|*revision}.tar.gz
 
 - name: debian-package-build
   run_on: &deb-package-build-run_on
@@ -1087,11 +1087,12 @@ tasks:
           set -o errexit
           set -o xtrace
           bash .evergreen/debian_package_build.sh --is-patch=${is_patch}
+          mv ../deb.tar.gz ../deb-${tag_upload_location!|*revision}.tar.gz
     - command: s3.put
       params:
         role_arn: ${upload_arn}
         skip_existing: true
-        local_file: deb.tar.gz
+        local_file: deb-${tag_upload_location!|*revision}.tar.gz
         remote_file: libmongocrypt/${branch_name}/${revision}/${version_id}/${build_id}/${execution}/debian-packages.tar.gz
         bucket: ${upload_bucket}
         permissions: ${upload_permissions}
@@ -1105,7 +1106,7 @@ tasks:
         product: ${papertrail_project} # libmongocrypt-dev or libmongocrypt-release
         version: ${tag_upload_location!|*revision} # Use ${tag_upload_location} if non-empty, otherwise ${revision}.
         filenames:
-          - deb.tar.gz
+          - deb-${tag_upload_location!|*revision}.tar.gz
   allowed_requesters:
     - ad_hoc
     - commit
@@ -1129,11 +1130,12 @@ tasks:
           set -o errexit
           set -o xtrace
           bash .evergreen/debian_package_build.sh --arch=i386 --is-patch=${is_patch}
+          mv ../deb.tar.gz ../deb-${tag_upload_location!|*revision}.tar.gz
     - command: s3.put
       params:
         role_arn: ${upload_arn}
         skip_existing: true
-        local_file: deb.tar.gz
+        local_file: deb-${tag_upload_location!|*revision}.tar.gz
         remote_file: libmongocrypt/${branch_name}/${revision}/${version_id}/${build_id}/${execution}/debian-packages-i386.tar.gz
         bucket: ${upload_bucket}
         permissions: ${upload_permissions}
@@ -1147,7 +1149,7 @@ tasks:
         product: ${papertrail_project} # libmongocrypt-dev or libmongocrypt-release
         version: ${tag_upload_location!|*revision} # Use ${tag_upload_location} if non-empty, otherwise ${revision}.
         filenames:
-          - deb.tar.gz
+          - deb-${tag_upload_location!|*revision}.tar.gz
 
 - name: rpm-package-build
   tags: [packaging]
