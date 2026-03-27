@@ -899,6 +899,31 @@ tasks:
         local_file: 'unstable/libmongocrypt-all-${tag_upload_location}.tar.gz'
         content_type: '${content_type|application/x-gzip}'
 
+- name: sign-all
+  patchable: false # Garasign credentials are marked as "Admin only" in Evergreen project. "Admin only" variables are not included in patch builds. To test a patch: temporarily unselect "Admin only".
+  depends_on: upload-all
+  commands:
+  - func: "fetch source" # To get Earthfile.
+  - command: s3.get
+    params:
+      role_arn: '${upload_arn}'
+      remote_file: 'libmongocrypt/all/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt-all.tar.gz'
+      bucket: ${upload_bucket}
+      local_file: 'libmongocrypt/libmongocrypt-all.tar.gz'
+  - func: "earthly" # Sign tarball.
+    vars:
+      args: --secret garasign_username=${garasign_username} --secret garasign_password=${garasign_password} +sign --file_to_sign=libmongocrypt-all.tar.gz --output_file=libmongocrypt-all.asc --is_patch="${is_patch}"
+  - command: s3.put # Upload signature.
+    params:
+      role_arn: '${upload_arn}'
+      skip_existing: true
+      remote_file: 'libmongocrypt/${build_variant}/${branch_name}/${revision}/${version_id}/libmongocrypt-all.asc'
+      bucket: ${upload_bucket}
+      permissions: ${upload_permissions}
+      visibility: ${upload_visibility}
+      local_file: 'libmongocrypt/libmongocrypt-all.asc'
+      content_type: 'application/pgp-signature'
+
 - name: publish-packages
   depends_on: build-packages
   commands:
@@ -1694,10 +1719,11 @@ buildvariants:
     - ubuntu2004-small
 - name: publish
   display_name: "Publish"
-  run_on: ubuntu1804-test
+  run_on: ubuntu2404-latest-small
   tasks:
     - name: "upload-java"
     - name: "upload-all"
+    - name: "sign-all"
 - name: packaging
   display_name: "Linux Distro Packaging"
   tasks: [.packaging]
