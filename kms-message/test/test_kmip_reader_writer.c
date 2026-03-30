@@ -450,8 +450,6 @@ kms_kmip_reader_find_and_recurse_invalid_test (void)
    uint8_t *data;
    size_t datalen;
    kmip_reader_t *reader;
-   size_t pos = 0;
-   size_t len = 0;
 
    // Structure with overly large length:
    data = hex_to_data (
@@ -459,14 +457,8 @@ kms_kmip_reader_find_and_recurse_invalid_test (void)
       &datalen);
 
    reader = kmip_reader_new (data, datalen);
-   ASSERT (kmip_reader_find_and_recurse (reader, KMIP_TAG_CompromiseDate));
-
    // Expect error:
-   ASSERT(!kmip_reader_find (reader,
-                             KMIP_TAG_ApplicationSpecificInformation,
-                             KMIP_ITEM_TYPE_Enumeration,
-                             &pos,
-                             &len));
+   ASSERT (!kmip_reader_find_and_recurse (reader, KMIP_TAG_CompromiseDate));
    kmip_reader_destroy (reader);
    free (data);
 }

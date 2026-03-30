@@ -451,6 +451,7 @@ kmip_reader_find (kmip_reader_t *reader,
       if (read_tag == search_tag && read_type == type) {
          *pos = reader->pos;
          *length = read_length;
+         CHECK_REMAINING_BUFFER_AND_RET (compute_padded_length(read_length));
          return true;
       }
 
