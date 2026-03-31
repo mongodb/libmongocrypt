@@ -900,7 +900,7 @@ tasks:
         content_type: '${content_type|application/x-gzip}'
 
 - name: sign-all
-  patchable: false # Garasign credentials are marked as "Admin only" in Evergreen project. "Admin only" variables are not included in patch builds. To test a patch: temporarily unselect "Admin only".
+  # patchable: false # Garasign credentials are marked as "Admin only" in Evergreen project. "Admin only" variables are not included in patch builds. To test a patch: temporarily unselect "Admin only".
   depends_on: upload-all
   commands:
   - func: "fetch source" # To get Earthfile.
