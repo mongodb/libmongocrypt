@@ -913,15 +913,81 @@ tasks:
   - func: "earthly" # Sign tarball.
     vars:
       args: --secret garasign_username=${garasign_username} --secret garasign_password=${garasign_password} +sign --file_to_sign=libmongocrypt-all.tar.gz --output_file=libmongocrypt-all.asc --is_patch="${is_patch}"
-  - command: s3.put # Upload signature.
+  # Upload to same locations as libmongocrypt-all.tar.gz
+  - command: shell.exec
     params:
-      role_arn: '${upload_arn}'
+      script: |-
+        set -o errexit
+        cd libmongocrypt
+        if [ -n "${tag_upload_location}" ]; then
+          # the "fetch source" step detected a release tag on HEAD, so we
+          # prepare a local file for upload to a location based on the tag
+          cp -a libmongocrypt-all.asc libmongocrypt-all-${tag_upload_location}.asc
+
+          if [[ "$tag_upload_location" = *-* ]]; then
+            # Unstable release, like 1.1.0-beta1 or 1.0.1-rc0.
+            mkdir unstable
+            cp -a libmongocrypt-all.asc unstable/libmongocrypt-all-${tag_upload_location}.asc
+          else
+            mkdir stable
+            cp -a libmongocrypt-all.asc stable/libmongocrypt-all-${tag_upload_location}.asc
+          fi
+        fi
+  - command: s3.put
+    params:
+      role_arn: ${upload_arn}
       skip_existing: true
-      remote_file: 'libmongocrypt/${build_variant}/${branch_name}/${revision}/${version_id}/libmongocrypt-all.asc'
+      remote_file: 'libmongocrypt/all/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt-all.asc'
       bucket: ${upload_bucket}
       permissions: ${upload_permissions}
       visibility: ${upload_visibility}
       local_file: 'libmongocrypt/libmongocrypt-all.asc'
+      content_type: 'application/pgp-signature'
+  - command: s3.put
+    params:
+      role_arn: ${upload_arn}
+      skip_existing: true
+      remote_file: 'libmongocrypt/all/${branch_name}/${libmongocrypt_s3_suffix_copy}/libmongocrypt-all.asc'
+      bucket: ${upload_bucket}
+      permissions: ${upload_permissions}
+      visibility: ${upload_visibility}
+      local_file: 'libmongocrypt/libmongocrypt-all.asc'
+      content_type: 'application/pgp-signature'
+  - command: s3.put
+    params:
+      role_arn: ${upload_arn}
+      skip_existing: true
+      remote_file: 'libmongocrypt/all/${tag_upload_location}/libmongocrypt-all.asc'
+      bucket: ${upload_bucket}
+      permissions: ${upload_permissions}
+      visibility: ${upload_visibility}
+      optional: true # Do not fail task if `local_file` does not exist. `local_file` only exists for tagged release.
+      display_name: 'libmongocrypt-all-${tag_upload_location}.asc'
+      local_file: 'libmongocrypt/libmongocrypt-all-${tag_upload_location}.asc'
+      content_type: 'application/pgp-signature'
+  - command: s3.put
+    params:
+      role_arn: ${upload_arn}
+      skip_existing: true
+      remote_file: 'libmongocrypt/all/latest/stable/libmongocrypt-all.asc'
+      bucket: ${upload_bucket}
+      permissions: ${upload_permissions}
+      visibility: ${upload_visibility}
+      optional: true # Do not fail task if `local_file` does not exist. `local_file` only exists for stable release.
+      display_name: 'stable/libmongocrypt-all-${tag_upload_location}.asc'
+      local_file: 'libmongocrypt/stable/libmongocrypt-all-${tag_upload_location}.asc'
+      content_type: 'application/pgp-signature'
+  - command: s3.put
+    params:
+      role_arn: ${upload_arn}
+      skip_existing: true
+      remote_file: 'libmongocrypt/all/latest/unstable/libmongocrypt-all.asc'
+      bucket: ${upload_bucket}
+      permissions: ${upload_permissions}
+      visibility: ${upload_visibility}
+      optional: true # Do not fail task if `local_file` does not exist. `local_file` only exists for unstable release.
+      display_name: 'unstable/libmongocrypt-all-${tag_upload_location}.asc'
+      local_file: 'libmongocrypt/unstable/libmongocrypt-all-${tag_upload_location}.asc'
       content_type: 'application/pgp-signature'
 
 - name: publish-packages
