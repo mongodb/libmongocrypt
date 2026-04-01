@@ -18,6 +18,8 @@
 # OSS-Fuzz build script for libmongocrypt
 # This script is called by OSS-Fuzz to build the fuzzing targets
 
+cd $SRC/libmongocrypt
+
 # Build the library
 mkdir -p build
 cd build
