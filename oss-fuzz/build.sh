@@ -57,6 +57,8 @@ $CXX $CXXFLAGS $LIB_FUZZING_ENGINE fuzz_mongocrypt.o \
     _mongo-c-driver/src/libbson/libbson-static-for-libmongocrypt.a \
     -Wl,--end-group
 
-# TODO: Add seed corpus and dictionary files
-# cp ../test/data/seed_corpus/* $OUT/fuzz_mongocrypt_seed_corpus/
+# Package seed corpus for fuzz_mongocrypt
+mkdir -p $OUT/fuzz_mongocrypt_seed_corpus
+cp ../test/data/fuzz_mongocrypt_corpus/* $OUT/fuzz_mongocrypt_seed_corpus/
+zip -j $OUT/fuzz_mongocrypt_seed_corpus.zip $OUT/fuzz_mongocrypt_seed_corpus/*
 
