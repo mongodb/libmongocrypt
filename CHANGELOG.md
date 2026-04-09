@@ -1,5 +1,28 @@
 # ChangeLog
 
+## Unreleased
+
+
+### Changed
+
+- Final release packages in the PPA are now available by specifying `release` in the repository configuration in place of the major/minor version (e.g., `1.17`). Details in `README.md`.
+
+## 1.17.3
+
+### Fixed
+
+- Fix check in KMIP parser.
+
+## 1.17.2
+
+### Fixed
+
+- Fix build warning with GCC 16
+
+## 1.17.1
+
+Add package for Debian Trixie.
+
 ## 1.17.0
 
 ### New features
