@@ -16,6 +16,18 @@
 
 [msvcrt]: https://cmake.org/cmake/help/latest/variable/CMAKE_MSVC_RUNTIME_LIBRARY.html
 
+## 1.17.3
+
+### Fixed
+
+- Fix check in KMIP parser.
+
+## 1.17.2
+
+### Fixed
+
+- Fix build warning with GCC 16
+
 ## 1.17.1
 
 Add package for Debian Trixie.
