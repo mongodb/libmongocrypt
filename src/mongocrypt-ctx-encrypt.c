@@ -713,8 +713,8 @@ static moe_result must_omit_encryptionInformation(const char *command_name,
         bool has_fields_requiring_ei = false;
         for (const mc_EncryptedField_t *ef = efc->fields; ef != NULL; ef = ef->next) {
             if (ef->supported_queries
-                & (SUPPORTS_RANGE_QUERIES | SUPPORTS_SUBSTRING_PREVIEW_QUERIES | SUPPORTS_SUFFIX_PREVIEW_QUERIES
-                   | SUPPORTS_PREFIX_PREVIEW_QUERIES)) {
+                & (SUPPORTS_RANGE_QUERIES | SUPPORTS_SUBSTRING_PREVIEW_QUERIES | SUPPORTS_SUFFIX_QUERIES
+                   | SUPPORTS_PREFIX_QUERIES)) {
                 has_fields_requiring_ei = true;
                 break;
             }
@@ -834,8 +834,8 @@ static bool _fle2_append_compactionTokens(mongocrypt_t *crypt,
         const _mongocrypt_buffer_t *ecoct_buf = mc_ECOCToken_get(ecoct);
 
         if (ptr->supported_queries
-            & (SUPPORTS_RANGE_QUERIES | SUPPORTS_SUBSTRING_PREVIEW_QUERIES | SUPPORTS_SUFFIX_PREVIEW_QUERIES
-               | SUPPORTS_PREFIX_PREVIEW_QUERIES)) {
+            & (SUPPORTS_RANGE_QUERIES | SUPPORTS_SUBSTRING_PREVIEW_QUERIES | SUPPORTS_SUFFIX_QUERIES
+               | SUPPORTS_PREFIX_QUERIES)) {
             // Append the document {ecoc: <ECOCToken>, anchorPaddingToken: <AnchorPaddingTokenRoot>}
             esct = mc_ESCToken_new(crypto, cl1t, status);
             if (!esct) {
@@ -1325,8 +1325,8 @@ static bool _fle2_finalize_explicit(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *
             _mongocrypt_ctx_fail_w_msg(ctx, "Cannot use rangePreview query type with Range V2");
             goto fail;
         // fallthrough
-        case MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW:
-        case MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW:
+        case MONGOCRYPT_QUERY_TYPE_SUFFIX:
+        case MONGOCRYPT_QUERY_TYPE_PREFIX:
         case MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW:
         case MONGOCRYPT_QUERY_TYPE_RANGE:
         case MONGOCRYPT_QUERY_TYPE_EQUALITY: marking.u.fle2.type = MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND; break;
@@ -1892,14 +1892,14 @@ static bool explicit_encrypt_init(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *ms
 
     if (ctx->opts.query_type.set) {
         const mongocrypt_query_type_t qt = ctx->opts.query_type.value;
-        if (qt == MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW) {
+        if (qt == MONGOCRYPT_QUERY_TYPE_PREFIX) {
             if (!(ctx->opts.index_type.set && ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_TEXTPREVIEW)) {
-                return _mongocrypt_ctx_fail_w_msg(ctx, "prefixPreview query type requires textPreview index type");
+                return _mongocrypt_ctx_fail_w_msg(ctx, "prefix query type requires textPreview index type");
             }
         }
-        if (qt == MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW) {
+        if (qt == MONGOCRYPT_QUERY_TYPE_SUFFIX) {
             if (!(ctx->opts.index_type.set && ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_TEXTPREVIEW)) {
-                return _mongocrypt_ctx_fail_w_msg(ctx, "suffixPreview query type requires textPreview index type");
+                return _mongocrypt_ctx_fail_w_msg(ctx, "suffix query type requires textPreview index type");
             }
         }
         if (qt == MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW) {
@@ -1985,8 +1985,8 @@ static bool explicit_encrypt_init(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *ms
             matches = (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_EQUALITY);
             break;
         // fallthrough
-        case MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW:
-        case MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW:
+        case MONGOCRYPT_QUERY_TYPE_PREFIX:
+        case MONGOCRYPT_QUERY_TYPE_SUFFIX:
         case MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW:
             matches = (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_TEXTPREVIEW);
             break;

@@ -366,11 +366,11 @@ bool mc_TextOpts_to_FLE2TextSearchInsertSpec_for_query(const mc_TextOpts_t *txo,
         CLIENT_ERR("Unexpected query type: %s\n", _mongocrypt_query_type_to_string(query_type));
         return false;
     }
-    case MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW: {
+    case MONGOCRYPT_QUERY_TYPE_PREFIX: {
         include_prefix = true;
         break;
     }
-    case MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW: {
+    case MONGOCRYPT_QUERY_TYPE_SUFFIX: {
         include_suffix = true;
         break;
     }

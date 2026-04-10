@@ -35,10 +35,12 @@ static bool _parse_query_type_string(const char *queryType, supported_query_type
         *out = SUPPORTS_RANGE_PREVIEW_DEPRECATED_QUERIES;
     } else if (mstr_eq_ignore_case(mstrv_lit(MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW_STR), qtv)) {
         *out = SUPPORTS_SUBSTRING_PREVIEW_QUERIES;
-    } else if (mstr_eq_ignore_case(mstrv_lit(MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW_STR), qtv)) {
-        *out = SUPPORTS_SUFFIX_PREVIEW_QUERIES;
-    } else if (mstr_eq_ignore_case(mstrv_lit(MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW_STR), qtv)) {
-        *out = SUPPORTS_PREFIX_PREVIEW_QUERIES;
+    } else if (mstr_eq_ignore_case(mstrv_lit(MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW_DEPRECATED_STR), qtv)
+               || mstr_eq_ignore_case(mstrv_lit(MONGOCRYPT_QUERY_TYPE_SUFFIX_STR), qtv)) {
+        *out = SUPPORTS_SUFFIX_QUERIES;
+    } else if (mstr_eq_ignore_case(mstrv_lit(MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW_DEPRECATED_STR), qtv)
+               || mstr_eq_ignore_case(mstrv_lit(MONGOCRYPT_QUERY_TYPE_PREFIX_STR), qtv)) {
+        *out = SUPPORTS_PREFIX_QUERIES;
     } else {
         return false;
     }
@@ -196,8 +198,7 @@ bool mc_EncryptedFieldConfig_parse(mc_EncryptedFieldConfig_t *efc,
 
     if (!bson_iter_init_find(&iter, efc_bson, "strEncodeVersion")) {
         if (all_supported_queries
-            & (SUPPORTS_SUBSTRING_PREVIEW_QUERIES | SUPPORTS_SUFFIX_PREVIEW_QUERIES
-               | SUPPORTS_PREFIX_PREVIEW_QUERIES)) {
+            & (SUPPORTS_SUBSTRING_PREVIEW_QUERIES | SUPPORTS_SUFFIX_QUERIES | SUPPORTS_PREFIX_QUERIES)) {
             // Has at least one text search query type, set to latest by default.
             efc->str_encode_version = LATEST_STR_ENCODE_VERSION;
         } else {
