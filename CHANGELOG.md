@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+- Signed binaries for macOS and Linux are now available on the GitHub release.
+    - Linux binaries including `nocrypto` in the name have no dependency on OpenSSL. Drivers using the `nocrypto` variant are expected to set crypto callbacks (e.g. call `mongocrypt_setopt_crypto_hooks`) to do operations requiring crypto to avoid an error.
+    - Drivers that package libmongocrypt binaries are encouraged to migrate release scripts to use these binaries.
 
 ### Changed
 

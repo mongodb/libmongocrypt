@@ -628,7 +628,7 @@ tasks:
   commands:
     - func: "download and merge python releases"
 
-- name: upload-java
+- name: upload-java # TODO(MONGOCRYPT-894) remove in favor of `upload-release` tasks.
   depends_on:
     - variant: rhel-62-64-bit
       name: build-and-test-and-upload
@@ -708,7 +708,7 @@ tasks:
         filenames:
           - libmongocrypt-java-${tag_upload_location!|*revision}.tar.gz
 
-- name: upload-all
+- name: upload-all # TODO(MONGOCRYPT-894) remove in favor of `upload-release` tasks.
   depends_on:
     - variant: ubuntu1604
       name: build-and-test-and-upload
@@ -947,7 +947,7 @@ tasks:
         filenames:
           - libmongocrypt-all-${tag_upload_location!|*revision}.tar.gz
 
-- name: sign-all
+- name: sign-all # TODO(MONGOCRYPT-894) remove in favor of `upload-release` tasks.
   patchable: false # Garasign credentials are marked as "Admin only" in Evergreen project. "Admin only" variables are not included in patch builds. To test a patch: temporarily unselect "Admin only".
   depends_on: upload-all
   commands:
@@ -1044,7 +1044,7 @@ tasks:
     - func: "fetch source"
     - func: "setup packaging credentials"
     - func: "publish packages"
-- name: windows-upload-release
+- name: windows-upload-release # TODO(MONGOCRYPT-894) remove in favor of `upload-release` tasks.
   patchable: false # Garasign credentials are marked as "Admin only" in Evergreen and are not included in patch builds.
   depends_on:
   - variant: windows-test
@@ -1161,6 +1161,98 @@ tasks:
         version: ${tag_upload_location!|*revision} # Use ${tag_upload_location} if non-empty, otherwise ${revision}.
         filenames:
           - libmongocrypt-windows-x86_64-${tag_upload_location!|*revision}.tar.gz
+
+- name: upload-release
+  run_on: ubuntu2404-latest-small
+  patchable: false # Garasign credentials are marked as "Admin only" in Evergreen and are not included in patch builds. To test a patch: temporarily unselect "Admin only".
+  commands:
+    - func: "fetch source"
+    - command: s3.get # Download build.
+      params:
+        role_arn: ${upload_arn}
+        remote_file: 'libmongocrypt/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt.tar.gz'
+        bucket: ${upload_bucket}
+        extract_to: libmongocrypt_download
+    - command: shell.exec
+      params:
+        shell: bash
+        script: |-
+          set -o xtrace
+          set -o errexit
+
+          # Move just the mongocrypt files needed into the final upload
+          mkdir libmongocrypt_upload
+
+          if [[ "${release_os_arch}" == *"nocrypto"* ]]; then
+            # Publish libmongocrypt library without crypto dependency.
+            srcdir="libmongocrypt_download/nocrypto"
+          else
+            srcdir="libmongocrypt_download"
+          fi
+          
+          # Move headers
+          mkdir libmongocrypt_upload/include
+          mv $srcdir/include/mongocrypt libmongocrypt_upload/include
+
+          # Move library
+          if [ -f "$srcdir/lib64/libmongocrypt.so" ]; then
+            mkdir libmongocrypt_upload/lib64
+            mv $srcdir/lib64/libmongocrypt.so libmongocrypt_upload/lib64
+          elif [ -f "$srcdir/lib/libmongocrypt.so" ]; then
+            mkdir libmongocrypt_upload/lib
+            mv $srcdir/lib/libmongocrypt.so libmongocrypt_upload/lib
+          elif [ -f "$srcdir/lib/libmongocrypt.dylib" ]; then
+            mkdir libmongocrypt_upload/lib
+            mv $srcdir/lib/libmongocrypt.dylib libmongocrypt_upload/lib
+          elif [ -f "$srcdir/bin/libmongocrypt.dll" ]; then
+            mkdir libmongocrypt_upload/bin
+            mv $srcdir/bin/libmongocrypt.dll libmongocrypt_upload/bin
+          fi
+    - command: archive.targz_pack
+      params:
+        target: libmongocrypt-${release_os_arch}-${tag_upload_location!|*revision}.tar.gz
+        source_dir: libmongocrypt_upload
+        include: [./**]
+    - command: s3.put # Upload tarball for GitHub Release.
+      params:
+        role_arn: ${upload_arn}
+        skip_existing: true
+        remote_file: 'libmongocrypt/${build_variant}/${branch_name}/${revision}/${version_id}/libmongocrypt-${release_os_arch}-${tag_upload_location!|*revision}.tar.gz'
+        display_name: libmongocrypt-${release_os_arch}-${tag_upload_location!|*revision}.tar.gz
+        bucket: ${upload_bucket}
+        permissions: ${upload_permissions}
+        visibility: ${upload_visibility}
+        local_file: 'libmongocrypt-${release_os_arch}-${tag_upload_location!|*revision}.tar.gz'
+        content_type: 'application/x-gzip'
+    - command: shell.exec
+      params:
+        shell: bash
+        script: |-
+          set -o errexit
+          # Copy file to sign into `libmongocrypt` directory to be used by Earthly.
+          cp libmongocrypt-${release_os_arch}-${tag_upload_location!|*revision}.tar.gz libmongocrypt
+    - func: "earthly" # Sign tarball.
+      vars:
+        args: --secret garasign_username=${garasign_username} --secret garasign_password=${garasign_password} +sign --file_to_sign=libmongocrypt-${release_os_arch}-${tag_upload_location!|*revision}.tar.gz --output_file=libmongocrypt_upload.asc
+    - command: s3.put # Upload signature for GitHub Release.
+      params:
+        role_arn: ${upload_arn}
+        skip_existing: true
+        remote_file: 'libmongocrypt/${build_variant}/${branch_name}/${revision}/${version_id}/libmongocrypt-${release_os_arch}-${tag_upload_location!|*revision}.asc'
+        display_name: libmongocrypt-${release_os_arch}-${tag_upload_location!|*revision}.asc
+        bucket: ${upload_bucket}
+        permissions: ${upload_permissions}
+        visibility: ${upload_visibility}
+        local_file: 'libmongocrypt/libmongocrypt_upload.asc'
+        content_type: 'application/pgp-signature'
+    - command: papertrail.trace
+      params:
+        key_id: ${papertrail_key_id}
+        secret_key: ${papertrail_secret_key}
+        product: ${papertrail_project} # libmongocrypt-dev or libmongocrypt-release
+        version: ${tag_upload_location!|*revision} # Use ${tag_upload_location} if non-empty, otherwise ${revision}.
+        filenames:
+          - libmongocrypt-${release_os_arch}-${tag_upload_location!|*revision}.tar.gz
 
 - name: debian-package-build
   run_on: &deb-package-build-run_on
@@ -1419,6 +1511,7 @@ buildvariants:
   expansions:
     packager_distro: rhel72
     packager_arch: s390x
+    release_os_arch: linux-s390x-glibc_2_17-nocrypto
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
@@ -1426,6 +1519,8 @@ buildvariants:
   - name: publish-packages
     distros:
     - rhel70-small
+  - name: upload-release
+    depends_on: build-and-test-and-upload
 - name: rhel83-zseries
   # rhel83-zseries has a new enough g++ to build the C++ tests.
   # rhel72-zseries-test does not build the C++ tests.
@@ -1439,9 +1534,12 @@ buildvariants:
   expansions:
     vs_version: "15"
     vs_target_arch: amd64
+    release_os_arch: windows-x86_64
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
+  - name: upload-release
+    depends_on: build-and-test-and-upload
 - name: windows-test-python
   display_name: "Windows Python"
   run_on: windows-64-vsMulti-small
@@ -1591,15 +1689,19 @@ buildvariants:
     compile_env: >-
       LIBMONGOCRYPT_COMPILE_FLAGS="-D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS"
       BUILD_TESTING=OFF
+    release_os_arch: linux-x86_64-glibc_2_12-nocrypto
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
+  - name: upload-release
+    depends_on: build-and-test-and-upload
 - name: rhel-70-64-bit
   display_name: "RHEL 7.0 64-bit"
   run_on: rhel70-small
   expansions:
     packager_distro: rhel70
     packager_arch: x86_64
+    release_os_arch: linux-x86_64-glibc_2_17-nocrypto
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
@@ -1607,12 +1709,15 @@ buildvariants:
   - name: publish-packages
     distros:
     - rhel70-small
+  - name: upload-release
+    depends_on: build-and-test-and-upload
 - name: rhel-71-ppc64el
   display_name: "RHEL 7.1 ppc64el"
   run_on: rhel71-power8-test
   expansions:
     packager_distro: rhel71
     packager_arch: ppc64le
+    release_os_arch: linux-ppc64le-glibc_2_17-nocrypto
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
@@ -1620,6 +1725,8 @@ buildvariants:
   - name: publish-packages
     distros:
     - rhel70-small
+  - name: upload-release
+    depends_on: build-and-test-and-upload
 - name: rhel-80-64-bit
   display_name: "RHEL 8.0 64-bit"
   run_on: rhel80-test
@@ -1641,6 +1748,7 @@ buildvariants:
   expansions:
     packager_distro: rhel82
     packager_arch: aarch64
+    release_os_arch: linux-arm64-glibc_2_28-nocrypto
   tasks:
   - build-and-test-and-upload
   - test-python
@@ -1649,6 +1757,8 @@ buildvariants:
   - name: publish-packages
     distros:
     - rhel70-small
+  - name: upload-release
+    depends_on: build-and-test-and-upload
 - name: rhel-81-ppc64el
   display_name: "RHEL 8.1 ppc64el"
   run_on: rhel81-power8-small
@@ -1731,6 +1841,7 @@ buildvariants:
   expansions:
     packager_distro: ubuntu1604
     packager_arch: arm64
+    release_os_arch: linux-arm64-glibc_2_23-nocrypto
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
@@ -1739,12 +1850,15 @@ buildvariants:
   - name: publish-packages
     distros:
     - ubuntu2004-small
+  - name: upload-release
+    depends_on: build-and-test-and-upload
 - name: ubuntu1804-64
   display_name: "Ubuntu 18.04 64-bit"
   run_on: ubuntu1804-test
   expansions:
     packager_distro: ubuntu1804
     packager_arch: x86_64
+    release_os_arch: linux-x86_64-glibc_2_27-nocrypto
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
@@ -1753,6 +1867,8 @@ buildvariants:
   - name: publish-packages
     distros:
     - ubuntu2004-small
+  - name: upload-release
+    depends_on: build-and-test-and-upload
 - name: ubuntu1804-64-clang7
   # ubuntu1804-64-clang7 is used to test Ubuntu 18.04 with Clang 7.0.1.
   # This is a supported configuration built by the MongoDB Server.
@@ -1771,6 +1887,7 @@ buildvariants:
   expansions:
     packager_distro: ubuntu1804
     packager_arch: arm64
+    release_os_arch: linux-x86_64-glibc_2_27-nocrypto
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
@@ -1779,6 +1896,8 @@ buildvariants:
   - name: publish-packages
     distros:
     - ubuntu2004-small
+  - name: upload-release
+    depends_on: build-and-test-and-upload
 - name: ubuntu2004-64
   display_name: "Ubuntu 20.04 64-bit"
   run_on: ubuntu2004-small
@@ -1886,10 +2005,13 @@ buildvariants:
       CMAKE=/opt/homebrew/bin/cmake
     # Disable Ninja to work around error "Bad CPU type in executable"
     CMAKE_GENERATOR: ''
+    release_os_arch: macos-universal
   tasks:
   - build-and-test-and-upload
   - name: test-python
     distros: macos-14-arm64
+  - name: upload-release
+    depends_on: build-and-test-and-upload
 - name: windows-vs2017-32bit
   # Test Windows 32 bit builds for PHPC. PHPC builds libmongocrypt from source. See MONGOCRYPT-391.
   display_name: "Windows VS 2017 32-bit compile"
@@ -1912,9 +2034,12 @@ buildvariants:
   display_name: "Alpine Linux 3.18 amd64 (via Earthly)"
   expansions:
     earthly_env: alpine
+    release_os_arch: linux-x86_64-musl_1_2-nocrypto
   tasks:
   - name: build-with-earthly
     run_on: ubuntu2204-small
+  - name: upload-release
+    depends_on: build-with-earthly
 
 - name: alpine-arm64-earthly
   display_name: "Alpine Linux 3.18 arm64 (via Earthly)"
