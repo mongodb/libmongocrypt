@@ -117,6 +117,7 @@ functions:
           export VS_VERSION=${vs_version|}
           export VS_TARGET_ARCH=${vs_target_arch|amd64}
           export CMAKE_GENERATOR=${CMAKE_GENERATOR|Ninja}
+          export release_os_arch=${release_os_arch}
           env ${compile_env|} \
             bash "$EVG_DIR/env-run.sh" \
               bash "$EVG_DIR/build_all.sh"

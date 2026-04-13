@@ -21,6 +21,8 @@ fi
 : "${LIBMONGOCRYPT_COMPILE_FLAGS:=}"
 # Additional CMake flags that apply only to the libmongocrypt build. (Used by the C driver)
 : "${LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS:=}"
+# release_os_arch is set for release builds.
+: "${release_os_arch:=}"
 
 # Control the build configuration that is generated.
 export CMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE:-RelWithDebInfo}"
@@ -96,6 +98,27 @@ if [ "$CONFIGURE_ONLY" ]; then
 fi
 echo "Installing libmongocrypt"
 _cmake_with_env --build "$BINARY_DIR" --target install
+
+# If release_os_arch names a minimum glibc requirement (e.g. "linux-x86_64-glibc_2_17-nocrypto"),
+# verify it matches the maximum glibc symbol used.
+if [[ "$release_os_arch" == *glibc* ]]; then
+    expected_glibc=$(echo "$release_os_arch" | sed -r 's/.*glibc_([0-9]+)_([0-9]+).*/\1.\2/')
+    if [ -f "$CMAKE_INSTALL_PREFIX/lib64/libmongocrypt.so" ]; then
+        check_lib="$CMAKE_INSTALL_PREFIX/lib64/libmongocrypt.so"
+    elif [ -f "$CMAKE_INSTALL_PREFIX/lib/libmongocrypt.so" ]; then
+        check_lib="$CMAKE_INSTALL_PREFIX/lib/libmongocrypt.so"
+    else
+        echo "glibc version check failed: libmongocrypt.so not found under $CMAKE_INSTALL_PREFIX"
+        exit 1
+    fi
+    actual_glibc=$(objdump -T "$check_lib" | grep 'GLIBC_' | sed -r -e 's/.*GLIBC_([0-9.]+).*/\1/' | sort -u | tail -1)
+    if [ "$actual_glibc" != "$expected_glibc" ]; then
+        echo "glibc version check failed: release_os_arch requires glibc $expected_glibc but library uses glibc $actual_glibc"
+        exit 1
+    fi
+    echo "glibc version check passed: $actual_glibc"
+fi
+
 run_chdir "$BINARY_DIR" run_ctest
 
 # MONGOCRYPT-372, ensure macOS universal builds contain both x86_64 and arm64 architectures.
