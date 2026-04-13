@@ -13,7 +13,7 @@
 - Final release packages in the PPA are now available by specifying `release` in the repository configuration in place of the major/minor version (e.g., `1.17`). Details in `README.md`.
 
 ### Deprecated
-- Linux builds depending on glibc 2.1 (RHEL 6.2) are deprecated and may be removed in the future. Use builds depending on glibc 2.17 (RHEL 7.1) or higher.
+- RHEL 6.2 builds are deprecated and may be removed in the future. The `linux-x86_64-glibc_2_7-nocrypto` release build may be used instead and has equivalent glibc requirements.
 
 ### Removed
 
