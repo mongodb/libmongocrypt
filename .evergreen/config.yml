@@ -75,27 +75,37 @@ functions:
   "tar and upload libmongocrypt libraries":
     - command: archive.targz_pack
       params:
-        target: libmongocrypt.tar.gz
+        target: libmongocrypt-${build_variant}-${tag_upload_location!|*revision}.tar.gz
         source_dir: install/libmongocrypt
         include: [./**]
     - command: s3.put
       params:
-        aws_key: '${aws_key}'
-        aws_secret: '${aws_secret}'
-        remote_file: '${project}/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt.tar.gz'
-        bucket: mciuploads
-        permissions: public-read
-        local_file: 'libmongocrypt.tar.gz'
+        role_arn: ${upload_arn}
+        skip_existing: true
+        remote_file: 'libmongocrypt/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt.tar.gz'
+        bucket: ${upload_bucket}
+        permissions: ${upload_permissions}
+        visibility: ${upload_visibility}
+        local_file: 'libmongocrypt-${build_variant}-${tag_upload_location!|*revision}.tar.gz'
         content_type: '${content_type|application/x-gzip}'
     - command: s3.put
       params:
-        aws_key: '${aws_key}'
-        aws_secret: '${aws_secret}'
-        remote_file: '${project}/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix_copy}/libmongocrypt.tar.gz'
-        bucket: mciuploads
-        permissions: public-read
-        local_file: 'libmongocrypt.tar.gz'
+        role_arn: ${upload_arn}
+        skip_existing: true
+        remote_file: 'libmongocrypt/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix_copy}/libmongocrypt.tar.gz'
+        bucket: ${upload_bucket}
+        permissions: ${upload_permissions}
+        visibility: ${upload_visibility}
+        local_file: 'libmongocrypt-${build_variant}-${tag_upload_location!|*revision}.tar.gz'
         content_type: '${content_type|application/x-gzip}'
+    - command: papertrail.trace
+      params:
+        key_id: ${papertrail_key_id}
+        secret_key: ${papertrail_secret_key}
+        product: ${papertrail_project} # libmongocrypt-dev or libmongocrypt-release
+        version: ${tag_upload_location!|*revision} # Use ${tag_upload_location} if non-empty, otherwise ${revision}.
+        filenames:
+            - 'libmongocrypt-${build_variant}-${tag_upload_location!|*revision}.tar.gz'
 
   "build and test":
     - command: "shell.exec"
@@ -124,7 +134,6 @@ functions:
         script: |
           env "WORKDIR=${workdir}" \
               "PYTHON=${PYTHON3_BINARY|}" \
-              "HAS_PACKAGES=${has_packages|false}" \
               "PACKAGER_DISTRO=${packager_distro}" \
               "PACKAGER_ARCH=${packager_arch}" \
               ${compile_env|} \
@@ -133,19 +142,27 @@ functions:
   "upload packages and repos":
     - command: archive.targz_pack
       params:
-        target: libmongocrypt-distro-packages.tar.gz
+        target: libmongocrypt-distro-packages-${tag_upload_location!|*revision}.tar.gz
         source_dir: libmongocrypt/repo
         include: [./**]
     - command: s3.put
       params:
-        aws_key: '${aws_key}'
-        aws_secret: '${aws_secret}'
-        remote_file: '${project}/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt-distro-packages.tar.gz'
-        bucket: mciuploads
-        permissions: public-read
-        local_file: 'libmongocrypt-distro-packages.tar.gz'
+        role_arn: ${upload_arn}
+        skip_existing: true
+        remote_file: 'libmongocrypt/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt-distro-packages.tar.gz'
+        bucket: ${upload_bucket}
+        permissions: ${upload_permissions}
+        visibility: ${upload_visibility}
+        local_file: 'libmongocrypt-distro-packages-${tag_upload_location!|*revision}.tar.gz'
         content_type: '${content_type|application/x-gzip}'
-        optional: true
+    - command: papertrail.trace
+      params:
+        key_id: ${papertrail_key_id}
+        secret_key: ${papertrail_secret_key}
+        product: ${papertrail_project} # libmongocrypt-dev or libmongocrypt-release
+        version: ${tag_upload_location!|*revision} # Use ${tag_upload_location} if non-empty, otherwise ${revision}.
+        filenames:
+          - 'libmongocrypt-distro-packages-${tag_upload_location!|*revision}.tar.gz'
 
   "run clang-tidy":
     - command: "shell.exec"
@@ -224,10 +241,9 @@ functions:
   "download tarball":
     - command: s3.get
       params:
-        aws_key: '${aws_key}'
-        aws_secret: '${aws_secret}'
-        remote_file: '${project}/${variant_name}/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt.tar.gz'
-        bucket: mciuploads
+        role_arn: ${upload_arn}
+        remote_file: 'libmongocrypt/${variant_name}/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt.tar.gz'
+        bucket: ${upload_bucket}
         extract_to: all/${variant_name}
 
   "setup packaging credentials":
@@ -281,11 +297,6 @@ functions:
             exit 0
           fi
 
-          if [ "${has_packages|}" != "true" ] ; then
-            echo "'has_packages' is not 'true', skipping package publication"
-            exit 0
-          fi
-
           # Some venv-activate scripts are not nounset-clean
           set +u
 
@@ -303,7 +314,12 @@ functions:
           curl -L -O http://boxes.10gen.com/build/curator/curator-dist-rhel70-$CURATOR_RELEASE.tar.gz
           tar -zxvf curator-dist-rhel70-$CURATOR_RELEASE.tar.gz
           ./curator version
-          ./curator repo submit --config etc/repo_config.yaml --distro ${packager_distro} --edition org --version $pkg_version --arch ${packager_arch} --service https://barque.corp.mongodb.com/ --packages https://mciuploads.s3.amazonaws.com/${project}/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt-distro-packages.tar.gz
+          if [ "${project}" = 'libmongocrypt-release' ]; then
+            package_url_prefix="https://downloads.mongodb.org"
+          else
+            package_url_prefix="https://mciuploads.s3.amazonaws.com"
+          fi
+          ./curator repo submit --config etc/repo_config.yaml --distro ${packager_distro} --edition org --version $pkg_version --arch ${packager_arch} --service https://barque.corp.mongodb.com/ --packages $package_url_prefix/libmongocrypt/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt-distro-packages.tar.gz
 
   "build python release":
     - command: shell.exec
@@ -317,22 +333,35 @@ functions:
   "upload python release":
     - command: archive.targz_pack
       params:
-        target: "release-files.tgz"
+        target: "release-files-${tag_upload_location!|*revision}.tgz"
         source_dir: "libmongocrypt/bindings/python/dist"
         include:
           - "*"
     - command: s3.put
       params:
-        aws_key: ${aws_key}
-        aws_secret: ${aws_secret}
-        local_file: release-files.tgz
-        remote_file: '${project}/python-release/${branch_name}/${libmongocrypt_s3_suffix}/${task_id}-${execution}-release-files.tar.gz'
-        bucket: mciuploads
-        permissions: public-read
+        role_arn: ${upload_arn}
+        skip_existing: true
+        local_file: release-files-${tag_upload_location!|*revision}.tgz
+        remote_file: 'libmongocrypt/python-release/${branch_name}/${libmongocrypt_s3_suffix}/${task_id}-${execution}-release-files.tar.gz'
+        bucket: ${upload_bucket}
+        permissions: ${upload_permissions}
+        visibility: ${upload_visibility}
         content_type: ${content_type|application/gzip}
         display_name: Release Python files
+    - command: papertrail.trace
+      params:
+        key_id: ${papertrail_key_id}
+        secret_key: ${papertrail_secret_key}
+        product: ${papertrail_project} # libmongocrypt-dev or libmongocrypt-release
+        version: ${tag_upload_location!|*revision} # Use ${tag_upload_location} if non-empty, otherwise ${revision}.
+        filenames:
+          - release-files-${tag_upload_location!|*revision}.tgz
 
   "download and merge python releases":
+    - command: ec2.assume_role
+      type: setup
+      params:
+        role_arn: ${upload_arn}
     - command: shell.exec
       params:
         silent: true
@@ -346,19 +375,17 @@ functions:
           [default]
           region = us-east-1
           EOF
-
-          cat <<EOF >> ~/.aws/credentials
-          [default]
-          aws_access_key_id = ${aws_key}
-          aws_secret_access_key = ${aws_secret}
-          EOF
     - command: shell.exec
       params:
         shell: "bash"
+        include_expansions_in_env: &aws-params-env
+          - AWS_ACCESS_KEY_ID
+          - AWS_SECRET_ACCESS_KEY
+          - AWS_SESSION_TOKEN
         script: |
           set -o xtrace
           # Download all the release files.
-          aws s3 cp --recursive s3://mciuploads/${project}/python-release/${branch_name}/${libmongocrypt_s3_suffix}/ release/
+          aws s3 cp --recursive s3://${upload_bucket}/${project}/python-release/${branch_name}/${libmongocrypt_s3_suffix}/ release/
           # Combine releases into one directory.
           ls -la release/
           mkdir releases
@@ -367,20 +394,30 @@ functions:
           done
     - command: archive.targz_pack
       params:
-        target: "release-files-all.tgz"
+        target: "release-files-all-${tag_upload_location!|*revision}.tgz"
         source_dir: "releases/"
         include:
           - "*"
     - command: s3.put
       params:
-        aws_key: ${aws_key}
-        aws_secret: ${aws_secret}
-        local_file: release-files-all.tgz
-        remote_file: '${project}/python-release/${branch_name}/${libmongocrypt_s3_suffix}/${task_id}-${execution}-release-files-all.tar.gz'
-        bucket: mciuploads
-        permissions: public-read
+        role_arn: ${upload_arn}
+        skip_existing: true
+        local_file: release-files-all-${tag_upload_location!|*revision}.tgz
+        remote_file: 'libmongocrypt/python-release/${branch_name}/${libmongocrypt_s3_suffix}/${task_id}-${execution}-release-files-all.tar.gz'
+        # The merged results are placed in the CDN bucket for releases
+        bucket: ${upload_bucket}
+        permissions: ${upload_permissions}
+        visibility: ${upload_visibility}
         content_type: ${content_type|application/gzip}
         display_name: Release Python files all
+    - command: papertrail.trace
+      params:
+        key_id: ${papertrail_key_id}
+        secret_key: ${papertrail_secret_key}
+        product: ${papertrail_project} # libmongocrypt-dev or libmongocrypt-release
+        version: ${tag_upload_location!|*revision} # Use ${tag_upload_location} if non-empty, otherwise ${revision}.
+        filenames:
+          - release-files-all-${tag_upload_location!|*revision}.tgz
   earthly:
     - command: shell.exec
       params:
@@ -400,10 +437,7 @@ functions:
       type: setup
       params:
         binary: bash
-        include_expansions_in_env:
-          - AWS_ACCESS_KEY_ID
-          - AWS_SECRET_ACCESS_KEY
-          - AWS_SESSION_TOKEN
+        include_expansions_in_env: *aws-params-env
         args:
           - -c
           - |
@@ -432,13 +466,14 @@ functions:
       type: test
       params:
         display_name: Augmented SBOM
-        aws_key: ${aws_key}
-        aws_secret: ${aws_secret}
-        bucket: mciuploads
+        role_arn: ${upload_arn}
+        skip_existing: true
+        bucket: ${upload_bucket}
         content_type: application/json
         local_file: libmongocrypt/cyclonedx.augmented.sbom.json
-        permissions: public-read
-        remote_file: ${project}/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix}/sbom/cyclonedx.augmented.sbom.json
+        permissions: ${upload_permissions}
+        visibility: ${upload_visibility}
+        remote_file: libmongocrypt/${build_variant}/${branch_name}/${libmongocrypt_s3_suffix}/sbom/cyclonedx.augmented.sbom.json
 
 tasks:
 - name: build-and-test-and-upload
@@ -446,6 +481,10 @@ tasks:
   - func: "fetch source"
   - func: "build and test"
   - func: "tar and upload libmongocrypt libraries"
+
+- name: build-packages
+  commands:
+  - func: "fetch source"
   - func: "fetch drivers-evergreen-tools" # Set PYTHON3_BINARY.
   - func: "create packages and repos"
   - func: "upload packages and repos"
@@ -626,7 +665,7 @@ tasks:
       vars: { variant_name: "macos" }
     - command: archive.targz_pack
       params:
-        target: libmongocrypt-java.tar.gz
+        target: libmongocrypt-java-${revision}.tar.gz
         source_dir: all
         include: [./**]
     - command: shell.exec
@@ -636,28 +675,38 @@ tasks:
           if [ -n "${tag_upload_location}" ]; then
             # the "fetch source" step detected a release tag on HEAD, so we
             # prepare a local file for upload to a location based on the tag
-            cp -a libmongocrypt-java.tar.gz libmongocrypt-java-${tag_upload_location}.tar.gz
+            cp -a libmongocrypt-java-${revision}.tar.gz libmongocrypt-java-${tag_upload_location}.tar.gz
           fi
     - command: s3.put
       params:
-        aws_key: '${aws_key}'
-        aws_secret: '${aws_secret}'
+        role_arn: ${upload_arn}
+        skip_existing: true
         remote_file: 'libmongocrypt/java/${revision}/libmongocrypt-java.tar.gz'
-        bucket: mciuploads
-        permissions: public-read
-        local_file: 'libmongocrypt-java.tar.gz'
+        bucket: ${upload_bucket}
+        permissions: ${upload_permissions}
+        visibility: ${upload_visibility}
+        local_file: 'libmongocrypt-java-${revision}.tar.gz'
         content_type: '${content_type|application/x-gzip}'
     - command: s3.put
       params:
-        aws_key: '${aws_key}'
-        aws_secret: '${aws_secret}'
+        role_arn: ${upload_arn}
+        skip_existing: true
         remote_file: 'libmongocrypt/java/${tag_upload_location}/libmongocrypt-java.tar.gz'
-        bucket: mciuploads
-        permissions: public-read
+        bucket: ${upload_bucket}
+        permissions: ${upload_permissions}
+        visibility: ${upload_visibility}
         optional: true
         display_name: 'libmongocrypt-java-${tag_upload_location}.tar.gz'
         local_file: 'libmongocrypt-java-${tag_upload_location}.tar.gz'
         content_type: '${content_type|application/x-gzip}'
+    - command: papertrail.trace
+      params:
+        key_id: ${papertrail_key_id}
+        secret_key: ${papertrail_secret_key}
+        product: ${papertrail_project} # libmongocrypt-dev or libmongocrypt-release
+        version: ${tag_upload_location!|*revision} # Use ${tag_upload_location} if non-empty, otherwise ${revision}.
+        filenames:
+          - libmongocrypt-java-${tag_upload_location!|*revision}.tar.gz
 
 - name: upload-all
   depends_on:
@@ -812,7 +861,7 @@ tasks:
       vars: { variant_name: "alpine-arm64-earthly" }
     - command: archive.targz_pack
       params:
-        target: libmongocrypt-all.tar.gz
+        target: libmongocrypt-all-${tag_upload_location!|*revision}.tar.gz
         source_dir: all
         include: [./**]
     - command: shell.exec
@@ -822,71 +871,175 @@ tasks:
           if [ -n "${tag_upload_location}" ]; then
             # the "fetch source" step detected a release tag on HEAD, so we
             # prepare a local file for upload to a location based on the tag
-            cp -a libmongocrypt-all.tar.gz libmongocrypt-all-${tag_upload_location}.tar.gz
+            cp -a libmongocrypt-all-${tag_upload_location!|*revision}.tar.gz libmongocrypt-all-${tag_upload_location}.tar.gz
 
             if [[ "$tag_upload_location" = *-* ]]; then
               # Unstable release, like 1.1.0-beta1 or 1.0.1-rc0.
               mkdir unstable
-              cp -a libmongocrypt-all.tar.gz unstable/libmongocrypt-all-${tag_upload_location}.tar.gz
+              cp -a libmongocrypt-all-${tag_upload_location!|*revision}.tar.gz unstable/libmongocrypt-all-${tag_upload_location}.tar.gz
             else
               mkdir stable
-              cp -a libmongocrypt-all.tar.gz stable/libmongocrypt-all-${tag_upload_location}.tar.gz
+              cp -a libmongocrypt-all-${tag_upload_location!|*revision}.tar.gz stable/libmongocrypt-all-${tag_upload_location}.tar.gz
             fi
           fi
     - command: s3.put
       params:
-        aws_key: '${aws_key}'
-        aws_secret: '${aws_secret}'
+        role_arn: ${upload_arn}
+        skip_existing: true
         remote_file: 'libmongocrypt/all/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt-all.tar.gz'
-        bucket: mciuploads
-        permissions: public-read
-        local_file: 'libmongocrypt-all.tar.gz'
+        bucket: ${upload_bucket}
+        permissions: ${upload_permissions}
+        visibility: ${upload_visibility}
+        local_file: 'libmongocrypt-all-${tag_upload_location!|*revision}.tar.gz'
         content_type: '${content_type|application/x-gzip}'
     - command: s3.put
       params:
-        aws_key: '${aws_key}'
-        aws_secret: '${aws_secret}'
+        role_arn: ${upload_arn}
+        skip_existing: true
         remote_file: 'libmongocrypt/all/${branch_name}/${libmongocrypt_s3_suffix_copy}/libmongocrypt-all.tar.gz'
-        bucket: mciuploads
-        permissions: public-read
-        local_file: 'libmongocrypt-all.tar.gz'
+        bucket: ${upload_bucket}
+        permissions: ${upload_permissions}
+        visibility: ${upload_visibility}
+        local_file: 'libmongocrypt-all-${tag_upload_location!|*revision}.tar.gz'
         content_type: '${content_type|application/x-gzip}'
     - command: s3.put
       params:
-        aws_key: '${aws_key}'
-        aws_secret: '${aws_secret}'
+        role_arn: ${upload_arn}
+        skip_existing: true
         remote_file: 'libmongocrypt/all/${tag_upload_location}/libmongocrypt-all.tar.gz'
-        bucket: mciuploads
-        permissions: public-read
+        bucket: ${upload_bucket}
+        permissions: ${upload_permissions}
+        visibility: ${upload_visibility}
         optional: true # Do not fail task if `local_file` does not exist. `local_file` only exists for tagged release.
         display_name: 'libmongocrypt-all-${tag_upload_location}.tar.gz'
         local_file: 'libmongocrypt-all-${tag_upload_location}.tar.gz'
         content_type: '${content_type|application/x-gzip}'
     - command: s3.put
       params:
-        aws_key: '${aws_key}'
-        aws_secret: '${aws_secret}'
+        role_arn: ${upload_arn}
+        skip_existing: true
         remote_file: 'libmongocrypt/all/latest/stable/libmongocrypt-all.tar.gz'
-        bucket: mciuploads
-        permissions: public-read
+        bucket: ${upload_bucket}
+        permissions: ${upload_permissions}
+        visibility: ${upload_visibility}
         optional: true # Do not fail task if `local_file` does not exist. `local_file` only exists for stable release.
         display_name: 'stable/libmongocrypt-all-${tag_upload_location}.tar.gz'
         local_file: 'stable/libmongocrypt-all-${tag_upload_location}.tar.gz'
         content_type: '${content_type|application/x-gzip}'
     - command: s3.put
       params:
-        aws_key: '${aws_key}'
-        aws_secret: '${aws_secret}'
+        role_arn: ${upload_arn}
+        skip_existing: true
         remote_file: 'libmongocrypt/all/latest/unstable/libmongocrypt-all.tar.gz'
-        bucket: mciuploads
-        permissions: public-read
+        bucket: ${upload_bucket}
+        permissions: ${upload_permissions}
+        visibility: ${upload_visibility}
         optional: true # Do not fail task if `local_file` does not exist. `local_file` only exists for unstable release.
         display_name: 'unstable/libmongocrypt-all-${tag_upload_location}.tar.gz'
         local_file: 'unstable/libmongocrypt-all-${tag_upload_location}.tar.gz'
         content_type: '${content_type|application/x-gzip}'
+    - command: papertrail.trace
+      params:
+        key_id: ${papertrail_key_id}
+        secret_key: ${papertrail_secret_key}
+        product: ${papertrail_project} # libmongocrypt-dev or libmongocrypt-release
+        version: ${tag_upload_location!|*revision} # Use ${tag_upload_location} if non-empty, otherwise ${revision}.
+        filenames:
+          - libmongocrypt-all-${tag_upload_location!|*revision}.tar.gz
+
+- name: sign-all
+  patchable: false # Garasign credentials are marked as "Admin only" in Evergreen project. "Admin only" variables are not included in patch builds. To test a patch: temporarily unselect "Admin only".
+  depends_on: upload-all
+  commands:
+  - func: "fetch source" # To get Earthfile.
+  - command: s3.get
+    params:
+      role_arn: '${upload_arn}'
+      remote_file: 'libmongocrypt/all/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt-all.tar.gz'
+      bucket: ${upload_bucket}
+      local_file: 'libmongocrypt/libmongocrypt-all.tar.gz'
+  - func: "earthly" # Sign tarball.
+    vars:
+      args: --secret garasign_username=${garasign_username} --secret garasign_password=${garasign_password} +sign --file_to_sign=libmongocrypt-all.tar.gz --output_file=libmongocrypt-all.asc --is_patch="${is_patch}"
+  # Upload to same locations as libmongocrypt-all.tar.gz
+  - command: shell.exec
+    params:
+      script: |-
+        set -o errexit
+        cd libmongocrypt
+        if [ -n "${tag_upload_location}" ]; then
+          # the "fetch source" step detected a release tag on HEAD, so we
+          # prepare a local file for upload to a location based on the tag
+          cp -a libmongocrypt-all.asc libmongocrypt-all-${tag_upload_location}.asc
+
+          if [[ "$tag_upload_location" = *-* ]]; then
+            # Unstable release, like 1.1.0-beta1 or 1.0.1-rc0.
+            mkdir unstable
+            cp -a libmongocrypt-all.asc unstable/libmongocrypt-all-${tag_upload_location}.asc
+          else
+            mkdir stable
+            cp -a libmongocrypt-all.asc stable/libmongocrypt-all-${tag_upload_location}.asc
+          fi
+        fi
+  - command: s3.put
+    params:
+      role_arn: ${upload_arn}
+      skip_existing: true
+      remote_file: 'libmongocrypt/all/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt-all.asc'
+      bucket: ${upload_bucket}
+      permissions: ${upload_permissions}
+      visibility: ${upload_visibility}
+      local_file: 'libmongocrypt/libmongocrypt-all.asc'
+      content_type: 'application/pgp-signature'
+  - command: s3.put
+    params:
+      role_arn: ${upload_arn}
+      skip_existing: true
+      remote_file: 'libmongocrypt/all/${branch_name}/${libmongocrypt_s3_suffix_copy}/libmongocrypt-all.asc'
+      bucket: ${upload_bucket}
+      permissions: ${upload_permissions}
+      visibility: ${upload_visibility}
+      local_file: 'libmongocrypt/libmongocrypt-all.asc'
+      content_type: 'application/pgp-signature'
+  - command: s3.put
+    params:
+      role_arn: ${upload_arn}
+      skip_existing: true
+      remote_file: 'libmongocrypt/all/${tag_upload_location}/libmongocrypt-all.asc'
+      bucket: ${upload_bucket}
+      permissions: ${upload_permissions}
+      visibility: ${upload_visibility}
+      optional: true # Do not fail task if `local_file` does not exist. `local_file` only exists for tagged release.
+      display_name: 'libmongocrypt-all-${tag_upload_location}.asc'
+      local_file: 'libmongocrypt/libmongocrypt-all-${tag_upload_location}.asc'
+      content_type: 'application/pgp-signature'
+  - command: s3.put
+    params:
+      role_arn: ${upload_arn}
+      skip_existing: true
+      remote_file: 'libmongocrypt/all/latest/stable/libmongocrypt-all.asc'
+      bucket: ${upload_bucket}
+      permissions: ${upload_permissions}
+      visibility: ${upload_visibility}
+      optional: true # Do not fail task if `local_file` does not exist. `local_file` only exists for stable release.
+      display_name: 'stable/libmongocrypt-all-${tag_upload_location}.asc'
+      local_file: 'libmongocrypt/stable/libmongocrypt-all-${tag_upload_location}.asc'
+      content_type: 'application/pgp-signature'
+  - command: s3.put
+    params:
+      role_arn: ${upload_arn}
+      skip_existing: true
+      remote_file: 'libmongocrypt/all/latest/unstable/libmongocrypt-all.asc'
+      bucket: ${upload_bucket}
+      permissions: ${upload_permissions}
+      visibility: ${upload_visibility}
+      optional: true # Do not fail task if `local_file` does not exist. `local_file` only exists for unstable release.
+      display_name: 'unstable/libmongocrypt-all-${tag_upload_location}.asc'
+      local_file: 'libmongocrypt/unstable/libmongocrypt-all-${tag_upload_location}.asc'
+      content_type: 'application/pgp-signature'
 
 - name: publish-packages
-  depends_on: build-and-test-and-upload
+  depends_on: build-packages
   commands:
     - func: "fetch source"
     - func: "setup packaging credentials"
@@ -931,10 +1084,9 @@ tasks:
         file: libmongocrypt/expansions.yml
     - command: s3.get # Download Windows build.
       params:
-        aws_key: '${aws_key}'
-        aws_secret: '${aws_secret}'
-        remote_file: '${project}/windows-test/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt.tar.gz'
-        bucket: mciuploads
+        role_arn: ${upload_arn}
+        remote_file: 'libmongocrypt/windows-test/${branch_name}/${libmongocrypt_s3_suffix}/libmongocrypt.tar.gz'
+        bucket: ${upload_bucket}
         extract_to: libmongocrypt_download
     - command: shell.exec
       params:
@@ -950,7 +1102,7 @@ tasks:
           mv libmongocrypt_download/include/mongocrypt libmongocrypt_upload/include
     - command: archive.targz_pack
       params:
-        target: libmongocrypt_upload.tar.gz
+        target: libmongocrypt-windows-x86_64-${tag_upload_location!|*revision}.tar.gz
         source_dir: libmongocrypt_upload
         include: [./**]
     - command: s3.put
@@ -960,23 +1112,25 @@ tasks:
       # Documentation now refers to the GitHub release page, which includes the per-release tarball.
       # The fixed URL upload is kept to avoid possibly breaking expectations. Consider removing in the future.
       params:
-        aws_key: '${aws_key}'
-        aws_secret: '${aws_secret}'
+        role_arn: ${upload_arn}
+        skip_existing: true
         remote_file: 'libmongocrypt/windows/latest_release/libmongocrypt${upload_suffix}.tar.gz'
         display_name: (Deprecated) libmongocrypt${upload_suffix}.tar.gz
-        bucket: mciuploads
-        permissions: public-read
-        local_file: 'libmongocrypt_upload.tar.gz'
+        bucket: ${upload_bucket}
+        permissions: ${upload_permissions}
+        visibility: ${upload_visibility}
+        local_file: 'libmongocrypt-windows-x86_64-${tag_upload_location!|*revision}.tar.gz'
         content_type: 'application/x-gzip'
     - command: s3.put # Upload tarball for GitHub Release.
       params:
-        aws_key: '${aws_key}'
-        aws_secret: '${aws_secret}'
-        remote_file: '${project}/${build_variant}/${branch_name}/${revision}/${version_id}/libmongocrypt-windows-x86_64-${libmongocrypt_release_version}.tar.gz'
+        role_arn: ${upload_arn}
+        skip_existing: true
+        remote_file: 'libmongocrypt/${build_variant}/${branch_name}/${revision}/${version_id}/libmongocrypt-windows-x86_64-${libmongocrypt_release_version}.tar.gz'
         display_name: libmongocrypt-windows-x86_64-${libmongocrypt_release_version}.tar.gz
-        bucket: mciuploads
-        permissions: public-read
-        local_file: 'libmongocrypt_upload.tar.gz'
+        bucket: ${upload_bucket}
+        permissions: ${upload_permissions}
+        visibility: ${upload_visibility}
+        local_file: 'libmongocrypt-windows-x86_64-${tag_upload_location!|*revision}.tar.gz'
         content_type: 'application/x-gzip'
     - command: shell.exec
       params:
@@ -984,20 +1138,29 @@ tasks:
         script: |-
           set -o errexit
           # Copy file to sign into `libmongocrypt` directory to be used by Earthly.
-          cp libmongocrypt_upload.tar.gz libmongocrypt
+          cp libmongocrypt-windows-x86_64-${tag_upload_location!|*revision}.tar.gz libmongocrypt
     - func: "earthly" # Sign tarball.
       vars:
-        args: --secret garasign_username=${garasign_username} --secret garasign_password=${garasign_password} +sign --file_to_sign=libmongocrypt_upload.tar.gz --output_file=libmongocrypt_upload.asc
+        args: --secret garasign_username=${garasign_username} --secret garasign_password=${garasign_password} +sign --file_to_sign=libmongocrypt-windows-x86_64-${tag_upload_location!|*revision}.tar.gz --output_file=libmongocrypt_upload.asc
     - command: s3.put # Upload signature for GitHub Release.
       params:
-        aws_key: '${aws_key}'
-        aws_secret: '${aws_secret}'
-        remote_file: '${project}/${build_variant}/${branch_name}/${revision}/${version_id}/libmongocrypt-windows-x86_64-${libmongocrypt_release_version}.asc'
+        role_arn: ${upload_arn}
+        skip_existing: true
+        remote_file: 'libmongocrypt/${build_variant}/${branch_name}/${revision}/${version_id}/libmongocrypt-windows-x86_64-${libmongocrypt_release_version}.asc'
         display_name: libmongocrypt-windows-x86_64-${libmongocrypt_release_version}.asc
-        bucket: mciuploads
-        permissions: public-read
+        bucket: ${upload_bucket}
+        permissions: ${upload_permissions}
+        visibility: ${upload_visibility}
         local_file: 'libmongocrypt/libmongocrypt_upload.asc'
         content_type: 'application/pgp-signature'
+    - command: papertrail.trace
+      params:
+        key_id: ${papertrail_key_id}
+        secret_key: ${papertrail_secret_key}
+        product: ${papertrail_project} # libmongocrypt-dev or libmongocrypt-release
+        version: ${tag_upload_location!|*revision} # Use ${tag_upload_location} if non-empty, otherwise ${revision}.
+        filenames:
+          - libmongocrypt-windows-x86_64-${tag_upload_location!|*revision}.tar.gz
 
 - name: debian-package-build
   run_on: &deb-package-build-run_on
@@ -1015,16 +1178,26 @@ tasks:
           set -o errexit
           set -o xtrace
           bash .evergreen/debian_package_build.sh --is-patch=${is_patch}
+          mv ../deb.tar.gz ../deb-${tag_upload_location!|*revision}.tar.gz
     - command: s3.put
       params:
-        aws_key: ${aws_key}
-        aws_secret: ${aws_secret}
-        local_file: deb.tar.gz
+        role_arn: ${upload_arn}
+        skip_existing: true
+        local_file: deb-${tag_upload_location!|*revision}.tar.gz
         remote_file: libmongocrypt/${branch_name}/${revision}/${version_id}/${build_id}/${execution}/debian-packages.tar.gz
-        bucket: mciuploads
-        permissions: public-read
+        bucket: ${upload_bucket}
+        permissions: ${upload_permissions}
+        visibility: ${upload_visibility}
         content_type: ${content_type|application/x-gzip}
         display_name: "deb.tar.gz"
+    - command: papertrail.trace
+      params:
+        key_id: ${papertrail_key_id}
+        secret_key: ${papertrail_secret_key}
+        product: ${papertrail_project} # libmongocrypt-dev or libmongocrypt-release
+        version: ${tag_upload_location!|*revision} # Use ${tag_upload_location} if non-empty, otherwise ${revision}.
+        filenames:
+          - deb-${tag_upload_location!|*revision}.tar.gz
   allowed_requesters:
     - ad_hoc
     - commit
@@ -1048,16 +1221,26 @@ tasks:
           set -o errexit
           set -o xtrace
           bash .evergreen/debian_package_build.sh --arch=i386 --is-patch=${is_patch}
+          mv ../deb.tar.gz ../deb-${tag_upload_location!|*revision}.tar.gz
     - command: s3.put
       params:
-        aws_key: ${aws_key}
-        aws_secret: ${aws_secret}
-        local_file: deb.tar.gz
+        role_arn: ${upload_arn}
+        skip_existing: true
+        local_file: deb-${tag_upload_location!|*revision}.tar.gz
         remote_file: libmongocrypt/${branch_name}/${revision}/${version_id}/${build_id}/${execution}/debian-packages-i386.tar.gz
-        bucket: mciuploads
-        permissions: public-read
+        bucket: ${upload_bucket}
+        permissions: ${upload_permissions}
+        visibility: ${upload_visibility}
         content_type: ${content_type|application/x-gzip}
         display_name: "deb.tar.gz"
+    - command: papertrail.trace
+      params:
+        key_id: ${papertrail_key_id}
+        secret_key: ${papertrail_secret_key}
+        product: ${papertrail_project} # libmongocrypt-dev or libmongocrypt-release
+        version: ${tag_upload_location!|*revision} # Use ${tag_upload_location} if non-empty, otherwise ${revision}.
+        filenames:
+          - deb-${tag_upload_location!|*revision}.tar.gz
 
 - name: rpm-package-build
   tags: [packaging]
@@ -1158,15 +1341,46 @@ pre:
           REMOTE_SUFFIX_COPY="latest-${branch_name}"
         fi
 
+        # If we are a non-patch build in the libmongocrypt-release project, we upload to a restricted
+        # CDN S3 bucket. Otherwise, we upload to a less restricted bucket for convenience. The corresponding
+        # role_arn_... values come from EVG project configuration variables stored on the EVG server
+        if test "${is_patch}" = 'true' || test "${project}" != 'libmongocrypt-release'; then
+          echo "Using upload bucket: mciuploads"
+          echo "Uploads will be available to download at https://mciuploads.s3.amazonaws.com/<remote_file>"
+          upload_bucket='mciuploads'
+          upload_arn='${role_arn_for_mciuploads}'
+          upload_permissions='public-read'
+          upload_visibility='public'
+        else
+          echo "Using upload bucket: cdn-origin-libmongocrypt"
+          echo "Uploads will be available to download at https://downloads.mongodb.org/<remote_file>"
+          upload_bucket='cdn-origin-libmongocrypt'
+          upload_arn='${role_arn_for_release}'
+          upload_permissions='private'
+          upload_visibility='signed'
+        fi
+
+        if test "${project}" = 'libmongocrypt'; then
+          papertrail_project='libmongocrypt-dev'
+        else
+          papertrail_project='libmongocrypt-release'
+        fi
+
         PROJECT_DIRECTORY="$(pwd)"
         echo "libmongocrypt_s3_suffix: $REMOTE_SUFFIX"
         echo "libmongocrypt_s3_suffix_copy: $REMOTE_SUFFIX_COPY"
         echo "project_directory: $PROJECT_DIRECTORY"
+        echo "Upload S3 bucket: $upload_bucket"
 
         cat <<EOT > expansion.yml
         libmongocrypt_s3_suffix: "$REMOTE_SUFFIX"
         libmongocrypt_s3_suffix_copy: "$REMOTE_SUFFIX_COPY"
         project_directory: "$PROJECT_DIRECTORY"
+        upload_bucket: "$upload_bucket"
+        upload_arn: "$upload_arn"
+        upload_permissions: "$upload_permissions"
+        upload_visibility: "$upload_visibility"
+        papertrail_project: "$papertrail_project"
         EOT
   - command: expansions.update
     params:
@@ -1182,13 +1396,13 @@ buildvariants:
   display_name: "Ubuntu 16.04 64-bit"
   run_on: ubuntu1604-test
   expansions:
-    has_packages: true
     packager_distro: ubuntu1604
     packager_arch: x86_64
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
+  - build-packages
   - name: publish-packages
     distros:
     - ubuntu2004-small
@@ -1203,12 +1417,12 @@ buildvariants:
   display_name: "RHEL 7.2 on zSeries"
   run_on: rhel72-zseries-test
   expansions:
-    has_packages: true
     packager_distro: rhel72
     packager_arch: s390x
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
+  - build-packages
   - name: publish-packages
     distros:
     - rhel70-small
@@ -1243,12 +1457,12 @@ buildvariants:
   display_name: "Amazon Linux"
   run_on: amazon1-2018-test
   expansions:
-    has_packages: true
     packager_distro: amazon
     packager_arch: x86_64
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
+  - build-packages
   - name: publish-packages
     distros:
     - rhel70-small
@@ -1256,13 +1470,13 @@ buildvariants:
   display_name: "Amazon Linux 2"
   run_on: amazon2-test
   expansions:
-    has_packages: true
     packager_distro: amazon2
     packager_arch: x86_64
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
+  - build-packages
   - name: publish-packages
     distros:
     - rhel70-small
@@ -1270,13 +1484,13 @@ buildvariants:
   display_name: "Amazon Linux 2 (arm64)"
   run_on: amazon2-arm64
   expansions:
-    has_packages: true
     packager_distro: amazon2
     packager_arch: aarch64
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
+  - build-packages
   - name: publish-packages
     distros:
     - rhel70-small
@@ -1284,11 +1498,11 @@ buildvariants:
   display_name: "Amazon Linux 2023"
   run_on: amazon2023.0-small
   expansions:
-    has_packages: true
     packager_distro: amazon2023
     packager_arch: x86_64
   tasks:
   - build-and-test-and-upload
+  - build-packages
   - name: publish-packages
     distros:
     - rhel70-small
@@ -1296,11 +1510,11 @@ buildvariants:
   display_name: "Amazon Linux 2023 (arm64)"
   run_on: amazon2023-arm64-small
   expansions:
-    has_packages: true
     packager_distro: amazon2023
     packager_arch: aarch64
   tasks:
   - build-and-test-and-upload
+  - build-packages
   - name: publish-packages
     distros:
     - rhel70-small
@@ -1308,13 +1522,13 @@ buildvariants:
   display_name: "Debian 11"
   run_on: debian11-large
   expansions:
-    has_packages: true
     packager_distro: debian11
     packager_arch: x86_64
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
+  - build-packages
   - name: publish-packages
     distros:
     - ubuntu2004-small
@@ -1322,11 +1536,11 @@ buildvariants:
   display_name: "Debian 13"
   run_on: debian13-m6i-xlarge
   expansions:
-    has_packages: true
     packager_distro: debian13
     packager_arch: x86_64
   tasks:
   - build-and-test-and-upload
+  - build-packages
   - name: publish-packages
     distros:
     - ubuntu2004-small
@@ -1334,11 +1548,11 @@ buildvariants:
   display_name: "Debian 12"
   run_on: debian12-large
   expansions:
-    has_packages: true
     packager_distro: debian12
     packager_arch: x86_64
   tasks:
   - build-and-test-and-upload
+  - build-packages
   - name: publish-packages
     distros:
     - ubuntu2004-small
@@ -1346,13 +1560,13 @@ buildvariants:
   display_name: "Debian 10"
   run_on: debian10-test
   expansions:
-    has_packages: true
     packager_distro: debian10
     packager_arch: x86_64
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
+  - build-packages
   - name: publish-packages
     distros:
     - ubuntu2004-small
@@ -1360,13 +1574,13 @@ buildvariants:
   display_name: "Debian 9.2"
   run_on: debian92-test
   expansions:
-    has_packages: true
     packager_distro: debian92
     packager_arch: x86_64
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
+  - build-packages
   - name: publish-packages
     distros:
     - ubuntu2004-small
@@ -1384,12 +1598,12 @@ buildvariants:
   display_name: "RHEL 7.0 64-bit"
   run_on: rhel70-small
   expansions:
-    has_packages: true
     packager_distro: rhel70
     packager_arch: x86_64
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
+  - build-packages
   - name: publish-packages
     distros:
     - rhel70-small
@@ -1397,12 +1611,12 @@ buildvariants:
   display_name: "RHEL 7.1 ppc64el"
   run_on: rhel71-power8-test
   expansions:
-    has_packages: true
     packager_distro: rhel71
     packager_arch: ppc64le
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
+  - build-packages
   - name: publish-packages
     distros:
     - rhel70-small
@@ -1410,7 +1624,6 @@ buildvariants:
   display_name: "RHEL 8.0 64-bit"
   run_on: rhel80-test
   expansions:
-    has_packages: true
     packager_distro: rhel80
     packager_arch: x86_64
   tasks:
@@ -1418,6 +1631,7 @@ buildvariants:
   - build-and-test-shared-bson
   - test-python
   - test-python-integ
+  - build-packages
   - name: publish-packages
     distros:
     - rhel70-small
@@ -1425,13 +1639,13 @@ buildvariants:
   display_name: "RHEL 8.2 arm64"
   run_on: rhel82-arm64-small
   expansions:
-    has_packages: true
     packager_distro: rhel82
     packager_arch: aarch64
   tasks:
   - build-and-test-and-upload
   - test-python
   - test-python-integ
+  - build-packages
   - name: publish-packages
     distros:
     - rhel70-small
@@ -1439,11 +1653,11 @@ buildvariants:
   display_name: "RHEL 8.1 ppc64el"
   run_on: rhel81-power8-small
   expansions:
-    has_packages: true
     packager_distro: rhel81
     packager_arch: ppc64le
   tasks:
   - build-and-test-and-upload
+  - build-packages
   - name: publish-packages
     distros:
     - rhel70-small
@@ -1451,11 +1665,11 @@ buildvariants:
   display_name: "RHEL 8.3 zSeries"
   run_on: rhel83-zseries-small
   expansions:
-    has_packages: true
     packager_distro: rhel83
     packager_arch: s390x
   tasks:
   - build-and-test-and-upload
+  - build-packages
   - name: publish-packages
     distros:
     - rhel70-small
@@ -1463,11 +1677,11 @@ buildvariants:
   display_name: "RHEL 9.1 64-bit"
   run_on: rhel91-small
   expansions:
-    has_packages: true
     packager_distro: rhel91
     packager_arch: x86_64
   tasks:
   - build-and-test-and-upload
+  - build-packages
   - name: publish-packages
     distros:
     - rhel70-small
@@ -1475,11 +1689,11 @@ buildvariants:
   display_name: "RHEL 9.1 arm64"
   run_on: rhel91-arm64-small
   expansions:
-    has_packages: true
     packager_distro: rhel91
     packager_arch: aarch64
   tasks:
   - build-and-test-and-upload
+  - build-packages
   - name: publish-packages
     distros:
     - rhel70-small
@@ -1487,13 +1701,13 @@ buildvariants:
   display_name: "SLES 12 64-bit"
   run_on: suse12-sp5-small
   expansions:
-    has_packages: true
     packager_distro: suse12
     packager_arch: x86_64
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
+  - build-packages
   - name: publish-packages
     distros:
     - rhel70-small
@@ -1501,13 +1715,13 @@ buildvariants:
   display_name: "SLES 15 64-bit"
   run_on: suse15-test
   expansions:
-    has_packages: true
     packager_distro: suse15
     packager_arch: x86_64
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
+  - build-packages
   - name: publish-packages
     distros:
     - rhel70-small
@@ -1515,13 +1729,13 @@ buildvariants:
   display_name: "Ubuntu 16.04 arm64"
   run_on: ubuntu1604-arm64-large
   expansions:
-    has_packages: true
     packager_distro: ubuntu1604
     packager_arch: arm64
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
+  - build-packages
   - name: publish-packages
     distros:
     - ubuntu2004-small
@@ -1529,13 +1743,13 @@ buildvariants:
   display_name: "Ubuntu 18.04 64-bit"
   run_on: ubuntu1804-test
   expansions:
-    has_packages: true
     packager_distro: ubuntu1804
     packager_arch: x86_64
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
+  - build-packages
   - name: publish-packages
     distros:
     - ubuntu2004-small
@@ -1555,13 +1769,13 @@ buildvariants:
   display_name: "Ubuntu 18.04 arm64"
   run_on: ubuntu1804-arm64-build
   expansions:
-    has_packages: true
     packager_distro: ubuntu1804
     packager_arch: arm64
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
+  - build-packages
   - name: publish-packages
     distros:
     - ubuntu2004-small
@@ -1569,7 +1783,6 @@ buildvariants:
   display_name: "Ubuntu 20.04 64-bit"
   run_on: ubuntu2004-small
   expansions:
-    has_packages: true
     packager_distro: ubuntu2004
     packager_arch: x86_64
   tasks:
@@ -1578,18 +1791,19 @@ buildvariants:
   - build-and-test-shared-bson
   - build-and-test-asan
   - upload-java
+  - build-packages
   - publish-packages
 - name: ubuntu2004-arm64
   display_name: "Ubuntu 20.04 arm64"
   run_on: ubuntu2004-arm64-small
   expansions:
-    has_packages: true
     packager_distro: ubuntu2004
     packager_arch: arm64
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
+  - build-packages
   - name: publish-packages
     distros:
     - ubuntu2004-small
@@ -1597,11 +1811,11 @@ buildvariants:
   display_name: "Ubuntu 24.04 64-bit"
   run_on: ubuntu2404-small
   expansions:
-    has_packages: true
     packager_distro: ubuntu2404
     packager_arch: x86_64
   tasks:
   - build-and-test-and-upload
+  - build-packages
   - name: publish-packages
     distros:
     - ubuntu2004-small
@@ -1609,11 +1823,11 @@ buildvariants:
   display_name: "Ubuntu 24.04 arm64"
   run_on: ubuntu2404-arm64-small
   expansions:
-    has_packages: true
     packager_distro: ubuntu2404
     packager_arch: arm64
   tasks:
   - build-and-test-and-upload
+  - build-packages
   - name: publish-packages
     distros:
     - ubuntu2004-small
@@ -1621,7 +1835,6 @@ buildvariants:
   display_name: "Ubuntu 22.04 64-bit"
   run_on: ubuntu2204-small
   expansions:
-    has_packages: true
     packager_distro: ubuntu2204
     packager_arch: x86_64
     clang_env: CC=clang-12 CXX=clang++-12
@@ -1632,6 +1845,7 @@ buildvariants:
   - build-and-test-asan
   - build-and-test-ubsan
   - upload-java
+  - build-packages
   - name: publish-packages
     distros:
     - ubuntu2004-small
@@ -1640,22 +1854,23 @@ buildvariants:
   display_name: "Ubuntu 22.04 arm64"
   run_on: ubuntu2204-arm64-small
   expansions:
-    has_packages: true
     packager_distro: ubuntu2204
     packager_arch: arm64
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
   - build-and-test-asan
+  - build-packages
   - name: publish-packages
     distros:
     - ubuntu2004-small
 - name: publish
   display_name: "Publish"
-  run_on: ubuntu1804-test
+  run_on: ubuntu2404-latest-small
   tasks:
     - name: "upload-java"
     - name: "upload-all"
+    - name: "sign-all"
 - name: packaging
   display_name: "Linux Distro Packaging"
   tasks: [.packaging]
@@ -1712,7 +1927,6 @@ buildvariants:
 - name: debian11-arm64-earthly
   display_name: "Debian 11 arm64 (via Earthly)"
   expansions:
-    has_packages: true
     packager_distro: debian11
     packager_arch: arm64
     earthly_env: deb11
@@ -1727,7 +1941,6 @@ buildvariants:
 - name: debian13-arm64-earthly
   display_name: "Debian 13 arm64 (via Earthly)"
   expansions:
-    has_packages: true
     packager_distro: debian13
     packager_arch: arm64
     earthly_env: deb13
@@ -1743,7 +1956,6 @@ buildvariants:
 - name: debian12-arm64-earthly
   display_name: "Debian 12 arm64 (via Earthly)"
   expansions:
-    has_packages: true
     packager_distro: debian12
     packager_arch: arm64
     earthly_env: deb12
@@ -1758,7 +1970,6 @@ buildvariants:
 - name: debian10-arm64-earthly
   display_name: "Debian 10 arm64 (via Earthly)"
   expansions:
-    has_packages: true
     packager_distro: debian10
     packager_arch: arm64
     earthly_env: deb10
@@ -1773,7 +1984,6 @@ buildvariants:
 - name: debian9-arm64-earthly
   display_name: "Debian 9 arm64 (via Earthly)"
   expansions:
-    has_packages: true
     packager_distro: debian92
     packager_arch: arm64
     earthly_env: deb9

@@ -13,6 +13,8 @@ set -eu
 : "${BINARY_DIR:="$LIBMONGOCRYPT_DIR/cmake-build"}"
 # Additional compilation flags that apply only to the libmongocrypt build
 : "${LIBMONGOCRYPT_COMPILE_FLAGS:=}"
+# Additional CMake flags that apply only to the libmongocrypt build. (Used by the C driver)
+: "${LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS:=}"
 
 # Control the build configuration that is generated.
 export CMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE:-RelWithDebInfo}"
@@ -25,6 +27,10 @@ export CMAKE_INSTALL_PREFIX="${MONGOCRYPT_INSTALL_PREFIX-}"
 export CTEST_OUTPUT_ON_FAILURE=1
 # Generate a compilation database for use by other tools
 export CMAKE_EXPORT_COMPILE_COMMANDS=1
+# Permit skipping build of tests.
+BUILD_TESTING="${BUILD_TESTING-TRUE}"
+# Build nocrypto and sharedbson variants (true by defualt).
+LIBMONGOCRYPT_BUILD_VARIANTS="${LIBMONGOCRYPT_BUILD_VARIANTS:-TRUE}"
 
 # Accumulate arguments that are passed to CMake
 cmake_args=(
@@ -36,10 +42,13 @@ cmake_args=(
     # Toggle compiling with shared BSON
     -D USE_SHARED_LIBBSON="${USE_SHARED_LIBBSON-FALSE}"
     # Toggle building of tests
-    -D BUILD_TESTING="${BUILD_TESTING-TRUE}"
+    -D BUILD_TESTING="${BUILD_TESTING:?}"
     # Enable additional warnings-as-errors
     -D ENABLE_MORE_WARNINGS_AS_ERRORS=TRUE
 )
+
+# shellcheck disable=SC2206
+cmake_args+=($LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS)
 
 : "${CONFIGURE_ONLY:=}"
 
@@ -80,7 +89,7 @@ if [ "$CONFIGURE_ONLY" ]; then
     exit 0;
 fi
 echo "Installing libmongocrypt"
-_cmake_with_env --build "$BINARY_DIR" --target install test-mongocrypt test_kms_request
+_cmake_with_env --build "$BINARY_DIR" --target install
 run_chdir "$BINARY_DIR" run_ctest
 
 # MONGOCRYPT-372, ensure macOS universal builds contain both x86_64 and arm64 architectures.
@@ -100,12 +109,17 @@ if [ "$PPA_BUILD_ONLY" ]; then
     exit 0;
 fi
 
+if [ "${LIBMONGOCRYPT_BUILD_VARIANTS:?}" != "TRUE" ]; then
+    echo "Skipping build of libmongocrypt variants";
+    exit 0;
+fi
+
 # Build and install libmongocrypt with no native crypto.
 _cmake_with_env "${cmake_args[@]}" \
     -DDISABLE_NATIVE_CRYPTO=ON \
     -DCMAKE_INSTALL_PREFIX="$MONGOCRYPT_INSTALL_PREFIX/nocrypto" \
     -B "$BINARY_DIR" -S "$LIBMONGOCRYPT_DIR"
-_cmake_with_env --build "$BINARY_DIR" --target install test-mongocrypt
+_cmake_with_env --build "$BINARY_DIR" --target install
 run_chdir "$BINARY_DIR" run_ctest
 
 # Build and install libmongocrypt without statically linking libbson
@@ -113,5 +127,5 @@ _cmake_with_env "${cmake_args[@]}" \
     -DUSE_SHARED_LIBBSON=ON \
     -DCMAKE_INSTALL_PREFIX="$MONGOCRYPT_INSTALL_PREFIX/sharedbson" \
     -B "$BINARY_DIR" -S "$LIBMONGOCRYPT_DIR"
-_cmake_with_env --build "$BINARY_DIR" --target install test-mongocrypt
+_cmake_with_env --build "$BINARY_DIR" --target install
 run_chdir "$BINARY_DIR" run_ctest
