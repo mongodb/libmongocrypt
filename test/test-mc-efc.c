@@ -156,6 +156,7 @@ static void _test_efc(_mongocrypt_tester_t *tester) {
         _mongocrypt_status_reset(status);
     }
 
+    _mongocrypt_buffer_cleanup(&expect_keyId3);
     _mongocrypt_buffer_cleanup(&expect_keyId2);
     _mongocrypt_buffer_cleanup(&expect_keyId1);
     mongocrypt_status_destroy(status);
