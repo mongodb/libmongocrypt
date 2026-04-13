@@ -1690,12 +1690,9 @@ buildvariants:
     compile_env: >-
       LIBMONGOCRYPT_COMPILE_FLAGS="-D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS"
       BUILD_TESTING=OFF
-    release_os_arch: linux-x86_64-glibc_2_7-nocrypto
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
-  - name: upload-release
-    depends_on: build-and-test-and-upload
 - name: rhel-70-64-bit
   display_name: "RHEL 7.0 64-bit"
   run_on: rhel70-small
@@ -1842,7 +1839,6 @@ buildvariants:
   expansions:
     packager_distro: ubuntu1604
     packager_arch: arm64
-    release_os_arch: linux-arm64-glibc_2_17-nocrypto
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
@@ -1851,15 +1847,12 @@ buildvariants:
   - name: publish-packages
     distros:
     - ubuntu2004-small
-  - name: upload-release
-    depends_on: build-and-test-and-upload
 - name: ubuntu1804-64
   display_name: "Ubuntu 18.04 64-bit"
   run_on: ubuntu1804-test
   expansions:
     packager_distro: ubuntu1804
     packager_arch: x86_64
-    release_os_arch: linux-x86_64-glibc_2_7-nocrypto
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
@@ -1868,8 +1861,6 @@ buildvariants:
   - name: publish-packages
     distros:
     - ubuntu2004-small
-  - name: upload-release
-    depends_on: build-and-test-and-upload
 - name: ubuntu1804-64-clang7
   # ubuntu1804-64-clang7 is used to test Ubuntu 18.04 with Clang 7.0.1.
   # This is a supported configuration built by the MongoDB Server.
@@ -1888,7 +1879,6 @@ buildvariants:
   expansions:
     packager_distro: ubuntu1804
     packager_arch: arm64
-    release_os_arch: linux-x86_64-glibc_2_17-nocrypto
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
@@ -1897,8 +1887,6 @@ buildvariants:
   - name: publish-packages
     distros:
     - ubuntu2004-small
-  - name: upload-release
-    depends_on: build-and-test-and-upload
 - name: ubuntu2004-64
   display_name: "Ubuntu 20.04 64-bit"
   run_on: ubuntu2004-small
