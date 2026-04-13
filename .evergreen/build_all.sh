@@ -9,12 +9,6 @@ echo "Begin compile process"
 
 set -eu
 
-if command -v ldd &> /dev/null; then
-    # Print verison of libc:
-    echo "Output of 'ldd --version':"
-    ldd --version || true
-fi
-
 # Directory where build files will be stored
 : "${BINARY_DIR:="$LIBMONGOCRYPT_DIR/cmake-build"}"
 # Additional compilation flags that apply only to the libmongocrypt build
