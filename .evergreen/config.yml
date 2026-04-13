@@ -1512,7 +1512,7 @@ buildvariants:
   expansions:
     packager_distro: rhel72
     packager_arch: s390x
-    release_os_arch: linux-s390x-glibc_2_17-nocrypto
+    release_os_arch: linux-s390x-glibc_2_7-nocrypto
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
@@ -1690,7 +1690,7 @@ buildvariants:
     compile_env: >-
       LIBMONGOCRYPT_COMPILE_FLAGS="-D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS"
       BUILD_TESTING=OFF
-    release_os_arch: linux-x86_64-glibc_2_12-nocrypto
+    release_os_arch: linux-x86_64-glibc_2_7-nocrypto
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
@@ -1702,7 +1702,7 @@ buildvariants:
   expansions:
     packager_distro: rhel70
     packager_arch: x86_64
-    release_os_arch: linux-x86_64-glibc_2_17-nocrypto
+    release_os_arch: linux-x86_64-glibc_2_7-nocrypto
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
@@ -1749,7 +1749,7 @@ buildvariants:
   expansions:
     packager_distro: rhel82
     packager_arch: aarch64
-    release_os_arch: linux-arm64-glibc_2_28-nocrypto
+    release_os_arch: linux-arm64-glibc_2_17-nocrypto
   tasks:
   - build-and-test-and-upload
   - test-python
@@ -1842,7 +1842,7 @@ buildvariants:
   expansions:
     packager_distro: ubuntu1604
     packager_arch: arm64
-    release_os_arch: linux-arm64-glibc_2_23-nocrypto
+    release_os_arch: linux-arm64-glibc_2_17-nocrypto
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
@@ -1859,7 +1859,7 @@ buildvariants:
   expansions:
     packager_distro: ubuntu1804
     packager_arch: x86_64
-    release_os_arch: linux-x86_64-glibc_2_27-nocrypto
+    release_os_arch: linux-x86_64-glibc_2_7-nocrypto
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
@@ -1888,7 +1888,7 @@ buildvariants:
   expansions:
     packager_distro: ubuntu1804
     packager_arch: arm64
-    release_os_arch: linux-x86_64-glibc_2_27-nocrypto
+    release_os_arch: linux-x86_64-glibc_2_17-nocrypto
   tasks:
   - build-and-test-and-upload
   - build-and-test-shared-bson
