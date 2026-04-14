@@ -1021,11 +1021,21 @@ bool mongocrypt_ctx_setopt_query_type(mongocrypt_ctx_t *ctx, const char *query_t
     } else if (mstr_eq_ignore_case(qt_str, mstrv_lit(MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_DEPRECATED_STR))) {
         _mongocrypt_ctx_fail_w_msg(ctx, "Query type 'rangePreview' is deprecated, please use 'range'");
         return false;
-    } else if (mstr_eq_ignore_case(qt_str, mstrv_lit(MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW_STR))) {
-        ctx->opts.query_type.value = MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW;
+    } else if (mstr_eq_ignore_case(qt_str, mstrv_lit(MONGOCRYPT_QUERY_TYPE_PREFIX_STR))) {
+        ctx->opts.query_type.value = MONGOCRYPT_QUERY_TYPE_PREFIX;
         ctx->opts.query_type.set = true;
-    } else if (mstr_eq_ignore_case(qt_str, mstrv_lit(MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW_STR))) {
-        ctx->opts.query_type.value = MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW;
+    } else if (mstr_eq_ignore_case(qt_str, mstrv_lit(MONGOCRYPT_QUERY_TYPE_SUFFIX_STR))) {
+        ctx->opts.query_type.value = MONGOCRYPT_QUERY_TYPE_SUFFIX;
+        ctx->opts.query_type.set = true;
+    } else if (mstr_eq_ignore_case(qt_str, mstrv_lit(MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW_DEPRECATED_STR))) {
+        // TODO: MONGOCRYPT-870 disallow prefixPreview
+        // _mongocrypt_ctx_fail_w_msg(ctx, "Query type 'prefixPreview' is deprecated, please use 'prefix'");
+        ctx->opts.query_type.value = MONGOCRYPT_QUERY_TYPE_PREFIX;
+        ctx->opts.query_type.set = true;
+    } else if (mstr_eq_ignore_case(qt_str, mstrv_lit(MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW_DEPRECATED_STR))) {
+        // TODO: MONGOCRYPT-870 disallow suffixPreview
+        // _mongocrypt_ctx_fail_w_msg(ctx, "Query type 'suffixPreview' is deprecated, please use 'suffix'");
+        ctx->opts.query_type.value = MONGOCRYPT_QUERY_TYPE_SUFFIX;
         ctx->opts.query_type.set = true;
     } else if (mstr_eq_ignore_case(qt_str, mstrv_lit(MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW_STR))) {
         ctx->opts.query_type.value = MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW;
@@ -1058,8 +1068,8 @@ const char *_mongocrypt_query_type_to_string(mongocrypt_query_type_t val) {
     case MONGOCRYPT_QUERY_TYPE_EQUALITY: return "Equality";
     case MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_DEPRECATED: return "RangePreview";
     case MONGOCRYPT_QUERY_TYPE_RANGE: return "Range";
-    case MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW: return "PrefixPreview";
-    case MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW: return "SuffixPreview";
+    case MONGOCRYPT_QUERY_TYPE_PREFIX: return "Prefix";
+    case MONGOCRYPT_QUERY_TYPE_SUFFIX: return "Suffix";
     case MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW: return "SubstringPreview";
     default: return "Unknown";
     }

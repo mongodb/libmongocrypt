@@ -255,7 +255,7 @@ static void test_mc_TextOpts_to_FLE2TextSearchInsertSpec_for_query(_mongocrypt_t
              "prefix" : {"strMinQueryLength" : 3, "strMaxQueryLength" : 8}
          }),
          .v = RAW_STRING({"v" : "test"}),
-         .qt = MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW,
+         .qt = MONGOCRYPT_QUERY_TYPE_PREFIX,
          .expect =
              RAW_STRING({"v" : {"v" : "test", "casef" : true, "diacf" : false, "prefix" : {"ub" : 8, "lb" : 3}}})},
         {.desc = "Works with suffix",
@@ -265,7 +265,7 @@ static void test_mc_TextOpts_to_FLE2TextSearchInsertSpec_for_query(_mongocrypt_t
              "suffix" : {"strMinQueryLength" : 3, "strMaxQueryLength" : 8}
          }),
          .v = RAW_STRING({"v" : "test"}),
-         .qt = MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW,
+         .qt = MONGOCRYPT_QUERY_TYPE_SUFFIX,
          .expect =
              RAW_STRING({"v" : {"v" : "test", "casef" : true, "diacf" : false, "suffix" : {"ub" : 8, "lb" : 3}}})},
         {.desc = "Works with prefix + suffix when querying prefix",
@@ -276,7 +276,7 @@ static void test_mc_TextOpts_to_FLE2TextSearchInsertSpec_for_query(_mongocrypt_t
              "suffix" : {"strMinQueryLength" : 3, "strMaxQueryLength" : 8}
          }),
          .v = RAW_STRING({"v" : "test"}),
-         .qt = MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW,
+         .qt = MONGOCRYPT_QUERY_TYPE_PREFIX,
          .expect =
              RAW_STRING({"v" : {"v" : "test", "casef" : true, "diacf" : false, "prefix" : {"ub" : 9, "lb" : 4}}})},
         {.desc = "Works with prefix + suffix when querying suffix",
@@ -287,7 +287,7 @@ static void test_mc_TextOpts_to_FLE2TextSearchInsertSpec_for_query(_mongocrypt_t
              "suffix" : {"strMinQueryLength" : 3, "strMaxQueryLength" : 8}
          }),
          .v = RAW_STRING({"v" : "test"}),
-         .qt = MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW,
+         .qt = MONGOCRYPT_QUERY_TYPE_SUFFIX,
          .expect =
              RAW_STRING({"v" : {"v" : "test", "casef" : true, "diacf" : false, "suffix" : {"ub" : 8, "lb" : 3}}})},
     };
