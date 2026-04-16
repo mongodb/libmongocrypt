@@ -2,10 +2,18 @@
 
 ## Unreleased
 
+### Added
+- Signed binaries for macOS and Linux are now available on the GitHub release.
+    - Linux binaries including `nocrypto` in the name have no dependency on OpenSSL. Drivers using the `nocrypto` variant are expected to set crypto callbacks (e.g. call `mongocrypt_setopt_crypto_hooks`) to do operations requiring crypto to avoid an error.
+    - Drivers that package libmongocrypt binaries are encouraged to migrate release scripts to use these binaries.
+        - No reduction in platform support is expected. glibc dependencies were checked against existing builds on RHEL 6.2 and Ubuntu 16.04.
 
 ### Changed
 
 - Final release packages in the PPA are now available by specifying `release` in the repository configuration in place of the major/minor version (e.g., `1.17`). Details in `README.md`.
+
+### Deprecated
+- RHEL 6.2 builds are deprecated and may be removed in the future. The `linux-x86_64-glibc_2_7-nocrypto` release build may be used instead and has equivalent glibc requirements.
 
 ### Removed
 
