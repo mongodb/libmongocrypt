@@ -22,6 +22,7 @@ if test -f /etc/debian_version ; then
 elif test -f /etc/redhat-release || grep 'ID="amzn"' /etc/os-release >/dev/null 1>&2; then
     if test -f /usr/bin/dnf; then
         # 'dnf' will "do the right thing"
+        # --allow-erasing: see https://github.com/jeroen/curl/issues/350.
         dnf install -y --allowerasing -- "$@"
     elif test -f /usr/bin/yum; then
         yum install -y -- "$@"
