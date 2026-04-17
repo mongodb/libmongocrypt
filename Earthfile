@@ -59,7 +59,7 @@
     # Use of an unqualified image ID may enable separate registry in CI and local development.
 # ###
 
-VERSION --use-cache-command 0.6
+VERSION 0.8
 FROM alpine:3.16
 WORKDIR /s
 
@@ -82,13 +82,13 @@ init:
 
 DEBIAN_SETUP:
     # Setup for a debian-like build environment. Used for both Debian and Ubuntu
-    COMMAND
+    FUNCTION
     RUN __install build-essential g++ libssl-dev curl unzip python3 pkg-config \
                   git ccache findutils ca-certificates
 
 REDHAT_SETUP:
     # Setup for a redhat-like build environment. Used for CentOS and RockyLinux.
-    COMMAND
+    FUNCTION
     RUN __install epel-release && \
         __install gcc-c++ make openssl-devel curl unzip git ccache findutils \
                   patch
@@ -96,14 +96,14 @@ REDHAT_SETUP:
 CENTOS6_SETUP:
     # Special setup for CentOS6: The packages have been moved to the vault, so
     # we need to enable the vault repos before we perform any __installs
-    COMMAND
+    FUNCTION
     RUN rm /etc/yum.repos.d/*.repo
     COPY etc/c6-vault.repo /etc/yum.repos.d/CentOS-Base.repo
     DO +REDHAT_SETUP
 
 AMZ_SETUP:
     # Setup for Amazon Linux.
-    COMMAND
+    FUNCTION
     # amzn1 has "python38", but amzn2 has "python3." Try both
     RUN __install python3 || __install python38
     RUN __install gcc-c++ make openssl-devel curl unzip tar gzip \
@@ -111,13 +111,13 @@ AMZ_SETUP:
 
 SLES_SETUP:
     # Setup for a SLES/SUSE build environment
-    COMMAND
+    FUNCTION
     RUN __install gcc-c++ make libopenssl-devel curl unzip tar gzip python3 \
                   patch git xz which
 
 ALPINE_SETUP:
     # Setup for an Alpine Linux build environment
-    COMMAND
+    FUNCTION
     RUN __install make bash gcc g++ unzip curl tar gzip git musl-dev \
                   linux-headers openssl-dev python3
 
@@ -142,7 +142,7 @@ env.rl8:
 
 # Utility command for Ubuntu environments
 ENV_UBUNTU:
-    COMMAND
+    FUNCTION
     ARG --required version
     FROM +init --base=ubuntu:$version
     DO +DEBIAN_SETUP
@@ -179,7 +179,7 @@ env.amzn2:
 
 # Utility command for Debian setup
 ENV_DEBIAN:
-    COMMAND
+    FUNCTION
     ARG --required version
     FROM +init --base=debian:$version
     IF [ $version = "9.2" ]
@@ -225,13 +225,13 @@ env.sles15:
     DO +SLES_SETUP
 
 env.alpine:
-    FROM +init --base=alpine:3.18
+    FROM +init --base=alpine:3.21
     DO +ALPINE_SETUP
 
 # Utility: Warm-up obtaining CMake and Ninja for the build. This is usually
 # very quick, but on some platforms we need to compile them from source.
 CACHE_WARMUP:
-    COMMAND
+    FUNCTION
     # Copy only the scripts that are strictly necessary for the operation, to
     # avoid cache invalidation later on.
     COPY .evergreen/setup-env.sh \
@@ -246,7 +246,7 @@ CACHE_WARMUP:
         bash /T/ensure-ninja.sh
 
 COPY_SOURCE:
-    COMMAND
+    FUNCTION
     COPY --dir \
         .git/ \
         cmake/ \
@@ -263,7 +263,7 @@ COPY_SOURCE:
     COPY --dir bindings/cs/ "/s/libmongocrypt/bindings/"
 
 BUILD_EXAMPLE_STATE_MACHINE:
-    COMMAND
+    FUNCTION
     COPY test/example-state-machine.c /s/
     RUN pkg-config --exists libmongocrypt --print-errors && \
         gcc /s/example-state-machine.c \
