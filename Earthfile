@@ -95,12 +95,6 @@ AMZ_SETUP:
     RUN __install gcc-c++ make openssl-devel curl unzip tar gzip \
                   openssh-clients patch git
 
-SLES_SETUP:
-    # Setup for a SLES/SUSE build environment
-    FUNCTION
-    RUN __install gcc-c++ make libopenssl-devel curl unzip tar gzip python3 \
-                  patch git xz which
-
 ALPINE_SETUP:
     # Setup for an Alpine Linux build environment
     FUNCTION
@@ -156,18 +150,6 @@ ENV_DEBIAN:
     FUNCTION
     ARG --required version
     FROM +init --base=debian:$version
-    IF [ $version = "9.2" ]
-        # Update source list for archived Debian stretch packages.
-        # Refer: https://unix.stackexchange.com/a/743865/260858
-        RUN echo "deb http://archive.debian.org/debian stretch main" > /etc/apt/sources.list
-        # Trust newer Debian signing keys to avoid "unauthenticated packages" error:
-        COPY +get-deb-signing-keys/keys/deb10-archive-signing-key.gpg /etc/apt/trusted.gpg.d
-        COPY +get-deb-signing-keys/keys/deb11-archive-signing-key.gpg /etc/apt/trusted.gpg.d
-    END
-    IF [ $version = "10.0" ]
-        # Update source list for archived Debian buster packages.
-        RUN echo "deb http://archive.debian.org/debian buster main" > /etc/apt/sources.list
-    END
     DO +DEBIAN_SETUP
 
 env.deb-unstable:
@@ -339,19 +321,6 @@ check-format:
     RUN /X/etc/format.sh  # Does nothing, but warms the cache
     COPY --dir .clang-format src test /X/
     RUN /X/etc/format-all.sh --dry-run -Werror --verbose
-
-get-deb-signing-keys:
-    FROM +env.deb12
-    RUN __install gpg
-    # Get "Debian 10/buster archive signing key"
-    RUN gpg --keyserver keyserver.ubuntu.com --recv-keys 80D15823B7FD1561F9F7BCDDDC30D7C23CBBABEE
-    RUN gpg --export 80D15823B7FD1561F9F7BCDDDC30D7C23CBBABEE > deb10-archive-signing-key.gpg
-    SAVE ARTIFACT deb10-archive-signing-key.gpg /keys/
-
-    # Import "Debian 11/bullseye archive signing key"
-    RUN gpg --keyserver keyserver.ubuntu.com --recv-keys 1F89983E0081FDE018F3CC9673A4F27B8DD47936
-    RUN gpg --export 1F89983E0081FDE018F3CC9673A4F27B8DD47936 > deb11-archive-signing-key.gpg
-    SAVE ARTIFACT deb11-archive-signing-key.gpg /keys/
 
 # The main "build" target. Options:
 #   • --env=[...] (default "u22")
