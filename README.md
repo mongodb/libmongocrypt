@@ -150,13 +150,13 @@ First, import the public key used to sign the package repositories:
 sudo sh -c 'curl -s --location https://pgp.mongodb.com/libmongocrypt.asc | gpg --dearmor >/etc/apt/trusted.gpg.d/libmongocrypt.gpg'
 ```
 
-Second, create a list entry for the repository.  For Ubuntu systems (be sure to change `<release>` to `xenial`, `bionic`, `focal`, `jammy`, or `noble` as appropriate to your system):
+Second, create a list entry for the repository.  For Ubuntu systems (be sure to change `<release>` to `jammy` or `noble`, as appropriate to your system):
 
 ```
 echo "deb https://libmongocrypt.s3.amazonaws.com/apt/ubuntu <release>/libmongocrypt/<channel> universe" | sudo tee /etc/apt/sources.list.d/libmongocrypt.list
 ```
 
-For Debian systems (be sure to change `<release>` to `stretch`, `buster`, `bullseye`, `bookworm`, or `trixie` as appropriate to your system):
+For Debian systems (be sure to change `<release>` to `bullseye`, `bookworm`, or `trixie` as appropriate to your system):
 
 ```
 echo "deb https://libmongocrypt.s3.amazonaws.com/apt/debian <release>/libmongocrypt/<channel> main" | sudo tee /etc/apt/sources.list.d/libmongocrypt.list
