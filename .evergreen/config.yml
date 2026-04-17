@@ -1190,7 +1190,7 @@ tasks:
           else
             srcdir="libmongocrypt_download"
           fi
-          
+
           # Move headers
           mkdir libmongocrypt_upload/include
           mv $srcdir/include/mongocrypt libmongocrypt_upload/include
