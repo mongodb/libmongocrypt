@@ -38,7 +38,7 @@
     #   • u18 - Ubuntu 18.04
     #   • u16 - Ubuntu 16.04
     #   • u14 - Ubuntu 14.04
-    #   • rl8 - RockyLinux 8 - Stand-in for RHEL 8
+    #   • rl8 - AlmaLinux 8 - Stand-in for RHEL 8
     #   • c10 - CentOS Stream 10 - Stand-in for RHEL 10
     #   • c9 - CentOS Stream 9 - Stand-in for RHEL 9
     #   • amzn1 - AmazonLinux (2018.03)
@@ -125,8 +125,8 @@ env.c10:
     DO +REDHAT_SETUP
 
 env.rl8:
-    # CentOS 8 is cancelled. Use RockyLinux 8 for our RHEL 8 environment.
-    FROM +init --base=rockylinux:8
+    # Use AlmaLinux 8 for RHEL 8 coverage.
+    FROM +init --base=almalinux:8
     DO +REDHAT_SETUP
 
 # Utility command for Ubuntu environments
