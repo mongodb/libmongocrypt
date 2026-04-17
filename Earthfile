@@ -48,7 +48,6 @@
     #   • deb11 - Debian 11.0
     #   • deb12 - Debian 12.0
     #   • deb13 - Debian 13
-    #   • sles15 - OpenSUSE Leap 15.0
     #   • alpine - Alpine Linux 3.18
     #
     # When adding new environments, prefer an unqualified image ID with a version:
@@ -218,11 +217,6 @@ env.deb12:
 env.deb13:
     # A Debian 13 environment
     DO +ENV_DEBIAN --version 13.0
-
-env.sles15:
-    # An OpenSUSE Leap 15.0 environment.
-    FROM +init --base=opensuse/leap:15.0
-    DO +SLES_SETUP
 
 env.alpine:
     FROM +init --base=alpine:3.21
