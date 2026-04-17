@@ -21,8 +21,8 @@
     #     the cache.
     #
     # This file has a few major sections:
-    #   - Setup COMMANDs
-    #   - Utility COMMANDs
+    #   - Setup FUNCTIONs
+    #   - Utility FUNCTIONs
     #   - Environment targets
     #   - Build/test/CI targets
     #
