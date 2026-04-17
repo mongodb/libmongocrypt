@@ -35,8 +35,6 @@
     # The following environment are defined in this file:
     #   • u24 - Ubuntu 24.04
     #   • u22 - Ubuntu 22.04
-    #   • u20 - Ubuntu 20.04
-    #   • u18 - Ubuntu 18.04
     #   • rl8 - AlmaLinux 8 - Stand-in for RHEL 8
     #   • c10 - CentOS Stream 10 - Stand-in for RHEL 10
     #   • c9 - CentOS Stream 9 - Stand-in for RHEL 9
@@ -134,14 +132,6 @@ ENV_UBUNTU:
     ARG --required version
     FROM +init --base=ubuntu:$version
     DO +DEBIAN_SETUP
-
-env.u18:
-    # An Ubuntu 18.04 environment
-    DO +ENV_UBUNTU --version 18.04
-
-env.u20:
-    # An Ubuntu 20.04 environment
-    DO +ENV_UBUNTU --version 20.04
 
 env.u22:
     # An Ubuntu 22.04 environment
