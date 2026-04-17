@@ -38,8 +38,7 @@
     #   • c10 - CentOS Stream 10 - Stand-in for RHEL 10
     #   • c9 - CentOS Stream 9 - Stand-in for RHEL 9
     #   • alma8 - AlmaLinux 8 - Stand-in for RHEL 8
-    #   • amzn1 - AmazonLinux (2018.03)
-    #   • amzn2 - AmazonLinux 2
+    #   • amzn2023 - AmazonLinux 2023
     #   • deb11 - Debian 11.0
     #   • deb12 - Debian 12.0
     #   • deb13 - Debian 13
@@ -90,8 +89,6 @@ REDHAT_SETUP:
 AMZ_SETUP:
     # Setup for Amazon Linux.
     FUNCTION
-    # amzn1 has "python38", but amzn2 has "python3." Try both
-    RUN __install python3 || __install python38
     RUN __install gcc-c++ make openssl-devel curl unzip tar gzip \
                   openssh-clients patch git
 
@@ -135,14 +132,9 @@ env.u24:
     # An Ubuntu 24.04 environment
     DO +ENV_UBUNTU --version 24.04
 
-env.amzn1:
-    # An Amazon "1" environment. (AmazonLinux 2018)
-    FROM +init --base=amazonlinux:2018.03
-    DO +AMZ_SETUP
-
-env.amzn2:
-    # An AmazonLinux 2 environment
-    FROM +init --base=amazonlinux:2
+env.amzn2023:
+    # An Amazon "2023" environment. (AmazonLinux 2023)
+    FROM +init --base=amazonlinux:2023
     DO +AMZ_SETUP
 
 # Utility command for Debian setup
