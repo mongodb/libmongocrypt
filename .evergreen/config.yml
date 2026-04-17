@@ -2026,7 +2026,7 @@ buildvariants:
     release_os_arch: linux-x86_64-musl_1_2-nocrypto
   tasks:
   - name: build-with-earthly
-    run_on: ubuntu2204-small
+    run_on: ubuntu2404-latest-large
   - name: upload-release
     depends_on: build-with-earthly
 
@@ -2036,7 +2036,7 @@ buildvariants:
     earthly_env: alpine
   tasks:
   - name: build-with-earthly
-    run_on: ubuntu2204-arm64-small
+    run_on: ubuntu2404-arm64-latest-large
 
 - name: debian11-arm64-earthly
   display_name: "Debian 11 arm64 (via Earthly)"
@@ -2047,10 +2047,10 @@ buildvariants:
   tasks:
   - name: build-deb-packages-with-earthly
     # Use an arm64 distro to match the intended target architecture of .deb packages.
-    run_on: ubuntu2204-arm64-small
+    run_on: ubuntu2404-arm64-latest-large
   - name: publish-deb-packages-with-earthly
     # Use a distro suitable for running curator to publish .deb packages.
-    run_on: ubuntu2004-small
+    run_on: ubuntu2404-latest-small
 
 - name: debian13-arm64-earthly
   display_name: "Debian 13 arm64 (via Earthly)"
@@ -2062,10 +2062,10 @@ buildvariants:
   tasks:
   - name: build-deb-packages-with-earthly
     # Use an arm64 distro to match the intended target architecture of .deb packages.
-    run_on: ubuntu2204-arm64-small
+    run_on: ubuntu2404-arm64-latest-large
   - name: publish-deb-packages-with-earthly
     # Use a distro suitable for running curator to publish .deb packages.
-    run_on: ubuntu2004-small
+    run_on: ubuntu2404-latest-small
 
 - name: debian12-arm64-earthly
   display_name: "Debian 12 arm64 (via Earthly)"
@@ -2076,10 +2076,10 @@ buildvariants:
   tasks:
   - name: build-deb-packages-with-earthly
     # Use an arm64 distro to match the intended target architecture of .deb packages.
-    run_on: ubuntu2204-arm64-small
+    run_on: ubuntu2404-arm64-latest-large
   - name: publish-deb-packages-with-earthly
     # Use a distro suitable for running curator to publish .deb packages.
-    run_on: ubuntu2004-small
+    run_on: ubuntu2404-latest-small
 
 - name: sbom
   display_name: SBOM
