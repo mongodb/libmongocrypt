@@ -43,8 +43,6 @@
     #   • c6 - CentOS 6 - Stand-in for RHEL 6
     #   • amzn1 - AmazonLinux (2018.03)
     #   • amzn2 - AmazonLinux 2
-    #   • deb9 - Debian 9.2
-    #   • deb10 - Debian 10.0
     #   • deb11 - Debian 11.0
     #   • deb12 - Debian 12.0
     #   • deb13 - Debian 13
@@ -194,14 +192,6 @@ ENV_DEBIAN:
         RUN echo "deb http://archive.debian.org/debian buster main" > /etc/apt/sources.list
     END
     DO +DEBIAN_SETUP
-
-env.deb9:
-    # A Debian 9.2 environment
-    DO +ENV_DEBIAN --version 9.2
-
-env.deb10:
-    # A Debian 10.0 environment
-    DO +ENV_DEBIAN --version 10.0
 
 env.deb-unstable:
     DO +ENV_DEBIAN --version=unstable
