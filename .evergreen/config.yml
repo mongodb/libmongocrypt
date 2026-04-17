@@ -2020,7 +2020,7 @@ buildvariants:
   - benchmark-python
 
 - name: alpine-amd64-earthly
-  display_name: "Alpine Linux 3.18 amd64 (via Earthly)"
+  display_name: "Alpine Linux 3.23 amd64 (via Earthly)"
   expansions:
     earthly_env: alpine
     release_os_arch: linux-x86_64-musl_1_2-nocrypto
@@ -2031,7 +2031,7 @@ buildvariants:
     depends_on: build-with-earthly
 
 - name: alpine-arm64-earthly
-  display_name: "Alpine Linux 3.18 arm64 (via Earthly)"
+  display_name: "Alpine Linux 3.23 arm64 (via Earthly)"
   expansions:
     earthly_env: alpine
   tasks:

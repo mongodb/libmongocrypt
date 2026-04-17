@@ -46,7 +46,7 @@
     #   • deb11 - Debian 11.0
     #   • deb12 - Debian 12.0
     #   • deb13 - Debian 13
-    #   • alpine - Alpine Linux 3.18
+    #   • alpine - Alpine Linux 3.23
     #
     # When adding new environments, prefer an unqualified image ID with a version:
     #   • DO NOT: "ubuntu"
@@ -57,7 +57,7 @@
 # ###
 
 VERSION 0.8
-FROM alpine:3.16
+FROM alpine:3.23
 WORKDIR /s
 
 init:
@@ -209,7 +209,7 @@ env.deb13:
     DO +ENV_DEBIAN --version 13.0
 
 env.alpine:
-    FROM +init --base=alpine:3.21
+    FROM +init --base=alpine:3.23
     DO +ALPINE_SETUP
 
 # Utility: Warm-up obtaining CMake and Ninja for the build. This is usually
