@@ -81,7 +81,7 @@ DEBIAN_SETUP:
                   git ccache findutils ca-certificates
 
 REDHAT_SETUP:
-    # Setup for a redhat-like build environment. Used for CentOS Stream and RockyLinux.
+    # Setup for a redhat-like build environment. Used for CentOS Stream and AlmaLinux.
     FUNCTION
     RUN __install epel-release && \
         __install gcc-c++ make openssl-devel curl unzip git ccache findutils \
