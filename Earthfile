@@ -39,8 +39,8 @@
     #   • u16 - Ubuntu 16.04
     #   • u14 - Ubuntu 14.04
     #   • rl8 - RockyLinux 8 - Stand-in for RHEL 8
-    #   • c7 - CentOS 7 - Stand-in for RHEL 7
-    #   • c6 - CentOS 6 - Stand-in for RHEL 6
+    #   • c10 - CentOS Stream 10 - Stand-in for RHEL 10
+    #   • c9 - CentOS Stream 9 - Stand-in for RHEL 9
     #   • amzn1 - AmazonLinux (2018.03)
     #   • amzn2 - AmazonLinux 2
     #   • deb11 - Debian 11.0
@@ -84,19 +84,11 @@ DEBIAN_SETUP:
                   git ccache findutils ca-certificates
 
 REDHAT_SETUP:
-    # Setup for a redhat-like build environment. Used for CentOS and RockyLinux.
+    # Setup for a redhat-like build environment. Used for CentOS Stream and RockyLinux.
     FUNCTION
     RUN __install epel-release && \
         __install gcc-c++ make openssl-devel curl unzip git ccache findutils \
                   patch
-
-CENTOS6_SETUP:
-    # Special setup for CentOS6: The packages have been moved to the vault, so
-    # we need to enable the vault repos before we perform any __installs
-    FUNCTION
-    RUN rm /etc/yum.repos.d/*.repo
-    COPY etc/c6-vault.repo /etc/yum.repos.d/CentOS-Base.repo
-    DO +REDHAT_SETUP
 
 AMZ_SETUP:
     # Setup for Amazon Linux.
@@ -122,14 +114,14 @@ ALPINE_SETUP:
 # are rather themselves the "outputs" to be used as the environment for subsequent
 # tasks
 
-env.c6:
-    # A CentOS 6 environment.
-    FROM +init --base=centos:6
-    DO +CENTOS6_SETUP
+env.c9:
+    # A CentOS Stream 9 environment.
+    FROM +init --base=quay.io/centos/centos:stream9
+    DO +REDHAT_SETUP
 
-env.c7:
-    # A CentOS 7 environment.
-    FROM +init --base=centos:7
+env.c10:
+    # A CentOS Stream 10 environment.
+    FROM +init --base=quay.io/centos/centos:stream10
     DO +REDHAT_SETUP
 
 env.rl8:

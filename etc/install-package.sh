@@ -22,7 +22,7 @@ if test -f /etc/debian_version ; then
 elif test -f /etc/redhat-release || grep 'ID="amzn"' /etc/os-release >/dev/null 1>&2; then
     if test -f /usr/bin/dnf; then
         # 'dnf' will "do the right thing"
-        dnf install -y -- "$@"
+        dnf install -y --allowerasing -- "$@"
     elif test -f /usr/bin/yum; then
         yum install -y -- "$@"
         # 'yum' happily ignores missing packages. Use 'rpm -q' to check that
