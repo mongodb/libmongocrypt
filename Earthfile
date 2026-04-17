@@ -33,11 +33,10 @@
     # and can be used i.e. "earthly +build --env=u22"
     #
     # The following environment are defined in this file:
+    #   • u24 - Ubuntu 24.04
     #   • u22 - Ubuntu 22.04
     #   • u20 - Ubuntu 20.04
     #   • u18 - Ubuntu 18.04
-    #   • u16 - Ubuntu 16.04
-    #   • u14 - Ubuntu 14.04
     #   • rl8 - AlmaLinux 8 - Stand-in for RHEL 8
     #   • c10 - CentOS Stream 10 - Stand-in for RHEL 10
     #   • c9 - CentOS Stream 9 - Stand-in for RHEL 9
@@ -136,14 +135,6 @@ ENV_UBUNTU:
     FROM +init --base=ubuntu:$version
     DO +DEBIAN_SETUP
 
-env.u14:
-    # An Ubuntu 14.04 environment
-    DO +ENV_UBUNTU --version 14.04
-
-env.u16:
-    # An Ubuntu 16.04 environment
-    DO +ENV_UBUNTU --version 16.04
-
 env.u18:
     # An Ubuntu 18.04 environment
     DO +ENV_UBUNTU --version 18.04
@@ -155,6 +146,10 @@ env.u20:
 env.u22:
     # An Ubuntu 22.04 environment
     DO +ENV_UBUNTU --version 22.04
+
+env.u24:
+    # An Ubuntu 24.04 environment
+    DO +ENV_UBUNTU --version 24.04
 
 env.amzn1:
     # An Amazon "1" environment. (AmazonLinux 2018)
