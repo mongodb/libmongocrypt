@@ -35,9 +35,9 @@
     # The following environment are defined in this file:
     #   • u24 - Ubuntu 24.04
     #   • u22 - Ubuntu 22.04
-    #   • rl8 - AlmaLinux 8 - Stand-in for RHEL 8
     #   • c10 - CentOS Stream 10 - Stand-in for RHEL 10
     #   • c9 - CentOS Stream 9 - Stand-in for RHEL 9
+    #   • alma8 - AlmaLinux 8 - Stand-in for RHEL 8
     #   • amzn1 - AmazonLinux (2018.03)
     #   • amzn2 - AmazonLinux 2
     #   • deb11 - Debian 11.0
@@ -106,17 +106,17 @@ ALPINE_SETUP:
 # tasks
 
 env.c9:
-    # A CentOS Stream 9 environment.
+    # Use CentOS Stream 9 as a stand-in for RHEL 9
     FROM +init --base=quay.io/centos/centos:stream9
     DO +REDHAT_SETUP
 
 env.c10:
-    # A CentOS Stream 10 environment.
+    # Use CentOS Stream 10 as a stand-in for RHEL 10
     FROM +init --base=quay.io/centos/centos:stream10
     DO +REDHAT_SETUP
 
-env.rl8:
-    # Use AlmaLinux 8 for RHEL 8 coverage.
+env.alma8:
+    # Use AlmaLinux 8 as a stand-in for RHEL 8
     FROM +init --base=almalinux:8
     DO +REDHAT_SETUP
 
