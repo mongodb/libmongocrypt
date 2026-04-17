@@ -21,6 +21,7 @@
   removed. Users that need the static MSVCRT library should instead set the
   [`CMAKE_MSVC_RUNTIME_LIBRARY`][msvcrt] built-in CMake parameter when
   configuring libmongocrypt.
+- Packages for Debian 9 and Debian 10.
 
 [msvcrt]: https://cmake.org/cmake/help/latest/variable/CMAKE_MSVC_RUNTIME_LIBRARY.html
 

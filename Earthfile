@@ -21,8 +21,8 @@
     #     the cache.
     #
     # This file has a few major sections:
-    #   - Setup COMMANDs
-    #   - Utility COMMANDs
+    #   - Setup FUNCTIONs
+    #   - Utility FUNCTIONs
     #   - Environment targets
     #   - Build/test/CI targets
     #
@@ -33,23 +33,16 @@
     # and can be used i.e. "earthly +build --env=u22"
     #
     # The following environment are defined in this file:
+    #   • u24 - Ubuntu 24.04
     #   • u22 - Ubuntu 22.04
-    #   • u20 - Ubuntu 20.04
-    #   • u18 - Ubuntu 18.04
-    #   • u16 - Ubuntu 16.04
-    #   • u14 - Ubuntu 14.04
-    #   • rl8 - RockyLinux 8 - Stand-in for RHEL 8
-    #   • c7 - CentOS 7 - Stand-in for RHEL 7
-    #   • c6 - CentOS 6 - Stand-in for RHEL 6
-    #   • amzn1 - AmazonLinux (2018.03)
-    #   • amzn2 - AmazonLinux 2
-    #   • deb9 - Debian 9.2
-    #   • deb10 - Debian 10.0
+    #   • c10 - CentOS Stream 10 - Stand-in for RHEL 10
+    #   • c9 - CentOS Stream 9 - Stand-in for RHEL 9
+    #   • alma8 - AlmaLinux 8 - Stand-in for RHEL 8
+    #   • amzn2023 - AmazonLinux 2023
     #   • deb11 - Debian 11.0
     #   • deb12 - Debian 12.0
     #   • deb13 - Debian 13
-    #   • sles15 - OpenSUSE Leap 15.0
-    #   • alpine - Alpine Linux 3.18
+    #   • alpine - Alpine Linux 3.23
     #
     # When adding new environments, prefer an unqualified image ID with a version:
     #   • DO NOT: "ubuntu"
@@ -59,8 +52,8 @@
     # Use of an unqualified image ID may enable separate registry in CI and local development.
 # ###
 
-VERSION --use-cache-command 0.6
-FROM alpine:3.16
+VERSION 0.8
+FROM alpine:3.23
 WORKDIR /s
 
 init:
@@ -82,42 +75,26 @@ init:
 
 DEBIAN_SETUP:
     # Setup for a debian-like build environment. Used for both Debian and Ubuntu
-    COMMAND
+    FUNCTION
     RUN __install build-essential g++ libssl-dev curl unzip python3 pkg-config \
                   git ccache findutils ca-certificates
 
 REDHAT_SETUP:
-    # Setup for a redhat-like build environment. Used for CentOS and RockyLinux.
-    COMMAND
+    # Setup for a redhat-like build environment. Used for CentOS Stream and AlmaLinux.
+    FUNCTION
     RUN __install epel-release && \
         __install gcc-c++ make openssl-devel curl unzip git ccache findutils \
                   patch
 
-CENTOS6_SETUP:
-    # Special setup for CentOS6: The packages have been moved to the vault, so
-    # we need to enable the vault repos before we perform any __installs
-    COMMAND
-    RUN rm /etc/yum.repos.d/*.repo
-    COPY etc/c6-vault.repo /etc/yum.repos.d/CentOS-Base.repo
-    DO +REDHAT_SETUP
-
 AMZ_SETUP:
     # Setup for Amazon Linux.
-    COMMAND
-    # amzn1 has "python38", but amzn2 has "python3." Try both
-    RUN __install python3 || __install python38
+    FUNCTION
     RUN __install gcc-c++ make openssl-devel curl unzip tar gzip \
                   openssh-clients patch git
 
-SLES_SETUP:
-    # Setup for a SLES/SUSE build environment
-    COMMAND
-    RUN __install gcc-c++ make libopenssl-devel curl unzip tar gzip python3 \
-                  patch git xz which
-
 ALPINE_SETUP:
     # Setup for an Alpine Linux build environment
-    COMMAND
+    FUNCTION
     RUN __install make bash gcc g++ unzip curl tar gzip git musl-dev \
                   linux-headers openssl-dev python3
 
@@ -125,84 +102,47 @@ ALPINE_SETUP:
 # are rather themselves the "outputs" to be used as the environment for subsequent
 # tasks
 
-env.c6:
-    # A CentOS 6 environment.
-    FROM +init --base=centos:6
-    DO +CENTOS6_SETUP
-
-env.c7:
-    # A CentOS 7 environment.
-    FROM +init --base=centos:7
+env.c9:
+    # Use CentOS Stream 9 as a stand-in for RHEL 9
+    FROM +init --base=quay.io/centos/centos:stream9
     DO +REDHAT_SETUP
 
-env.rl8:
-    # CentOS 8 is cancelled. Use RockyLinux 8 for our RHEL 8 environment.
-    FROM +init --base=rockylinux:8
+env.c10:
+    # Use CentOS Stream 10 as a stand-in for RHEL 10
+    FROM +init --base=quay.io/centos/centos:stream10
+    DO +REDHAT_SETUP
+
+env.alma8:
+    # Use AlmaLinux 8 as a stand-in for RHEL 8
+    FROM +init --base=almalinux:8
     DO +REDHAT_SETUP
 
 # Utility command for Ubuntu environments
 ENV_UBUNTU:
-    COMMAND
+    FUNCTION
     ARG --required version
     FROM +init --base=ubuntu:$version
     DO +DEBIAN_SETUP
-
-env.u14:
-    # An Ubuntu 14.04 environment
-    DO +ENV_UBUNTU --version 14.04
-
-env.u16:
-    # An Ubuntu 16.04 environment
-    DO +ENV_UBUNTU --version 16.04
-
-env.u18:
-    # An Ubuntu 18.04 environment
-    DO +ENV_UBUNTU --version 18.04
-
-env.u20:
-    # An Ubuntu 20.04 environment
-    DO +ENV_UBUNTU --version 20.04
 
 env.u22:
     # An Ubuntu 22.04 environment
     DO +ENV_UBUNTU --version 22.04
 
-env.amzn1:
-    # An Amazon "1" environment. (AmazonLinux 2018)
-    FROM +init --base=amazonlinux:2018.03
-    DO +AMZ_SETUP
+env.u24:
+    # An Ubuntu 24.04 environment
+    DO +ENV_UBUNTU --version 24.04
 
-env.amzn2:
-    # An AmazonLinux 2 environment
-    FROM +init --base=amazonlinux:2
+env.amzn2023:
+    # An Amazon "2023" environment. (AmazonLinux 2023)
+    FROM +init --base=amazonlinux:2023
     DO +AMZ_SETUP
 
 # Utility command for Debian setup
 ENV_DEBIAN:
-    COMMAND
+    FUNCTION
     ARG --required version
     FROM +init --base=debian:$version
-    IF [ $version = "9.2" ]
-        # Update source list for archived Debian stretch packages.
-        # Refer: https://unix.stackexchange.com/a/743865/260858
-        RUN echo "deb http://archive.debian.org/debian stretch main" > /etc/apt/sources.list
-        # Trust newer Debian signing keys to avoid "unauthenticated packages" error:
-        COPY +get-deb-signing-keys/keys/deb10-archive-signing-key.gpg /etc/apt/trusted.gpg.d
-        COPY +get-deb-signing-keys/keys/deb11-archive-signing-key.gpg /etc/apt/trusted.gpg.d
-    END
-    IF [ $version = "10.0" ]
-        # Update source list for archived Debian buster packages.
-        RUN echo "deb http://archive.debian.org/debian buster main" > /etc/apt/sources.list
-    END
     DO +DEBIAN_SETUP
-
-env.deb9:
-    # A Debian 9.2 environment
-    DO +ENV_DEBIAN --version 9.2
-
-env.deb10:
-    # A Debian 10.0 environment
-    DO +ENV_DEBIAN --version 10.0
 
 env.deb-unstable:
     DO +ENV_DEBIAN --version=unstable
@@ -219,19 +159,14 @@ env.deb13:
     # A Debian 13 environment
     DO +ENV_DEBIAN --version 13.0
 
-env.sles15:
-    # An OpenSUSE Leap 15.0 environment.
-    FROM +init --base=opensuse/leap:15.0
-    DO +SLES_SETUP
-
 env.alpine:
-    FROM +init --base=alpine:3.18
+    FROM +init --base=alpine:3.23
     DO +ALPINE_SETUP
 
 # Utility: Warm-up obtaining CMake and Ninja for the build. This is usually
 # very quick, but on some platforms we need to compile them from source.
 CACHE_WARMUP:
-    COMMAND
+    FUNCTION
     # Copy only the scripts that are strictly necessary for the operation, to
     # avoid cache invalidation later on.
     COPY .evergreen/setup-env.sh \
@@ -246,7 +181,7 @@ CACHE_WARMUP:
         bash /T/ensure-ninja.sh
 
 COPY_SOURCE:
-    COMMAND
+    FUNCTION
     COPY --dir \
         .git/ \
         cmake/ \
@@ -263,7 +198,7 @@ COPY_SOURCE:
     COPY --dir bindings/cs/ "/s/libmongocrypt/bindings/"
 
 BUILD_EXAMPLE_STATE_MACHINE:
-    COMMAND
+    FUNCTION
     COPY test/example-state-machine.c /s/
     RUN pkg-config --exists libmongocrypt --print-errors && \
         gcc /s/example-state-machine.c \
@@ -378,19 +313,6 @@ check-format:
     RUN /X/etc/format.sh  # Does nothing, but warms the cache
     COPY --dir .clang-format src test /X/
     RUN /X/etc/format-all.sh --dry-run -Werror --verbose
-
-get-deb-signing-keys:
-    FROM +env.deb12
-    RUN __install gpg
-    # Get "Debian 10/buster archive signing key"
-    RUN gpg --keyserver keyserver.ubuntu.com --recv-keys 80D15823B7FD1561F9F7BCDDDC30D7C23CBBABEE
-    RUN gpg --export 80D15823B7FD1561F9F7BCDDDC30D7C23CBBABEE > deb10-archive-signing-key.gpg
-    SAVE ARTIFACT deb10-archive-signing-key.gpg /keys/
-
-    # Import "Debian 11/bullseye archive signing key"
-    RUN gpg --keyserver keyserver.ubuntu.com --recv-keys 1F89983E0081FDE018F3CC9673A4F27B8DD47936
-    RUN gpg --export 1F89983E0081FDE018F3CC9673A4F27B8DD47936 > deb11-archive-signing-key.gpg
-    SAVE ARTIFACT deb11-archive-signing-key.gpg /keys/
 
 # The main "build" target. Options:
 #   • --env=[...] (default "u22")
