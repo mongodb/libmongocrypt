@@ -51,7 +51,7 @@ static void _gen_uuid_and_key_and_altname(_mongocrypt_tester_t *tester,
     BSON_ASSERT(_mongocrypt_buffer_append(id, &copied, "_id", 3));
     if (altname) {
         bson_t child;
-        bson_append_array_begin(&copied, "keyAltNames", -1, &child);
+        bson_append_array_unsafe_begin(&copied, "keyAltNames", -1, &child);
         bson_append_utf8(&child, "0", -1, altname, -1);
         bson_append_array_end(&copied, &child);
     }

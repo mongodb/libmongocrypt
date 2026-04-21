@@ -133,7 +133,7 @@ addPlaceholders_recursive(bson_iter_t *iter, bson_t *out, _mongocrypt_buffer_t *
         if (BSON_ITER_HOLDS_ARRAY(iter)) {
             bson_t child;
             bson_iter_t iter_child;
-            ASSERT(BSON_APPEND_ARRAY_BEGIN(out, key, &child));
+            ASSERT(BSON_APPEND_ARRAY_UNSAFE_BEGIN(out, key, &child));
             ASSERT(bson_iter_recurse(iter, &iter_child));
             addPlaceholders_recursive(&iter_child, &child, p1, p2);
             ASSERT(bson_append_array_end(out, &child));

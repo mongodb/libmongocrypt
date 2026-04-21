@@ -296,7 +296,7 @@ static bool _create_markings_cmd_bson(mongocrypt_ctx_t *ctx, bson_t *out) {
 
                 // Process the fields array using the shared helper function
                 bson_t new_fields;
-                BSON_APPEND_ARRAY_BEGIN(&new_ef, "fields", &new_fields);
+                BSON_APPEND_ARRAY_UNSAFE_BEGIN(&new_ef, "fields", &new_fields);
 
                 const int translated_keyAltName =
                     mc_translate_fields_keyAltName_to_keyId(&fields_bson, &ctx->kb, &new_fields, ctx->status);
@@ -1101,7 +1101,7 @@ _fle2_strip_encryptionInformation(const char *cmd_name, bson_t *cmd /* in and ou
             bson_copy_to_excluding_noinit(cmd, &stripped, "nsInfo", NULL);
             // Append `nsInfo` array.
             bson_t nsInfo_array;
-            if (!BSON_APPEND_ARRAY_BEGIN(&stripped, "nsInfo", &nsInfo_array)) {
+            if (!BSON_APPEND_ARRAY_UNSAFE_BEGIN(&stripped, "nsInfo", &nsInfo_array)) {
                 CLIENT_ERR("unable to begin appending 'nsInfo' array");
                 goto fail;
             }
