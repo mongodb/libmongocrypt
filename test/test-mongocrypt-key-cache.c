@@ -80,7 +80,7 @@ gen_key(_mongocrypt_tester_t *tester, bson_t *key_description, bson_t *key_out, 
         bson_t key_alt_name_bson;
         int counter = 0;
 
-        BSON_APPEND_ARRAY_BEGIN(&key, "keyAltNames", &key_alt_name_bson);
+        BSON_APPEND_ARRAY_UNSAFE_BEGIN(&key, "keyAltNames", &key_alt_name_bson);
         for (bson_iter_recurse(&iter, &iter); bson_iter_next(&iter);) {
             char *field;
 
