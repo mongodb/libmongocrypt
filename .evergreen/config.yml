@@ -301,7 +301,7 @@ functions:
           # Some venv-activate scripts are not nounset-clean
           set +u
 
-          # Need requests for notary-client.py
+          # Need requests and pycrypto for notary-client.py
           python -m virtualenv venv
           cd venv
           . bin/activate
@@ -2049,7 +2049,8 @@ buildvariants:
     run_on: ubuntu2404-arm64-latest-large
   - name: publish-deb-packages-with-earthly
     # Use a distro suitable for running curator to publish .deb packages.
-    run_on: ubuntu2404-latest-small
+    # Use 22.04 for Python 3.10 to avoid failure installing pycrypto.
+    run_on: ubuntu2204-latest-small
 
 - name: debian13-arm64-earthly
   display_name: "Debian 13 arm64 (via Earthly)"
@@ -2064,7 +2065,8 @@ buildvariants:
     run_on: ubuntu2404-arm64-latest-large
   - name: publish-deb-packages-with-earthly
     # Use a distro suitable for running curator to publish .deb packages.
-    run_on: ubuntu2404-latest-small
+    # Use 22.04 for Python 3.10 to avoid failure installing pycrypto.
+    run_on: ubuntu2204-latest-small
 
 - name: debian12-arm64-earthly
   display_name: "Debian 12 arm64 (via Earthly)"
@@ -2078,7 +2080,8 @@ buildvariants:
     run_on: ubuntu2404-arm64-latest-large
   - name: publish-deb-packages-with-earthly
     # Use a distro suitable for running curator to publish .deb packages.
-    run_on: ubuntu2404-latest-small
+    # Use 22.04 for Python 3.10 to avoid failure installing pycrypto.
+    run_on: ubuntu2204-latest-small
 
 - name: sbom
   display_name: SBOM
