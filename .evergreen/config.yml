@@ -301,12 +301,11 @@ functions:
           # Some venv-activate scripts are not nounset-clean
           set +u
 
-          # Need requests and poster for notary-client.py
+          # Need requests for notary-client.py
           python -m virtualenv venv
           cd venv
           . bin/activate
           ./bin/pip install requests
-          ./bin/pip install poster
           ./bin/pip install pycrypto
           cd ..
           # Get the current version of libmongocrypt.
