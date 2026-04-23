@@ -208,11 +208,11 @@ BUILD_EXAMPLE_STATE_MACHINE:
     RUN cd /s && /s/example-state-machine
 
 rpm-build:
-    FROM +init --base fedora:38
+    FROM +init --base fedora:45
     GIT CLONE https://src.fedoraproject.org/rpms/libmongocrypt.git /R
     # Install the packages listed by "BuildRequires" and rpm-build:
-    RUN __install $(awk '/^BuildRequires:/ { print $2 }' /R/libmongocrypt.spec) \
-                  rpm-build
+    RUN __install /R/libmongocrypt.spec
+    RUN __install rpm-build
     DO +COPY_SOURCE
     RUN cp -r /s/libmongocrypt/. /R
     RUN awk -f /R/etc/rpm/tweak.awk < /R/libmongocrypt.spec > /R/libmongocrypt.2.spec
@@ -224,7 +224,7 @@ rpm-build:
 
 rpm-install-runtime:
     # Install the runtime RPM
-    FROM +init --base fedora:38
+    FROM +init --base fedora:45
     COPY +rpm-build/RPMS /tmp/libmongocrypt-rpm/
     RUN dnf makecache
     RUN __install $(find /tmp/libmongocrypt-rpm/ -name 'libmongocrypt-1.*.rpm')
