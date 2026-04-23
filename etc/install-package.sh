@@ -21,9 +21,14 @@ if test -f /etc/debian_version ; then
         apt-get -y install -- "$@"
 elif test -f /etc/redhat-release || grep 'ID="amzn"' /etc/os-release >/dev/null 1>&2; then
     if test -f /usr/bin/dnf; then
-        # 'dnf' will "do the right thing"
-        # --allow-erasing: see https://github.com/jeroen/curl/issues/350.
-        dnf install -y --allowerasing -- "$@"
+        if echo "$@" | grep -q '[.]spec'; then
+            # We use the build-dep command to let dnf do the heavy lifting from the spec file
+            dnf build-dep -y --allowerasing "$@"
+        else
+            # 'dnf' will "do the right thing"
+            # --allow-erasing: see https://github.com/jeroen/curl/issues/350.
+            dnf install -y --allowerasing "$@"
+        fi
     elif test -f /usr/bin/yum; then
         yum install -y -- "$@"
         # 'yum' happily ignores missing packages. Use 'rpm -q' to check that
