@@ -1255,8 +1255,8 @@ tasks:
 
 - name: debian-package-build
   run_on: &deb-package-build-run_on
-    - ubuntu2004
-    - ubuntu2004-small
+    - ubuntu2404-large
+    - ubuntu2404-small
   tags: [packaging]
   commands:
     - func: "fetch source"
