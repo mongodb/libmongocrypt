@@ -58,5 +58,7 @@ install_build_tools() {
   cmake --version | head -n 1 || return
   echo "ninja version: $(ninja --version)" || return
 
-  export CMAKE_GENERATOR="${CMAKE_GENERATOR:="Ninja"}"
+  if [[ "${OSTYPE:?}" != "cygwin" ]]; then
+    export CMAKE_GENERATOR="${CMAKE_GENERATOR:="Ninja"}"
+  fi
 }

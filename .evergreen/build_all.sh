@@ -67,19 +67,15 @@ for suffix in "dll" "dylib" "so"; do
     fi
 done
 
-if test "${CMAKE_GENERATOR-}" = Ninja; then
-    export NINJA_EXE
-    : "${NINJA_EXE:="$BINARY_DIR/ninja$EXE_SUFFIX"}"
-    cmake_args+=(-DCMAKE_MAKE_PROGRAM="$NINJA_EXE")
-    bash "$EVG_DIR/ensure-ninja.sh"
-fi
+. "$(dirname "${BASH_SOURCE[0]}")/install-build-tools.sh"
+install_build_tools
 
 # A command that prepends our custom compile flags for any CMake execution
 _cmake_with_env() {
     # Prepend our custom C and CXX flags for any possible CMake builds
     CFLAGS="$LIBMONGOCRYPT_COMPILE_FLAGS ${CFLAGS-}" \
     CXXFLAGS="$LIBMONGOCRYPT_COMPILE_FLAGS ${CXXFLAGS-}" \
-        run_cmake "$@"
+        cmake "$@"
 }
 
 # Build and install libmongocrypt.
@@ -113,7 +109,7 @@ if [[ "$release_os_arch" == *glibc* ]]; then
     echo "glibc version check passed: $actual_glibc"
 fi
 
-run_chdir "$BINARY_DIR" run_ctest
+run_chdir "$BINARY_DIR" ctest
 
 # MONGOCRYPT-372, ensure macOS universal builds contain both x86_64 and arm64 architectures.
 if test "${CMAKE_OSX_ARCHITECTURES-}" != ''; then
@@ -143,7 +139,7 @@ _cmake_with_env "${cmake_args[@]}" \
     -DCMAKE_INSTALL_PREFIX="$MONGOCRYPT_INSTALL_PREFIX/nocrypto" \
     -B "$BINARY_DIR" -S "$LIBMONGOCRYPT_DIR"
 _cmake_with_env --build "$BINARY_DIR" --target install
-run_chdir "$BINARY_DIR" run_ctest
+run_chdir "$BINARY_DIR" ctest
 
 # Build and install libmongocrypt without statically linking libbson
 _cmake_with_env "${cmake_args[@]}" \
@@ -151,4 +147,4 @@ _cmake_with_env "${cmake_args[@]}" \
     -DCMAKE_INSTALL_PREFIX="$MONGOCRYPT_INSTALL_PREFIX/sharedbson" \
     -B "$BINARY_DIR" -S "$LIBMONGOCRYPT_DIR"
 _cmake_with_env --build "$BINARY_DIR" --target install
-run_chdir "$BINARY_DIR" run_ctest
+run_chdir "$BINARY_DIR" ctest

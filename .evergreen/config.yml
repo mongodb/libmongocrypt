@@ -116,7 +116,7 @@ functions:
           export LSAN_OPTIONS="suppressions=$LIBMONGOCRYPT_DIR/.lsan-suppressions"
           export VS_VERSION=${vs_version|}
           export VS_TARGET_ARCH=${vs_target_arch|amd64}
-          export CMAKE_GENERATOR=${CMAKE_GENERATOR|Ninja}
+          export CMAKE_GENERATOR=${CMAKE_GENERATOR|Ninja} # Even on Windows.
           export release_os_arch=${release_os_arch}
           env ${compile_env|} \
             bash "$EVG_DIR/env-run.sh" \
@@ -169,7 +169,6 @@ functions:
     - command: "shell.exec"
       params:
         script: |-
-          if test "$OS_NAME" != "windows"; then export CMAKE_GENERATOR=${CMAKE_GENERATOR|Ninja}; fi
           env ${compile_env|} CONFIGURE_ONLY=ON ${clang_env|CC=clang CXX=clang++} \
               bash libmongocrypt/.evergreen/build_all.sh
           ./libmongocrypt/.evergreen/clang-tidy.sh
@@ -502,7 +501,7 @@ tasks:
   - func: "fetch source"
   - func: "earthly"
     vars:
-      args: +create-deb-packages-and-repos --env=${earthly_env} --packager_distro=${packager_distro} --packager_arch=${packager_arch} --ninja_version=${ninja_version}
+      args: +create-deb-packages-and-repos --env=${earthly_env} --packager_distro=${packager_distro} --packager_arch=${packager_arch}
   - func: "upload packages and repos"
 
 - name: publish-deb-packages-with-earthly
@@ -1060,7 +1059,7 @@ tasks:
           set -o errexit
 
           . .evergreen/init.sh
-          libmongocrypt_release_version=$(run_python ./etc/calc_release_version.py)
+          libmongocrypt_release_version=$(uvx python ./etc/calc_release_version.py)
           case "$libmongocrypt_release_version" in
             *+*)
               # Not a tagged release. Use full release version suffix.
@@ -1986,8 +1985,6 @@ buildvariants:
     compile_env: >-
       CMAKE_OSX_ARCHITECTURES="arm64;x86_64"
       CMAKE=/opt/homebrew/bin/cmake
-    # Disable Ninja to work around error "Bad CPU type in executable"
-    CMAKE_GENERATOR: ''
     release_os_arch: macos-universal
   tasks:
   - build-and-test-and-upload
@@ -2053,7 +2050,6 @@ buildvariants:
     packager_distro: debian13
     packager_arch: arm64
     earthly_env: deb13
-    ninja_version: 1.12.1
   tasks:
   - name: build-deb-packages-with-earthly
     # Use an arm64 distro to match the intended target architecture of .deb packages.

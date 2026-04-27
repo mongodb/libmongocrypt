@@ -223,14 +223,11 @@ CACHE_WARMUP:
     # avoid cache invalidation later on.
     COPY .evergreen/setup-env.sh \
          .evergreen/init.sh \
-         .evergreen/ensure-cmake.sh \
-         .evergreen/ensure-ninja.sh \
+         .evergreen/install-build-tools.sh \
          /T/
-    RUN bash /T/ensure-cmake.sh
-    ARG ninja_version
-    ENV NINJA_VERSION=$ninja_version
-    RUN env NINJA_EXE=/usr/local/bin/ninja \
-        bash /T/ensure-ninja.sh
+    RUN bash -c '. /T/install-build-tools.sh && UV_TOOL_DIR=/T/uv-tools UV_TOOL_BIN_DIR=/T/uv-bin install_build_tools'
+    ENV PATH="/T/uv-bin:$PATH"
+    ENV CMAKE_GENERATOR="Ninja"
 
 COPY_SOURCE:
     FUNCTION
@@ -384,7 +381,7 @@ build:
     IF $persist_build
         CACHE /s/libmongocrypt/cmake-build
     END
-    RUN env USE_NINJA=1 bash libmongocrypt/.evergreen/build_all.sh
+    RUN bash libmongocrypt/.evergreen/build_all.sh
     SAVE ARTIFACT /s/install /libmongocrypt-install
 
 # `create-deb-packages-and-repos` creates the .deb packages and repo directories intended for the PPA on debian-like distros. Options:
@@ -395,8 +392,7 @@ build:
 create-deb-packages-and-repos:
     ARG env
     FROM +env.$env
-    ARG ninja_version
-    DO +CACHE_WARMUP --ninja_version=$ninja_version
+    DO +CACHE_WARMUP
     DO +COPY_SOURCE
     WORKDIR /s
     RUN __install dh-make dpkg-dev apt-utils
