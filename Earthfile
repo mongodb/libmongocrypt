@@ -176,7 +176,7 @@ ENV_DEBIAN:
 env.deb-unstable:
     DO +ENV_DEBIAN --version=unstable
     # uv is not available via apt: use pip instead.
-    RUN __install python3-pip
+    RUN __install python3-pip  # Python 3.13
     RUN python3 -m pip install --user --break-system-packages uv
     ENV PATH=/root/.local/bin:$PATH
     RUN uv --version && uvx python --version
@@ -185,7 +185,7 @@ env.deb11:
     # A Debian 11.0 environment
     DO +ENV_DEBIAN --version 11.0
     # uv is not available via apt: use pip instead.
-    RUN __install python3-pip
+    RUN __install python3-pip  # Python 3.9
     RUN python3 -m pip install --user uv
     ENV PATH=/root/.local/bin:$PATH
     RUN uv --version && uvx python --version
@@ -194,7 +194,7 @@ env.deb12:
     # A Debian 12.0 environment
     DO +ENV_DEBIAN --version 12.0
     # uv is not available via apt: use pip instead.
-    RUN __install python3-pip
+    RUN __install python3-pip  # Python 3.11
     RUN python3 -m pip install --user --break-system-packages uv
     ENV PATH=/root/.local/bin:$PATH
     RUN uv --version && uvx python --version
@@ -203,7 +203,7 @@ env.deb13:
     # A Debian 13 environment
     DO +ENV_DEBIAN --version 13.0
     # uv is not available via apt: use pip instead.
-    RUN __install python3-pip
+    RUN __install python3-pip  # Python 3.13
     RUN python3 -m pip install --user --break-system-packages uv
     ENV PATH=/root/.local/bin:$PATH
     RUN uv --version && uvx python --version
