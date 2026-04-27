@@ -20,6 +20,15 @@ export_uv_tool_dirs() {
 install_build_tools() {
   export_uv_tool_dirs || return
 
+  declare rhel6 rhel7
+  rhel6="$([[ -f /etc/redhat-release ]] && perl -lne "m|Red Hat Enterprise Linux Server release 6(?:\.\d+)?| || exit 1" /etc/redhat-release && echo "1" || echo "0")" || true
+  rhel7="$([[ -f /etc/redhat-release ]] && perl -lne "m|Red Hat Enterprise Linux Server release 7(?:\.\d+)?| || exit 1" /etc/redhat-release && echo "1" || echo "0")" || true
+
+  # Temporary workarounds for rhel-62-64-bit and rhel72-zseries-test. To be removed.
+  if [[ "${rhel6:?}" == "1" || "${rhel7:?}" == "1" ]]; then
+    export UV_PYTHON="/opt/mongodbtoolchain/v4/bin/python3"
+  fi
+
   if ! command -v uv &>/dev/null; then
     echo "missing system-provided uv binary: fallback to uv-installer.sh" >&2
     : "${EVG_DIR:="$(dirname "${BASH_SOURCE[0]}")"}" || return
@@ -41,17 +50,26 @@ install_build_tools() {
     uv --version || return
   fi
 
-  # PyPI `cmake` requires a sufficiently recent Python version.
-  uv python install --no-bin -q || uv python install -q || return
-
-  uv tool install -q cmake || return
-
-  if [[ -f /etc/redhat-release && -x /opt/mongodbtoolchain/v4/bin/ninja ]]; then
-    # Avoid strange "Could NOT find Threads" CMake configuration error on RHEL when using PyPI CMake, PyPI Ninja, and
-    # C++20 or newer by using MongoDB Toolchain's Ninja binary instead.
+  if [[ "${rhel7:?}" == "1" ]]; then
+    uv tool install -q cmake || return
+    ln -sf /opt/mongodbtoolchain/v4/bin/ninja "${UV_TOOL_BIN_DIR:?}/ninja" || return
+  elif [[ "${rhel6:?}" == "1" ]]; then
+    ln -sf /opt/mongodbtoolchain/v4/bin/cmake "${UV_TOOL_BIN_DIR:?}/cmake" || return
+    ln -sf /opt/mongodbtoolchain/v4/bin/ctest "${UV_TOOL_BIN_DIR:?}/ctest" || return
     ln -sf /opt/mongodbtoolchain/v4/bin/ninja "${UV_TOOL_BIN_DIR:?}/ninja" || return
   else
-    uv tool install -q ninja || return
+    # PyPI `cmake` requires a sufficiently recent Python version.
+    uv python install --no-bin -q || uv python install -q || return
+
+    uv tool install -q cmake || return
+
+    if [[ -f /etc/redhat-release && -x /opt/mongodbtoolchain/v4/bin/ninja ]]; then
+      # Avoid strange "Could NOT find Threads" CMake configuration error on RHEL when using PyPI CMake, PyPI Ninja, and
+      # C++20 or newer by using MongoDB Toolchain's Ninja binary instead.
+      ln -sf /opt/mongodbtoolchain/v4/bin/ninja "${UV_TOOL_BIN_DIR:?}/ninja" || return
+    else
+      uv tool install -q ninja || return
+    fi
   fi
 
   uvx python --version || return

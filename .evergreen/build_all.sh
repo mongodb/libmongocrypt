@@ -35,8 +35,14 @@ BUILD_TESTING="${BUILD_TESTING-TRUE}"
 LIBMONGOCRYPT_BUILD_VARIANTS="${LIBMONGOCRYPT_BUILD_VARIANTS:-TRUE}"
 
 # Accumulate arguments that are passed to CMake
-cmake_args=(
-    --fresh
+cmake_args=()
+
+# Temporary workarounds for rhel-62-64-bit and rhel72-zseries-test. To be removed.
+if cmake --help | grep -q -- '--fresh'; then
+  cmake_args+=(--fresh)
+fi
+
+cmake_args+=(
     # Set the build type. CMake 3.22 recognizes this via environment variable
     -D CMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE}"
     # Set the install prefix. CMake 3.29 recognizes this via environment variable
