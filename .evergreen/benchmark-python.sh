@@ -27,7 +27,6 @@ cd bindings/python/
 
 uv venv venv
 . ./venv/bin/activate
-uv python install
 uv pip install -r requirements-test.txt
 uv pip install -e .
 
