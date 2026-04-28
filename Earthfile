@@ -355,6 +355,7 @@ packaging-full-test:
 
 check-format:
     FROM +init --base=python:3.13.5-slim-bookworm
+    # uv is available via pip: install directly.
     RUN pip install uv
     COPY etc/format* /X/etc/
     COPY .evergreen/init.sh /X/.evergreen/
