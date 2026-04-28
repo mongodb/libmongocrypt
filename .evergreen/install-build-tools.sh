@@ -46,7 +46,7 @@ install_build_tools() {
         INSTALLER_PRINT_VERBOSE=1 \
         "${script:?}" || return
 
-    PATH="${uv_install_dir:?}:$PATH" || return
+    PATH="${uv_install_dir:?}:$PATH"
     uv --version || return
   fi
 
