@@ -67,7 +67,6 @@ Do the following when releasing:
 - Ensure `etc/purls.txt` is up-to-date.
 - Update `etc/third_party_vulnerabilities.md` with any updates to new or known vulnerabilities for third party dependencies that must be reported.
 - If this is a new non-patch release (e.g. `x.y.0`):
-   - Update the Linux distribution package installation instructions in [README.md](../README.md) to refer to the new version `x.y`.
    - Update the [libmongocrypt-release](https://spruce.mongodb.com/project/libmongocrypt-release/settings/general) Evergreen project (requires auth) to set `Branch Name` to `rx.y`.
 - Commit the changes on the `rx.y` branch with a message like "Release x.y.z".
 - Tag the commit with `git tag -a <tag>`.
