@@ -73,7 +73,7 @@ Do the following when releasing:
    - Push both the branch ref and tag ref in the same command: `git push origin master 1.8.0-alpha0` or `git push origin r1.8 1.8.4`
    - Pushing the branch ref and the tag ref in the same command eliminates the possibility of a race condition in Evergreen (for building resources based on the presence of a release tag)
    - Note that in the future (e.g., if we move to a PR-based workflow for releases, or if we simply want to take better advantage of advanced Evergreen features), it is possible to use Evergreen's "Trigger Versions With Git Tags" feature by updating both `config.yml` and the project's settings in Evergreen
-- Ensure the version on Evergreen with the tagged commit is scheduled. The following tasks must pass to complete the release:
+- Ensure the version on Evergreen with the tagged commit is scheduled. This may require clicking "Force Repotracker Run" in [project settings](https://spruce.corp.mongodb.com/project/libmongocrypt-release/settings/general). The following tasks must pass to complete the release:
    - `upload-all`
    - `windows-upload-release`
    - All `publish-packages` tasks.
