@@ -1085,6 +1085,9 @@ bool _mongocrypt_key_broker_decrypted_key_by_name(_mongocrypt_key_broker_t *kb,
     BSON_ASSERT_PARAM(out);
     BSON_ASSERT_PARAM(key_id_out);
 
+    _mongocrypt_buffer_init(out);
+    _mongocrypt_buffer_init(key_id_out);
+
     // We may be in KB_REQUESTING and need keys after requesting keys for keyAltName
     if (kb->state != KB_DONE && kb->state != KB_REQUESTING) {
         return _key_broker_fail_w_msg(kb, "attempting retrieve decrypted key material, but in wrong state");
