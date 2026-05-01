@@ -1063,6 +1063,8 @@ bool _mongocrypt_key_broker_decrypted_key_by_id(_mongocrypt_key_broker_t *kb,
     BSON_ASSERT_PARAM(key_id);
     BSON_ASSERT_PARAM(out);
 
+    _mongocrypt_buffer_init(out);
+
     if (kb->state != KB_DONE && kb->state != KB_REQUESTING) {
         return _key_broker_fail_w_msg(kb, "attempting retrieve decrypted key material, but in wrong state");
     }
