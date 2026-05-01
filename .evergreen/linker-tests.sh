@@ -38,28 +38,24 @@ common_cmake_args=(
   -D BUILD_TESTING="${BUILD_TESTING-TRUE}"
 )
 
-if test "${CMAKE_GENERATOR-}" = Ninja; then
-    export NINJA_EXE
-    : "${NINJA_EXE:="$linker_tests_root/ninja$EXE_SUFFIX"}"
-    common_cmake_args+=(-DCMAKE_MAKE_PROGRAM="$NINJA_EXE")
-    bash "$EVG_DIR/ensure-ninja.sh"
-fi
-
 run_chdir "$MONGOC_DIR" git apply --ignore-whitespace "$linker_tests_deps_root/bson_patches/libbson1.patch"
 # Apply patches to fix compile on RHEL 6.2. TODO: try to remove once RHEL 6.2 is dropped (MONGOCRYPT-688).
 run_chdir "$MONGOC_DIR" git apply "$LIBMONGOCRYPT_DIR/etc/libbson-remove-GCC-diagnostic-pragma.patch"
 run_chdir "$MONGOC_DIR" git apply "$LIBMONGOCRYPT_DIR/etc/mongo-common-test-harness.patch"
 
+. "$(dirname "${BASH_SOURCE[0]}")/install-build-tools.sh"
+install_build_tools
+
 BUILD_PATH="$MONGOC_DIR/cmake-build"
 BSON1_INSTALL_PATH="$linker_tests_root/install/bson1"
 SRC_PATH="$MONGOC_DIR"
-run_cmake \
+cmake \
   -DENABLE_MONGOC=OFF \
   "${common_cmake_args[@]}" \
   -DCMAKE_INSTALL_PREFIX="$BSON1_INSTALL_PATH" \
   "-H$SRC_PATH" \
   "-B$BUILD_PATH"
-run_cmake --build "$BUILD_PATH" --target install --config RelWithDebInfo
+cmake --build "$BUILD_PATH" --target install --config RelWithDebInfo
 echo "Make libbson1 ... done"
 
 echo "Prepare libbson2 ..."
@@ -75,13 +71,13 @@ echo "Build libmongocrypt, static linking against libbson2 ..."
 BUILD_DIR="$linker_tests_root/libmongocrypt-cmake-build"
 LMC_INSTALL_PATH="$linker_tests_root/install/libmongocrypt"
 SRC_PATH="$LIBMONGOCRYPT_DIR"
-run_cmake \
+cmake \
   "-DMONGOCRYPT_MONGOC_DIR=$LIBBSON2_SRC_DIR" \
   "${common_cmake_args[@]}" \
   -DCMAKE_INSTALL_PREFIX="$LMC_INSTALL_PATH" \
   "-H$SRC_PATH" \
   "-B$BUILD_DIR"
-run_cmake --build "$BUILD_DIR" --target install --config RelWithDebInfo
+cmake --build "$BUILD_DIR" --target install --config RelWithDebInfo
 echo "Build libmongocrypt, static linking against libbson2 ... done"
 
 echo "Test case: Model libmongoc's use ..."
@@ -90,12 +86,12 @@ echo "Test case: Model libmongoc's use ..."
 BUILD_DIR="$linker_tests_root/app-cmake-build"
 PREFIX_PATH="$LMC_INSTALL_PATH;$BSON1_INSTALL_PATH"
 SRC_PATH="$linker_tests_deps_root/app"
-run_cmake \
+cmake \
   "${common_cmake_args[@]}" \
   -DCMAKE_PREFIX_PATH="$PREFIX_PATH" \
   "-H$SRC_PATH" \
   "-B$BUILD_DIR"
-run_cmake --build "$BUILD_DIR" --target app --config RelWithDebInfo
+cmake --build "$BUILD_DIR" --target app --config RelWithDebInfo
 
 export PATH="$PATH:$BSON1_INSTALL_PATH/bin:$LMC_INSTALL_PATH/bin"
 APP_CMD="$BUILD_DIR/app"

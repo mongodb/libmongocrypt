@@ -106,16 +106,30 @@ env.c9:
     # Use CentOS Stream 9 as a stand-in for RHEL 9
     FROM +init --base=quay.io/centos/centos:stream9
     DO +REDHAT_SETUP
+    # uv is not available via dnf: use pip instead.
+    RUN __install python3.12-pip
+    RUN python3.12 -m pip install --user uv
+    ENV PATH=/root/.local/bin:$PATH
+    RUN uv --version && uvx python --version
 
 env.c10:
     # Use CentOS Stream 10 as a stand-in for RHEL 10
     FROM +init --base=quay.io/centos/centos:stream10
     DO +REDHAT_SETUP
+    # uv is available via dnf: install directly.
+    RUN __install uv
+    RUN uv --version && uvx python --version
 
 env.alma8:
     # Use AlmaLinux 8 as a stand-in for RHEL 8
     FROM +init --base=almalinux:8
     DO +REDHAT_SETUP
+    # uv is not available via dnf: use pip instead.
+    RUN dnf config-manager --set-enabled powertools
+    RUN __install python3.12-pip
+    RUN python3.12 -m pip install --user uv
+    ENV PATH=/root/.local/bin:$PATH
+    RUN uv --version && uvx python --version
 
 # Utility command for Ubuntu environments
 ENV_UBUNTU:
@@ -127,15 +141,30 @@ ENV_UBUNTU:
 env.u22:
     # An Ubuntu 22.04 environment
     DO +ENV_UBUNTU --version 22.04
+    # uv is not available via apt: use pip instead.
+    RUN __install python3-pip  # Python 3.10
+    RUN python3 -m pip install --user uv
+    ENV PATH=/root/.local/bin:$PATH
+    RUN uv --version && uvx python --version
 
 env.u24:
     # An Ubuntu 24.04 environment
     DO +ENV_UBUNTU --version 24.04
+    # uv is not available via apt: use pip instead.
+    RUN __install python3-pip  # Python 3.12
+    RUN python3 -m pip install --user --break-system-packages uv
+    ENV PATH=/root/.local/bin:$PATH
+    RUN uv --version && uvx python --version
 
 env.amzn2023:
     # An Amazon "2023" environment. (AmazonLinux 2023)
     FROM +init --base=amazonlinux:2023
     DO +AMZ_SETUP
+    # uv is not available via dnf: use pip instead.
+    RUN __install python3.13-pip
+    RUN python3.13 -m pip install --user uv
+    ENV PATH=/root/.local/bin:$PATH
+    RUN uv --version && uvx python --version
 
 # Utility command for Debian setup
 ENV_DEBIAN:
@@ -146,22 +175,45 @@ ENV_DEBIAN:
 
 env.deb-unstable:
     DO +ENV_DEBIAN --version=unstable
+    # uv is not available via apt: use pip instead.
+    RUN __install python3-pip  # Python 3.13
+    RUN python3 -m pip install --user --break-system-packages uv
+    ENV PATH=/root/.local/bin:$PATH
+    RUN uv --version && uvx python --version
 
 env.deb11:
     # A Debian 11.0 environment
     DO +ENV_DEBIAN --version 11.0
+    # uv is not available via apt: use pip instead.
+    RUN __install python3-pip  # Python 3.9
+    RUN python3 -m pip install --user uv
+    ENV PATH=/root/.local/bin:$PATH
+    RUN uv --version && uvx python --version
 
 env.deb12:
     # A Debian 12.0 environment
     DO +ENV_DEBIAN --version 12.0
+    # uv is not available via apt: use pip instead.
+    RUN __install python3-pip  # Python 3.11
+    RUN python3 -m pip install --user --break-system-packages uv
+    ENV PATH=/root/.local/bin:$PATH
+    RUN uv --version && uvx python --version
 
 env.deb13:
     # A Debian 13 environment
     DO +ENV_DEBIAN --version 13.0
+    # uv is not available via apt: use pip instead.
+    RUN __install python3-pip  # Python 3.13
+    RUN python3 -m pip install --user --break-system-packages uv
+    ENV PATH=/root/.local/bin:$PATH
+    RUN uv --version && uvx python --version
 
 env.alpine:
     FROM +init --base=alpine:3.23
     DO +ALPINE_SETUP
+    # uv is available via apk: install directly.
+    RUN __install uv
+    RUN uv --version && uvx python --version
 
 # Utility: Warm-up obtaining CMake and Ninja for the build. This is usually
 # very quick, but on some platforms we need to compile them from source.
@@ -171,14 +223,11 @@ CACHE_WARMUP:
     # avoid cache invalidation later on.
     COPY .evergreen/setup-env.sh \
          .evergreen/init.sh \
-         .evergreen/ensure-cmake.sh \
-         .evergreen/ensure-ninja.sh \
+         .evergreen/install-build-tools.sh \
          /T/
-    RUN bash /T/ensure-cmake.sh
-    ARG ninja_version
-    ENV NINJA_VERSION=$ninja_version
-    RUN env NINJA_EXE=/usr/local/bin/ninja \
-        bash /T/ensure-ninja.sh
+    RUN bash -c '. /T/install-build-tools.sh && UV_TOOL_DIR=/T/uv-tools UV_TOOL_BIN_DIR=/T/uv-bin install_build_tools'
+    ENV PATH="/T/uv-bin:$PATH"
+    ENV CMAKE_GENERATOR="Ninja"
 
 COPY_SOURCE:
     FUNCTION
@@ -306,8 +355,8 @@ packaging-full-test:
 
 check-format:
     FROM +init --base=python:3.13.5-slim-bookworm
-    RUN __install build-essential # To install `make` to install clang-format.
-    RUN pip install pipx
+    # uv is available via pip: install directly.
+    RUN pip install uv
     COPY etc/format* /X/etc/
     COPY .evergreen/init.sh /X/.evergreen/
     RUN /X/etc/format.sh  # Does nothing, but warms the cache
@@ -333,7 +382,7 @@ build:
     IF $persist_build
         CACHE /s/libmongocrypt/cmake-build
     END
-    RUN env USE_NINJA=1 bash libmongocrypt/.evergreen/build_all.sh
+    RUN bash libmongocrypt/.evergreen/build_all.sh
     SAVE ARTIFACT /s/install /libmongocrypt-install
 
 # `create-deb-packages-and-repos` creates the .deb packages and repo directories intended for the PPA on debian-like distros. Options:
@@ -344,8 +393,7 @@ build:
 create-deb-packages-and-repos:
     ARG env
     FROM +env.$env
-    ARG ninja_version
-    DO +CACHE_WARMUP --ninja_version=$ninja_version
+    DO +CACHE_WARMUP
     DO +COPY_SOURCE
     WORKDIR /s
     RUN __install dh-make dpkg-dev apt-utils
