@@ -25,39 +25,35 @@ common_cmake_args=(
     -D BUILD_TESTING="${BUILD_TESTING-TRUE}"
 )
 
-if test "${CMAKE_GENERATOR-}" = Ninja; then
-    export NINJA_EXE
-    : "${NINJA_EXE:="$pkgconfig_tests_root/ninja$EXE_SUFFIX"}"
-    common_cmake_args+=(-DCMAKE_MAKE_PROGRAM="$NINJA_EXE")
-    bash "$EVG_DIR/ensure-ninja.sh"
-fi
-
 # Apply patches to fix compile on RHEL 6.2. TODO: try to remove once RHEL 6.2 is dropped (MONGOCRYPT-688).
 run_chdir "$mongoc_src_dir" git apply "$LIBMONGOCRYPT_DIR/etc/libbson-remove-GCC-diagnostic-pragma.patch"
 run_chdir "$mongoc_src_dir" git apply "$LIBMONGOCRYPT_DIR/etc/mongo-common-test-harness.patch"
 
+. "$(dirname "${BASH_SOURCE[0]}")/install-build-tools.sh"
+install_build_tools
+
 echo "Building libbson ..."
 libbson_install_dir="$pkgconfig_tests_root/install/libbson"
 build_dir="$mongoc_src_dir/_build"
-run_cmake -DENABLE_MONGOC=OFF \
+cmake -DENABLE_MONGOC=OFF \
        "${common_cmake_args[@]}" \
        -DCMAKE_INSTALL_PREFIX="$libbson_install_dir" \
        -H"$mongoc_src_dir" \
        -B"$build_dir"
-run_cmake --build "$build_dir" --target install --config RelWithDebInfo
+cmake --build "$build_dir" --target install --config RelWithDebInfo
 libbson_pkg_config_path="$(native_path "$(dirname "$(find "$libbson_install_dir" -name bson2.pc)")")"
 echo "Building libbson ... done"
 
 echo "Build libmongocrypt, static linking against libbson and configured for the PPA ..."
 mongocrypt_install_dir="$pkgconfig_tests_root/install/libmongocrypt"
 build_dir=$pkgconfig_tests_root/mongocrypt-build
-run_cmake -DUSE_SHARED_LIBBSON=OFF \
+cmake -DUSE_SHARED_LIBBSON=OFF \
        -DENABLE_BUILD_FOR_PPA=ON \
        "${common_cmake_args[@]}" \
        -DCMAKE_INSTALL_PREFIX="$mongocrypt_install_dir" \
        -H"$LIBMONGOCRYPT_DIR" \
        -B"$build_dir"
-run_cmake --build "$build_dir" --target install --config RelWithDebInfo
+cmake --build "$build_dir" --target install --config RelWithDebInfo
 echo "Build libmongocrypt, static linking against libbson and configured for the PPA ... done"
 
 # To validate the pkg-config scripts, we don't want the libbson script to be visible
@@ -114,13 +110,13 @@ echo "Build example-no-bson, dynamic linking against libmongocrypt ... done"
 rm -r "$mongocrypt_install_dir"
 
 echo "Build libmongocrypt, dynamic linking against libbson ..."
-run_cmake -DUSE_SHARED_LIBBSON=ON \
+cmake -DUSE_SHARED_LIBBSON=ON \
        -DENABLE_BUILD_FOR_PPA=OFF \
        "${common_cmake_args[@]}" \
        -DCMAKE_INSTALL_PREFIX="$mongocrypt_install_dir" \
        -H"$LIBMONGOCRYPT_DIR" \
        -B"$build_dir"
-run_cmake --build "$build_dir" --target install --config RelWithDebInfo
+cmake --build "$build_dir" --target install --config RelWithDebInfo
 echo "Build libmongocrypt, dynamic linking against libbson ... done"
 
 echo "Build example-state-machine, static linking against libmongocrypt ..."
