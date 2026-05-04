@@ -41,7 +41,7 @@ function get_libmongocrypt() {
     # Download the public key, import it, and verify the signature
     curl -LO https://pgp.mongodb.com/libmongocrypt.pub
     gpg --import libmongocrypt.pub
-    gpg --verify libmongocrypt.asc libmongocrypt.asc
+    gpg --verify libmongocrypt.asc libmongocrypt.tar.gz
 
     mkdir libmongocrypt
     tar xzf libmongocrypt.tar.gz -C ./libmongocrypt
