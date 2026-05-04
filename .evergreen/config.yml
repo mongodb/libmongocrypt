@@ -871,7 +871,6 @@ tasks:
           if [ -n "${tag_upload_location}" ]; then
             # the "fetch source" step detected a release tag on HEAD, so we
             # prepare a local file for upload to a location based on the tag
-            cp -a libmongocrypt-all-${tag_upload_location!|*revision}.tar.gz libmongocrypt-all-${tag_upload_location}.tar.gz
 
             if [[ "$tag_upload_location" = *-* ]]; then
               # Unstable release, like 1.1.0-beta1 or 1.0.1-rc0.
