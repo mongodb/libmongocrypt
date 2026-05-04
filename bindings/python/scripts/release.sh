@@ -35,7 +35,14 @@ function get_libmongocrypt() {
     TARGET=$1
     MONGOCRYPT_SO=$2
     rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
-    curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt-release/$TARGET/${BRANCH}/${REVISION}/libmongocrypt.tar.gz
+    curl -O https://github.com/mongodb/libmongocrypt/releases/download/${LIBMONGOCRYPT_VERSION}/libmongocrypt-${TARGET}-${LIBMONGOCRYPT_VERSION}.tar.gz
+    curl -O https://github.com/mongodb/libmongocrypt/releases/download/${LIBMONGOCRYPT_VERSION}/libmongocrypt-${TARGET}-${LIBMONGOCRYPT_VERSION}.asc
+
+    # Download the public key, import it, and verify the signature
+    curl -LO https://pgp.mongodb.com/libmongocrypt.pub
+    gpg --import libmongocrypt.pub
+    gpg --verify libmongocrypt-${TARGET}-${LIBMONGOCRYPT_VERSION}.asc libmongocrypt-${TARGET}-${LIBMONGOCRYPT_VERSION}.tar.gz
+
     mkdir libmongocrypt
     tar xzf libmongocrypt.tar.gz -C ./libmongocrypt
     chmod +x ${MONGOCRYPT_SO}
@@ -75,7 +82,7 @@ if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
     . ./.venv/Scripts/activate
 
     # Use crypto-enabled libmongocrypt.
-    get_libmongocrypt windows-test libmongocrypt/bin/mongocrypt.dll
+    get_libmongocrypt windows-x86_64 libmongocrypt/bin/mongocrypt.dll
     build_wheel
     test_dist dist/*.whl
 fi
@@ -86,7 +93,7 @@ if [ "Darwin" = "$(uname -s)" ]; then
     . .venv/bin/activate
 
     # Build universal2 wheel.
-    get_libmongocrypt macos libmongocrypt/lib/libmongocrypt.dylib
+    get_libmongocrypt macos-universal libmongocrypt/lib/libmongocrypt.dylib
     export MACOSX_DEPLOYMENT_TARGET=11.0
     export _PYTHON_HOST_PLATFORM=macosx-11.0-universal2
     build_wheel
@@ -117,7 +124,7 @@ if [ $(command -v docker) ]; then
     # Supports CentOS 7 rh-python38, CentOS 8 python38, Fedora 32+, Ubuntu 20.04+.
     # When the rhel7 images go EOL we'll have to switch to the manylinux_x_y variants
     # and use rhel8.
-    get_libmongocrypt rhel-70-64-bit libmongocrypt/nocrypto/lib64/libmongocrypt.so
+    get_libmongocrypt linux-x86_64-glibc_2_7-nocrypto libmongocrypt/nocrypto/lib64/libmongocrypt.so
     build_manylinux_wheel quay.io/pypa/manylinux2014_x86_64:2023-12-05-e9f0345
     if [ "Linux" = "$(uname -s)" ]; then
         $PYTHON -m venv .venv
@@ -126,7 +133,7 @@ if [ $(command -v docker) ]; then
     fi
 
     # Build the manylinux_2_28 aarch64 wheel.
-    get_libmongocrypt rhel-82-arm64 libmongocrypt/nocrypto/lib64/libmongocrypt.so
+    get_libmongocrypt linux-arm64-glibc_2_17-nocrypto libmongocrypt/nocrypto/lib64/libmongocrypt.so
     build_manylinux_wheel quay.io/pypa/manylinux_2_28_aarch64:2024-01-01-0e91b08
 fi
 
