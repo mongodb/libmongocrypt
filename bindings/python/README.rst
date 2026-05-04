@@ -111,10 +111,10 @@ libmongocrypt is continuously built and published on evergreen.
 
 Follow the instructions `here <https://www.mongodb.com/docs/manual/core/csfle/reference/libmongocrypt/>`_ to install the correct libmongocrypt build for your operating system.
 
-Alternatively, latest tarballs containing libmongocrypt binaries are
+Alternatively, the latest tarballs containing libmongocrypt binaries are
 `published here <https://github.com/mongodb/libmongocrypt/releases/latest>`_.
 Download and extract the correct ``libmongocrypt.tar.gz`` for your operating system and set
-``PYMONGOCRYPT_LIB`` to the path to your operating system's libmongocrypt.so file.
+``PYMONGOCRYPT_LIB`` to the path to your operating system's ``libmongocrypt.so`` file.
 
 For example::
 macOS::
