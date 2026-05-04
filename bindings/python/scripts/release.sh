@@ -35,8 +35,8 @@ function get_libmongocrypt() {
     TARGET=$1
     MONGOCRYPT_SO=$2
     rm -rf build libmongocrypt pymongocrypt/*.so pymongocrypt/*.dll pymongocrypt/*.dylib
-    curl -O https://github.com/mongodb/libmongocrypt/releases/download/${LIBMONGOCRYPT_VERSION}/libmongocrypt-${TARGET}-${LIBMONGOCRYPT_VERSION}.tar.gz
-    curl -O https://github.com/mongodb/libmongocrypt/releases/download/${LIBMONGOCRYPT_VERSION}/libmongocrypt-${TARGET}-${LIBMONGOCRYPT_VERSION}.asc
+    curl -LO https://github.com/mongodb/libmongocrypt/releases/download/${LIBMONGOCRYPT_VERSION}/libmongocrypt-${TARGET}-${LIBMONGOCRYPT_VERSION}.tar.gz
+    curl -LO https://github.com/mongodb/libmongocrypt/releases/download/${LIBMONGOCRYPT_VERSION}/libmongocrypt-${TARGET}-${LIBMONGOCRYPT_VERSION}.asc
 
     # Download the public key, import it, and verify the signature
     curl -LO https://pgp.mongodb.com/libmongocrypt.pub
