@@ -247,7 +247,7 @@ static void test_mc_TextOpts_to_FLE2TextSearchInsertSpec_for_query(_mongocrypt_t
          .v = RAW_STRING({"v" : "test"}),
          .qt = MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW,
          .expect = RAW_STRING(
-             {"v" : {"v" : "test", "casef" : true, "diacf" : false, "substr" : {"mlen" : 10, "ub" : 8, "lb" : 3}}})},
+             {"v" : {"v" : "test", "casef" : false, "diacf" : true, "substr" : {"mlen" : 10, "ub" : 8, "lb" : 3}}})},
         {.desc = "Works with prefix",
          .in = RAW_STRING({
              "caseSensitive" : true,
@@ -257,7 +257,7 @@ static void test_mc_TextOpts_to_FLE2TextSearchInsertSpec_for_query(_mongocrypt_t
          .v = RAW_STRING({"v" : "test"}),
          .qt = MONGOCRYPT_QUERY_TYPE_PREFIX,
          .expect =
-             RAW_STRING({"v" : {"v" : "test", "casef" : true, "diacf" : false, "prefix" : {"ub" : 8, "lb" : 3}}})},
+             RAW_STRING({"v" : {"v" : "test", "casef" : false, "diacf" : true, "prefix" : {"ub" : 8, "lb" : 3}}})},
         {.desc = "Works with suffix",
          .in = RAW_STRING({
              "caseSensitive" : true,
@@ -267,7 +267,7 @@ static void test_mc_TextOpts_to_FLE2TextSearchInsertSpec_for_query(_mongocrypt_t
          .v = RAW_STRING({"v" : "test"}),
          .qt = MONGOCRYPT_QUERY_TYPE_SUFFIX,
          .expect =
-             RAW_STRING({"v" : {"v" : "test", "casef" : true, "diacf" : false, "suffix" : {"ub" : 8, "lb" : 3}}})},
+             RAW_STRING({"v" : {"v" : "test", "casef" : false, "diacf" : true, "suffix" : {"ub" : 8, "lb" : 3}}})},
         {.desc = "Works with prefix + suffix when querying prefix",
          .in = RAW_STRING({
              "caseSensitive" : true,
@@ -278,7 +278,7 @@ static void test_mc_TextOpts_to_FLE2TextSearchInsertSpec_for_query(_mongocrypt_t
          .v = RAW_STRING({"v" : "test"}),
          .qt = MONGOCRYPT_QUERY_TYPE_PREFIX,
          .expect =
-             RAW_STRING({"v" : {"v" : "test", "casef" : true, "diacf" : false, "prefix" : {"ub" : 9, "lb" : 4}}})},
+             RAW_STRING({"v" : {"v" : "test", "casef" : false, "diacf" : true, "prefix" : {"ub" : 9, "lb" : 4}}})},
         {.desc = "Works with prefix + suffix when querying suffix",
          .in = RAW_STRING({
              "caseSensitive" : true,
@@ -289,7 +289,7 @@ static void test_mc_TextOpts_to_FLE2TextSearchInsertSpec_for_query(_mongocrypt_t
          .v = RAW_STRING({"v" : "test"}),
          .qt = MONGOCRYPT_QUERY_TYPE_SUFFIX,
          .expect =
-             RAW_STRING({"v" : {"v" : "test", "casef" : true, "diacf" : false, "suffix" : {"ub" : 8, "lb" : 3}}})},
+             RAW_STRING({"v" : {"v" : "test", "casef" : false, "diacf" : true, "suffix" : {"ub" : 8, "lb" : 3}}})},
     };
 
     for (size_t i = 0; i < sizeof(tests) / sizeof(tests[0]); i++) {
