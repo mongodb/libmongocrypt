@@ -57,7 +57,7 @@ bool mc_FLE2TagAndEncryptedMetadataBlock_parse(mc_FLE2TagAndEncryptedMetadataBlo
 
     CHECK_AND_RETURN(mc_reader_read_buffer(&reader, &metadata->rawBlock, kMetadataLen, status));
 
-    uint8_t offset = 0;
+    uint64_t offset = 0;
     _mongocrypt_buffer_from_data(&metadata->encryptedCount, metadata->rawBlock.data + offset, kFieldLen);
 
     offset += kFieldLen;
