@@ -43,8 +43,8 @@ static void test_mc_TextOpts_parse(_mongocrypt_tester_t *tester) {
     testcase tests[] = {
         {.desc = "Works with minimal options",
          .in = RAW_STRING({
-             "caseSensitive" : true,
-             "diacriticSensitive" : false,
+            "caseSensitive" : false,
+            "diacriticSensitive" : true,
              "prefix" : {"strMinQueryLength" : 1, "strMaxQueryLength" : 2}
          }),
          .expectCaseSensitive = true,
@@ -54,8 +54,8 @@ static void test_mc_TextOpts_parse(_mongocrypt_tester_t *tester) {
          .expectPrefixStrMaxQueryLength = 2},
         {.desc = "Works with substring options",
          .in = RAW_STRING({
-             "caseSensitive" : true,
-             "diacriticSensitive" : false,
+            "caseSensitive" : false,
+            "diacriticSensitive" : true,
              "substring" : {"strMaxLength" : 10, "strMinQueryLength" : 3, "strMaxQueryLength" : 8}
          }),
          .expectCaseSensitive = true,
@@ -69,8 +69,8 @@ static void test_mc_TextOpts_parse(_mongocrypt_tester_t *tester) {
          .expectError = "One of 'prefix', 'suffix', or 'substring' is required"},
         {.desc = "Errors if substring, prefix, and suffix are all provided",
          .in = RAW_STRING({
-             "caseSensitive" : true,
-             "diacriticSensitive" : false,
+            "caseSensitive" : false,
+            "diacriticSensitive" : true,
              "substring" : {"strMaxLength" : 10, "strMinQueryLength" : 3, "strMaxQueryLength" : 8},
              "prefix" : {"strMinQueryLength" : 2, "strMaxQueryLength" : 10},
              "suffix" : {"strMinQueryLength" : 4, "strMaxQueryLength" : 12}
@@ -78,15 +78,15 @@ static void test_mc_TextOpts_parse(_mongocrypt_tester_t *tester) {
          .expectError = "Cannot specify 'substring' with 'prefix' or 'suffix'"},
         {.desc = "Errors if strMaxLength is present in prefix",
          .in = RAW_STRING({
-             "caseSensitive" : true,
-             "diacriticSensitive" : false,
+            "caseSensitive" : false,
+            "diacriticSensitive" : true,
              "prefix" : {"strMaxLength" : 12, "strMinQueryLength" : 2, "strMaxQueryLength" : 10}
          }),
          .expectError = "'strMaxLength' is not allowed in 'prefix'"},
         {.desc = "Errors if strMaxLength is present in suffix",
          .in = RAW_STRING({
-             "caseSensitive" : true,
-             "diacriticSensitive" : false,
+            "caseSensitive" : false,
+            "diacriticSensitive" : true,
              "suffix" : {"strMaxLength" : 15, "strMinQueryLength" : 4, "strMaxQueryLength" : 12}
          }),
          .expectError = "'strMaxLength' is not allowed in 'suffix'"},
@@ -157,8 +157,8 @@ static void test_mc_TextOpts_to_FLE2TextSearchInsertSpec(_mongocrypt_tester_t *t
     testcase tests[] = {
         {.desc = "Works with substring",
          .in = RAW_STRING({
-             "caseSensitive" : true,
-             "diacriticSensitive" : false,
+            "caseSensitive" : false,
+            "diacriticSensitive" : true,
              "substring" : {"strMaxLength" : 10, "strMinQueryLength" : 3, "strMaxQueryLength" : 8}
          }),
          .v = RAW_STRING({"v" : "test"}),
@@ -166,8 +166,8 @@ static void test_mc_TextOpts_to_FLE2TextSearchInsertSpec(_mongocrypt_tester_t *t
              {"v" : {"v" : "test", "casef" : false, "diacf" : true, "substr" : {"mlen" : 10, "ub" : 8, "lb" : 3}}})},
         {.desc = "Works with prefix",
          .in = RAW_STRING({
-             "caseSensitive" : true,
-             "diacriticSensitive" : false,
+            "caseSensitive" : false,
+            "diacriticSensitive" : true,
              "prefix" : {"strMinQueryLength" : 3, "strMaxQueryLength" : 8}
          }),
          .v = RAW_STRING({"v" : "test"}),
@@ -175,8 +175,8 @@ static void test_mc_TextOpts_to_FLE2TextSearchInsertSpec(_mongocrypt_tester_t *t
              RAW_STRING({"v" : {"v" : "test", "casef" : false, "diacf" : true, "prefix" : {"ub" : 8, "lb" : 3}}})},
         {.desc = "Works with suffix",
          .in = RAW_STRING({
-             "caseSensitive" : true,
-             "diacriticSensitive" : false,
+            "caseSensitive" : false,
+            "diacriticSensitive" : true,
              "suffix" : {"strMinQueryLength" : 3, "strMaxQueryLength" : 8}
          }),
          .v = RAW_STRING({"v" : "test"}),
@@ -184,8 +184,8 @@ static void test_mc_TextOpts_to_FLE2TextSearchInsertSpec(_mongocrypt_tester_t *t
              RAW_STRING({"v" : {"v" : "test", "casef" : false, "diacf" : true, "suffix" : {"ub" : 8, "lb" : 3}}})},
         {.desc = "Works with prefix + suffix",
          .in = RAW_STRING({
-             "caseSensitive" : true,
-             "diacriticSensitive" : false,
+            "caseSensitive" : false,
+            "diacriticSensitive" : true,
              "prefix" : {"strMinQueryLength" : 4, "strMaxQueryLength" : 9},
              "suffix" : {"strMinQueryLength" : 3, "strMaxQueryLength" : 8}
          }),
@@ -201,8 +201,8 @@ static void test_mc_TextOpts_to_FLE2TextSearchInsertSpec(_mongocrypt_tester_t *t
          })},
         {.desc = "Errors with missing v",
          .in = RAW_STRING({
-             "caseSensitive" : true,
-             "diacriticSensitive" : false,
+            "caseSensitive" : false,
+            "diacriticSensitive" : true,
              "prefix" : {"strMinQueryLength" : 3, "strMaxQueryLength" : 8}
          }),
          .v = RAW_STRING({"foo" : "bar"}),
@@ -240,8 +240,8 @@ static void test_mc_TextOpts_to_FLE2TextSearchInsertSpec_for_query(_mongocrypt_t
     testcase tests[] = {
         {.desc = "Works with substring",
          .in = RAW_STRING({
-             "caseSensitive" : true,
-             "diacriticSensitive" : false,
+            "caseSensitive" : false,
+            "diacriticSensitive" : true,
              "substring" : {"strMaxLength" : 10, "strMinQueryLength" : 3, "strMaxQueryLength" : 8}
          }),
          .v = RAW_STRING({"v" : "test"}),
@@ -250,8 +250,8 @@ static void test_mc_TextOpts_to_FLE2TextSearchInsertSpec_for_query(_mongocrypt_t
              {"v" : {"v" : "test", "casef" : true, "diacf" : false, "substr" : {"mlen" : 10, "ub" : 8, "lb" : 3}}})},
         {.desc = "Works with prefix",
          .in = RAW_STRING({
-             "caseSensitive" : true,
-             "diacriticSensitive" : false,
+            "caseSensitive" : false,
+            "diacriticSensitive" : true,
              "prefix" : {"strMinQueryLength" : 3, "strMaxQueryLength" : 8}
          }),
          .v = RAW_STRING({"v" : "test"}),
@@ -260,8 +260,8 @@ static void test_mc_TextOpts_to_FLE2TextSearchInsertSpec_for_query(_mongocrypt_t
              RAW_STRING({"v" : {"v" : "test", "casef" : true, "diacf" : false, "prefix" : {"ub" : 8, "lb" : 3}}})},
         {.desc = "Works with suffix",
          .in = RAW_STRING({
-             "caseSensitive" : true,
-             "diacriticSensitive" : false,
+            "caseSensitive" : false,
+            "diacriticSensitive" : true,
              "suffix" : {"strMinQueryLength" : 3, "strMaxQueryLength" : 8}
          }),
          .v = RAW_STRING({"v" : "test"}),
@@ -270,8 +270,8 @@ static void test_mc_TextOpts_to_FLE2TextSearchInsertSpec_for_query(_mongocrypt_t
              RAW_STRING({"v" : {"v" : "test", "casef" : true, "diacf" : false, "suffix" : {"ub" : 8, "lb" : 3}}})},
         {.desc = "Works with prefix + suffix when querying prefix",
          .in = RAW_STRING({
-             "caseSensitive" : true,
-             "diacriticSensitive" : false,
+            "caseSensitive" : false,
+            "diacriticSensitive" : true,
              "prefix" : {"strMinQueryLength" : 4, "strMaxQueryLength" : 9},
              "suffix" : {"strMinQueryLength" : 3, "strMaxQueryLength" : 8}
          }),
@@ -281,8 +281,8 @@ static void test_mc_TextOpts_to_FLE2TextSearchInsertSpec_for_query(_mongocrypt_t
              RAW_STRING({"v" : {"v" : "test", "casef" : true, "diacf" : false, "prefix" : {"ub" : 9, "lb" : 4}}})},
         {.desc = "Works with prefix + suffix when querying suffix",
          .in = RAW_STRING({
-             "caseSensitive" : true,
-             "diacriticSensitive" : false,
+            "caseSensitive" : false,
+            "diacriticSensitive" : true,
              "prefix" : {"strMinQueryLength" : 4, "strMaxQueryLength" : 9},
              "suffix" : {"strMinQueryLength" : 3, "strMaxQueryLength" : 8}
          }),
