@@ -280,6 +280,12 @@ kms_response_parser_feed (kms_response_parser_t *parser,
       return kms_kmip_response_parser_feed (parser->kmip, buf, len);
    }
 
+   // As a precaution, limit the maximum size KMS response:
+   if (len > KMS_PARSER_MAX_RESPONSE_LEN || raw->len > KMS_PARSER_MAX_RESPONSE_LEN - len) {
+      KMS_ERROR (parser, "KMS response too large");
+      return false;
+   }
+
    curr = (int) raw->len;
    kms_request_str_append_chars (raw, (char *) buf, len);
    /* process the new data appended. */
