@@ -163,7 +163,7 @@ static void test_mc_TextOpts_to_FLE2TextSearchInsertSpec(_mongocrypt_tester_t *t
          }),
          .v = RAW_STRING({"v" : "test"}),
          .expect = RAW_STRING(
-             {"v" : {"v" : "test", "casef" : true, "diacf" : false, "substr" : {"mlen" : 10, "ub" : 8, "lb" : 3}}})},
+             {"v" : {"v" : "test", "casef" : false, "diacf" : true, "substr" : {"mlen" : 10, "ub" : 8, "lb" : 3}}})},
         {.desc = "Works with prefix",
          .in = RAW_STRING({
              "caseSensitive" : true,
@@ -172,7 +172,7 @@ static void test_mc_TextOpts_to_FLE2TextSearchInsertSpec(_mongocrypt_tester_t *t
          }),
          .v = RAW_STRING({"v" : "test"}),
          .expect =
-             RAW_STRING({"v" : {"v" : "test", "casef" : true, "diacf" : false, "prefix" : {"ub" : 8, "lb" : 3}}})},
+             RAW_STRING({"v" : {"v" : "test", "casef" : false, "diacf" : true, "prefix" : {"ub" : 8, "lb" : 3}}})},
         {.desc = "Works with suffix",
          .in = RAW_STRING({
              "caseSensitive" : true,
@@ -181,7 +181,7 @@ static void test_mc_TextOpts_to_FLE2TextSearchInsertSpec(_mongocrypt_tester_t *t
          }),
          .v = RAW_STRING({"v" : "test"}),
          .expect =
-             RAW_STRING({"v" : {"v" : "test", "casef" : true, "diacf" : false, "suffix" : {"ub" : 8, "lb" : 3}}})},
+             RAW_STRING({"v" : {"v" : "test", "casef" : false, "diacf" : true, "suffix" : {"ub" : 8, "lb" : 3}}})},
         {.desc = "Works with prefix + suffix",
          .in = RAW_STRING({
              "caseSensitive" : true,
@@ -193,8 +193,8 @@ static void test_mc_TextOpts_to_FLE2TextSearchInsertSpec(_mongocrypt_tester_t *t
          .expect = RAW_STRING({
              "v" : {
                  "v" : "test",
-                 "casef" : true,
-                 "diacf" : false,
+                 "casef" : false,
+                 "diacf" : true,
                  "prefix" : {"ub" : 9, "lb" : 4},
                  "suffix" : {"ub" : 8, "lb" : 3}
              }
