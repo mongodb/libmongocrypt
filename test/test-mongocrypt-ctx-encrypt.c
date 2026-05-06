@@ -2484,8 +2484,8 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.user_key_id = &keyABC_id;
         tc.keys_to_feed[0] = keyABC;
         tc.text_opts = TEST_BSON(RAW_STRING({
-            "caseSensitive" : false,
-            "diacriticSensitive" : false,
+            "caseSensitive" : true,
+            "diacriticSensitive" : true,
             "suffix" : {"strMinQueryLength" : 1, "strMaxQueryLength" : 100}
         }));
         tc.expect = TEST_FILE("./test/data/fle2-explicit/find-suffix.json");
@@ -2502,8 +2502,8 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.user_key_id = &keyABC_id;
         tc.keys_to_feed[0] = keyABC;
         tc.text_opts = TEST_BSON(RAW_STRING({
-            "caseSensitive" : false,
-            "diacriticSensitive" : false,
+            "caseSensitive" : true,
+            "diacriticSensitive" : true,
             "prefix" : {"strMinQueryLength" : 1, "strMaxQueryLength" : 100}
         }));
         tc.expect = TEST_FILE("./test/data/fle2-explicit/find-prefix.json");
@@ -2520,8 +2520,8 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.user_key_id = &keyABC_id;
         tc.keys_to_feed[0] = keyABC;
         tc.text_opts = TEST_BSON(RAW_STRING({
-            "caseSensitive" : false,
-            "diacriticSensitive" : false,
+            "caseSensitive" : true,
+            "diacriticSensitive" : true,
             "suffix" : {"strMinQueryLength" : 1, "strMaxQueryLength" : 100}
         }));
         tc.expect = TEST_FILE("./test/data/fle2-explicit/find-suffix.json");
@@ -2538,8 +2538,8 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.user_key_id = &keyABC_id;
         tc.keys_to_feed[0] = keyABC;
         tc.text_opts = TEST_BSON(RAW_STRING({
-            "caseSensitive" : false,
-            "diacriticSensitive" : false,
+            "caseSensitive" : true,
+            "diacriticSensitive" : true,
             "prefix" : {"strMinQueryLength" : 1, "strMaxQueryLength" : 100}
         }));
         tc.expect = TEST_FILE("./test/data/fle2-explicit/find-prefix.json");
@@ -2556,8 +2556,8 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.user_key_id = &keyABC_id;
         tc.keys_to_feed[0] = keyABC;
         tc.text_opts = TEST_BSON(RAW_STRING({
-            "caseSensitive" : false,
-            "diacriticSensitive" : false,
+            "caseSensitive" : true,
+            "diacriticSensitive" : true,
             "substring" : {"strMaxLength" : 100, "strMinQueryLength" : 1, "strMaxQueryLength" : 100}
         }));
         tc.expect = TEST_FILE("./test/data/fle2-explicit/find-substring.json");
@@ -2576,8 +2576,8 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.user_key_id = &keyABC_id;
         tc.keys_to_feed[0] = keyABC;
         tc.text_opts = TEST_BSON(RAW_STRING({
-            "caseSensitive" : false,
-            "diacriticSensitive" : false,
+            "caseSensitive" : true,
+            "diacriticSensitive" : true,
             "suffix" : {"strMinQueryLength" : 1, "strMaxQueryLength" : 100}
         }));
         tc.expect = TEST_FILE("./test/data/fle2-explicit/insert-suffix.json");
@@ -2596,8 +2596,8 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.user_key_id = &keyABC_id;
         tc.keys_to_feed[0] = keyABC;
         tc.text_opts = TEST_BSON(RAW_STRING({
-            "caseSensitive" : false,
-            "diacriticSensitive" : false,
+            "caseSensitive" : true,
+            "diacriticSensitive" : true,
             "prefix" : {"strMinQueryLength" : 1, "strMaxQueryLength" : 100}
         }));
         tc.expect = TEST_FILE("./test/data/fle2-explicit/insert-prefix.json");
@@ -2616,8 +2616,8 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.user_key_id = &keyABC_id;
         tc.keys_to_feed[0] = keyABC;
         tc.text_opts = TEST_BSON(RAW_STRING({
-            "caseSensitive" : false,
-            "diacriticSensitive" : false,
+            "caseSensitive" : true,
+            "diacriticSensitive" : true,
             "substring" : {"strMaxLength" : 100, "strMinQueryLength" : 1, "strMaxQueryLength" : 100}
         }));
         tc.expect = TEST_FILE("./test/data/fle2-explicit/insert-substring.json");
@@ -2636,8 +2636,8 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.user_key_id = &keyABC_id;
         tc.keys_to_feed[0] = keyABC;
         tc.text_opts = TEST_BSON(RAW_STRING({
-            "caseSensitive" : false,
-            "diacriticSensitive" : false,
+            "caseSensitive" : true,
+            "diacriticSensitive" : true,
             "prefix" : {"strMinQueryLength" : 1, "strMaxQueryLength" : 100},
             "suffix" : {"strMinQueryLength" : 1, "strMaxQueryLength" : 100}
         }));
@@ -2675,8 +2675,8 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
         tc.keys_to_feed[0] = keyABC;
         tc.query_type = MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW_DEPRECATED_STR;
         tc.text_opts = TEST_BSON(RAW_STRING({
-            "caseSensitive" : false,
-            "diacriticSensitive" : false,
+            "caseSensitive" : true,
+            "diacriticSensitive" : true,
             "prefix" : {"strMinQueryLength" : 1, "strMaxQueryLength" : 100},
             "suffix" : {"strMinQueryLength" : 1, "strMaxQueryLength" : 100}
         }));
