@@ -1202,9 +1202,9 @@ tasks:
           elif [ -f "$srcdir/lib/libmongocrypt.dylib" ]; then
             mkdir libmongocrypt_upload/lib
             mv $srcdir/lib/libmongocrypt.dylib libmongocrypt_upload/lib
-          elif [ -f "$srcdir/bin/libmongocrypt.dll" ]; then
+          elif [ -f "$srcdir/bin/mongocrypt.dll" ]; then
             mkdir libmongocrypt_upload/bin
-            mv $srcdir/bin/libmongocrypt.dll libmongocrypt_upload/bin
+            mv $srcdir/bin/mongocrypt.dll libmongocrypt_upload/bin
           fi
     - command: archive.targz_pack
       params:
