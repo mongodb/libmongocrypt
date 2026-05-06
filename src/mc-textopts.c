@@ -271,12 +271,14 @@ static bool TextOpts_to_FLE2TextSearchInsertSpec(const mc_TextOpts_t *txo,
         CLIENT_ERR(ERROR_PREFIX "Error appending to BSON");
         return false;
     }
-    if (!bson_append_bool(&child, "casef", -1, txo->caseSensitive)) {
+    // "casef" means "case folding". Case sensitive => not folded. Case insensitive => folded.
+    if (!bson_append_bool(&child, "casef", -1, !txo->caseSensitive)) {
         CLIENT_ERR(ERROR_PREFIX "Error appending to BSON");
         return false;
     }
 
-    if (!bson_append_bool(&child, "diacf", -1, txo->diacriticSensitive)) {
+    // "diacf" means "diacritic folding". Diacritic sensitive => not folded. Diacritic insensitive => folded.
+    if (!bson_append_bool(&child, "diacf", -1, !txo->diacriticSensitive)) {
         CLIENT_ERR(ERROR_PREFIX "Error appending to BSON");
         return false;
     }

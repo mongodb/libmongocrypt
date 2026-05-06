@@ -1,6 +1,6 @@
 {
-    "caseSensitive": true,
-    "diacriticSensitive": true,
+    "caseSensitive": false,
+    "diacriticSensitive": false,
     "prefix": {
         "strMaxQueryLength": 10,
         "strMinQueryLength": 2
