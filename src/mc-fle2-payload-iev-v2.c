@@ -622,11 +622,12 @@ bool mc_FLE2IndexedEncryptedValueV2_parse(mc_FLE2IndexedEncryptedValueV2_t *iev,
     // Read each metadata element in buff
     for (uint32_t i = 0; i < iev->edge_count; i++) {
         _mongocrypt_buffer_t tmp_buf;
+        const uint8_t *mbuf = NULL;
 
-        CHECK_AND_RETURN(mc_reader_read_buffer(&reader, &tmp_buf, kMetadataLen, status));
+        CHECK_AND_RETURN(mc_reader_read_bytes(&reader, &mbuf, kMetadataLen, status));
+        _mongocrypt_buffer_from_data(&tmp_buf, mbuf, kMetadataLen);
+
         CHECK_AND_RETURN(mc_FLE2TagAndEncryptedMetadataBlock_parse(&iev->metadata[i], &tmp_buf, status));
-
-        _mongocrypt_buffer_cleanup(&tmp_buf);
     }
 
     return true;
