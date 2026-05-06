@@ -271,6 +271,7 @@ static bool TextOpts_to_FLE2TextSearchInsertSpec(const mc_TextOpts_t *txo,
         CLIENT_ERR(ERROR_PREFIX "Error appending to BSON");
         return false;
     }
+    // "casef" means "case folding". Case sensitive => not folded. Case insensitive => folded.
     if (!bson_append_bool(&child, "casef", -1, !txo->caseSensitive)) {
         CLIENT_ERR(ERROR_PREFIX "Error appending to BSON");
         return false;
