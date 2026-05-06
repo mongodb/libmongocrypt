@@ -277,6 +277,7 @@ static bool TextOpts_to_FLE2TextSearchInsertSpec(const mc_TextOpts_t *txo,
         return false;
     }
 
+    // "diacf" means "diacritic folding". Diacritic sensitive => not folded. Diacritic insensitive => folded.
     if (!bson_append_bool(&child, "diacf", -1, !txo->diacriticSensitive)) {
         CLIENT_ERR(ERROR_PREFIX "Error appending to BSON");
         return false;
