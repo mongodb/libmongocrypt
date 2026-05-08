@@ -4,6 +4,13 @@
 
 <!-- TODO: add entries for next release -->
 
+## 1.18.1
+
+### Fixed
+- Fix QE text explicit encryption handling of `caseSensitive` and `diacriticSensitive` options.
+    - This is a backwards breaking bug fix, but only applies to the experimental QE text algorithm "TextPreview".
+- Fix handling of malformed KMS replies.
+
 ## 1.18.0
 
 ### Added
