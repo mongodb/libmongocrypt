@@ -38,10 +38,16 @@ function get_libmongocrypt() {
     curl -Lo libmongocrypt.tar.gz https://github.com/mongodb/libmongocrypt/releases/download/${LIBMONGOCRYPT_VERSION}/libmongocrypt-${TARGET}-${LIBMONGOCRYPT_VERSION}.tar.gz
     curl -Lo libmongocrypt.asc https://github.com/mongodb/libmongocrypt/releases/download/${LIBMONGOCRYPT_VERSION}/libmongocrypt-${TARGET}-${LIBMONGOCRYPT_VERSION}.asc
 
-    # Download the public key, import it, and verify the signature
+    # Download the public key, import it, and verify the signature.
+    # Pre-create ~/.gnupg so GnuPG >= 2.4.1 does not auto-enable keyboxd on
+    # fresh install, as keyboxd is broken on Windows.
+    mkdir -p ~/.gnupg
+    chmod 700 ~/.gnupg
+    touch ~/.gnupg/common.conf
+    gpg --version
     curl -LO https://pgp.mongodb.com/libmongocrypt.pub
-    gpg --import libmongocrypt.pub
-    gpg --verify libmongocrypt.asc libmongocrypt.tar.gz
+    gpg --batch --no-tty --import libmongocrypt.pub
+    gpg --batch --no-tty --verify libmongocrypt.asc libmongocrypt.tar.gz
 
     mkdir libmongocrypt
     tar xzf libmongocrypt.tar.gz -C ./libmongocrypt
