@@ -23,6 +23,9 @@ for arg in "$@"; do
     --is-patch=*)
       IS_PATCH="${arg#*=}"
       ;;
+    --pkg-file-name=*)
+      PKG_FILE_NAME="-${arg#*=}"
+      ;;
     *)
       echo "Unknown argument '$arg'"
       exit 1
@@ -86,7 +89,7 @@ sudo chroot ./unstable-chroot /bin/bash -c '(set -o xtrace && \
   /usr/bin/gcc $(pkgconf --cflags libmongocrypt bson2) -o example-state-machine test/example-state-machine.c -lmongocrypt -lbson2 )'
 
 [ -e ./unstable-chroot/tmp/libmongocrypt/example-state-machine ] || (echo "Example 'example-state-machine' was not built!" ; exit 1)
-(cd ./unstable-chroot/tmp/ ; tar zcvf ../../deb.tar.gz *.dsc *.orig.tar.gz *.debian.tar.xz *.build *.deb)
+(cd ./unstable-chroot/tmp/ ; tar zcvf "../../deb${PKG_FILE_NAME}.tar.gz" *.dsc *.orig.tar.gz *.debian.tar.xz *.build *.deb)
 
 # Build a second time, to ensure a "double build" works
 sudo chroot ./unstable-chroot /bin/bash -c "(\

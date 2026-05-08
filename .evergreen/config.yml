@@ -1267,8 +1267,7 @@ tasks:
         script: |-
           set -o errexit
           set -o xtrace
-          bash .evergreen/debian_package_build.sh --is-patch=${is_patch}
-          mv ../deb.tar.gz ../deb-${tag_upload_location!|*revision}.tar.gz
+          bash .evergreen/debian_package_build.sh --is-patch=${is_patch} --pkg-file-name=${tag_upload_location!|*revision}
     - command: s3.put
       params:
         role_arn: ${upload_arn}
@@ -1310,8 +1309,7 @@ tasks:
         script: |-
           set -o errexit
           set -o xtrace
-          bash .evergreen/debian_package_build.sh --arch=i386 --is-patch=${is_patch}
-          mv ../deb.tar.gz ../deb-${tag_upload_location!|*revision}.tar.gz
+          bash .evergreen/debian_package_build.sh --arch=i386 --is-patch=${is_patch} --pkg-file-name=${tag_upload_location!|*revision}
     - command: s3.put
       params:
         role_arn: ${upload_arn}
