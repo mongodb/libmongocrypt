@@ -108,60 +108,51 @@ Installing libmongocrypt
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 libmongocrypt is continuously built and published on evergreen.
-The latest tarball containing libmongocrypt built on all supported variants is
-`published here <https://s3.amazonaws.com/mciuploads/libmongocrypt/all/master/latest/libmongocrypt-all.tar.gz>`_.
-Download and extract ``libmongocrypt-all.tar.gz`` and set
-``PYMONGOCRYPT_LIB`` to the path to your operating system's libmongocrypt.so file.
+
+Follow the instructions `here <https://www.mongodb.com/docs/manual/core/csfle/reference/libmongocrypt/>`_ to install the correct libmongocrypt build for your operating system.
+
+Alternatively, the latest tarballs containing libmongocrypt binaries are
+`published here <https://github.com/mongodb/libmongocrypt/releases/latest>`_.
+Download and extract the correct ``libmongocrypt.tar.gz`` for your operating system and set
+``PYMONGOCRYPT_LIB`` to the path to your operating system's ``libmongocrypt.so`` file.
+
 For example::
-
-  $ curl -O https://s3.amazonaws.com/mciuploads/libmongocrypt/all/master/latest/libmongocrypt-all.tar.gz
-  $ mkdir libmongocrypt-all && tar xzf libmongocrypt-all.tar.gz -C libmongocrypt-all
-  $ ls libmongocrypt-all
-  amazon2             debian92            rhel-80-64-bit      rhel72-zseries-test ubuntu1804-arm64
-  amazon2-arm64       linux-64-amazon-ami rhel-81-ppc64el     suse12-64           ubuntu2004-64
-  amazon2023          macos               rhel-82-arm64       suse15-64           ubuntu2004-arm64
-  amazon2023-arm64    rhel-62-64-bit      rhel-83-zseries     ubuntu1604          ubuntu2204-64
-  debian10            rhel-70-64-bit      rhel-91-64-bit      ubuntu1604-arm64    ubuntu2204-arm64
-  debian11            rhel-71-ppc64el     rhel-91-arm64       ubuntu1804-64       windows-test
-
 macOS::
 
   $ # Set PYMONGOCRYPT_LIB for macOS:
-  $ export PYMONGOCRYPT_LIB=$(pwd)/libmongocrypt-all/macos/lib/libmongocrypt.dylib
+  $ export PYMONGOCRYPT_LIB=$(pwd)/libmongocrypt/lib/libmongocrypt.dylib
   $ python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
-  1.9.0
+  1.18.0
 
 Windows::
 
   $ # Set PYMONGOCRYPT_LIB for Windows:
   $ chmod +x $(pwd)/libmongocrypt-all/windows-test/bin/mongocrypt.dll
-  $ export PYMONGOCRYPT_LIB=$(pwd)/libmongocrypt-all/windows-test/bin/mongocrypt.dll
+  $ export PYMONGOCRYPT_LIB=$(pwd)/libmongocrypt/bin/mongocrypt.dll
   $ python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
-  1.9.0
+  1.18.0
 
 Linux: set the libmongocrypt build for your platform, for example for Ubuntu 22.04 x86_64::
 
   $ # Set PYMONGOCRYPT_LIB for Ubuntu 22.04 x86_64:
-  $ export PYMONGOCRYPT_LIB=$(pwd)/libmongocrypt-all/ubuntu2204-64/lib/libmongocrypt.so
+  $ export PYMONGOCRYPT_LIB=$(pwd)/libmongocrypt/lib64/libmongocrypt.so
   $ python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
-  1.9.0
+  1.18.0
   $ # Check that native crypto is enabled for better performance:
   $ python -c 'from pymongocrypt.binding import lib;print(lib.mongocrypt_is_crypto_available())'
   True
 
-Note if your Linux platform is not available, the generic RHEL 6.2 x86_64 "nocrypto" build
+Note if your Linux platform is not available, the generic ``linux-x86_64-glibc_2_7-nocrypto`` build
 should still be compatible however the "nocrypto" build will result in lower performance
 for encryption and decryption::
 
-  $ # Set PYMONGOCRYPT_LIB for RHEL 6.2 x86_64:
-  $ export PYMONGOCRYPT_LIB=$(pwd)/libmongocrypt-all/rhel-62-64-bit/nocrypto/lib64/libmongocrypt.so
+  $ # Set PYMONGOCRYPT_LIB for linux-x86_64-glibc_2_7-nocrypto:
+  $ export PYMONGOCRYPT_LIB=$(pwd)/libmongocrypt/lib64/libmongocrypt.so
   $ python -c "import pymongocrypt; print(pymongocrypt.libmongocrypt_version())"
-  1.9.0
+  1.18.0
   $ python -c 'from pymongocrypt.binding import lib;print(lib.mongocrypt_is_crypto_available())'
   False
 
-Other methods of installation (brew, rpm, yum, apt-get, deb, etc...) are documented here:
-https://www.mongodb.com/docs/manual/core/csfle/reference/libmongocrypt/#linux-installation
 
 Dependencies
 ============
