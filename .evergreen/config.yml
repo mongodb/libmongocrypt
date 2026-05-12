@@ -1255,8 +1255,8 @@ tasks:
 
 - name: debian-package-build
   run_on: &deb-package-build-run_on
-    - ubuntu2004
-    - ubuntu2004-small
+    - ubuntu2404-large
+    - ubuntu2404-small
   tags: [packaging]
   commands:
     - func: "fetch source"
@@ -1268,8 +1268,7 @@ tasks:
         script: |-
           set -o errexit
           set -o xtrace
-          bash .evergreen/debian_package_build.sh --is-patch=${is_patch}
-          mv ../deb.tar.gz ../deb-${tag_upload_location!|*revision}.tar.gz
+          bash .evergreen/debian_package_build.sh --is-patch=${is_patch} --pkg-file-name=${tag_upload_location!|*revision}
     - command: s3.put
       params:
         role_arn: ${upload_arn}
@@ -1311,8 +1310,7 @@ tasks:
         script: |-
           set -o errexit
           set -o xtrace
-          bash .evergreen/debian_package_build.sh --arch=i386 --is-patch=${is_patch}
-          mv ../deb.tar.gz ../deb-${tag_upload_location!|*revision}.tar.gz
+          bash .evergreen/debian_package_build.sh --arch=i386 --is-patch=${is_patch} --pkg-file-name=${tag_upload_location!|*revision}
     - command: s3.put
       params:
         role_arn: ${upload_arn}
