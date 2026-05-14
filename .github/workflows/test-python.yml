@@ -17,6 +17,9 @@ defaults:
     working-directory: ./bindings/python
     shell: bash -eux {0}
  
+permissions:
+  contents: read
+
 jobs:
 
   static:
