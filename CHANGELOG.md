@@ -1,11 +1,38 @@
 # ChangeLog
 
-## Unreleased
+## 1.18.1
 
+### Fixed
+- Fix QE text explicit encryption handling of `caseSensitive` and `diacriticSensitive` options.
+    - This is a backwards breaking bug fix, but only applies to the experimental QE text algorithm "TextPreview".
+- Fix handling of malformed KMS replies.
+
+## 1.18.0
+
+### Added
+- Signed binaries for macOS and Linux are now available on the GitHub release.
+    - Linux binaries including `nocrypto` in the name have no dependency on OpenSSL. Drivers using the `nocrypto` variant are expected to set crypto callbacks (e.g. call `mongocrypt_setopt_crypto_hooks`) to do operations requiring crypto to avoid an error.
+    - Drivers that package libmongocrypt binaries are encouraged to migrate release scripts to use these binaries.
+        - No reduction in platform support is expected. glibc dependencies were checked against existing builds on RHEL 6.2 and Ubuntu 16.04.
+- Support referencing keys by `keyAltName` in `encryptedFieldsMap`.
 
 ### Changed
 
 - Final release packages in the PPA are now available by specifying `release` in the repository configuration in place of the major/minor version (e.g., `1.17`). Details in `README.md`.
+- Bump downloaded libbson version from 2.1.0 to 2.3.0.
+
+### Deprecated
+- RHEL 6.2 builds are deprecated and may be removed in the future. The `linux-x86_64-glibc_2_7-nocrypto` release build may be used instead and has equivalent glibc requirements.
+
+### Removed
+
+- The configure-time CMake parameter `ENABLE_WINDOWS_STATIC_RUNTIME` has been
+  removed. Users that need the static MSVCRT library should instead set the
+  [`CMAKE_MSVC_RUNTIME_LIBRARY`][msvcrt] built-in CMake parameter when
+  configuring libmongocrypt.
+- Packages for Debian 9 and Debian 10.
+
+[msvcrt]: https://cmake.org/cmake/help/latest/variable/CMAKE_MSVC_RUNTIME_LIBRARY.html
 
 ## 1.17.3
 
@@ -221,7 +248,7 @@ This release makes backwards breaking changes to Queryable Encryption (QE) behav
 ## Warnings
 - This release has a severe bug in the context returned by `mongocrypt_ctx_rewrap_many_datakey_init` that may result in data corruption. Please upgrade to 1.5.2 before using `mongocrypt_ctx_rewrap_many_datakey_init`.
 ## Fixed
-- Update to use new payload for FLE 2.0 find. 
+- Update to use new payload for FLE 2.0 find.
 - Require contention factor.
 ## 1.5.0-rc2
 ### Fixed
@@ -241,7 +268,7 @@ This release makes backwards breaking changes to Queryable Encryption (QE) behav
 ## 1.5.0-rc0
 ## Fixed
 - Account for shared library rename.
-- Update to use new payload for FLE 2.0 find. 
+- Update to use new payload for FLE 2.0 find.
 
 ## 1.5.0-alpha2
 ## New Features

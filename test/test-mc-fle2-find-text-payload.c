@@ -312,6 +312,12 @@ static void _test_FLE2FindTextPayload_parse_errors(_mongocrypt_tester_t *tester)
         _do_parse_error_test(tester, level2, "Unrecognized field 'oo'");
         _do_parse_error_test(tester, level3, "Unrecognized field 'pp'");
     }
+
+    // Test invalid contention:
+    {
+        bson_t *bad_cm = TMP_BSON("{'cm': {'$numberLong': '-1' }, %s}", TS_JSON ", " CF_JSON ", " DF_JSON);
+        _do_parse_error_test(tester, bad_cm, "must be non-negative");
+    }
 }
 
 void _mongocrypt_tester_install_fle2_payload_find_text(_mongocrypt_tester_t *tester) {

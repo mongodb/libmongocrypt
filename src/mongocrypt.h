@@ -435,6 +435,10 @@ bool mongocrypt_setopt_encrypted_field_config_map(mongocrypt_t *crypt, mongocryp
  * the path string is literal "$SYSTEM", then libmongocrypt will defer to the
  * system's library resolution mechanism to find the crypt_shared library.
  *
+ * @warning Use of "$SYSTEM" will search system directories for the
+ * mongo_crypt_v1.(dll,so,dylib) following the search behavior of LoadLibrary
+ * on Windows and dlopen on Unix. Ensure secure deployment of the library.
+ *
  * @note If no crypt_shared dynamic library is found in any of the directories
  * specified by the search paths loaded here, @ref mongocrypt_init() will still
  * succeed and continue to operate without crypt_shared.
@@ -1595,9 +1599,11 @@ bool mongocrypt_setopt_key_expiration(mongocrypt_t *crypt, uint64_t cache_expira
 #define MONGOCRYPT_QUERY_TYPE_RANGE_STR "range"
 /// NOTE: "substringPreview" is experimental and may be removed in a future non-major release.
 #define MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW_STR "substringPreview"
-/// NOTE: "suffixPreview" is experimental and may be removed in a future non-major release.
-#define MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW_STR "suffixPreview"
-/// NOTE: "prefixPreview" is experimental and may be removed in a future non-major release.
-#define MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW_STR "prefixPreview"
+/// DEPRECATED: Support for "suffixPreview" has been removed in favor of "suffix"
+#define MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW_DEPRECATED_STR "suffixPreview"
+#define MONGOCRYPT_QUERY_TYPE_SUFFIX_STR "suffix"
+/// DEPRECATED: Support for "prefixPreview" has been removed in favor of "suffix"
+#define MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW_DEPRECATED_STR "prefixPreview"
+#define MONGOCRYPT_QUERY_TYPE_PREFIX_STR "prefix"
 
 #endif /* MONGOCRYPT_H */

@@ -30,7 +30,7 @@ static void _get_bytes(const void *in, char *out, int len) {
     char *dest = out;
 
     for (int i = 0; i < len; i++, dest += 3) {
-        sprintf(dest, "%02X ", src[i]);
+        ASSERT(3 == bson_snprintf(dest, 4, "%02X ", src[i]));
     }
     dest[-1] = '\0';
 }

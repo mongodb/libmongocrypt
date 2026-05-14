@@ -80,7 +80,7 @@ static void _reset_nesting(bson_t *parent, bson_t *bson, _nesting_t nesting, cha
         bson_append_document_begin(parent, name, -1, bson);
     } else if (nesting == NEST_IN_ARRAY) {
         BSON_ASSERT(bson_append_array_end(parent, bson));
-        bson_append_array_begin(parent, name, -1, bson);
+        bson_append_array_unsafe_begin(parent, name, -1, bson);
     }
 }
 
@@ -174,7 +174,7 @@ static bson_t *_assemble_bson(int num_markings,
         bson_append_document_begin(parent, "other", -1, &bson);
     } else if (tester->parent == NEST_IN_ARRAY) {
         parent = bson_new();
-        bson_append_array_begin(parent, "other", -1, &bson);
+        bson_append_array_unsafe_begin(parent, "other", -1, &bson);
     } else {
         bson_init(&bson);
     }

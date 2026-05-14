@@ -30,9 +30,11 @@ static void _test_efc(_mongocrypt_tester_t *tester) {
     mongocrypt_status_t *status = mongocrypt_status_new();
     _mongocrypt_buffer_t expect_keyId1;
     _mongocrypt_buffer_t expect_keyId2;
+    _mongocrypt_buffer_t expect_keyId3;
 
     _mongocrypt_buffer_copy_from_hex(&expect_keyId1, "12345678123498761234123456789012");
     _mongocrypt_buffer_copy_from_hex(&expect_keyId2, "abcdefab123498761234123456789012");
+    _mongocrypt_buffer_copy_from_hex(&expect_keyId3, "12345678123498761234123456abcdef");
 
     {
         _load_test_file(tester, "./test/data/efc/efc-oneField.json", &efc_bson);
@@ -90,7 +92,7 @@ static void _test_efc(_mongocrypt_tester_t *tester) {
         _load_test_file(tester, "./test/data/efc/efc-missingKeyId.json", &efc_bson);
         ASSERT_FAILS_STATUS(mc_EncryptedFieldConfig_parse(&efc, &efc_bson, status),
                             status,
-                            "unable to find 'keyId' in 'field' document");
+                            "unable to find 'keyId' or 'keyAltName' in 'field' document");
         mc_EncryptedFieldConfig_cleanup(&efc);
         _mongocrypt_status_reset(status);
     }
@@ -110,9 +112,14 @@ static void _test_efc(_mongocrypt_tester_t *tester) {
         ASSERT_CMPUINT8(efc.str_encode_version, ==, LATEST_STR_ENCODE_VERSION);
         ptr = efc.fields;
         ASSERT(ptr);
+        ASSERT_STREQUAL(ptr->path, "middleName");
+        ASSERT_CMPBUF(expect_keyId3, ptr->keyId);
+        ASSERT(ptr->supported_queries == (SUPPORTS_SUFFIX_QUERIES | SUPPORTS_PREFIX_QUERIES));
+        ASSERT(ptr->next != NULL);
+        ptr = ptr->next;
         ASSERT_STREQUAL(ptr->path, "lastName");
         ASSERT_CMPBUF(expect_keyId2, ptr->keyId);
-        ASSERT(ptr->supported_queries == (SUPPORTS_SUFFIX_PREVIEW_QUERIES | SUPPORTS_PREFIX_PREVIEW_QUERIES));
+        ASSERT(ptr->supported_queries == (SUPPORTS_SUFFIX_QUERIES | SUPPORTS_PREFIX_QUERIES));
         ASSERT(ptr->next != NULL);
         ptr = ptr->next;
         ASSERT_STREQUAL(ptr->path, "firstName");
@@ -130,7 +137,7 @@ static void _test_efc(_mongocrypt_tester_t *tester) {
         ASSERT(ptr);
         ASSERT_STREQUAL(ptr->path, "lastName");
         ASSERT_CMPBUF(expect_keyId2, ptr->keyId);
-        ASSERT(ptr->supported_queries == (SUPPORTS_SUFFIX_PREVIEW_QUERIES | SUPPORTS_PREFIX_PREVIEW_QUERIES));
+        ASSERT(ptr->supported_queries == (SUPPORTS_SUFFIX_QUERIES | SUPPORTS_PREFIX_QUERIES));
         ASSERT(ptr->next != NULL);
         ptr = ptr->next;
         ASSERT_STREQUAL(ptr->path, "firstName");
@@ -149,6 +156,16 @@ static void _test_efc(_mongocrypt_tester_t *tester) {
         _mongocrypt_status_reset(status);
     }
 
+    {
+        _load_test_file(tester, "./test/data/efc/efc-duplicateKeyAltName.json", &efc_bson);
+        ASSERT_FAILS_STATUS(mc_EncryptedFieldConfig_parse(&efc, &efc_bson, status),
+                            status,
+                            "duplicate keyAltName 'myKeyAltName' found in encrypted field config");
+        mc_EncryptedFieldConfig_cleanup(&efc);
+        _mongocrypt_status_reset(status);
+    }
+
+    _mongocrypt_buffer_cleanup(&expect_keyId3);
     _mongocrypt_buffer_cleanup(&expect_keyId2);
     _mongocrypt_buffer_cleanup(&expect_keyId1);
     mongocrypt_status_destroy(status);

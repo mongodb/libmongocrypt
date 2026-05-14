@@ -1,0 +1,43 @@
+{
+    "hasEncryptionPlaceholders": true,
+    "schemaRequiresEncryption": true,
+    "result": {
+        "insert": "coll",
+        "encryptionInformation": {
+            "type": {
+                "$numberInt": "1"
+            },
+            "schema": {
+                "db.coll": {
+                    "fields": [
+                        {
+                            "path": "secret",
+                            "bsonType": "string",
+                            "keyId": {
+                                "$binary": {
+                                    "base64": "YWFhYWFhYWFhYWFhYWFhYQ==",
+                                    "subType": "04"
+                                }
+                            }
+                        }
+                    ],
+                    "escCollection": "enxcol_.coll.esc",
+                    "ecocCollection": "enxcol_.coll.ecoc"
+                }
+            }
+        },
+        "documents": [
+            {
+                "secret": {
+                    "$binary": {
+                        "base64": "A1wAAAAQdAABAAAAEGEAAQAAAAVraQAQAAAABGFhYWFhYWFhYWFhYWFhYWEFa3UAEAAAAARhYWFhYWFhYWFhYWFhYWFhAnYABAAAAGJhcgASY20AAAAAAAAAAAAA",
+                        "subType": "06"
+                    }
+                }
+            }
+        ]
+    },
+    "ok": {
+        "$numberDouble": "1.0"
+    }
+}

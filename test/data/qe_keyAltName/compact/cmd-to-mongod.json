@@ -1,0 +1,11 @@
+{
+    "compactStructuredEncryptionData": "coll",
+    "compactionTokens": {
+        "secret": {
+            "$binary": {
+                "base64" : "PZsCLRX3GB1seYw7TB452mz1LjJQq1P+hH1cX0ECbO0=",
+                "subType" : "00"
+            }
+        }
+    }
+}

@@ -5,11 +5,6 @@
 # Generate an error if these are unset:
 : "$PACKAGER_DISTRO" "$PACKAGER_ARCH"
 
-if ! "${HAS_PACKAGES:-false}"; then
-  echo "'HAS_PACKAGES' is not 'true': Skipping package build"
-  exit 0
-fi
-
 if test -d "$WORKDIR/venv"; then
   if test "$OS" = "Windows_NT"; then
     # Need to quote the path on Windows to preserve the separator.

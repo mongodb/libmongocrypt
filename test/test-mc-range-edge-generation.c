@@ -16,7 +16,6 @@
 
 #include "test-mongocrypt.h"
 
-#include "mc-check-conversions-private.h"
 #include "mc-optional-private.h"
 #include "mc-range-edge-generation-private.h"
 

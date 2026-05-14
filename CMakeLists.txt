@@ -15,10 +15,6 @@ option (ENABLE_PIC
 option (ENABLE_BUILD_FOR_PPA "Maintainer-only option for preparing PPA build" OFF)
 option (ENABLE_ONLINE_TESTS "Enable online tests and the csfle utility. Requires libmongoc." ON)
 
-if (ENABLE_WINDOWS_STATIC_RUNTIME)
-   set (CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-endif ()
-
 if (MINGW)
    # MSVCRT-based mingw-w64 GCC requires this macro to enable C99 format specifiers. This does not apply to UCRT-based
    # mingw-w64 GCC, but apply the workaround anyways until bson-compat.h no longer requires this.
@@ -503,6 +499,8 @@ set (TEST_MONGOCRYPT_SOURCES
    test/test-unicode-fold.c
    )
 
+if (BUILD_TESTING)
+
 # Define test-mongocrypt
 add_executable (test-mongocrypt ${TEST_MONGOCRYPT_SOURCES})
 # Use the static version since it allows the test binary to use private symbols
@@ -552,6 +550,8 @@ if ("cxx_relaxed_constexpr" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
       add_test ("${test_name}" "${exe_name}")
    endforeach ()
 endif ()
+
+endif () # BUILD_TESTING
 
 if ("cxx_std_20" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
    add_executable (csfle-markup src/csfle-markup.cpp)

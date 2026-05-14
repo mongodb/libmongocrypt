@@ -80,7 +80,12 @@ Do the following when releasing:
    - All `publish-packages` tasks.
       - If the `publish-packages` tasks fail with an error like `[curator] 2024/01/02 13:56:17 [p=emergency]: problem submitting repobuilder job: 404 (Not Found)`, this suggests the published path does not yet exist. Barque (the Linux package publishing service) has protection to avoid unintentional publishes. File a DEVPROD ticket ([example](https://jira.mongodb.org/browse/DEVPROD-15320)) and assign to the team called Release Infrastructure to request the path be created. Then re-run the failing `publish-packages` task. Ask in the slack channel `#ask-devprod-release-tools` for further help with `Barque` or `curator`.
 - Create the release from the GitHub releases page from the new tag.
-   - Attach the tarball and signature file from the Files tab of the `windows-upload-release` task. [Example](https://github.com/mongodb/libmongocrypt/releases/tag/1.13.0).
+   - Attach the tarball and signature files from the `upload-release` tasks. Use `etc/download-artifacts.py` to download all such files. Obtain the version ID from the Evergreen URL:
+      ```bash
+      # Example: the Evergreen URL: https://spruce.corp.mongodb.com/version/69cfada41e1f8400073c971e has VERSION_ID=69cfada41e1f8400073c971e
+      # Downloads to _build/artifacts
+      uv run etc/download-artifacts.py ${VERSION_ID:?}
+      ```
    - Attach the Augmented SBOM file to the release as `cyclonedx.augmented.sbom.json`.
      Download the Augmented SBOM from a recent execution of the `sbom` task in an Evergreen patch or commit build.
    - Attach `etc/third_party_vulnerabilities.md` to the release.
@@ -128,7 +133,7 @@ Do the following when releasing:
      ```
      Commit resulting `etc/cyclonedx.sbom.json`.
 - Update the release on the [Jira releases page](https://jira.mongodb.org/projects/MONGOCRYPT/versions).
-- Record the release on [C/C++ Release Info](https://docs.google.com/spreadsheets/d/1yHfGmDnbA5-Qt8FX4tKWC5xk9AhzYZx1SKF4AD36ecY/edit?usp=sharing). This is done to meet SSDLC reporting requirements.
+- Record the release on [C/C++ Release Info](https://docs.google.com/spreadsheets/d/1yHfGmDnbA5-Qt8FX4tKWC5xk9AhzYZx1SKF4AD36ecY/edit?usp=sharing). This is done to leave commentary about the process.
 - Add a link to the Evergreen waterfall for the tagged commit to [libmongocrypt Security Testing Summary](https://docs.google.com/document/d/1dc7uvBzu3okAIsA8LSW5sVQGkYIvwpBVdg5v4wb4c4s/edit#heading=h.5t79jwe4p0ss).
 
 ## Homebrew steps ##

@@ -230,7 +230,7 @@ static void match_err(match_ctx_t *ctx, const char *fmt, ...) {
     formatted = bson_strdupv_printf(fmt, args);
     va_end(args);
 
-    bson_snprintf(ctx->errmsg, sizeof ctx->errmsg, "%s: %s", ctx->path, formatted);
+    BSON_ASSERT(0 < bson_snprintf(ctx->errmsg, sizeof ctx->errmsg, "%s: %s", ctx->path, formatted)); // Truncation OK.
 
     bson_free(formatted);
 }
@@ -245,9 +245,9 @@ static void derive(match_ctx_t *ctx, match_ctx_t *derived, const char *key) {
     derived->strict_numeric_types = ctx->strict_numeric_types;
 
     if (strlen(ctx->path) > 0) {
-        bson_snprintf(derived->path, sizeof derived->path, "%s.%s", ctx->path, key);
+        BSON_ASSERT(0 < bson_snprintf(derived->path, sizeof derived->path, "%s.%s", ctx->path, key)); // Truncation OK.
     } else {
-        bson_snprintf(derived->path, sizeof derived->path, "%s", key);
+        BSON_ASSERT(0 < bson_snprintf(derived->path, sizeof derived->path, "%s", key)); // Truncation OK.
     }
     derived->retain_dots_in_keys = ctx->retain_dots_in_keys;
     derived->allow_placeholders = ctx->allow_placeholders;

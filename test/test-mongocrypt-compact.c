@@ -226,7 +226,7 @@ static void _test_compact_missing_key_id(_mongocrypt_tester_t *tester) {
     {
         ASSERT_FAILS(mongocrypt_ctx_mongo_feed(ctx, TEST_FILE("./test/data/compact/missing-key-id/collinfo.json")),
                      ctx,
-                     "unable to find 'keyId' in 'field' document");
+                     "unable to find 'keyId' or 'keyAltName' in 'field' document");
     }
 
     mongocrypt_ctx_destroy(ctx);

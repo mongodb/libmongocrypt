@@ -99,7 +99,8 @@ test_file_path (const char *path, const char *suffix)
    char *r;
    char *test_name = last_segment (path);
    char file_path[PATH_MAX];
-   snprintf (file_path, PATH_MAX, "%s/%s.%s", path, test_name, suffix);
+   int ret = snprintf (file_path, PATH_MAX, "%s/%s.%s", path, test_name, suffix);
+   KMS_ASSERT (ret > 0 && ret < PATH_MAX);
    r = strdup (file_path);
    free (test_name);
    return r;
@@ -114,6 +115,7 @@ realloc_buffer (char **buffer, size_t *n, size_t len)
 
    } else {
       *buffer = realloc (*buffer, len);
+      KMS_ASSERT(*buffer);
    }
 
    *n = len;
@@ -1228,6 +1230,7 @@ extern void kms_kmip_response_get_secretdata_notfound_test (void);
 extern void kms_kmip_response_parser_reuse_test (void);
 extern void kms_kmip_response_parser_excess_test (void);
 extern void kms_kmip_response_parser_notenough_test (void);
+extern void kms_response_parser_response_too_big_test (void);
 
 int
 main (int argc, char *argv[])
@@ -1294,6 +1297,7 @@ main (int argc, char *argv[])
    RUN_TEST (kms_kmip_response_parser_reuse_test);
    RUN_TEST (kms_kmip_response_parser_excess_test);
    RUN_TEST (kms_kmip_response_parser_notenough_test);
+   RUN_TEST (kms_response_parser_response_too_big_test);
    RUN_TEST (test_request_newlines);
    RUN_TEST (test_kms_util);
 

@@ -74,21 +74,43 @@ static void _test_FLE2FindEqualityPayloadV2_roundtrip(_mongocrypt_tester_t *test
 #undef TEST_FIND_EQ_PAYLOAD_HEX_V2
 
 static void _test_FLE2FindEqualityPayloadV2_errors(_mongocrypt_tester_t *tester) {
-    bson_t *input_bson = TMP_BSON_STR(BSON_STR({
-        "d" : {"$binary" : {"base64" : "AAAA", "subType" : "00"}},
-        "s" : {"$binary" : {"base64" : "AAAA", "subType" : "00"}},
-        "l" : {"$binary" : {"base64" : "AAAA", "subType" : "00"}},
-        "cm" : "wrong type!"
-    }));
+    // Test non-int64 'cm'
+    {
+        bson_t *input_bson = TMP_BSON_STR(BSON_STR({
+            "d" : {"$binary" : {"base64" : "AAAA", "subType" : "00"}},
+            "s" : {"$binary" : {"base64" : "AAAA", "subType" : "00"}},
+            "l" : {"$binary" : {"base64" : "AAAA", "subType" : "00"}},
+            "cm" : "wrong type!"
+        }));
 
-    mc_FLE2FindEqualityPayloadV2_t payload;
-    mc_FLE2FindEqualityPayloadV2_init(&payload);
-    mongocrypt_status_t *status = mongocrypt_status_new();
-    ASSERT_FAILS_STATUS(mc_FLE2FindEqualityPayloadV2_parse(&payload, input_bson, status),
-                        status,
-                        "Field 'cm' expected to hold an int64");
-    mc_FLE2FindEqualityPayloadV2_cleanup(&payload);
-    mongocrypt_status_destroy(status);
+        mc_FLE2FindEqualityPayloadV2_t payload;
+        mc_FLE2FindEqualityPayloadV2_init(&payload);
+        mongocrypt_status_t *status = mongocrypt_status_new();
+        ASSERT_FAILS_STATUS(mc_FLE2FindEqualityPayloadV2_parse(&payload, input_bson, status),
+                            status,
+                            "Field 'cm' expected to hold an int64");
+        mc_FLE2FindEqualityPayloadV2_cleanup(&payload);
+        mongocrypt_status_destroy(status);
+    }
+
+    // Test negative 'cm'
+    {
+        bson_t *input_bson = TMP_BSON_STR(BSON_STR({
+            "d" : {"$binary" : {"base64" : "AAAA", "subType" : "00"}},
+            "s" : {"$binary" : {"base64" : "AAAA", "subType" : "00"}},
+            "l" : {"$binary" : {"base64" : "AAAA", "subType" : "00"}},
+            "cm" : {"$numberLong" : "-1"}
+        }));
+
+        mc_FLE2FindEqualityPayloadV2_t payload;
+        mc_FLE2FindEqualityPayloadV2_init(&payload);
+        mongocrypt_status_t *status = mongocrypt_status_new();
+        ASSERT_FAILS_STATUS(mc_FLE2FindEqualityPayloadV2_parse(&payload, input_bson, status),
+                            status,
+                            "must be non-negative");
+        mc_FLE2FindEqualityPayloadV2_cleanup(&payload);
+        mongocrypt_status_destroy(status);
+    }
 }
 
 void _mongocrypt_tester_install_fle2_payload_find_equality_v2(_mongocrypt_tester_t *tester) {

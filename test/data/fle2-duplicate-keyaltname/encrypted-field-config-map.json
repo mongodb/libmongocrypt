@@ -1,0 +1,27 @@
+{
+    "db.test": {
+        "escCollection": "esc",
+        "ecocCollection": "ecoc",
+        "fields": [
+            {
+                "keyAltName": "duplicateKey",
+                "path": "encrypted",
+                "bsonType": "string",
+                "queries": {
+                    "queryType": "equality",
+                    "contention": 0
+                }
+            },
+            {
+                "keyAltName": "duplicateKey",
+                "path": "nested.encrypted",
+                "bsonType": "string",
+                "queries": {
+                    "queryType": "equality",
+                    "contention": 0
+                }
+            }
+        ]
+    }
+}
+

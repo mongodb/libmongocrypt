@@ -16,6 +16,7 @@
 
 #include <bson/bson.h>
 
+#include "mc-fle2-encryption-placeholder-private.h"
 #include "mc-fle2-insert-update-payload-private-v2.h"
 #include "mc-parse-utils-private.h"
 #include "mongocrypt-buffer-private.h"
@@ -205,8 +206,7 @@ bool mc_FLE2InsertUpdatePayloadV2_parse(mc_FLE2InsertUpdatePayloadV2_t *out,
                 CLIENT_ERR("Field 'k' expected to hold an int64");
                 goto fail;
             }
-            if ((contention < 0)) {
-                CLIENT_ERR("Field 'k' must be non-negative, got: %" PRId64, contention);
+            if (!mc_validate_contention(contention, status)) {
                 goto fail;
             }
             out->contentionFactor = contention;
@@ -224,6 +224,9 @@ bool mc_FLE2InsertUpdatePayloadV2_parse(mc_FLE2InsertUpdatePayloadV2_t *out,
                 goto fail;
             }
             int64_t sparsity = bson_iter_int64(&iter);
+            if (!mc_validate_sparsity(sparsity, status)) {
+                goto fail;
+            }
             out->sparsity = OPT_I64(sparsity);
         }
         END_IF_FIELD
@@ -327,7 +330,7 @@ bool mc_FLE2InsertUpdatePayloadV2_serializeForRange(const mc_FLE2InsertUpdatePay
     }
     // Append "g" array of EdgeTokenSets.
     bson_t g_bson;
-    if (!BSON_APPEND_ARRAY_BEGIN(out, "g", &g_bson)) {
+    if (!BSON_APPEND_ARRAY_UNSAFE_BEGIN(out, "g", &g_bson)) {
         return false;
     }
 
@@ -429,7 +432,7 @@ SERIALIZE_TEXT_TOKEN_SET_FOR_TYPE_IMPL(Prefix)
         BSON_ASSERT_PARAM(array_name);                                                                                 \
         BSON_ASSERT_PARAM(array);                                                                                      \
         bson_t arr_bson;                                                                                               \
-        if (!BSON_APPEND_ARRAY_BEGIN(parent, array_name, &arr_bson)) {                                                 \
+        if (!BSON_APPEND_ARRAY_UNSAFE_BEGIN(parent, array_name, &arr_bson)) {                                          \
             return false;                                                                                              \
         }                                                                                                              \
                                                                                                                        \

@@ -157,8 +157,8 @@ static void test_mc_TextOpts_to_FLE2TextSearchInsertSpec(_mongocrypt_tester_t *t
     testcase tests[] = {
         {.desc = "Works with substring",
          .in = RAW_STRING({
-             "caseSensitive" : true,
-             "diacriticSensitive" : false,
+             "caseSensitive" : false,
+             "diacriticSensitive" : true,
              "substring" : {"strMaxLength" : 10, "strMinQueryLength" : 3, "strMaxQueryLength" : 8}
          }),
          .v = RAW_STRING({"v" : "test"}),
@@ -166,8 +166,8 @@ static void test_mc_TextOpts_to_FLE2TextSearchInsertSpec(_mongocrypt_tester_t *t
              {"v" : {"v" : "test", "casef" : true, "diacf" : false, "substr" : {"mlen" : 10, "ub" : 8, "lb" : 3}}})},
         {.desc = "Works with prefix",
          .in = RAW_STRING({
-             "caseSensitive" : true,
-             "diacriticSensitive" : false,
+             "caseSensitive" : false,
+             "diacriticSensitive" : true,
              "prefix" : {"strMinQueryLength" : 3, "strMaxQueryLength" : 8}
          }),
          .v = RAW_STRING({"v" : "test"}),
@@ -175,8 +175,8 @@ static void test_mc_TextOpts_to_FLE2TextSearchInsertSpec(_mongocrypt_tester_t *t
              RAW_STRING({"v" : {"v" : "test", "casef" : true, "diacf" : false, "prefix" : {"ub" : 8, "lb" : 3}}})},
         {.desc = "Works with suffix",
          .in = RAW_STRING({
-             "caseSensitive" : true,
-             "diacriticSensitive" : false,
+             "caseSensitive" : false,
+             "diacriticSensitive" : true,
              "suffix" : {"strMinQueryLength" : 3, "strMaxQueryLength" : 8}
          }),
          .v = RAW_STRING({"v" : "test"}),
@@ -184,8 +184,8 @@ static void test_mc_TextOpts_to_FLE2TextSearchInsertSpec(_mongocrypt_tester_t *t
              RAW_STRING({"v" : {"v" : "test", "casef" : true, "diacf" : false, "suffix" : {"ub" : 8, "lb" : 3}}})},
         {.desc = "Works with prefix + suffix",
          .in = RAW_STRING({
-             "caseSensitive" : true,
-             "diacriticSensitive" : false,
+             "caseSensitive" : false,
+             "diacriticSensitive" : true,
              "prefix" : {"strMinQueryLength" : 4, "strMaxQueryLength" : 9},
              "suffix" : {"strMinQueryLength" : 3, "strMaxQueryLength" : 8}
          }),
@@ -201,8 +201,8 @@ static void test_mc_TextOpts_to_FLE2TextSearchInsertSpec(_mongocrypt_tester_t *t
          })},
         {.desc = "Errors with missing v",
          .in = RAW_STRING({
-             "caseSensitive" : true,
-             "diacriticSensitive" : false,
+             "caseSensitive" : false,
+             "diacriticSensitive" : true,
              "prefix" : {"strMinQueryLength" : 3, "strMaxQueryLength" : 8}
          }),
          .v = RAW_STRING({"foo" : "bar"}),
@@ -247,7 +247,7 @@ static void test_mc_TextOpts_to_FLE2TextSearchInsertSpec_for_query(_mongocrypt_t
          .v = RAW_STRING({"v" : "test"}),
          .qt = MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW,
          .expect = RAW_STRING(
-             {"v" : {"v" : "test", "casef" : true, "diacf" : false, "substr" : {"mlen" : 10, "ub" : 8, "lb" : 3}}})},
+             {"v" : {"v" : "test", "casef" : false, "diacf" : true, "substr" : {"mlen" : 10, "ub" : 8, "lb" : 3}}})},
         {.desc = "Works with prefix",
          .in = RAW_STRING({
              "caseSensitive" : true,
@@ -255,9 +255,9 @@ static void test_mc_TextOpts_to_FLE2TextSearchInsertSpec_for_query(_mongocrypt_t
              "prefix" : {"strMinQueryLength" : 3, "strMaxQueryLength" : 8}
          }),
          .v = RAW_STRING({"v" : "test"}),
-         .qt = MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW,
+         .qt = MONGOCRYPT_QUERY_TYPE_PREFIX,
          .expect =
-             RAW_STRING({"v" : {"v" : "test", "casef" : true, "diacf" : false, "prefix" : {"ub" : 8, "lb" : 3}}})},
+             RAW_STRING({"v" : {"v" : "test", "casef" : false, "diacf" : true, "prefix" : {"ub" : 8, "lb" : 3}}})},
         {.desc = "Works with suffix",
          .in = RAW_STRING({
              "caseSensitive" : true,
@@ -265,9 +265,9 @@ static void test_mc_TextOpts_to_FLE2TextSearchInsertSpec_for_query(_mongocrypt_t
              "suffix" : {"strMinQueryLength" : 3, "strMaxQueryLength" : 8}
          }),
          .v = RAW_STRING({"v" : "test"}),
-         .qt = MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW,
+         .qt = MONGOCRYPT_QUERY_TYPE_SUFFIX,
          .expect =
-             RAW_STRING({"v" : {"v" : "test", "casef" : true, "diacf" : false, "suffix" : {"ub" : 8, "lb" : 3}}})},
+             RAW_STRING({"v" : {"v" : "test", "casef" : false, "diacf" : true, "suffix" : {"ub" : 8, "lb" : 3}}})},
         {.desc = "Works with prefix + suffix when querying prefix",
          .in = RAW_STRING({
              "caseSensitive" : true,
@@ -276,9 +276,9 @@ static void test_mc_TextOpts_to_FLE2TextSearchInsertSpec_for_query(_mongocrypt_t
              "suffix" : {"strMinQueryLength" : 3, "strMaxQueryLength" : 8}
          }),
          .v = RAW_STRING({"v" : "test"}),
-         .qt = MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW,
+         .qt = MONGOCRYPT_QUERY_TYPE_PREFIX,
          .expect =
-             RAW_STRING({"v" : {"v" : "test", "casef" : true, "diacf" : false, "prefix" : {"ub" : 9, "lb" : 4}}})},
+             RAW_STRING({"v" : {"v" : "test", "casef" : false, "diacf" : true, "prefix" : {"ub" : 9, "lb" : 4}}})},
         {.desc = "Works with prefix + suffix when querying suffix",
          .in = RAW_STRING({
              "caseSensitive" : true,
@@ -287,9 +287,9 @@ static void test_mc_TextOpts_to_FLE2TextSearchInsertSpec_for_query(_mongocrypt_t
              "suffix" : {"strMinQueryLength" : 3, "strMaxQueryLength" : 8}
          }),
          .v = RAW_STRING({"v" : "test"}),
-         .qt = MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW,
+         .qt = MONGOCRYPT_QUERY_TYPE_SUFFIX,
          .expect =
-             RAW_STRING({"v" : {"v" : "test", "casef" : true, "diacf" : false, "suffix" : {"ub" : 8, "lb" : 3}}})},
+             RAW_STRING({"v" : {"v" : "test", "casef" : false, "diacf" : true, "suffix" : {"ub" : 8, "lb" : 3}}})},
     };
 
     for (size_t i = 0; i < sizeof(tests) / sizeof(tests[0]); i++) {
