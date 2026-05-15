@@ -1,0 +1,13 @@
+{
+  "name": "FLE1EncryptionPlaceholder",
+  "dump": {
+    "a": 1,
+    "ki": {
+      "$binary": {
+        "base64": "YWFhYWFhYWFhYWFhYWFhYQ==",
+        "subType": "04"
+      }
+    },
+    "v": "457-55-5462"
+  }
+}

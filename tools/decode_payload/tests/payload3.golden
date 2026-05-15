@@ -1,0 +1,21 @@
+{
+  "name": "FLE2EncryptionPlaceholder",
+  "dump": {
+    "t": 2,
+    "a": 2,
+    "ki": {
+      "$binary": {
+        "base64": "EjRWeBI0mHYSNBI0VniQEg==",
+        "subType": "04"
+      }
+    },
+    "ku": {
+      "$binary": {
+        "base64": "EjRWeBI0mHYSNBI0VniQEg==",
+        "subType": "04"
+      }
+    },
+    "v": 123456,
+    "cm": 0
+  }
+}
