@@ -234,7 +234,7 @@ _parse_line (kms_response_parser_t *parser, int end)
       /* if we have *not* read the Content-Length yet, check. */
       if (parser->content_length == -1 &&
           strcmp (key->str, "Content-Length") == 0) {
-         if (!_parse_int (val->str, &parser->content_length)) {
+         if (!_parse_int (val->str, &parser->content_length) || parser->content_length > KMS_PARSER_MAX_RESPONSE_LEN || parser->content_length < 0) {
             KMS_ERROR (parser, "Could not parse Content-Length header.");
             kms_request_str_destroy (key);
             kms_request_str_destroy (val);
