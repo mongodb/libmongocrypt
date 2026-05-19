@@ -297,6 +297,9 @@ kms_response_parser_feed (kms_response_parser_t *parser,
          /* find the next \r\n. */
          if (curr && strncmp (raw->str + (curr - 1), "\r\n", 2) == 0) {
             parser->state = _parse_line (parser, curr - 1);
+            if (parser->failed) {
+               return false;
+            }
             parser->start = curr + 1;
          }
          curr++;
