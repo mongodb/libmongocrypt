@@ -16,7 +16,6 @@ If you have encountered a bug, or would like to see a new feature in libmongocry
 See [The Integration Guide](integrating.md) to integrate with your driver.
 
 See [mongocrypt.h](src/mongocrypt.h) for the public API reference.
-The documentation can be rendered into HTML with doxygen. Run `doxygen ./doc/Doxygen`, then open `./doc/html/index.html`.
 
 ## Building libmongocrypt ##
 
