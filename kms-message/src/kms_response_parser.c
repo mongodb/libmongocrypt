@@ -258,7 +258,7 @@ _parse_line (kms_response_parser_t *parser, int end)
    } else if (parser->state == PARSING_CHUNK_LENGTH) {
       int result = 0;
 
-      if (!_parse_hex_from_view (raw + i, end - i, &result)) {
+      if (!_parse_hex_from_view (raw + i, end - i, &result) || result > KMS_PARSER_MAX_RESPONSE_LEN || result < 0) {
          KMS_ERROR (parser, "Failed to parse hex chunk length.");
          return PARSING_DONE;
       }
