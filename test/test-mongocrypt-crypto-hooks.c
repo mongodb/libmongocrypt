@@ -53,12 +53,28 @@ static char *call_history;
     } else                                                                                                             \
         (void)0
 
+static char *to_hex(_mongocrypt_buffer_t *buf) {
+    BSON_ASSERT_PARAM(buf);
+
+    BSON_ASSERT(buf->len < (UINT32_MAX - 1) / 2);
+
+    char *hex = bson_malloc0(buf->len * 2 + 1);
+    BSON_ASSERT(hex);
+
+    char *out = hex;
+
+    for (uint32_t i = 0; i < buf->len; i++, out += 2) {
+        BSON_ASSERT(2 == bson_snprintf(out, 3, "%02X", buf->data[i]));
+    }
+    return hex;
+}
+
 static void _append_bin(const char *name, mongocrypt_binary_t *bin) {
     _mongocrypt_buffer_t tmp;
     char *hex;
 
     _mongocrypt_buffer_from_binary(&tmp, bin);
-    hex = _mongocrypt_buffer_to_hex(&tmp);
+    hex = to_hex(&tmp);
     APPEND_CALLHISTORY("%s:%s\n", name, hex);
     bson_free(hex);
     _mongocrypt_buffer_cleanup(&tmp);
