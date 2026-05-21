@@ -52,7 +52,7 @@ static void test_nofold_suffix_prefix_case(_mongocrypt_tester_t *tester,
     uint32_t byte_len = (uint32_t)strlen(str);
     uint32_t unfolded_codepoint_len = byte_len == 0 ? 1 : get_utf8_codepoint_length(str, byte_len);
     uint32_t folded_codepoint_len = byte_len == 0 ? 0 : unfolded_codepoint_len - foldable_codepoints;
-    uint32_t padded_len = 16 * (uint32_t)((byte_len + 5 + 15) / 16) - 5;
+    uint32_t padded_len = 16 * (uint32_t)((byte_len + 5 + 16) / 16) - 5;
     uint32_t max_affix_len = BSON_MIN(ub, folded_codepoint_len);
     uint32_t n_real_affixes = max_affix_len >= lb ? max_affix_len - lb + 1 : 0;
     uint32_t n_affixes = BSON_MIN(ub, padded_len) - lb + 1;
