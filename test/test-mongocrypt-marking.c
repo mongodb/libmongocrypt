@@ -2012,6 +2012,21 @@ static void test_mc_marking_to_ciphertext_fle2_text_search(_mongocrypt_tester_t 
     }
 }
 
+static size_t count_suffixes(bson_t *ciphertext_bson) {
+    bson_iter_t iter;
+    // Find TextSearchTokenSets ("b").
+    ASSERT(bson_iter_init_find(&iter, ciphertext_bson, "b"));
+    ASSERT(bson_iter_recurse(&iter, &iter));
+    // Find suffix tokens ("u"):
+    ASSERT(bson_iter_find(&iter, "u"));
+    ASSERT(bson_iter_recurse(&iter, &iter));
+    size_t suffix_count = 0;
+    while (bson_iter_next(&iter)) {
+        suffix_count++;
+    }
+    return suffix_count;
+}
+
 static void test_ciphertext_len_steps_fle2_text_search(_mongocrypt_tester_t *tester) {
 #define MARKING_JSON_FORMAT                                                                                            \
     RAW_STRING({                                                                                                       \
@@ -2021,12 +2036,13 @@ static void test_ciphertext_len_steps_fle2_text_search(_mongocrypt_tester_t *tes
             'v' : "%s",                                                                                                \
             'casef' : false,                                                                                           \
             'diacf' : false,                                                                                           \
-            'suffix' : {'ub' : {'$numberInt' : '2'}, 'lb' : {'$numberInt' : '1'}}                                      \
+            'suffix' : {'ub' : {'$numberInt' : '100'}, 'lb' : {'$numberInt' : '1'}}                                    \
         },                                                                                                             \
         'cm' : {'$numberLong' : '2'}                                                                                   \
     })
 
     size_t last_len = 0;
+    size_t last_suffix_count = 0;
     mongocrypt_binary_t *cmd = TEST_FILE("./test/example/cmd.json");
     mongocrypt_binary_t *key_file = TEST_BIN(16);
     mongocrypt_binary_t *ki = TEST_BIN(16);
@@ -2052,6 +2068,7 @@ static void test_ciphertext_len_steps_fle2_text_search(_mongocrypt_tester_t *tes
         bson_t ciphertext_bson;
         ASSERT(_mongocrypt_buffer_to_bson(&ciphertext.data, &ciphertext_bson));
         iupv2_fields_common res = validate_iupv2_common(&ciphertext_bson);
+        size_t suffix_count = count_suffixes(&ciphertext_bson);
         if (str_len != 0) {
             // We expect a step in ciphertext len iff str_len + 5 goes from 16k-1 to 16k. 5 is the number of overhead
             // bytes from the BSON header + null byte.
@@ -2060,8 +2077,18 @@ static void test_ciphertext_len_steps_fle2_text_search(_mongocrypt_tester_t *tes
             } else {
                 ASSERT_CMPSIZE_T(res.v.len, ==, last_len);
             }
+
+            // Similarly, we expect a step in suffix count at the same point:
+            if ((str_len + 5) % 16 == 0) {
+                size_t expected_suffix_count = BSON_MIN(100 /* ub */, last_suffix_count + 16);
+                ASSERT_CMPSIZE_T(suffix_count, ==, expected_suffix_count);
+            } else {
+                size_t expected_suffix_count = BSON_MIN(100 /* ub */, last_suffix_count);
+                ASSERT_CMPSIZE_T(suffix_count, ==, expected_suffix_count);
+            }
         }
         last_len = res.v.len;
+        last_suffix_count = suffix_count;
 
         bson_destroy(&ciphertext_bson);
         bson_free(markingJSON);
