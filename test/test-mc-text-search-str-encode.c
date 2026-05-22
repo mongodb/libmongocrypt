@@ -1136,6 +1136,9 @@ static void _test_text_search_str_encode_substring(_mongocrypt_tester_t *tester)
     bson_free(short_s);
     bson_free(medium_s);
     bson_free(long_s);
+
+    // Test fixed strings where byte_len+5 is a multiple of 16. Regression test for MONGOCRYPT-917.
+    test_nofold_substring_case(tester, "abcdefghijk" /* 11 chars */, 1, 30, 16, false, false, 0);
 }
 
 static void _test_text_search_str_encode_multiple(_mongocrypt_tester_t *tester) {
