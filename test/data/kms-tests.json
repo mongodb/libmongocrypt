@@ -293,5 +293,49 @@
       "{\"KeyId\": \"arn:aws:kms:us-east-1:579766882180:key/89fcc2c4-08b0-4bd9-9f25-e30687b580d0\", \"CiphertextBlob\": \"A\"}"
     ],
     "expect": "Failed to base64 decode"
+  },
+  {
+    "description": "Chunked transfer with INT_MAX chunk size (MONGOCRYPT-910)",
+    "ctx": [
+      "datakey",
+      "decrypt",
+      "azure_oauth_datakey",
+      "azure_oauth_decrypt",
+      "azure_datakey",
+      "azure_decrypt",
+      "gcp_oauth_datakey",
+      "gcp_oauth_decrypt",
+      "gcp_datakey",
+      "gcp_decrypt"
+    ],
+    "http_reply": [
+      "HTTP/1.1 200 OK\r\n",
+      "Transfer-Encoding: chunked\r\n",
+      "\r\n",
+      "7fffffff\r\nX"
+    ],
+    "expect": "Failed to parse hex chunk length"
+  },
+  {
+    "description": "Content-Length too large",
+    "ctx": [
+      "datakey",
+      "decrypt",
+      "azure_oauth_datakey",
+      "azure_oauth_decrypt",
+      "azure_datakey",
+      "azure_decrypt",
+      "gcp_oauth_datakey",
+      "gcp_oauth_decrypt",
+      "gcp_datakey",
+      "gcp_decrypt"
+    ],
+    "http_reply": [
+      "HTTP/1.1 200 OK\r\n",
+      "Content-Length: 123123123\r\n",
+      "\r\n",
+      "{}"
+    ],
+    "expect": "Could not parse Content-Length"
   }
 ]
