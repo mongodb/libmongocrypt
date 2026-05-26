@@ -932,6 +932,20 @@ static void get_ciphertext_from_marking_json(_mongocrypt_tester_t *tester,
                                                TEST_BIN(16));
 }
 
+static bson_t *get_ciphertext_as_bson(_mongocrypt_tester_t *tester, const char *markingJSON) {
+    bson_t ciphertext_bson;
+    _mongocrypt_ciphertext_t ciphertext;
+    _mongocrypt_ciphertext_init(&ciphertext);
+    mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+    get_ciphertext_from_marking_json(tester, crypt, markingJSON, &ciphertext);
+    // Get res.v, and make sure its size steps when we expect.
+    ASSERT(_mongocrypt_buffer_to_bson(&ciphertext.data, &ciphertext_bson));
+    bson_t *to_return = bson_copy(&ciphertext_bson);
+    _mongocrypt_ciphertext_cleanup(&ciphertext);
+    mongocrypt_destroy(crypt);
+    return to_return;
+}
+
 // Get the ECOC token to use in decryption.
 static mc_ECOCToken_t *getECOCToken(mongocrypt_t *crypt) {
     mongocrypt_status_t *status = mongocrypt_status_new();
@@ -2103,10 +2117,90 @@ static void test_ciphertext_len_steps_fle2_text_search(_mongocrypt_tester_t *tes
 #undef MARKING_JSON_FORMAT
 }
 
+static void test_no_repeats(_mongocrypt_tester_t *tester, const char *markingJSON, const char *token_key) {
+    bson_t *ciphertext_bson = get_ciphertext_as_bson(tester, markingJSON); // FLE2InsertUpdatePayloadV2
+    bson_iter_t iter;
+    bson_iter_t token;
+    bson_subtype_t subtype;
+    uint32_t len, prev_len;
+    const uint8_t *data, *prev_data = NULL;
+    ASSERT(bson_iter_init(&iter, ciphertext_bson));
+    ASSERT(bson_iter_find(&iter, "b")); // "b" for TextSearchTokenSets.
+    ASSERT(bson_iter_recurse(&iter, &iter));
+    ASSERT(bson_iter_find(&iter, token_key)); // "p" for prefix, "u" for suffix, "s" for substring
+    ASSERT(bson_iter_recurse(&iter, &iter));
+
+    // Assert each token is different from the previous one.
+    while (bson_iter_next(&iter)) {
+        bson_iter_recurse(&iter, &token);
+        // Value-derived token
+        ASSERT(bson_iter_find(&token, "d"));
+        bson_iter_recurse(&token, &token);
+        ASSERT(BSON_ITER_HOLDS_BINARY(&token));
+        bson_iter_binary(&token, &subtype, &len, &data);
+        ASSERT(data != NULL);
+        if (prev_data != NULL) {
+            ASSERT_CMPUINT32(len, ==, prev_len);
+            ASSERT(memcmp(data, prev_data, len) != 0); // Must differ.
+        }
+        prev_data = data;
+        prev_len = len;
+    }
+    bson_destroy(ciphertext_bson);
+}
+
+static void test_no_repeats_in_prefix_tags_fle2_text_search(_mongocrypt_tester_t *tester) {
+    char *markingJSON = RAW_STRING({
+        't' : 1,
+        'a' : 4,
+        'v' : {
+            'v' : "test",
+            'casef' : false,
+            'diacf' : false,
+            'prefix' : {'lb' : {'$numberInt' : '1'}, 'ub' : {'$numberInt' : '7'}}
+        },
+        'cm' : {'$numberLong' : '2'}
+    });
+    test_no_repeats(tester, markingJSON, "p");
+}
+
+static void test_no_repeats_in_suffix_tags_fle2_text_search(_mongocrypt_tester_t *tester) {
+    char *markingJSON = RAW_STRING({
+        't' : 1,
+        'a' : 4,
+        'v' : {
+            'v' : "test",
+            'casef' : false,
+            'diacf' : false,
+            'suffix' : {'lb' : {'$numberInt' : '1'}, 'ub' : {'$numberInt' : '7'}}
+        },
+        'cm' : {'$numberLong' : '2'}
+    });
+    test_no_repeats(tester, markingJSON, "u");
+}
+
+static void test_no_repeats_in_substring_tags_fle2_text_search(_mongocrypt_tester_t *tester) {
+    char *markingJSON = RAW_STRING({
+        't' : 1,
+        'a' : 4,
+        'v' : {
+            'v' : "test",
+            'casef' : false,
+            'diacf' : false,
+            'substr' : {'lb' : {'$numberInt' : '1'}, 'ub' : {'$numberInt' : '7'}, 'mlen' : {'$numberInt' : '16'}}
+        },
+        'cm' : {'$numberLong' : '2'}
+    });
+    test_no_repeats(tester, markingJSON, "s");
+}
+
 void _mongocrypt_tester_install_marking(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(test_mongocrypt_marking_parse);
     INSTALL_TEST(test_mc_get_mincover_from_FLE2RangeFindSpec);
     INSTALL_TEST(test_mc_marking_to_ciphertext_fle2_range);
     INSTALL_TEST(test_mc_marking_to_ciphertext_fle2_text_search);
     INSTALL_TEST(test_ciphertext_len_steps_fle2_text_search);
+    INSTALL_TEST(test_no_repeats_in_prefix_tags_fle2_text_search);
+    INSTALL_TEST(test_no_repeats_in_suffix_tags_fle2_text_search);
+    INSTALL_TEST(test_no_repeats_in_substring_tags_fle2_text_search);
 }
