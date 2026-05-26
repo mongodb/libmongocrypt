@@ -600,9 +600,8 @@ bool mc_FLE2IndexedEncryptedValueV2_parse(mc_FLE2IndexedEncryptedValueV2_t *iev,
         }
     }
 
-    // Maximum edge_count(4294967295) times kMetadataLen(96) fits easily without
-    // overflow.
-    const uint64_t metadata_len = iev->edge_count * kMetadataLen;
+    // Maximum edge_count(4294967295) times kMetadataLen(96) fits easily without overflowing uint64.
+    const uint64_t metadata_len = (uint64_t)iev->edge_count * (uint64_t)kMetadataLen;
 
     /* Read ServerEncryptedValue. */
     const uint64_t min_required_len = kMinServerEncryptedValueLen + metadata_len;
