@@ -925,16 +925,15 @@ static void _test_setopt_for_explicit_encrypt(_mongocrypt_tester_t *tester) {
                      "'rangePreview' is deprecated");
     }
 
-    /* It is an error to set range opts with index_type ==
-     * MONGOCRYPT_INDEX_TYPE_TEXTPREVIEW */
+    /* It is an error to set range opts with the 'string' algorithm */
     {
         REFRESH;
         /* Set key ID to get past the 'either key id or key alt name required'
          * error */
         ASSERT_KEY_ID_OK(uuid);
         ASSERT_OK(mongocrypt_ctx_setopt_algorithm_range(ctx, rangeopts), ctx);
-        ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_TEXTPREVIEW_STR, -1), ctx);
-        ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "cannot set range opts with textPreview index type");
+        ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_STRING_STR, -1), ctx);
+        ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "cannot set range opts with 'string' algorithm");
     }
 
     /* If query type == algorithm == "range", succeeds. */
@@ -971,7 +970,7 @@ static void _test_setopt_for_explicit_encrypt(_mongocrypt_tester_t *tester) {
         ASSERT_KEY_ID_OK(uuid);
         ASSERT_OK(mongocrypt_ctx_setopt_algorithm_text(ctx, textopts), ctx);
         ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_UNINDEXED_STR, -1), ctx);
-        ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "cannot set text opts without textPreview index type");
+        ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "cannot set string opts without string or textPreview index type");
     }
 
     /* It is an error to set text opts with index_type ==
@@ -983,7 +982,7 @@ static void _test_setopt_for_explicit_encrypt(_mongocrypt_tester_t *tester) {
         ASSERT_KEY_ID_OK(uuid);
         ASSERT_OK(mongocrypt_ctx_setopt_algorithm_text(ctx, textopts), ctx);
         ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_INDEXED_STR, -1), ctx);
-        ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "cannot set text opts without textPreview index type");
+        ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "cannot set string opts without string or textPreview index type");
     }
 
     /* It is an error to set text opts with index_type ==
@@ -995,7 +994,7 @@ static void _test_setopt_for_explicit_encrypt(_mongocrypt_tester_t *tester) {
         ASSERT_KEY_ID_OK(uuid);
         ASSERT_OK(mongocrypt_ctx_setopt_algorithm_text(ctx, textopts), ctx);
         ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_RANGE_STR, -1), ctx);
-        ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "cannot set text opts without textPreview index type");
+        ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "cannot set string opts without string or textPreview index type");
     }
 
     /* It is an error to set a text query_type with index_type !=
@@ -1015,7 +1014,7 @@ static void _test_setopt_for_explicit_encrypt(_mongocrypt_tester_t *tester) {
         ASSERT_KEY_ID_OK(uuid);
         ASSERT_OK(mongocrypt_ctx_setopt_query_type(ctx, MONGOCRYPT_QUERY_TYPE_PREFIX_STR, -1), ctx);
         ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_INDEXED_STR, -1), ctx);
-        ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "prefix query type requires textPreview index type");
+        ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "prefix query type requires string index type");
 
         REFRESH;
         /* Set key ID to get past the 'either key id or key alt name required'
@@ -1023,7 +1022,7 @@ static void _test_setopt_for_explicit_encrypt(_mongocrypt_tester_t *tester) {
         ASSERT_KEY_ID_OK(uuid);
         ASSERT_OK(mongocrypt_ctx_setopt_query_type(ctx, MONGOCRYPT_QUERY_TYPE_SUFFIX_STR, -1), ctx);
         ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_RANGE_STR, -1), ctx);
-        ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "suffix query type requires textPreview index type");
+        ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "suffix query type requires string index type");
 
         REFRESH;
         /* Set key ID to get past the 'either key id or key alt name required'
@@ -1031,7 +1030,7 @@ static void _test_setopt_for_explicit_encrypt(_mongocrypt_tester_t *tester) {
         ASSERT_KEY_ID_OK(uuid);
         ASSERT_OK(mongocrypt_ctx_setopt_query_type(ctx, MONGOCRYPT_QUERY_TYPE_PREFIX_STR, -1), ctx);
         ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_RANGE_STR, -1), ctx);
-        ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "prefix query type requires textPreview index type");
+        ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "prefix query type requires string index type");
 
         REFRESH;
         /* Set key ID to get past the 'either key id or key alt name required'
@@ -1039,7 +1038,7 @@ static void _test_setopt_for_explicit_encrypt(_mongocrypt_tester_t *tester) {
         ASSERT_KEY_ID_OK(uuid);
         ASSERT_OK(mongocrypt_ctx_setopt_query_type(ctx, MONGOCRYPT_QUERY_TYPE_SUFFIX_STR, -1), ctx);
         ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_RANGE_STR, -1), ctx);
-        ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "suffix query type requires textPreview index type");
+        ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "suffix query type requires string index type");
     }
 
     // Can't use "prefixPreview" or "suffixPreview".
@@ -1061,24 +1060,24 @@ static void _test_setopt_for_explicit_encrypt(_mongocrypt_tester_t *tester) {
                      "'suffixPreview' is deprecated");
     }
 
-    /* It is an error to set a text algorithm without setting text options */
+    /* It is an error to set a string algorithm without setting text options */
     {
         REFRESH;
         /* Set key ID to get past the 'either key id or key alt name required' error */
         ASSERT_KEY_ID_OK(uuid);
-        ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_TEXTPREVIEW_STR, -1), ctx);
+        ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_STRING_STR, -1), ctx);
         ASSERT_OK(mongocrypt_ctx_setopt_contention_factor(ctx, 0), ctx);
-        ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "text opts are required for textPreview algorithm");
+        ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "string opts are required for string algorithm");
     }
 
-    /* It is an error to set a text algorithm without setting contention */
+    /* It is an error to set a string algorithm without setting contention */
     {
         REFRESH;
         /* Set key ID to get past the 'either key id or key alt name required' error */
         ASSERT_KEY_ID_OK(uuid);
-        ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_TEXTPREVIEW_STR, -1), ctx);
+        ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_STRING_STR, -1), ctx);
         ASSERT_OK(mongocrypt_ctx_setopt_algorithm_text(ctx, textopts), ctx);
-        ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "contention factor is required for textPreview algorithm");
+        ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "contention factor is required for string algorithm");
     }
 
     mongocrypt_ctx_destroy(ctx);
