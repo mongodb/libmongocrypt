@@ -1030,9 +1030,9 @@ if sys.version_info >= (3, 8, 0):  # noqa: UP036
             value = bson.encode({"v": "foo"})
             encrypted = await encrypter.encrypt(
                 value,
-                "textPreview",
+                "string",
                 key_id=key_id,
-                query_type="suffixPreview",
+                query_type="suffix",
                 contention_factor=0,
                 text_opts=text_opts,
             )
@@ -1500,9 +1500,9 @@ class TestExplicitEncryption(unittest.TestCase):
         value = bson.encode({"v": "foo"})
         encrypted = encrypter.encrypt(
             value,
-            "textPreview",
+            "string",
             key_id=key_id,
-            query_type="suffixPreview",
+            query_type="suffix",
             contention_factor=0,
             text_opts=text_opts,
         )
