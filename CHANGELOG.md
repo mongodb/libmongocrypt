@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Added
+- Stable support for `prefix` and `suffix` query types.
+
+### Removed
+- Support for the experimental `prefixPreview` and `suffixPreview` query types.
+
 <!-- TODO: add entries for next release -->
 
 ## 1.18.1
