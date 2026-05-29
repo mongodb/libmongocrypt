@@ -716,8 +716,10 @@ bool mongocrypt_ctx_setopt_algorithm(mongocrypt_ctx_t *ctx, const char *algorith
 // DEPRECATED: support "RangePreview" has been removed in favor of "range".
 #define MONGOCRYPT_ALGORITHM_RANGEPREVIEW_DEPRECATED_STR "RangePreview"
 #define MONGOCRYPT_ALGORITHM_RANGE_STR "Range"
-/// NOTE: "textPreview" is experimental only and may be removed in a future non-major release.
-#define MONGOCRYPT_ALGORITHM_TEXTPREVIEW_STR "textPreview"
+/// DEPRECATED: "textPreview" has been removed. Use "string".
+#define MONGOCRYPT_ALGORITHM_TEXTPREVIEW_DEPRECATED_STR "textPreview"
+// String constant for setopt_algorithm "string" explicit encryption.
+#define MONGOCRYPT_ALGORITHM_STRING_STR "string"
 
 /**
  * Identify the AWS KMS master key to use for creating a data key.
@@ -1555,9 +1557,9 @@ MONGOCRYPT_EXPORT
 bool mongocrypt_ctx_setopt_algorithm_range(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *opts);
 
 /**
- * Set options for explicit encryption with the "textPreview" algorithm.
+ * Set options for explicit encryption with the "string" algorithm.
  *
- * NOTE: "textPreview" is experimental only and may be removed in a future non-major release.
+ * NOTE: Use of the "substringPreview" query type is experimental only and may be removed in a future non-major release.
  * @p opts is a BSON document of the form:
  * {
  *   "caseSensitive": bool,
@@ -1578,6 +1580,8 @@ bool mongocrypt_ctx_setopt_algorithm_range(mongocrypt_ctx_t *ctx, mongocrypt_bin
  * }
  *
  * "prefix" and "suffix" can both be set.
+ *
+ * NOTE: Driver public APIs should use the name "string" rather than "text" to refer to options.
  */
 MONGOCRYPT_EXPORT
 bool mongocrypt_ctx_setopt_algorithm_text(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *opts);

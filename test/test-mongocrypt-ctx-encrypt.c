@@ -2477,43 +2477,7 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
     {
         ee_testcase tc = {0};
         tc.desc = "find suffix";
-        tc.algorithm = MONGOCRYPT_ALGORITHM_TEXTPREVIEW_STR;
-        tc.query_type = MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW_DEPRECATED_STR;
-        tc.contention_factor = OPT_I64(1);
-        tc.msg = TEST_BSON("{'v': 'abc'}");
-        tc.user_key_id = &keyABC_id;
-        tc.keys_to_feed[0] = keyABC;
-        tc.text_opts = TEST_BSON(RAW_STRING({
-            "caseSensitive" : true,
-            "diacriticSensitive" : true,
-            "suffix" : {"strMinQueryLength" : 1, "strMaxQueryLength" : 100}
-        }));
-        tc.expect = TEST_FILE("./test/data/fle2-explicit/find-suffix.json");
-        ee_testcase_run(&tc);
-    }
-
-    {
-        ee_testcase tc = {0};
-        tc.desc = "find prefix";
-        tc.algorithm = MONGOCRYPT_ALGORITHM_TEXTPREVIEW_STR;
-        tc.query_type = MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW_DEPRECATED_STR;
-        tc.contention_factor = OPT_I64(1);
-        tc.msg = TEST_BSON("{'v': 'abc'}");
-        tc.user_key_id = &keyABC_id;
-        tc.keys_to_feed[0] = keyABC;
-        tc.text_opts = TEST_BSON(RAW_STRING({
-            "caseSensitive" : true,
-            "diacriticSensitive" : true,
-            "prefix" : {"strMinQueryLength" : 1, "strMaxQueryLength" : 100}
-        }));
-        tc.expect = TEST_FILE("./test/data/fle2-explicit/find-prefix.json");
-        ee_testcase_run(&tc);
-    }
-
-    {
-        ee_testcase tc = {0};
-        tc.desc = "find suffix";
-        tc.algorithm = MONGOCRYPT_ALGORITHM_TEXTPREVIEW_STR;
+        tc.algorithm = MONGOCRYPT_ALGORITHM_STRING_STR;
         tc.query_type = MONGOCRYPT_QUERY_TYPE_SUFFIX_STR;
         tc.contention_factor = OPT_I64(1);
         tc.msg = TEST_BSON("{'v': 'abc'}");
@@ -2531,7 +2495,43 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
     {
         ee_testcase tc = {0};
         tc.desc = "find prefix";
-        tc.algorithm = MONGOCRYPT_ALGORITHM_TEXTPREVIEW_STR;
+        tc.algorithm = MONGOCRYPT_ALGORITHM_STRING_STR;
+        tc.query_type = MONGOCRYPT_QUERY_TYPE_PREFIX_STR;
+        tc.contention_factor = OPT_I64(1);
+        tc.msg = TEST_BSON("{'v': 'abc'}");
+        tc.user_key_id = &keyABC_id;
+        tc.keys_to_feed[0] = keyABC;
+        tc.text_opts = TEST_BSON(RAW_STRING({
+            "caseSensitive" : true,
+            "diacriticSensitive" : true,
+            "prefix" : {"strMinQueryLength" : 1, "strMaxQueryLength" : 100}
+        }));
+        tc.expect = TEST_FILE("./test/data/fle2-explicit/find-prefix.json");
+        ee_testcase_run(&tc);
+    }
+
+    {
+        ee_testcase tc = {0};
+        tc.desc = "find suffix";
+        tc.algorithm = MONGOCRYPT_ALGORITHM_STRING_STR;
+        tc.query_type = MONGOCRYPT_QUERY_TYPE_SUFFIX_STR;
+        tc.contention_factor = OPT_I64(1);
+        tc.msg = TEST_BSON("{'v': 'abc'}");
+        tc.user_key_id = &keyABC_id;
+        tc.keys_to_feed[0] = keyABC;
+        tc.text_opts = TEST_BSON(RAW_STRING({
+            "caseSensitive" : true,
+            "diacriticSensitive" : true,
+            "suffix" : {"strMinQueryLength" : 1, "strMaxQueryLength" : 100}
+        }));
+        tc.expect = TEST_FILE("./test/data/fle2-explicit/find-suffix.json");
+        ee_testcase_run(&tc);
+    }
+
+    {
+        ee_testcase tc = {0};
+        tc.desc = "find prefix";
+        tc.algorithm = MONGOCRYPT_ALGORITHM_STRING_STR;
         tc.query_type = MONGOCRYPT_QUERY_TYPE_PREFIX_STR;
         tc.contention_factor = OPT_I64(1);
         tc.msg = TEST_BSON("{'v': 'abc'}");
@@ -2549,7 +2549,7 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
     {
         ee_testcase tc = {0};
         tc.desc = "insert substring";
-        tc.algorithm = MONGOCRYPT_ALGORITHM_TEXTPREVIEW_STR;
+        tc.algorithm = MONGOCRYPT_ALGORITHM_STRING_STR;
         tc.query_type = MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW_STR;
         tc.contention_factor = OPT_I64(1);
         tc.msg = TEST_BSON("{'v': 'abc'}");
@@ -2570,7 +2570,7 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
 #include "./data/fle2-insert-text-search/RNG_DATA.h"
         tc.rng_data = (_test_rng_data_source){.buf = {.data = (uint8_t *)RNG_DATA, .len = sizeof(RNG_DATA) - 1}};
 #undef RNG_DATA
-        tc.algorithm = MONGOCRYPT_ALGORITHM_TEXTPREVIEW_STR;
+        tc.algorithm = MONGOCRYPT_ALGORITHM_STRING_STR;
         tc.contention_factor = OPT_I64(1);
         tc.msg = TEST_BSON("{'v': 'abc'}");
         tc.user_key_id = &keyABC_id;
@@ -2590,7 +2590,7 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
 #include "./data/fle2-insert-text-search/RNG_DATA.h"
         tc.rng_data = (_test_rng_data_source){.buf = {.data = (uint8_t *)RNG_DATA, .len = sizeof(RNG_DATA) - 1}};
 #undef RNG_DATA
-        tc.algorithm = MONGOCRYPT_ALGORITHM_TEXTPREVIEW_STR;
+        tc.algorithm = MONGOCRYPT_ALGORITHM_STRING_STR;
         tc.contention_factor = OPT_I64(1);
         tc.msg = TEST_BSON("{'v': 'abc'}");
         tc.user_key_id = &keyABC_id;
@@ -2610,7 +2610,7 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
 #include "./data/fle2-insert-text-search/RNG_DATA.h"
         tc.rng_data = (_test_rng_data_source){.buf = {.data = (uint8_t *)RNG_DATA, .len = sizeof(RNG_DATA) - 1}};
 #undef RNG_DATA
-        tc.algorithm = MONGOCRYPT_ALGORITHM_TEXTPREVIEW_STR;
+        tc.algorithm = MONGOCRYPT_ALGORITHM_STRING_STR;
         tc.contention_factor = OPT_I64(1);
         tc.msg = TEST_BSON("{'v': 'abc'}");
         tc.user_key_id = &keyABC_id;
@@ -2630,7 +2630,7 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
 #include "./data/fle2-insert-text-search/RNG_DATA.h"
         tc.rng_data = (_test_rng_data_source){.buf = {.data = (uint8_t *)RNG_DATA, .len = sizeof(RNG_DATA) - 1}};
 #undef RNG_DATA
-        tc.algorithm = MONGOCRYPT_ALGORITHM_TEXTPREVIEW_STR;
+        tc.algorithm = MONGOCRYPT_ALGORITHM_STRING_STR;
         tc.contention_factor = OPT_I64(1);
         tc.msg = TEST_BSON("{'v': 'abc'}");
         tc.user_key_id = &keyABC_id;
@@ -2651,7 +2651,7 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
 #include "./data/fle2-insert-text-search/RNG_DATA.h"
         tc.rng_data = (_test_rng_data_source){.buf = {.data = (uint8_t *)RNG_DATA, .len = sizeof(RNG_DATA) - 1}};
 #undef RNG_DATA
-        tc.algorithm = MONGOCRYPT_ALGORITHM_TEXTPREVIEW_STR;
+        tc.algorithm = MONGOCRYPT_ALGORITHM_STRING_STR;
         tc.contention_factor = OPT_I64(1);
         tc.msg = TEST_BSON("{'v': 'abc'}");
         tc.user_key_id = &keyABC_id;
@@ -2668,12 +2668,12 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
     {
         ee_testcase tc = {0};
         tc.desc = "find prefix on a field with prefix+suffix";
-        tc.algorithm = MONGOCRYPT_ALGORITHM_TEXTPREVIEW_STR;
+        tc.algorithm = MONGOCRYPT_ALGORITHM_STRING_STR;
         tc.contention_factor = OPT_I64(1);
         tc.msg = TEST_BSON("{'v': 'abc'}");
         tc.user_key_id = &keyABC_id;
         tc.keys_to_feed[0] = keyABC;
-        tc.query_type = MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW_DEPRECATED_STR;
+        tc.query_type = MONGOCRYPT_QUERY_TYPE_PREFIX_STR;
         tc.text_opts = TEST_BSON(RAW_STRING({
             "caseSensitive" : true,
             "diacriticSensitive" : true,
@@ -4408,6 +4408,91 @@ static void _test_rangePreview_fails(_mongocrypt_tester_t *tester) {
     }
 
     bson_free(local_kek);
+}
+
+// `_test_prefixPreview_suffixPreview_fails` tests that use of "prefixPreview" or "suffixPreview" errors.
+static void _test_prefixPreview_suffixPreview_fails(_mongocrypt_tester_t *tester) {
+#define TF(suffix) TEST_FILE("./test/data/fle2-insert-text-search-preview/" suffix)
+
+    // local_kek is the KEK used to encrypt the keyMaterial in ./test/data/key-document-local.json
+    uint8_t local_kek_raw[MONGOCRYPT_KEY_LEN] = {0};
+    char *local_kek = kms_message_raw_to_b64(local_kek_raw, sizeof(local_kek_raw));
+    mongocrypt_binary_t *kms_providers =
+        TEST_BSON(BSON_STR({"local" : {"key" : {"$binary" : {"base64" : "%s", "subType" : "00"}}}}), local_kek);
+
+    // Test setting 'prefixPreview' as an explicit encryption queryType results in error.
+    {
+        mongocrypt_t *crypt = mongocrypt_new();
+        mongocrypt_setopt_kms_providers(crypt, kms_providers);
+        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+        ASSERT_OK(ctx, crypt);
+        ASSERT_FAILS(mongocrypt_ctx_setopt_query_type(ctx, MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW_DEPRECATED_STR, -1),
+                     ctx,
+                     "Query type 'prefixPreview' is deprecated");
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+
+    // Test setting 'suffixPreview' as an explicit encryption queryType results in error.
+    {
+        mongocrypt_t *crypt = mongocrypt_new();
+        mongocrypt_setopt_kms_providers(crypt, kms_providers);
+        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+        ASSERT_OK(ctx, crypt);
+        ASSERT_FAILS(mongocrypt_ctx_setopt_query_type(ctx, MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW_DEPRECATED_STR, -1),
+                     ctx,
+                     "Query type 'suffixPreview' is deprecated");
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+
+    // Test setting 'prefixPreview' from encryptedFields results in error.
+    {
+        mongocrypt_t *crypt = mongocrypt_new();
+        mongocrypt_setopt_kms_providers(crypt, kms_providers);
+        ASSERT_OK(mongocrypt_setopt_encrypted_field_config_map(crypt, TF("encrypted-field-map-prefixPreview.json")),
+                  crypt);
+        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+        ASSERT_OK(ctx, crypt);
+        ASSERT_FAILS(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")),
+                     ctx,
+                     "Cannot use field 'encrypted' with 'prefixPreview' queries");
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+
+    // Test setting 'suffixPreview' from encryptedFields results in error.
+    {
+        mongocrypt_t *crypt = mongocrypt_new();
+        mongocrypt_setopt_kms_providers(crypt, kms_providers);
+        ASSERT_OK(mongocrypt_setopt_encrypted_field_config_map(crypt, TF("encrypted-field-map-suffixPreview.json")),
+                  crypt);
+        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+        ASSERT_OK(ctx, crypt);
+        ASSERT_FAILS(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")),
+                     ctx,
+                     "Cannot use field 'encrypted' with 'suffixPreview' queries");
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+
+    bson_free(local_kek);
+#undef TF
+}
+
+// `_test_textPreview_fails` tests that using "textPreview" algorithm errors.
+static void _test_textPreview_fails(_mongocrypt_tester_t *tester) {
+    mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+    mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+    ASSERT_FAILS(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_TEXTPREVIEW_DEPRECATED_STR, -1),
+                 ctx,
+                 "unsupported algorithm");
+    mongocrypt_ctx_destroy(ctx);
+    mongocrypt_destroy(crypt);
 }
 
 // `autoencryption_test` defines a test for the automatic encryption context.
@@ -6819,6 +6904,8 @@ void _mongocrypt_tester_install_ctx_encrypt(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_encrypt_fle2_insert_text_search_payload_with_str_encode_version);
     INSTALL_TEST(_test_bulkWrite);
     INSTALL_TEST(_test_rangePreview_fails);
+    INSTALL_TEST(_test_prefixPreview_suffixPreview_fails);
+    INSTALL_TEST(_test_textPreview_fails);
     INSTALL_TEST(_test_no_trimFactor);
     INSTALL_TEST(_test_range_sends_cryptoParams);
     INSTALL_TEST(_test_encrypt_retry);

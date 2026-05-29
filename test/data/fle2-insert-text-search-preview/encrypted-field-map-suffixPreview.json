@@ -1,0 +1,24 @@
+{
+   "db.test": {
+      "escCollection": "fle2.test.esc",
+      "ecocCollection": "fle2.test.ecoc",
+      "fields": [
+         {
+            "keyId": {
+               "$binary": {
+                  "base64": "EjRWeBI0mHYSNBI0VniQEg==",
+                  "subType": "04"
+               }
+            },
+            "path": "encrypted",
+            "bsonType": "string",
+            "queries": {
+               "queryType": "suffixPreview",
+               "contention": {
+                  "$numberLong": "0"
+               }
+            }
+         }
+      ]
+   }
+}

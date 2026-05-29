@@ -35,12 +35,14 @@ static bool _parse_query_type_string(const char *queryType, supported_query_type
         *out = SUPPORTS_RANGE_PREVIEW_DEPRECATED_QUERIES;
     } else if (mstr_eq_ignore_case(mstrv_lit(MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW_STR), qtv)) {
         *out = SUPPORTS_SUBSTRING_PREVIEW_QUERIES;
-    } else if (mstr_eq_ignore_case(mstrv_lit(MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW_DEPRECATED_STR), qtv)
-               || mstr_eq_ignore_case(mstrv_lit(MONGOCRYPT_QUERY_TYPE_SUFFIX_STR), qtv)) {
+    } else if (mstr_eq_ignore_case(mstrv_lit(MONGOCRYPT_QUERY_TYPE_SUFFIX_STR), qtv)) {
         *out = SUPPORTS_SUFFIX_QUERIES;
-    } else if (mstr_eq_ignore_case(mstrv_lit(MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW_DEPRECATED_STR), qtv)
-               || mstr_eq_ignore_case(mstrv_lit(MONGOCRYPT_QUERY_TYPE_PREFIX_STR), qtv)) {
+    } else if (mstr_eq_ignore_case(mstrv_lit(MONGOCRYPT_QUERY_TYPE_PREFIX_STR), qtv)) {
         *out = SUPPORTS_PREFIX_QUERIES;
+    } else if (mstr_eq_ignore_case(mstrv_lit(MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW_DEPRECATED_STR), qtv)) {
+        *out = SUPPORTS_SUFFIX_PREVIEW_DEPRECATED_QUERIES;
+    } else if (mstr_eq_ignore_case(mstrv_lit(MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW_DEPRECATED_STR), qtv)) {
+        *out = SUPPORTS_PREFIX_PREVIEW_DEPRECATED_QUERIES;
     } else {
         return false;
     }
@@ -172,6 +174,20 @@ static bool _parse_field(mc_EncryptedFieldConfig_t *efc, bson_t *field, mongocry
         // This check is intended to give an easier-to-understand earlier error.
         CLIENT_ERR("Cannot use field '%s' with 'rangePreview' queries. 'rangePreview' is unsupported. Use 'range' "
                    "instead. 'range' is not compatible with 'rangePreview' and requires recreating the collection.",
+                   field_path);
+        return false;
+    }
+
+    if (query_types & SUPPORTS_PREFIX_PREVIEW_DEPRECATED_QUERIES) {
+        CLIENT_ERR("Cannot use field '%s' with 'prefixPreview' queries. 'prefixPreview' is unsupported. Use 'prefix' "
+                   "instead.",
+                   field_path);
+        return false;
+    }
+
+    if (query_types & SUPPORTS_SUFFIX_PREVIEW_DEPRECATED_QUERIES) {
+        CLIENT_ERR("Cannot use field '%s' with 'suffixPreview' queries. 'suffixPreview' is unsupported. Use 'suffix' "
+                   "instead.",
                    field_path);
         return false;
     }

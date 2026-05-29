@@ -72,7 +72,7 @@
                 "path": "textField2",
                 "bsonType": "string",
                 "queries": [{
-                    "queryType": "suffixPreview",
+                    "queryType": "suffix",
                     "contention": {
                         "$numberLong": "0"
                     },
@@ -82,7 +82,7 @@
                     "diacriticSensitive": false
                 }, 
                 {
-                    "queryType": "prefixPreview",
+                    "queryType": "prefix",
                     "contention": {
                         "$numberLong": "0"
                     },
