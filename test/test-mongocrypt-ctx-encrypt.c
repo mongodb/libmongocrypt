@@ -1597,7 +1597,9 @@ static bool _test_rng_source(void *ctx, mongocrypt_binary_t *out, uint32_t count
     _test_rng_data_source *source = (_test_rng_data_source *)ctx;
 
     if ((source->pos + count) > source->buf.len) {
-        TEST_ERROR("Out of random data, wanted: %" PRIu32, count);
+        TEST_ERROR("Out of random data, wanted: %" PRIu32 ", but have %" PRIu32 " left",
+                   count,
+                   source->buf.len - source->pos);
         return false;
     }
 

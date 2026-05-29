@@ -36,6 +36,7 @@
 #include "mongocrypt-buffer-private.h"
 #include "mongocrypt-ciphertext-private.h"
 #include "mongocrypt-crypto-private.h"
+#include "mongocrypt-endian-private.h"
 #include "mongocrypt-key-broker-private.h"
 #include "mongocrypt-marking-private.h"
 #include "mongocrypt-private.h"
@@ -1326,15 +1327,39 @@ static bool _fle2_generate_TextSearchTokenSets(_mongocrypt_key_broker_t *kb,
                 mc_TextSubstringTokenSet_cleanup(&tset);
                 goto fail;
             }
-            _mongocrypt_buffer_cleanup(&asBsonValue);
 
             if (appendCount > 1) {
-                mc_TextSubstringTokenSet_t tset_copy;
-                mc_TextSubstringTokenSet_shallow_copy(&tset, &tset_copy);
+                // Count is only greater than one for padding strings.
+                BSON_ASSERT(substring[bytelen - 1] == '\xFF');
+
+                // Make room to append count.
+                _mongocrypt_buffer_resize(&asBsonValue, asBsonValue.len + (uint32_t)sizeof(uint32_t));
+
                 for (; appendCount > 1; appendCount--) {
-                    _mc_array_append_val(&tsts->substringArray, tset_copy);
+                    // Convert to little-endian (not strictly necessary since count is only appended for uniqueness):
+                    uint32_t count_le = MONGOCRYPT_UINT32_TO_LE(appendCount);
+                    memcpy(asBsonValue.data + asBsonValue.len - sizeof(uint32_t), &count_le, sizeof(uint32_t));
+
+                    mc_TextSubstringTokenSet_t tset_padding = {{0}};
+                    mc_TextSubstringTokenSet_init(&tset_padding);
+                    if (!_fle2_generate_TextSubstringTokenSet(kb,
+                                                              &tset_padding,
+                                                              &asBsonValue,
+                                                              contentionFactor,
+                                                              0 /* msize */,
+                                                              common.collectionsLevel1Token,
+                                                              common.serverTokenDerivationLevel1Token,
+                                                              status)) {
+                        _mongocrypt_buffer_cleanup(&asBsonValue);
+                        mc_TextSubstringTokenSet_cleanup(&tset_padding);
+                        mc_TextSubstringTokenSet_cleanup(&tset);
+                        goto fail;
+                    }
+                    _mc_array_append_val(&tsts->substringArray, tset_padding); // moves ownership of tset_padding
                 }
             }
+
+            _mongocrypt_buffer_cleanup(&asBsonValue);
             _mc_array_append_val(&tsts->substringArray, tset); // array now owns tset
         }
     }
@@ -1367,15 +1392,37 @@ static bool _fle2_generate_TextSearchTokenSets(_mongocrypt_key_broker_t *kb,
                 mc_TextSuffixTokenSet_cleanup(&tset);
                 goto fail;
             }
-            _mongocrypt_buffer_cleanup(&asBsonValue);
-
             if (appendCount > 1) {
-                mc_TextSuffixTokenSet_t tset_copy;
-                mc_TextSuffixTokenSet_shallow_copy(&tset, &tset_copy);
+                // Count is only greater than one for padding strings.
+                BSON_ASSERT(substring[bytelen - 1] == '\xFF');
+
+                // Make room to append count.
+                _mongocrypt_buffer_resize(&asBsonValue, asBsonValue.len + (uint32_t)sizeof(uint32_t));
+
                 for (; appendCount > 1; appendCount--) {
-                    _mc_array_append_val(&tsts->suffixArray, tset_copy);
+                    // Convert to little-endian (not strictly necessary since count is only appended for uniqueness):
+                    uint32_t count_le = MONGOCRYPT_UINT32_TO_LE(appendCount);
+                    memcpy(asBsonValue.data + asBsonValue.len - sizeof(uint32_t), &count_le, sizeof(uint32_t));
+
+                    mc_TextSuffixTokenSet_t tset_padding = {{0}};
+                    mc_TextSuffixTokenSet_init(&tset_padding);
+                    if (!_fle2_generate_TextSuffixTokenSet(kb,
+                                                           &tset_padding,
+                                                           &asBsonValue,
+                                                           contentionFactor,
+                                                           0 /* msize */,
+                                                           common.collectionsLevel1Token,
+                                                           common.serverTokenDerivationLevel1Token,
+                                                           status)) {
+                        _mongocrypt_buffer_cleanup(&asBsonValue);
+                        mc_TextSuffixTokenSet_cleanup(&tset_padding);
+                        mc_TextSuffixTokenSet_cleanup(&tset);
+                        goto fail;
+                    }
+                    _mc_array_append_val(&tsts->suffixArray, tset_padding); // moves ownership of tset_padding
                 }
             }
+            _mongocrypt_buffer_cleanup(&asBsonValue);
             _mc_array_append_val(&tsts->suffixArray, tset); // array now owns tset
         }
     }
@@ -1408,15 +1455,38 @@ static bool _fle2_generate_TextSearchTokenSets(_mongocrypt_key_broker_t *kb,
                 mc_TextPrefixTokenSet_cleanup(&tset);
                 goto fail;
             }
-            _mongocrypt_buffer_cleanup(&asBsonValue);
 
             if (appendCount > 1) {
-                mc_TextPrefixTokenSet_t tset_copy;
-                mc_TextPrefixTokenSet_shallow_copy(&tset, &tset_copy);
+                // Count is only greater than one for padding strings.
+                BSON_ASSERT(substring[bytelen - 1] == '\xFF');
+
+                // Make room to append count.
+                _mongocrypt_buffer_resize(&asBsonValue, asBsonValue.len + (uint32_t)sizeof(uint32_t));
+
                 for (; appendCount > 1; appendCount--) {
-                    _mc_array_append_val(&tsts->prefixArray, tset_copy); // array now owns tset_copy
+                    // Convert to little-endian (not strictly necessary since count is only appended for uniqueness):
+                    uint32_t count_le = MONGOCRYPT_UINT32_TO_LE(appendCount);
+                    memcpy(asBsonValue.data + asBsonValue.len - sizeof(uint32_t), &count_le, sizeof(uint32_t));
+
+                    mc_TextPrefixTokenSet_t tset_padding = {{0}};
+                    mc_TextPrefixTokenSet_init(&tset_padding);
+                    if (!_fle2_generate_TextPrefixTokenSet(kb,
+                                                           &tset_padding,
+                                                           &asBsonValue,
+                                                           contentionFactor,
+                                                           0 /* msize */,
+                                                           common.collectionsLevel1Token,
+                                                           common.serverTokenDerivationLevel1Token,
+                                                           status)) {
+                        _mongocrypt_buffer_cleanup(&asBsonValue);
+                        mc_TextPrefixTokenSet_cleanup(&tset_padding);
+                        mc_TextPrefixTokenSet_cleanup(&tset);
+                        goto fail;
+                    }
+                    _mc_array_append_val(&tsts->prefixArray, tset_padding); // moves ownership of tset_padding
                 }
             }
+            _mongocrypt_buffer_cleanup(&asBsonValue);
             _mc_array_append_val(&tsts->prefixArray, tset); // moves ownership of tset
         }
     }
