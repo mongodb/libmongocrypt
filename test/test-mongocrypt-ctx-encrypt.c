@@ -2549,7 +2549,7 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
     {
         ee_testcase tc = {0};
         tc.desc = "insert substring";
-        tc.algorithm = MONGOCRYPT_ALGORITHM_TEXTPREVIEW_STR;
+        tc.algorithm = MONGOCRYPT_ALGORITHM_STRING_STR;
         tc.query_type = MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW_STR;
         tc.contention_factor = OPT_I64(1);
         tc.msg = TEST_BSON("{'v': 'abc'}");
@@ -2610,7 +2610,7 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
 #include "./data/fle2-insert-text-search/RNG_DATA.h"
         tc.rng_data = (_test_rng_data_source){.buf = {.data = (uint8_t *)RNG_DATA, .len = sizeof(RNG_DATA) - 1}};
 #undef RNG_DATA
-        tc.algorithm = MONGOCRYPT_ALGORITHM_TEXTPREVIEW_STR;
+        tc.algorithm = MONGOCRYPT_ALGORITHM_STRING_STR;
         tc.contention_factor = OPT_I64(1);
         tc.msg = TEST_BSON("{'v': 'abc'}");
         tc.user_key_id = &keyABC_id;
@@ -4484,48 +4484,15 @@ static void _test_prefixPreview_suffixPreview_fails(_mongocrypt_tester_t *tester
 #undef TF
 }
 
-// `_test_textPreview_fails` tests that using "textPreview" algorithm with suffix or prefix errors.
+// `_test_textPreview_fails` tests that using "textPreview" algorithm errors.
 static void _test_textPreview_fails(_mongocrypt_tester_t *tester) {
-    _mongocrypt_buffer_t keyABC_id;
-    _mongocrypt_buffer_copy_from_hex(&keyABC_id, "ABCDEFAB123498761234123456789012");
-
-    // textPreview with suffix query type fails.
-    {
-        ee_testcase tc = {0};
-        tc.desc = "textPreview with suffix fails";
-        tc.algorithm = MONGOCRYPT_ALGORITHM_TEXTPREVIEW_STR;
-        tc.query_type = MONGOCRYPT_QUERY_TYPE_SUFFIX_STR;
-        tc.contention_factor = OPT_I64(1);
-        tc.msg = TEST_BSON("{'v': 'abc'}");
-        tc.user_key_id = &keyABC_id;
-        tc.text_opts = TEST_BSON(RAW_STRING({
-            "caseSensitive" : true,
-            "diacriticSensitive" : true,
-            "suffix" : {"strMinQueryLength" : 1, "strMaxQueryLength" : 100}
-        }));
-        tc.expect_init_error = "suffix query type requires string index type";
-        ee_testcase_run(&tc);
-    }
-
-    // textPreview with prefix query type fails.
-    {
-        ee_testcase tc = {0};
-        tc.desc = "textPreview with prefix fails";
-        tc.algorithm = MONGOCRYPT_ALGORITHM_TEXTPREVIEW_STR;
-        tc.query_type = MONGOCRYPT_QUERY_TYPE_PREFIX_STR;
-        tc.contention_factor = OPT_I64(1);
-        tc.msg = TEST_BSON("{'v': 'abc'}");
-        tc.user_key_id = &keyABC_id;
-        tc.text_opts = TEST_BSON(RAW_STRING({
-            "caseSensitive" : true,
-            "diacriticSensitive" : true,
-            "prefix" : {"strMinQueryLength" : 1, "strMaxQueryLength" : 100}
-        }));
-        tc.expect_init_error = "prefix query type requires string index type";
-        ee_testcase_run(&tc);
-    }
-
-    _mongocrypt_buffer_cleanup(&keyABC_id);
+    mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+    mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+    ASSERT_FAILS(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_TEXTPREVIEW_DEPRECATED_STR, -1),
+                 ctx,
+                 "unsupported algorithm");
+    mongocrypt_ctx_destroy(ctx);
+    mongocrypt_destroy(crypt);
 }
 
 // `autoencryption_test` defines a test for the automatic encryption context.

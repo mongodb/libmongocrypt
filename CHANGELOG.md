@@ -6,7 +6,7 @@
 - Stable support for prefix and suffix queries:
     - The `prefixPreview` query type is replaced with `prefix`.
     - The `suffixPreview` query type is replaced with `suffix`.
-    - Use the `string` algorithm (formerly `textPreview`) for `prefix` and `suffix` query types.
+    - Use the `string` algorithm (formerly `textPreview`) for `prefix`, `suffix`, and `substringPreview` query types.
 
 ### Removed
 - Support for the experimental `prefixPreview` and `suffixPreview` query types.

@@ -970,7 +970,7 @@ static void _test_setopt_for_explicit_encrypt(_mongocrypt_tester_t *tester) {
         ASSERT_KEY_ID_OK(uuid);
         ASSERT_OK(mongocrypt_ctx_setopt_algorithm_text(ctx, textopts), ctx);
         ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_UNINDEXED_STR, -1), ctx);
-        ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "cannot set string opts without string or textPreview index type");
+        ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "cannot set string opts without string index type");
     }
 
     /* It is an error to set text opts with index_type ==
@@ -982,7 +982,7 @@ static void _test_setopt_for_explicit_encrypt(_mongocrypt_tester_t *tester) {
         ASSERT_KEY_ID_OK(uuid);
         ASSERT_OK(mongocrypt_ctx_setopt_algorithm_text(ctx, textopts), ctx);
         ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_INDEXED_STR, -1), ctx);
-        ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "cannot set string opts without string or textPreview index type");
+        ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "cannot set string opts without string index type");
     }
 
     /* It is an error to set text opts with index_type ==
@@ -994,11 +994,11 @@ static void _test_setopt_for_explicit_encrypt(_mongocrypt_tester_t *tester) {
         ASSERT_KEY_ID_OK(uuid);
         ASSERT_OK(mongocrypt_ctx_setopt_algorithm_text(ctx, textopts), ctx);
         ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_RANGE_STR, -1), ctx);
-        ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "cannot set string opts without string or textPreview index type");
+        ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "cannot set string opts without string index type");
     }
 
     /* It is an error to set a text query_type with index_type !=
-     * MONGOCRYPT_INDEX_TYPE_TEXTPREVIEW */
+     * MONGOCRYPT_INDEX_TYPE_STRING */
     {
         REFRESH;
         /* Set key ID to get past the 'either key id or key alt name required'
@@ -1006,7 +1006,7 @@ static void _test_setopt_for_explicit_encrypt(_mongocrypt_tester_t *tester) {
         ASSERT_KEY_ID_OK(uuid);
         ASSERT_OK(mongocrypt_ctx_setopt_query_type(ctx, MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW_STR, -1), ctx);
         ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_RANGE_STR, -1), ctx);
-        ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "substringPreview query type requires textPreview index type");
+        ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "substringPreview query type requires string index type");
 
         REFRESH;
         /* Set key ID to get past the 'either key id or key alt name required'
