@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Changes in Version 1.18.1
+-------------------------
+
+- Bundle libmongocrypt 1.18.2 in release wheels.
+
 Changes in Version 1.18.0
 -------------------------
 
