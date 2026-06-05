@@ -13,6 +13,12 @@
 
 <!-- TODO: add entries for next release -->
 
+## 1.18.2
+
+### Fixed
+- Add musl arm64 release to GitHub release. This was an omission in 1.18.0.
+- Reject large KMS replies.
+
 ## 1.18.1
 
 ### Fixed
