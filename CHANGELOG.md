@@ -1,6 +1,6 @@
 # ChangeLog
 
-## Unreleased
+## 1.19.0
 
 ### Added
 - Stable support for prefix and suffix queries:
@@ -10,8 +10,6 @@
 
 ### Removed
 - Support for the experimental `prefixPreview` and `suffixPreview` query types.
-
-<!-- TODO: add entries for next release -->
 
 ## 1.18.1
 
