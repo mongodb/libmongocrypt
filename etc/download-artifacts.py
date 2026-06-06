@@ -2,14 +2,13 @@
 #
 # /// script
 # dependencies = [
-#   "pyyaml",
 #   "requests",
 # ]
 # ///
 
 import argparse
+import subprocess
 import requests
-import yaml
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -30,25 +29,23 @@ def download_file(url: str):
 
 def main():
     parser = argparse.ArgumentParser(description="Download release artifacts from an Evergreen version")
-    parser.add_argument("version_id", help="Evergreen version ID. (e.g. https://evergreen.mongodb.com/version/<version_id>)")
+    parser.add_argument("version_id", help="Evergreen version ID. (e.g. https://evergreen.corp.mongodb.com/version/<version_id>)")
     args = parser.parse_args()
 
     version_id = args.version_id
 
-    # Get Evergreen API credentials:
-    path: Path = Path().home() / ".evergreen.yml"
-    with path.open() as file:
-        evg_settings = yaml.load(file, Loader=yaml.FullLoader)
+    oauth_token = subprocess.check_output(["evergreen", "client", "get-oauth-token"], text=True).strip()
 
-    api_server_host = "https://evergreen.mongodb.com/rest/v2"
-    api_key = evg_settings["api_key"]
-    api_user = evg_settings["user"]
-    headers = {'Api-User': api_user, 'Api-Key': api_key}
+    api_server_host = "https://evergreen.corp.mongodb.com/rest/v2"
+    headers = {'Authorization': f'Bearer {oauth_token}'}
 
     resp: requests.Response = requests.get(
         f"{api_server_host}/versions/{version_id}/builds",
         params={"include_task_info": "true"},
         headers=headers)
+    if resp.status_code != 200:
+        print(f"Failed to get builds for version {version_id}: {resp.status_code} {resp.text}")
+        return
     builds = resp.json()
 
     for build in builds:

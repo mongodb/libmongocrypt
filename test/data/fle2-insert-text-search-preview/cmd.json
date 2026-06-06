@@ -1,0 +1,9 @@
+{
+   "insert": "test",
+   "documents": [
+      {
+         "_id": 1,
+         "ssn": "value123"
+      }
+   ]
+}

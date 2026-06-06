@@ -1,10 +1,15 @@
 # ChangeLog
 
-## 1.18.2
+## 1.19.0
 
-### Fixed
-- Add musl arm64 release to GitHub release. This was an omission in 1.18.0.
-- Reject large KMS replies.
+### Added
+- Stable support for prefix and suffix queries:
+    - The `prefixPreview` query type is replaced with `prefix`.
+    - The `suffixPreview` query type is replaced with `suffix`.
+    - Use the `string` algorithm (formerly `textPreview`) for `prefix`, `suffix`, and `substringPreview` query types.
+
+### Removed
+- Support for the experimental `prefixPreview` and `suffixPreview` query types.
 
 ## 1.18.1
 

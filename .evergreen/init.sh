@@ -210,38 +210,6 @@ is_false() {
     ! is_true "$@"
 }
 
-# Executes CMake via the cache-managing script
-run_cmake() {
-    command bash "$EVG_DIR/cmake.sh" "$@"
-}
-
-# Executes CTest via the cache-managing script
-run_ctest() {
-    command bash "$EVG_DIR/ctest.sh" "$@"
-}
-
-run_python() {
-    pys=(
-        "${MONGOCRYPT_PYTHON:-}"
-        py
-        python3.14
-        python3.13
-        python3.12
-        python3.11
-        python3.10
-        python3.9
-        python3.8
-        python3
-        python
-    )
-    for cand in "${pys[@]}"; do
-        if have_command "$cand" && "$cand" -c ""; then
-            "$cand" "$@"
-            return $?
-        fi
-    done
-}
-
 EXE_SUFFIX=""
 if test "$OS_NAME" = "windows"; then
     EXE_SUFFIX=".exe"
