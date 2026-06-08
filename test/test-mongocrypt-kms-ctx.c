@@ -20,6 +20,7 @@
 #include "mongocrypt-key-private.h"
 #include "mongocrypt-kms-ctx-private.h"
 #include "mongocrypt-private.h"
+#include "test-mongocrypt-assert.h"
 #include "test-mongocrypt-util.h"
 #include "test-mongocrypt.h"
 
@@ -885,6 +886,100 @@ static void _test_mongocrypt_kms_ctx_feed_empty_bytes(_mongocrypt_tester_t *test
     mongocrypt_status_destroy(status);
 }
 
+// _test_mongocrypt_kms_ctx_kmip_response_bad_length tests KMIP responses that report bad lengths.
+static void _test_mongocrypt_kms_ctx_kmip_response_bad_length(_mongocrypt_tester_t *tester) {
+    mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+    bool ok;
+    uint8_t secretdata[KMS_KMIP_REQUEST_SECRETDATA_LENGTH] = {0};
+    mongocrypt_status_t *status = mongocrypt_status_new();
+    _mongocrypt_endpoint_t *endpoint = _mongocrypt_endpoint_new("example.com", -1, NULL /* opts */, status);
+    ASSERT_OK_STATUS(endpoint != NULL, status);
+
+    // Regression test for MONGOCRYPT-909: test UINT32_MAX
+    {
+        mongocrypt_kms_ctx_t kms_ctx = {0};
+        static const char *kmip_header = "\x42\x00\x7b\x01"  // Tag=ResponseMessage, Type=Structure
+                                         "\xff\xff\xff\xff"; // Length = UINT32_MAX
+
+        ok = _mongocrypt_kms_ctx_init_kmip_register(&kms_ctx,
+                                                    endpoint,
+                                                    secretdata,
+                                                    KMS_KMIP_REQUEST_SECRETDATA_LENGTH,
+                                                    "kmip",
+                                                    &crypt->log);
+        ASSERT_OK_STATUS(ok, kms_ctx.status);
+
+        // Parser requests 8 bytes for initial header:
+        ASSERT_CMPINT(mongocrypt_kms_ctx_bytes_needed(&kms_ctx), ==, 8u);
+
+        mongocrypt_binary_t *bytes = mongocrypt_binary_new_from_data((uint8_t *)kmip_header, 8u);
+
+        // Expect error (not abort):
+        ASSERT_FAILS(mongocrypt_kms_ctx_feed(&kms_ctx, bytes), &kms_ctx, "KMS KMIP response too large");
+
+        mongocrypt_binary_destroy(bytes);
+        _mongocrypt_kms_ctx_cleanup(&kms_ctx);
+    }
+
+    // Length reported is less than data fed.
+    {
+        mongocrypt_kms_ctx_t kms_ctx = {0};
+        static const char *kmip_header = "\x42\x00\x7b\x01"  // Tag=ResponseMessage, Type=Structure
+                                         "\x00\x00\x00\x01"; // Length = 1
+        ASSERT_OK_STATUS(endpoint != NULL, status);
+
+        ok = _mongocrypt_kms_ctx_init_kmip_register(&kms_ctx,
+                                                    endpoint,
+                                                    secretdata,
+                                                    KMS_KMIP_REQUEST_SECRETDATA_LENGTH,
+                                                    "kmip",
+                                                    &crypt->log);
+        ASSERT_OK_STATUS(ok, kms_ctx.status);
+
+        // Parser requests 8 bytes for initial header:
+        ASSERT_CMPINT(mongocrypt_kms_ctx_bytes_needed(&kms_ctx), ==, 8u);
+
+        mongocrypt_binary_t *bytes = mongocrypt_binary_new_from_data((uint8_t *)kmip_header, 8u);
+        ASSERT_OK(mongocrypt_kms_ctx_feed(&kms_ctx, bytes), &kms_ctx);
+
+        ASSERT_CMPINT(mongocrypt_kms_ctx_bytes_needed(&kms_ctx), ==, 1u);
+        // Attempting to feed more data errors.
+        ASSERT_FAILS(mongocrypt_kms_ctx_feed(&kms_ctx, bytes), &kms_ctx, "KMS response fed too much data");
+
+        mongocrypt_binary_destroy(bytes);
+        _mongocrypt_kms_ctx_cleanup(&kms_ctx);
+    }
+
+    // Length reported is zero.
+    {
+        mongocrypt_kms_ctx_t kms_ctx = {0};
+        static const char *kmip_header = "\x42\x00\x7b\x01"  // Tag=ResponseMessage, Type=Structure
+                                         "\x00\x00\x00\x00"; // Length = 0
+        ASSERT_OK_STATUS(endpoint != NULL, status);
+
+        ok = _mongocrypt_kms_ctx_init_kmip_register(&kms_ctx,
+                                                    endpoint,
+                                                    secretdata,
+                                                    KMS_KMIP_REQUEST_SECRETDATA_LENGTH,
+                                                    "kmip",
+                                                    &crypt->log);
+        ASSERT_OK_STATUS(ok, kms_ctx.status);
+
+        // Parser requests 8 bytes for initial header:
+        ASSERT_CMPINT(mongocrypt_kms_ctx_bytes_needed(&kms_ctx), ==, 8u);
+
+        mongocrypt_binary_t *bytes = mongocrypt_binary_new_from_data((uint8_t *)kmip_header, 8u);
+        ASSERT_FAILS(mongocrypt_kms_ctx_feed(&kms_ctx, bytes), &kms_ctx, "Error getting UniqueIdentifer");
+
+        mongocrypt_binary_destroy(bytes);
+        _mongocrypt_kms_ctx_cleanup(&kms_ctx);
+    }
+
+    _mongocrypt_endpoint_destroy(endpoint);
+    mongocrypt_status_destroy(status);
+    mongocrypt_destroy(crypt);
+}
+
 void _mongocrypt_tester_install_kms_ctx(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_mongocrypt_kms_ctx_kmip_register);
     INSTALL_TEST(_test_mongocrypt_kms_ctx_kmip_activate);
@@ -895,4 +990,5 @@ void _mongocrypt_tester_install_kms_ctx(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_mongocrypt_kms_ctx_get_kms_provider);
     INSTALL_TEST(_test_mongocrypt_kms_ctx_default_port);
     INSTALL_TEST(_test_mongocrypt_kms_ctx_feed_empty_bytes);
+    INSTALL_TEST(_test_mongocrypt_kms_ctx_kmip_response_bad_length);
 }
