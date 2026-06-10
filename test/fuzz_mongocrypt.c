@@ -22,6 +22,7 @@
  */
 
 #include "mongocrypt.h"
+#include <bson/bson.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -43,8 +44,11 @@ enum {
     OP_DATAKEY = 4,
     OP_REWRAP_MANY_DATAKEY = 5,
     OP_EXPLICIT_ENCRYPT_EXPRESSION = 6,
-    OP_COUNT = 7,
+    OP_DATAKEY_AWS = 7, /* exercises NEED_KMS → KMS response parser (HTTP chunked) */
+    OP_DATAKEY_KMIP = 8, /* exercises NEED_KMS → KMIP response parser */
+    OP_COUNT = 9,
 };
+
 
 /* Helper: consume bytes from the fuzz input. */
 static const uint8_t *fuzz_consume(const uint8_t **data, size_t *remaining, size_t n) {
@@ -126,9 +130,9 @@ static void drive_ctx(mongocrypt_ctx_t *ctx, const uint8_t **data, size_t *remai
                     }
                 }
             } else {
-                /* Provide empty doc to advance past this state. */
-                uint8_t empty_bson[] = {5, 0, 0, 0, 0}; /* empty BSON document */
-                mongocrypt_binary_t *bin = mongocrypt_binary_new_from_data(empty_bson, sizeof(empty_bson));
+                bson_t empty = BSON_INITIALIZER;
+                mongocrypt_binary_t *bin =
+                    mongocrypt_binary_new_from_data((uint8_t *)bson_get_data(&empty), (uint32_t)empty.len);
                 if (bin) {
                     mongocrypt_ctx_provide_kms_providers(ctx, bin);
                     mongocrypt_binary_destroy(bin);
@@ -214,6 +218,25 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     mongocrypt_setopt_kms_provider_local(crypt, key_bin);
     mongocrypt_binary_destroy(key_bin);
 
+    /* Configure AWS KMS provider so OP_DATAKEY_AWS can reach NEED_KMS state
+     * and exercise the KMS HTTP response parser with fuzz-controlled bytes. */
+    mongocrypt_setopt_kms_provider_aws(crypt,
+                                       "AKIAIOSFODNN7EXAMPLE", -1,
+                                       "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY", -1);
+
+    /* Configure KMIP KMS provider so OP_DATAKEY_KMIP can reach NEED_KMS state
+     * and exercise the KMIP response parser with fuzz-controlled bytes. */
+    {
+        bson_t *kmip_doc = BCON_NEW("kmip", "{", "endpoint", "localhost:5696", "}");
+        mongocrypt_binary_t *kmip_bin =
+            mongocrypt_binary_new_from_data((uint8_t *)bson_get_data(kmip_doc), (uint32_t)kmip_doc->len);
+        if (kmip_bin) {
+            mongocrypt_setopt_kms_providers(crypt, kmip_bin);
+            mongocrypt_binary_destroy(kmip_bin);
+        }
+        bson_destroy(kmip_doc);
+    }
+
     if (!mongocrypt_init(crypt)) {
         mongocrypt_destroy(crypt);
         return 0;
@@ -269,21 +292,14 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         break;
 
     case OP_DATAKEY: {
-        /* Set up key encryption key for local provider. */
-        uint8_t kek_bson[] = {
-            /* {"provider": "local"} as BSON */
-            0x1b, 0x00, 0x00, 0x00,                                     /* doc len = 27 */
-            0x02,                                                        /* type: string */
-            'p', 'r', 'o', 'v', 'i', 'd', 'e', 'r', 0x00,              /* key */
-            0x06, 0x00, 0x00, 0x00,                                      /* string len = 6 */
-            'l', 'o', 'c', 'a', 'l', 0x00,                              /* value */
-            0x00                                                         /* doc terminator */
-        };
-        mongocrypt_binary_t *kek_bin = mongocrypt_binary_new_from_data(kek_bson, sizeof(kek_bson));
+        bson_t *kek = BCON_NEW("provider", "local");
+        mongocrypt_binary_t *kek_bin =
+            mongocrypt_binary_new_from_data((uint8_t *)bson_get_data(kek), (uint32_t)kek->len);
         if (kek_bin) {
             mongocrypt_ctx_setopt_key_encryption_key(ctx, kek_bin);
             mongocrypt_binary_destroy(kek_bin);
         }
+        bson_destroy(kek);
         init_ok = mongocrypt_ctx_datakey_init(ctx);
         break;
     }
@@ -306,6 +322,39 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         if (input_bin) {
             init_ok = mongocrypt_ctx_explicit_encrypt_expression_init(ctx, input_bin);
         }
+        break;
+    }
+
+    case OP_DATAKEY_AWS: {
+        /* Create a datakey encrypted with AWS KMS. The context transitions
+         * directly to NEED_KMS, so drive_ctx feeds fuzz bytes as the raw
+         * HTTP response to the KMS response parser. */
+        bson_t *kek = BCON_NEW("provider", "aws", "region", "us-east-1",
+                                "key", "arn:aws:kms:us-east-1:0:key/fuzz");
+        mongocrypt_binary_t *kek_bin =
+            mongocrypt_binary_new_from_data((uint8_t *)bson_get_data(kek), (uint32_t)kek->len);
+        if (kek_bin) {
+            mongocrypt_ctx_setopt_key_encryption_key(ctx, kek_bin);
+            mongocrypt_binary_destroy(kek_bin);
+        }
+        bson_destroy(kek);
+        init_ok = mongocrypt_ctx_datakey_init(ctx);
+        break;
+    }
+
+    case OP_DATAKEY_KMIP: {
+        /* Create a datakey encrypted with KMIP. The context transitions to
+         * NEED_KMS (KMIP Register request), so drive_ctx feeds fuzz bytes as
+         * the raw KMIP/TTLV response to the KMIP response parser. */
+        bson_t *kek = BCON_NEW("provider", "kmip");
+        mongocrypt_binary_t *kek_bin =
+            mongocrypt_binary_new_from_data((uint8_t *)bson_get_data(kek), (uint32_t)kek->len);
+        if (kek_bin) {
+            mongocrypt_ctx_setopt_key_encryption_key(ctx, kek_bin);
+            mongocrypt_binary_destroy(kek_bin);
+        }
+        bson_destroy(kek);
+        init_ok = mongocrypt_ctx_datakey_init(ctx);
         break;
     }
 
