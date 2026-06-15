@@ -531,6 +531,10 @@ static bool _encrypt_step(_mongocrypt_crypto_t *crypto,
     bool ret;
 
     BSON_ASSERT(MONGOCRYPT_BLOCK_SIZE >= unaligned);
+    if (unaligned > sizeof(final_block_storage)) {
+        CLIENT_ERR("unaligned block length %" PRIu32 " exceeds block size %d", unaligned, MONGOCRYPT_BLOCK_SIZE);
+        return false;
+    }
 
     /* Some crypto providers disallow variable length inputs, and require
      * the input to be a multiple of the block size. So add everything up
