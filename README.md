@@ -78,6 +78,9 @@ A Windows DLL for x86_64 is available on the Github Releases page. See the [late
 
 Use `gpg` to verify the signature. The public key for `libmongocrypt` is available on https://pgp.mongodb.com/.
 
+## Python Releases ##
+Python releases and tags are signed using the MongoDB Python driver PGP key. Use `gpg` to verify the signature. The public key is available at https://pgp.mongodb.com/python-driver.pub.
+
 
 ### Testing ###
 `test-mongocrypt` mocks all I/O with files stored in the `test/data` and `test/example` directories. Run `test-mongocrypt` from the source directory:
