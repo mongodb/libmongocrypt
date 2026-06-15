@@ -1,6 +1,10 @@
 # ChangeLog
 
-## Unreleased
+## 1.20.0 [Unreleased]
+
+<!-- TODO: add entries for next release -->
+
+## 1.19.0
 
 ### Added
 - Stable support for prefix and suffix queries:
@@ -11,7 +15,12 @@
 ### Removed
 - Support for the experimental `prefixPreview` and `suffixPreview` query types.
 
-<!-- TODO: add entries for next release -->
+
+## 1.18.2
+
+### Fixed
+- Add musl arm64 release to GitHub release. This was an omission in 1.18.0.
+- Reject large KMS replies.
 
 ## 1.18.1
 

@@ -111,6 +111,10 @@ kms_kmip_response_parser_feed (kms_kmip_response_parser_t *parser,
       uint32_t temp;
       memcpy (&temp, parser->buf->str + FIRST_LENGTH_OFFSET, sizeof (uint32_t));
       parser->first_len = KMS_UINT32_FROM_BE (temp);
+      if (parser->first_len > KMS_PARSER_MAX_RESPONSE_LEN) {
+         KMS_ERROR (parser, "KMS KMIP response too large");
+         return false;
+      }
    }
    return true;
 }
