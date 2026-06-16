@@ -245,7 +245,7 @@ static void test_mc_TextOpts_to_FLE2TextSearchInsertSpec_for_query(_mongocrypt_t
              "substring" : {"strMaxLength" : 10, "strMinQueryLength" : 3, "strMaxQueryLength" : 8}
          }),
          .v = RAW_STRING({"v" : "test"}),
-         .qt = MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW,
+         .qt = MONGOCRYPT_QUERY_TYPE_SUBSTRING,
          .expect = RAW_STRING(
              {"v" : {"v" : "test", "casef" : false, "diacf" : true, "substr" : {"mlen" : 10, "ub" : 8, "lb" : 3}}})},
         {.desc = "Works with prefix",

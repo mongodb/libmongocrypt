@@ -46,7 +46,7 @@ typedef enum _mongocrypt_query_type_t {
     MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_DEPRECATED = 3,
     MONGOCRYPT_QUERY_TYPE_PREFIX = 4,
     MONGOCRYPT_QUERY_TYPE_SUFFIX = 5,
-    MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW = 6,
+    MONGOCRYPT_QUERY_TYPE_SUBSTRING = 6,
 } mongocrypt_query_type_t;
 
 const char *_mongocrypt_query_type_to_string(mongocrypt_query_type_t val);

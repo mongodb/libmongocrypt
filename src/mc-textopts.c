@@ -376,7 +376,7 @@ bool mc_TextOpts_to_FLE2TextSearchInsertSpec_for_query(const mc_TextOpts_t *txo,
         include_suffix = true;
         break;
     }
-    case MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW: {
+    case MONGOCRYPT_QUERY_TYPE_SUBSTRING: {
         include_substring = true;
         break;
     }

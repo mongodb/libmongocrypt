@@ -28,8 +28,8 @@ typedef enum _supported_query_type_flags {
     SUPPORTS_RANGE_QUERIES = 1 << 1,
     // Range preview query supported
     SUPPORTS_RANGE_PREVIEW_DEPRECATED_QUERIES = 1 << 2,
-    // Text search preview query supported
-    SUPPORTS_SUBSTRING_PREVIEW_QUERIES = 1 << 3,
+    // Text search query supported
+    SUPPORTS_SUBSTRING_QUERIES = 1 << 3,
     SUPPORTS_SUFFIX_QUERIES = 1 << 4,
     SUPPORTS_PREFIX_QUERIES = 1 << 5,
     // prefixPreview and suffixPreview are dropped. Setting this results in an error.

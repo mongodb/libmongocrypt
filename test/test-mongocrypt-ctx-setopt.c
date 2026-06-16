@@ -1004,9 +1004,18 @@ static void _test_setopt_for_explicit_encrypt(_mongocrypt_tester_t *tester) {
         /* Set key ID to get past the 'either key id or key alt name required'
          * error */
         ASSERT_KEY_ID_OK(uuid);
-        ASSERT_OK(mongocrypt_ctx_setopt_query_type(ctx, MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW_STR, -1), ctx);
+        ASSERT_OK(mongocrypt_ctx_setopt_query_type(ctx, MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW_DEPRECATED_STR, -1),
+                  ctx);
         ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_RANGE_STR, -1), ctx);
-        ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "substringPreview query type requires string index type");
+        ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "substring query type requires string index type");
+
+        REFRESH;
+        /* Set key ID to get past the 'either key id or key alt name required'
+         * error */
+        ASSERT_KEY_ID_OK(uuid);
+        ASSERT_OK(mongocrypt_ctx_setopt_query_type(ctx, MONGOCRYPT_QUERY_TYPE_SUBSTRING_STR, -1), ctx);
+        ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_RANGE_STR, -1), ctx);
+        ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "substring query type requires string index type");
 
         REFRESH;
         /* Set key ID to get past the 'either key id or key alt name required'
