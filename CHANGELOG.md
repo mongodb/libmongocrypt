@@ -2,10 +2,13 @@
 
 ## 1.20.0 [Unreleased]
 
-### Added
-- Restore support for the deprecated `prefixPreview` and `suffixPreview` query types.
-
 <!-- TODO: add entries for next release -->
+
+## 1.19.1
+
+### Added
+- Restore support for the experimental `prefixPreview` and `suffixPreview` query types.
+
 
 ## 1.19.0
 
