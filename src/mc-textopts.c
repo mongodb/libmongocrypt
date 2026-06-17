@@ -368,11 +368,13 @@ bool mc_TextOpts_to_FLE2TextSearchInsertSpec_for_query(const mc_TextOpts_t *txo,
         CLIENT_ERR("Unexpected query type: %s\n", _mongocrypt_query_type_to_string(query_type));
         return false;
     }
-    case MONGOCRYPT_QUERY_TYPE_PREFIX: {
+    case MONGOCRYPT_QUERY_TYPE_PREFIX:
+    case MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW_DEPRECATED: {
         include_prefix = true;
         break;
     }
-    case MONGOCRYPT_QUERY_TYPE_SUFFIX: {
+    case MONGOCRYPT_QUERY_TYPE_SUFFIX:
+    case MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW_DEPRECATED: {
         include_suffix = true;
         break;
     }
