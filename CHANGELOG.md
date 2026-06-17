@@ -1,6 +1,6 @@
 # ChangeLog
 
-## 1.19.1 [unreleased]
+## 1.19.1
 
 ### Added
 - Restore support for the experimental `prefixPreview` and `suffixPreview` query types.
