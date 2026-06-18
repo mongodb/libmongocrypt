@@ -35,6 +35,8 @@ typedef enum _supported_query_type_flags {
     // prefixPreview and suffixPreview are dropped. Setting this results in an error.
     SUPPORTS_SUFFIX_PREVIEW_DEPRECATED_QUERIES = 1 << 6,
     SUPPORTS_PREFIX_PREVIEW_DEPRECATED_QUERIES = 1 << 7,
+    // substring preview query supported
+    SUPPORTS_SUBSTRING_PREVIEW_DEPRECATED_QUERIES = 1 << 8,
 } supported_query_type_flags;
 
 typedef struct _mc_EncryptedField_t {

@@ -1037,8 +1037,8 @@ bool mongocrypt_ctx_setopt_query_type(mongocrypt_ctx_t *ctx, const char *query_t
         ctx->opts.query_type.value = MONGOCRYPT_QUERY_TYPE_SUBSTRING;
         ctx->opts.query_type.set = true;
     } else if (mstr_eq_ignore_case(qt_str, mstrv_lit(MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW_DEPRECATED_STR))) {
-        // TODO: [FILE MONGOCRYPT TICKET BEFORE MERGING] disallow substringPreview
-        // // _mongocrypt_ctx_fail_w_msg(ctx, "Query type 'substringPreview' is deprecated, please use 'substring'");
+        // TODO: MONGOCRYPT-938 disallow substringPreview
+        // _mongocrypt_ctx_fail_w_msg(ctx, "Query type 'substringPreview' is deprecated, please use 'substring'");
         ctx->opts.query_type.value = MONGOCRYPT_QUERY_TYPE_SUBSTRING;
         ctx->opts.query_type.set = true;
     } else {
