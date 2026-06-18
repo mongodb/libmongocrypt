@@ -179,20 +179,6 @@ static bool _parse_field(mc_EncryptedFieldConfig_t *efc, bson_t *field, mongocry
         return false;
     }
 
-    if (query_types & SUPPORTS_PREFIX_PREVIEW_DEPRECATED_QUERIES) {
-        CLIENT_ERR("Cannot use field '%s' with 'prefixPreview' queries. 'prefixPreview' is unsupported. Use 'prefix' "
-                   "instead.",
-                   field_path);
-        return false;
-    }
-
-    if (query_types & SUPPORTS_SUFFIX_PREVIEW_DEPRECATED_QUERIES) {
-        CLIENT_ERR("Cannot use field '%s' with 'suffixPreview' queries. 'suffixPreview' is unsupported. Use 'suffix' "
-                   "instead.",
-                   field_path);
-        return false;
-    }
-
     /* Prepend a new mc_EncryptedField_t */
     mc_EncryptedField_t *ef = bson_malloc0(sizeof(mc_EncryptedField_t));
     if (has_keyid) {
@@ -258,7 +244,9 @@ bool mc_EncryptedFieldConfig_parse(mc_EncryptedFieldConfig_t *efc,
     }
 
     if (!bson_iter_init_find(&iter, efc_bson, "strEncodeVersion")) {
-        if (all_supported_queries & (SUPPORTS_SUBSTRING_QUERIES | SUPPORTS_SUFFIX_QUERIES | SUPPORTS_PREFIX_QUERIES)) {
+        if (all_supported_queries
+            & (SUPPORTS_SUBSTRING_QUERIES | SUPPORTS_SUBSTRING_PREVIEW_DEPRECATED_QUERIES | SUPPORTS_SUFFIX_QUERIES | SUPPORTS_PREFIX_QUERIES
+               | SUPPORTS_SUFFIX_PREVIEW_DEPRECATED_QUERIES | SUPPORTS_PREFIX_PREVIEW_DEPRECATED_QUERIES)) {
             // Has at least one text search query type, set to latest by default.
             efc->str_encode_version = LATEST_STR_ENCODE_VERSION;
         } else {

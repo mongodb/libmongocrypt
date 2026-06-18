@@ -32,7 +32,7 @@ typedef enum _supported_query_type_flags {
     SUPPORTS_SUBSTRING_QUERIES = 1 << 3,
     SUPPORTS_SUFFIX_QUERIES = 1 << 4,
     SUPPORTS_PREFIX_QUERIES = 1 << 5,
-    // prefixPreview and suffixPreview are dropped. Setting this results in an error.
+    // suffixPreview and prefixPreview are deprecated aliases for suffix and prefix, respectively.
     SUPPORTS_SUFFIX_PREVIEW_DEPRECATED_QUERIES = 1 << 6,
     SUPPORTS_PREFIX_PREVIEW_DEPRECATED_QUERIES = 1 << 7,
     // substring preview query supported
