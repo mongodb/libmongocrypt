@@ -1,5 +1,10 @@
 # ChangeLog
 
+## 1.19.2
+
+### Added
+- Add static library files to GitHub releases.
+
 ## 1.19.1
 
 ### Added
