@@ -2550,9 +2550,27 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
 
     {
         ee_testcase tc = {0};
-        tc.desc = "insert substring";
+        tc.desc = "find substring";
         tc.algorithm = MONGOCRYPT_ALGORITHM_STRING_STR;
-        tc.query_type = MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW_STR;
+        tc.query_type = MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW_DEPRECATED_STR;
+        tc.contention_factor = OPT_I64(1);
+        tc.msg = TEST_BSON("{'v': 'abc'}");
+        tc.user_key_id = &keyABC_id;
+        tc.keys_to_feed[0] = keyABC;
+        tc.text_opts = TEST_BSON(RAW_STRING({
+            "caseSensitive" : true,
+            "diacriticSensitive" : true,
+            "substring" : {"strMaxLength" : 100, "strMinQueryLength" : 1, "strMaxQueryLength" : 100}
+        }));
+        tc.expect = TEST_FILE("./test/data/fle2-explicit/find-substring.json");
+        ee_testcase_run(&tc);
+    }
+
+    {
+        ee_testcase tc = {0};
+        tc.desc = "find substring";
+        tc.algorithm = MONGOCRYPT_ALGORITHM_STRING_STR;
+        tc.query_type = MONGOCRYPT_QUERY_TYPE_SUBSTRING_STR;
         tc.contention_factor = OPT_I64(1);
         tc.msg = TEST_BSON("{'v': 'abc'}");
         tc.user_key_id = &keyABC_id;
