@@ -44,11 +44,10 @@ enum {
     OP_DATAKEY = 4,
     OP_REWRAP_MANY_DATAKEY = 5,
     OP_EXPLICIT_ENCRYPT_EXPRESSION = 6,
-    OP_DATAKEY_AWS = 7, /* exercises NEED_KMS → KMS response parser (HTTP chunked) */
+    OP_DATAKEY_AWS = 7,  /* exercises NEED_KMS → KMS response parser (HTTP chunked) */
     OP_DATAKEY_KMIP = 8, /* exercises NEED_KMS → KMIP response parser */
     OP_COUNT = 9,
 };
-
 
 /* Helper: consume bytes from the fuzz input. */
 static const uint8_t *fuzz_consume(const uint8_t **data, size_t *remaining, size_t n) {
@@ -221,8 +220,10 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     /* Configure AWS KMS provider so OP_DATAKEY_AWS can reach NEED_KMS state
      * and exercise the KMS HTTP response parser with fuzz-controlled bytes. */
     mongocrypt_setopt_kms_provider_aws(crypt,
-                                       "AKIAIOSFODNN7EXAMPLE", -1,
-                                       "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY", -1);
+                                       "AKIAIOSFODNN7EXAMPLE",
+                                       -1,
+                                       "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+                                       -1);
 
     /* Configure KMIP KMS provider so OP_DATAKEY_KMIP can reach NEED_KMS state
      * and exercise the KMIP response parser with fuzz-controlled bytes. */
@@ -318,7 +319,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
             mongocrypt_ctx_setopt_key_id(ctx, kid_bin);
             mongocrypt_binary_destroy(kid_bin);
         }
-        mongocrypt_ctx_setopt_algorithm(ctx, "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic", -1);
+        mongocrypt_ctx_setopt_query_type(ctx, MONGOCRYPT_QUERY_TYPE_RANGE_STR, -1);
         if (input_bin) {
             init_ok = mongocrypt_ctx_explicit_encrypt_expression_init(ctx, input_bin);
         }
@@ -329,8 +330,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         /* Create a datakey encrypted with AWS KMS. The context transitions
          * directly to NEED_KMS, so drive_ctx feeds fuzz bytes as the raw
          * HTTP response to the KMS response parser. */
-        bson_t *kek = BCON_NEW("provider", "aws", "region", "us-east-1",
-                                "key", "arn:aws:kms:us-east-1:0:key/fuzz");
+        bson_t *kek = BCON_NEW("provider", "aws", "region", "us-east-1", "key", "arn:aws:kms:us-east-1:0:key/fuzz");
         mongocrypt_binary_t *kek_bin =
             mongocrypt_binary_new_from_data((uint8_t *)bson_get_data(kek), (uint32_t)kek->len);
         if (kek_bin) {
@@ -375,4 +375,3 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
 
     return 0;
 }
-
