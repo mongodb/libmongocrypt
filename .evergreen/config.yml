@@ -1192,19 +1192,32 @@ tasks:
           mkdir libmongocrypt_upload/include
           mv $srcdir/include/mongocrypt libmongocrypt_upload/include
 
-          # Move library
+          # Move library files
           if [ -f "$srcdir/lib64/libmongocrypt.so" ]; then
             mkdir libmongocrypt_upload/lib64
             mv $srcdir/lib64/libmongocrypt.so libmongocrypt_upload/lib64
+            mv $srcdir/lib64/libmongocrypt-static.a libmongocrypt_upload/lib64
+            mv $srcdir/lib64/libbson-static-for-libmongocrypt.a libmongocrypt_upload/lib64
+            mv $srcdir/lib64/libkms_message-static.a libmongocrypt_upload/lib64
           elif [ -f "$srcdir/lib/libmongocrypt.so" ]; then
             mkdir libmongocrypt_upload/lib
             mv $srcdir/lib/libmongocrypt.so libmongocrypt_upload/lib
+            mv $srcdir/lib/libmongocrypt-static.a libmongocrypt_upload/lib
+            mv $srcdir/lib/libbson-static-for-libmongocrypt.a libmongocrypt_upload/lib
+            mv $srcdir/lib/libkms_message-static.a libmongocrypt_upload/lib
           elif [ -f "$srcdir/lib/libmongocrypt.dylib" ]; then
             mkdir libmongocrypt_upload/lib
             mv $srcdir/lib/libmongocrypt.dylib libmongocrypt_upload/lib
+            mv $srcdir/lib/libmongocrypt-static.a libmongocrypt_upload/lib
+            mv $srcdir/lib/libbson-static-for-libmongocrypt.a libmongocrypt_upload/lib
+            mv $srcdir/lib/libkms_message-static.a libmongocrypt_upload/lib
           elif [ -f "$srcdir/bin/mongocrypt.dll" ]; then
             mkdir libmongocrypt_upload/bin
+            mkdir libmongocrypt_upload/lib
             mv $srcdir/bin/mongocrypt.dll libmongocrypt_upload/bin
+            mv $srcdir/lib/mongocrypt-static.lib libmongocrypt_upload/lib
+            mv $srcdir/lib/bson-static-for-libmongocrypt.lib libmongocrypt_upload/lib
+            mv $srcdir/lib/kms_message-static.lib libmongocrypt_upload/lib
           fi
     - command: archive.targz_pack
       params:
