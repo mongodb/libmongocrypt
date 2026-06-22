@@ -1162,7 +1162,7 @@ tasks:
 
 - name: upload-release
   run_on: ubuntu2404-latest-small
-  patchable: false # Garasign credentials are marked as "Admin only" in Evergreen and are not included in patch builds. To test a patch: temporarily unselect "Admin only".
+  # patchable: false # Garasign credentials are marked as "Admin only" in Evergreen and are not included in patch builds. To test a patch: temporarily unselect "Admin only".
   commands:
     - func: "fetch source"
     - command: s3.get # Download build.
