@@ -891,8 +891,8 @@ static moe_result must_omit_encryptionInformation(const char *command_name,
         for (const mc_EncryptedField_t *ef = efc->fields; ef != NULL; ef = ef->next) {
             if (ef->supported_queries
                 & (SUPPORTS_RANGE_QUERIES | SUPPORTS_SUBSTRING_QUERIES | SUPPORTS_SUFFIX_QUERIES
-                   | SUPPORTS_PREFIX_QUERIES | SUPPORTS_SUBSTRING_PREVIEW_DEPRECATED_QUERIES | SUPPORTS_SUFFIX_PREVIEW_DEPRECATED_QUERIES
-                   | SUPPORTS_PREFIX_PREVIEW_DEPRECATED_QUERIES)) {
+                   | SUPPORTS_PREFIX_QUERIES | SUPPORTS_SUBSTRING_PREVIEW_DEPRECATED_QUERIES
+                   | SUPPORTS_SUFFIX_PREVIEW_DEPRECATED_QUERIES | SUPPORTS_PREFIX_PREVIEW_DEPRECATED_QUERIES)) {
                 has_fields_requiring_ei = true;
                 break;
             }
@@ -1012,8 +1012,8 @@ static bool _fle2_append_compactionTokens(mongocrypt_t *crypt,
         const _mongocrypt_buffer_t *ecoct_buf = mc_ECOCToken_get(ecoct);
 
         if (ptr->supported_queries
-            & (SUPPORTS_RANGE_QUERIES | SUPPORTS_SUBSTRING_QUERIES | SUPPORTS_SUFFIX_QUERIES
-               | SUPPORTS_PREFIX_QUERIES | SUPPORTS_SUBSTRING_PREVIEW_DEPRECATED_QUERIES | SUPPORTS_SUFFIX_PREVIEW_DEPRECATED_QUERIES
+            & (SUPPORTS_RANGE_QUERIES | SUPPORTS_SUBSTRING_QUERIES | SUPPORTS_SUFFIX_QUERIES | SUPPORTS_PREFIX_QUERIES
+               | SUPPORTS_SUBSTRING_PREVIEW_DEPRECATED_QUERIES | SUPPORTS_SUFFIX_PREVIEW_DEPRECATED_QUERIES
                | SUPPORTS_PREFIX_PREVIEW_DEPRECATED_QUERIES)) {
             // Append the document {ecoc: <ECOCToken>, anchorPaddingToken: <AnchorPaddingTokenRoot>}
             esct = mc_ESCToken_new(crypto, cl1t, status);

@@ -245,8 +245,9 @@ bool mc_EncryptedFieldConfig_parse(mc_EncryptedFieldConfig_t *efc,
 
     if (!bson_iter_init_find(&iter, efc_bson, "strEncodeVersion")) {
         if (all_supported_queries
-            & (SUPPORTS_SUBSTRING_QUERIES | SUPPORTS_SUBSTRING_PREVIEW_DEPRECATED_QUERIES | SUPPORTS_SUFFIX_QUERIES | SUPPORTS_PREFIX_QUERIES
-               | SUPPORTS_SUFFIX_PREVIEW_DEPRECATED_QUERIES | SUPPORTS_PREFIX_PREVIEW_DEPRECATED_QUERIES)) {
+            & (SUPPORTS_SUBSTRING_QUERIES | SUPPORTS_SUBSTRING_PREVIEW_DEPRECATED_QUERIES | SUPPORTS_SUFFIX_QUERIES
+               | SUPPORTS_PREFIX_QUERIES | SUPPORTS_SUFFIX_PREVIEW_DEPRECATED_QUERIES
+               | SUPPORTS_PREFIX_PREVIEW_DEPRECATED_QUERIES)) {
             // Has at least one text search query type, set to latest by default.
             efc->str_encode_version = LATEST_STR_ENCODE_VERSION;
         } else {
