@@ -2102,7 +2102,7 @@ static bool explicit_encrypt_init(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *ms
                 return _mongocrypt_ctx_fail_w_msg(ctx, "suffix query type requires string index type");
             }
         }
-        if (qt == MONGOCRYPT_QUERY_TYPE_SUBSTRING) {
+        if (qt == MONGOCRYPT_QUERY_TYPE_SUBSTRING || qt == MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW_DEPRECATED) {
             if (!(ctx->opts.index_type.set && ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_STRING)) {
                 return _mongocrypt_ctx_fail_w_msg(ctx, "substring query type requires string index type");
             }

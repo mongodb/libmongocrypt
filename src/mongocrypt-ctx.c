@@ -1041,7 +1041,7 @@ bool mongocrypt_ctx_setopt_query_type(mongocrypt_ctx_t *ctx, const char *query_t
     } else if (mstr_eq_ignore_case(qt_str, mstrv_lit(MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW_DEPRECATED_STR))) {
         // TODO: MONGOCRYPT-938 disallow substringPreview
         // _mongocrypt_ctx_fail_w_msg(ctx, "Query type 'substringPreview' is deprecated, please use 'substring'");
-        ctx->opts.query_type.value = MONGOCRYPT_QUERY_TYPE_SUBSTRING;
+        ctx->opts.query_type.value = MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW_DEPRECATED;
         ctx->opts.query_type.set = true;
     } else {
         /* don't check if qt_str.len fits in int; we want the diagnostic output */
