@@ -4503,7 +4503,7 @@ static void _test_textPreview_fails(_mongocrypt_tester_t *tester) {
     mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
     ASSERT_FAILS(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_TEXTPREVIEW_DEPRECATED_STR, -1),
                  ctx,
-                 "unsupported algorithm");
+                 "please use 'string'");
     mongocrypt_ctx_destroy(ctx);
     mongocrypt_destroy(crypt);
 }
