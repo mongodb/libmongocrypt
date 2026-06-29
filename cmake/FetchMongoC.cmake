@@ -15,11 +15,7 @@ include (Patch)
 make_patch_command (patch_command
     STRIP_COMPONENTS 1
     DIRECTORY "<SOURCE_DIR>"
-    DISABLED "${patch_disabled}"
-    PATCHES
-        ${PROJECT_SOURCE_DIR}/etc/libbson-remove-GCC-diagnostic-pragma.patch
-        ${PROJECT_SOURCE_DIR}/etc/mongo-common-test-harness.patch
-    )
+    DISABLED "${patch_disabled}")
 
 # Fetch the source archive for the requested tag from GitHub
 FetchContent_Declare (
