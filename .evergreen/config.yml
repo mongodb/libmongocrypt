@@ -629,8 +629,6 @@ tasks:
 
 - name: upload-java # TODO(MONGOCRYPT-894) remove in favor of `upload-release` tasks.
   depends_on:
-    - variant: rhel-62-64-bit
-      name: build-and-test-and-upload
     - variant: rhel72-zseries-test
       name: build-and-test-and-upload
     - variant: rhel-71-ppc64el
@@ -648,8 +646,6 @@ tasks:
     - command: shell.exec
       params:
         script: mkdir all
-    - func: "download tarball"
-      vars: { variant_name: "rhel-62-64-bit" }
     - func: "download tarball"
       vars: { variant_name: "rhel72-zseries-test" }
     - func: "download tarball"
@@ -737,8 +733,6 @@ tasks:
       name: build-and-test-and-upload
     - variant: debian92
       name: build-and-test-and-upload
-    - variant: rhel-62-64-bit
-      name: build-and-test-and-upload
     - variant: rhel-70-64-bit
       name: build-and-test-and-upload
     - variant: rhel-71-ppc64el
@@ -816,8 +810,6 @@ tasks:
       vars: { variant_name: "debian10" }
     - func: "download tarball"
       vars: { variant_name: "debian92" }
-    - func: "download tarball"
-      vars: { variant_name: "rhel-62-64-bit" }
     - func: "download tarball"
       vars: { variant_name: "rhel-70-64-bit" }
     - func: "download tarball"
@@ -1690,16 +1682,6 @@ buildvariants:
   - name: publish-packages
     distros:
     - ubuntu2004-small
-- name: rhel-62-64-bit
-  display_name: "RHEL 6.2 64-bit"
-  run_on: rhel62-small
-  expansions:
-    compile_env: >-
-      LIBMONGOCRYPT_COMPILE_FLAGS="-D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS"
-      BUILD_TESTING=OFF
-  tasks:
-  - build-and-test-and-upload
-  - build-and-test-shared-bson
 - name: rhel-70-64-bit
   display_name: "RHEL 7.0 64-bit"
   run_on: rhel70-small
