@@ -4,6 +4,9 @@
 
 <!-- TODO: add entries for next release -->
 
+### Removed
+- RHEL 6.2 builds. Use the `linux-x86_64-glibc_2_7-nocrypto` build instead as it has an equivalent glibc requirement.
+
 ## 1.19.2
 
 ### Added

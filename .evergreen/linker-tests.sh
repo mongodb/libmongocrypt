@@ -39,9 +39,6 @@ common_cmake_args=(
 )
 
 run_chdir "$MONGOC_DIR" git apply --ignore-whitespace "$linker_tests_deps_root/bson_patches/libbson1.patch"
-# Apply patches to fix compile on RHEL 6.2. TODO: try to remove once RHEL 6.2 is dropped (MONGOCRYPT-688).
-run_chdir "$MONGOC_DIR" git apply "$LIBMONGOCRYPT_DIR/etc/libbson-remove-GCC-diagnostic-pragma.patch"
-run_chdir "$MONGOC_DIR" git apply "$LIBMONGOCRYPT_DIR/etc/mongo-common-test-harness.patch"
 
 . "$(dirname "${BASH_SOURCE[0]}")/install-build-tools.sh"
 install_build_tools
@@ -61,9 +58,6 @@ echo "Make libbson1 ... done"
 echo "Prepare libbson2 ..."
 run_chdir "$MONGOC_DIR" git reset --hard
 run_chdir "$MONGOC_DIR" git apply --ignore-whitespace "$linker_tests_deps_root/bson_patches/libbson2.patch"
-# Apply patch to fix compile on RHEL 6.2. TODO: try to remove once RHEL 6.2 is dropped (MONGOCRYPT-688).
-run_chdir "$MONGOC_DIR" git apply "$LIBMONGOCRYPT_DIR/etc/libbson-remove-GCC-diagnostic-pragma.patch"
-run_chdir "$MONGOC_DIR" git apply "$LIBMONGOCRYPT_DIR/etc/mongo-common-test-harness.patch"
 LIBBSON2_SRC_DIR="$MONGOC_DIR"
 echo "Prepare libbson2 ... done"
 
