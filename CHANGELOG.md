@@ -1,8 +1,9 @@
 # ChangeLog
 
-## 1.20.0 [Unreleased]
+## 1.20.0
 
-<!-- TODO: add entries for next release -->
+### Added
+- Stable support for substring queries.
 
 ### Removed
 - RHEL 6.2 builds. Use the `linux-x86_64-glibc_2_7-nocrypto` build instead as it has an equivalent glibc requirement.
