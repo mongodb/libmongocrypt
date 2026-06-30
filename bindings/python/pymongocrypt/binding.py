@@ -1530,7 +1530,7 @@ bool mongocrypt_setopt_key_expiration(mongocrypt_t *crypt, uint64_t cache_expira
 // DEPRECATED: Support "rangePreview" has been removed in favor of "range".
 /// DEPRECATED: Support for "substringPreview" has been removed in favor of "substring"
 /// DEPRECATED: Support for "suffixPreview" has been removed in favor of "suffix"
-/// DEPRECATED: Support for "prefixPreview" has been removed in favor of "suffix"
+/// DEPRECATED: Support for "prefixPreview" has been removed in favor of "prefix"
 
 """
 )
