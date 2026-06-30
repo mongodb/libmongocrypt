@@ -2550,9 +2550,27 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
 
     {
         ee_testcase tc = {0};
-        tc.desc = "insert substring";
+        tc.desc = "find substring";
         tc.algorithm = MONGOCRYPT_ALGORITHM_STRING_STR;
-        tc.query_type = MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW_STR;
+        tc.query_type = MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW_DEPRECATED_STR;
+        tc.contention_factor = OPT_I64(1);
+        tc.msg = TEST_BSON("{'v': 'abc'}");
+        tc.user_key_id = &keyABC_id;
+        tc.keys_to_feed[0] = keyABC;
+        tc.text_opts = TEST_BSON(RAW_STRING({
+            "caseSensitive" : true,
+            "diacriticSensitive" : true,
+            "substring" : {"strMaxLength" : 100, "strMinQueryLength" : 1, "strMaxQueryLength" : 100}
+        }));
+        tc.expect = TEST_FILE("./test/data/fle2-explicit/find-substring.json");
+        ee_testcase_run(&tc);
+    }
+
+    {
+        ee_testcase tc = {0};
+        tc.desc = "find substring";
+        tc.algorithm = MONGOCRYPT_ALGORITHM_STRING_STR;
+        tc.query_type = MONGOCRYPT_QUERY_TYPE_SUBSTRING_STR;
         tc.contention_factor = OPT_I64(1);
         tc.msg = TEST_BSON("{'v': 'abc'}");
         tc.user_key_id = &keyABC_id;
@@ -4485,7 +4503,7 @@ static void _test_textPreview_fails(_mongocrypt_tester_t *tester) {
     mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
     ASSERT_FAILS(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_TEXTPREVIEW_DEPRECATED_STR, -1),
                  ctx,
-                 "unsupported algorithm");
+                 "please use 'string'");
     mongocrypt_ctx_destroy(ctx);
     mongocrypt_destroy(crypt);
 }

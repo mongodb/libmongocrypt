@@ -31,10 +31,12 @@ static void _test_efc(_mongocrypt_tester_t *tester) {
     _mongocrypt_buffer_t expect_keyId1;
     _mongocrypt_buffer_t expect_keyId2;
     _mongocrypt_buffer_t expect_keyId3;
+    _mongocrypt_buffer_t expect_keyId4;
 
     _mongocrypt_buffer_copy_from_hex(&expect_keyId1, "12345678123498761234123456789012");
     _mongocrypt_buffer_copy_from_hex(&expect_keyId2, "abcdefab123498761234123456789012");
     _mongocrypt_buffer_copy_from_hex(&expect_keyId3, "12345678123498761234123456abcdef");
+    _mongocrypt_buffer_copy_from_hex(&expect_keyId4, "abcdefab123498761234123456789012");
 
     {
         _load_test_file(tester, "./test/data/efc/efc-oneField.json", &efc_bson);
@@ -112,6 +114,11 @@ static void _test_efc(_mongocrypt_tester_t *tester) {
         ASSERT_CMPUINT8(efc.str_encode_version, ==, LATEST_STR_ENCODE_VERSION);
         ptr = efc.fields;
         ASSERT(ptr);
+        ASSERT_STREQUAL(ptr->path, "preferredName");
+        ASSERT_CMPBUF(expect_keyId4, ptr->keyId);
+        ASSERT(ptr->supported_queries == SUPPORTS_SUBSTRING_QUERIES);
+        ASSERT(ptr->next != NULL);
+        ptr = ptr->next;
         ASSERT_STREQUAL(ptr->path, "middleName");
         ASSERT_CMPBUF(expect_keyId3, ptr->keyId);
         ASSERT(ptr->supported_queries == (SUPPORTS_SUFFIX_QUERIES | SUPPORTS_PREFIX_QUERIES));
@@ -124,7 +131,7 @@ static void _test_efc(_mongocrypt_tester_t *tester) {
         ptr = ptr->next;
         ASSERT_STREQUAL(ptr->path, "firstName");
         ASSERT_CMPBUF(expect_keyId1, ptr->keyId);
-        ASSERT(ptr->supported_queries == SUPPORTS_SUBSTRING_PREVIEW_QUERIES);
+        ASSERT(ptr->supported_queries == SUPPORTS_SUBSTRING_QUERIES);
         ASSERT(ptr->next == NULL);
         mc_EncryptedFieldConfig_cleanup(&efc);
     }
@@ -142,7 +149,7 @@ static void _test_efc(_mongocrypt_tester_t *tester) {
         ptr = ptr->next;
         ASSERT_STREQUAL(ptr->path, "firstName");
         ASSERT_CMPBUF(expect_keyId1, ptr->keyId);
-        ASSERT(ptr->supported_queries == SUPPORTS_SUBSTRING_PREVIEW_QUERIES);
+        ASSERT(ptr->supported_queries == SUPPORTS_SUBSTRING_QUERIES);
         ASSERT(ptr->next == NULL);
         mc_EncryptedFieldConfig_cleanup(&efc);
     }
@@ -165,6 +172,7 @@ static void _test_efc(_mongocrypt_tester_t *tester) {
         _mongocrypt_status_reset(status);
     }
 
+    _mongocrypt_buffer_cleanup(&expect_keyId4);
     _mongocrypt_buffer_cleanup(&expect_keyId3);
     _mongocrypt_buffer_cleanup(&expect_keyId2);
     _mongocrypt_buffer_cleanup(&expect_keyId1);

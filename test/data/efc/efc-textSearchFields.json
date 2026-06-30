@@ -66,6 +66,22 @@
                     }
                 }
             ]
-        }
+        },
+        {
+            "keyId": {
+                "$binary": {
+                    "base64": "q83vqxI0mHYSNBI0VniQEg==",
+                    "subType": "04"
+                }
+            },
+            "path": "preferredName",
+            "bsonType": "string",
+            "queries": {
+                "queryType": "substring",
+                "contention": {
+                    "$numberLong": "0"
+                }
+            }
+         }
     ]
 }

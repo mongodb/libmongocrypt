@@ -248,6 +248,9 @@ bool mongocrypt_ctx_setopt_algorithm(mongocrypt_ctx_t *ctx, const char *algorith
     } else if (mstr_eq_ignore_case(algo_str, mstrv_lit(MONGOCRYPT_ALGORITHM_STRING_STR))) {
         ctx->opts.index_type.value = MONGOCRYPT_INDEX_TYPE_STRING;
         ctx->opts.index_type.set = true;
+    } else if (mstr_eq_ignore_case(algo_str, mstrv_lit(MONGOCRYPT_ALGORITHM_TEXTPREVIEW_DEPRECATED_STR))) {
+        _mongocrypt_ctx_fail_w_msg(ctx, "Algorithm 'textPreview' is deprecated, please use 'string'");
+        return false;
     } else {
         char *error = bson_strdup_printf("unsupported algorithm string \"%.*s\"",
                                          algo_str.len <= (size_t)INT_MAX ? (int)algo_str.len : INT_MAX,
@@ -1027,6 +1030,9 @@ bool mongocrypt_ctx_setopt_query_type(mongocrypt_ctx_t *ctx, const char *query_t
     } else if (mstr_eq_ignore_case(qt_str, mstrv_lit(MONGOCRYPT_QUERY_TYPE_SUFFIX_STR))) {
         ctx->opts.query_type.value = MONGOCRYPT_QUERY_TYPE_SUFFIX;
         ctx->opts.query_type.set = true;
+    } else if (mstr_eq_ignore_case(qt_str, mstrv_lit(MONGOCRYPT_QUERY_TYPE_SUBSTRING_STR))) {
+        ctx->opts.query_type.value = MONGOCRYPT_QUERY_TYPE_SUBSTRING;
+        ctx->opts.query_type.set = true;
     } else if (mstr_eq_ignore_case(qt_str, mstrv_lit(MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW_DEPRECATED_STR))) {
         // 'prefixPreview' is a deprecated alias for 'prefix'.
         ctx->opts.query_type.value = MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW_DEPRECATED;
@@ -1035,8 +1041,10 @@ bool mongocrypt_ctx_setopt_query_type(mongocrypt_ctx_t *ctx, const char *query_t
         // 'suffixPreview' is a deprecated alias for 'suffix'.
         ctx->opts.query_type.value = MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW_DEPRECATED;
         ctx->opts.query_type.set = true;
-    } else if (mstr_eq_ignore_case(qt_str, mstrv_lit(MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW_STR))) {
-        ctx->opts.query_type.value = MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW;
+    } else if (mstr_eq_ignore_case(qt_str, mstrv_lit(MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW_DEPRECATED_STR))) {
+        // TODO: MONGOCRYPT-938 disallow substringPreview
+        // _mongocrypt_ctx_fail_w_msg(ctx, "Query type 'substringPreview' is deprecated, please use 'substring'");
+        ctx->opts.query_type.value = MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW_DEPRECATED;
         ctx->opts.query_type.set = true;
     } else {
         /* don't check if qt_str.len fits in int; we want the diagnostic output */
@@ -1068,9 +1076,10 @@ const char *_mongocrypt_query_type_to_string(mongocrypt_query_type_t val) {
     case MONGOCRYPT_QUERY_TYPE_RANGE: return "Range";
     case MONGOCRYPT_QUERY_TYPE_PREFIX: return "Prefix";
     case MONGOCRYPT_QUERY_TYPE_SUFFIX: return "Suffix";
+    case MONGOCRYPT_QUERY_TYPE_SUBSTRING: return "Substring";
     case MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW_DEPRECATED: return "PrefixPreview";
     case MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW_DEPRECATED: return "SuffixPreview";
-    case MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW: return "SubstringPreview";
+    case MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW_DEPRECATED: return "SubstringPreview";
     default: return "Unknown";
     }
 }

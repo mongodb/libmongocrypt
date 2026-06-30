@@ -890,9 +890,9 @@ static moe_result must_omit_encryptionInformation(const char *command_name,
         bool has_fields_requiring_ei = false;
         for (const mc_EncryptedField_t *ef = efc->fields; ef != NULL; ef = ef->next) {
             if (ef->supported_queries
-                & (SUPPORTS_RANGE_QUERIES | SUPPORTS_SUBSTRING_PREVIEW_QUERIES | SUPPORTS_SUFFIX_QUERIES
-                   | SUPPORTS_PREFIX_QUERIES | SUPPORTS_SUFFIX_PREVIEW_DEPRECATED_QUERIES
-                   | SUPPORTS_PREFIX_PREVIEW_DEPRECATED_QUERIES)) {
+                & (SUPPORTS_RANGE_QUERIES | SUPPORTS_SUBSTRING_QUERIES | SUPPORTS_SUFFIX_QUERIES
+                   | SUPPORTS_PREFIX_QUERIES | SUPPORTS_SUBSTRING_PREVIEW_DEPRECATED_QUERIES
+                   | SUPPORTS_SUFFIX_PREVIEW_DEPRECATED_QUERIES | SUPPORTS_PREFIX_PREVIEW_DEPRECATED_QUERIES)) {
                 has_fields_requiring_ei = true;
                 break;
             }
@@ -1012,8 +1012,8 @@ static bool _fle2_append_compactionTokens(mongocrypt_t *crypt,
         const _mongocrypt_buffer_t *ecoct_buf = mc_ECOCToken_get(ecoct);
 
         if (ptr->supported_queries
-            & (SUPPORTS_RANGE_QUERIES | SUPPORTS_SUBSTRING_PREVIEW_QUERIES | SUPPORTS_SUFFIX_QUERIES
-               | SUPPORTS_PREFIX_QUERIES | SUPPORTS_SUFFIX_PREVIEW_DEPRECATED_QUERIES
+            & (SUPPORTS_RANGE_QUERIES | SUPPORTS_SUBSTRING_QUERIES | SUPPORTS_SUFFIX_QUERIES | SUPPORTS_PREFIX_QUERIES
+               | SUPPORTS_SUBSTRING_PREVIEW_DEPRECATED_QUERIES | SUPPORTS_SUFFIX_PREVIEW_DEPRECATED_QUERIES
                | SUPPORTS_PREFIX_PREVIEW_DEPRECATED_QUERIES)) {
             // Append the document {ecoc: <ECOCToken>, anchorPaddingToken: <AnchorPaddingTokenRoot>}
             esct = mc_ESCToken_new(crypto, cl1t, status);
@@ -1524,9 +1524,10 @@ static bool _fle2_finalize_explicit(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *
         // fallthrough
         case MONGOCRYPT_QUERY_TYPE_SUFFIX:
         case MONGOCRYPT_QUERY_TYPE_PREFIX:
+        case MONGOCRYPT_QUERY_TYPE_SUBSTRING:
         case MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW_DEPRECATED:
         case MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW_DEPRECATED:
-        case MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW:
+        case MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW_DEPRECATED:
         case MONGOCRYPT_QUERY_TYPE_RANGE:
         case MONGOCRYPT_QUERY_TYPE_EQUALITY: marking.u.fle2.type = MONGOCRYPT_FLE2_PLACEHOLDER_TYPE_FIND; break;
         default: _mongocrypt_ctx_fail_w_msg(ctx, "Invalid value for EncryptOpts.queryType"); goto fail;
@@ -2101,9 +2102,9 @@ static bool explicit_encrypt_init(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *ms
                 return _mongocrypt_ctx_fail_w_msg(ctx, "suffix query type requires string index type");
             }
         }
-        if (qt == MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW) {
+        if (qt == MONGOCRYPT_QUERY_TYPE_SUBSTRING || qt == MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW_DEPRECATED) {
             if (!(ctx->opts.index_type.set && ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_STRING)) {
-                return _mongocrypt_ctx_fail_w_msg(ctx, "substringPreview query type requires string index type");
+                return _mongocrypt_ctx_fail_w_msg(ctx, "substring query type requires string index type");
             }
         }
     }
@@ -2186,9 +2187,10 @@ static bool explicit_encrypt_init(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *ms
         // fallthrough
         case MONGOCRYPT_QUERY_TYPE_PREFIX:
         case MONGOCRYPT_QUERY_TYPE_SUFFIX:
+        case MONGOCRYPT_QUERY_TYPE_SUBSTRING:
         case MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW_DEPRECATED:
         case MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW_DEPRECATED:
-        case MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW:
+        case MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW_DEPRECATED:
             matches = (ctx->opts.index_type.value == MONGOCRYPT_INDEX_TYPE_STRING);
             break;
         default:

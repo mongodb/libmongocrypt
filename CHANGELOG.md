@@ -1,9 +1,20 @@
 # ChangeLog
 
+## 1.20.0
+
+### Added
+- Stable support for substring queries.
+
+## 1.19.2
+
+### Added
+- Add static library files to GitHub releases.
+
 ## 1.19.1
 
 ### Added
 - Restore support for the experimental `prefixPreview` and `suffixPreview` query types.
+
 
 ## 1.19.0
 
@@ -15,6 +26,13 @@
 
 ### Removed
 - Support for the experimental `prefixPreview` and `suffixPreview` query types.
+
+
+## 1.18.2
+
+### Fixed
+- Add musl arm64 release to GitHub release. This was an omission in 1.18.0.
+- Reject large KMS replies.
 
 ## 1.18.1
 
