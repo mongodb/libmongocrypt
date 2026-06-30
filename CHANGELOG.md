@@ -1,8 +1,9 @@
 # ChangeLog
 
-## 1.20.0 [Unreleased]
+## 1.20.0
 
-<!-- TODO: add entries for next release -->
+### Added
+- Stable support for substring queries.
 
 ## 1.19.2
 
