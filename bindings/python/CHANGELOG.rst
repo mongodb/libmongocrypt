@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Changes in Version 1.20.0
+-------------------------
+
+- Bundle libmongocrypt 1.20.0 in release wheels.
+- Stable support for substring queries, including "string", "suffix", and "prefix" algorithms.
+
 Changes in Version 1.18.1
 -------------------------
 
