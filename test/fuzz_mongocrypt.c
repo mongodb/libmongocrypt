@@ -160,8 +160,11 @@ static void drive_ctx(mongocrypt_ctx_t *ctx, const uint8_t **data, size_t *remai
                     mongocrypt_binary_t *bin =
                         mongocrypt_binary_new_from_data((uint8_t *)feed_data, (uint32_t)feed_len);
                     if (bin) {
-                        mongocrypt_kms_ctx_feed(kms_ctx, bin);
+                        bool ok = mongocrypt_kms_ctx_feed(kms_ctx, bin);
                         mongocrypt_binary_destroy(bin);
+                        if (!ok) {
+                            return;
+                        }
                     }
                 }
             }
