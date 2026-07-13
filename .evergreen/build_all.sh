@@ -115,7 +115,7 @@ if [[ "$release_os_arch" == *glibc* ]]; then
     echo "glibc version check passed: $actual_glibc"
 fi
 
-is_true "$BUILD_TESTING" && run_chdir "$BINARY_DIR" ctest
+is_true BUILD_TESTING && run_chdir "$BINARY_DIR" ctest
 
 # MONGOCRYPT-372, ensure macOS universal builds contain both x86_64 and arm64 architectures.
 if test "${CMAKE_OSX_ARCHITECTURES-}" != ''; then
@@ -145,7 +145,7 @@ _cmake_with_env "${cmake_args[@]}" \
     -DCMAKE_INSTALL_PREFIX="$MONGOCRYPT_INSTALL_PREFIX/nocrypto" \
     -B "$BINARY_DIR" -S "$LIBMONGOCRYPT_DIR"
 _cmake_with_env --build "$BINARY_DIR" --target install
-is_true "$BUILD_TESTING" && run_chdir "$BINARY_DIR" ctest
+is_true BUILD_TESTING && run_chdir "$BINARY_DIR" ctest
 
 # Build and install libmongocrypt without statically linking libbson
 _cmake_with_env "${cmake_args[@]}" \
@@ -153,4 +153,4 @@ _cmake_with_env "${cmake_args[@]}" \
     -DCMAKE_INSTALL_PREFIX="$MONGOCRYPT_INSTALL_PREFIX/sharedbson" \
     -B "$BINARY_DIR" -S "$LIBMONGOCRYPT_DIR"
 _cmake_with_env --build "$BINARY_DIR" --target install
-is_true "$BUILD_TESTING" && run_chdir "$BINARY_DIR" ctest
+is_true BUILD_TESTING && run_chdir "$BINARY_DIR" ctest
