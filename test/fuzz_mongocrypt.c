@@ -97,10 +97,8 @@ static void drive_ctx(mongocrypt_ctx_t *ctx, const uint8_t **data, size_t *remai
                 if (feed_data) {
                     mongocrypt_binary_t *bin =
                         mongocrypt_binary_new_from_data((uint8_t *)feed_data, (uint32_t)feed_len);
-                    if (bin) {
-                        mongocrypt_ctx_mongo_feed(ctx, bin);
-                        mongocrypt_binary_destroy(bin);
-                    }
+                    mongocrypt_ctx_mongo_feed(ctx, bin);
+                    mongocrypt_binary_destroy(bin);
                 }
             }
             mongocrypt_ctx_mongo_done(ctx);
@@ -123,19 +121,15 @@ static void drive_ctx(mongocrypt_ctx_t *ctx, const uint8_t **data, size_t *remai
                 if (feed_data) {
                     mongocrypt_binary_t *bin =
                         mongocrypt_binary_new_from_data((uint8_t *)feed_data, (uint32_t)feed_len);
-                    if (bin) {
-                        mongocrypt_ctx_provide_kms_providers(ctx, bin);
-                        mongocrypt_binary_destroy(bin);
-                    }
+                    mongocrypt_ctx_provide_kms_providers(ctx, bin);
+                    mongocrypt_binary_destroy(bin);
                 }
             } else {
                 bson_t empty = BSON_INITIALIZER;
                 mongocrypt_binary_t *bin =
                     mongocrypt_binary_new_from_data((uint8_t *)bson_get_data(&empty), (uint32_t)empty.len);
-                if (bin) {
-                    mongocrypt_ctx_provide_kms_providers(ctx, bin);
-                    mongocrypt_binary_destroy(bin);
-                }
+                mongocrypt_ctx_provide_kms_providers(ctx, bin);
+                mongocrypt_binary_destroy(bin);
             }
             break;
         }
@@ -159,12 +153,10 @@ static void drive_ctx(mongocrypt_ctx_t *ctx, const uint8_t **data, size_t *remai
                 if (feed_data) {
                     mongocrypt_binary_t *bin =
                         mongocrypt_binary_new_from_data((uint8_t *)feed_data, (uint32_t)feed_len);
-                    if (bin) {
-                        bool ok = mongocrypt_kms_ctx_feed(kms_ctx, bin);
-                        mongocrypt_binary_destroy(bin);
-                        if (!ok) {
-                            return;
-                        }
+                    bool ok = mongocrypt_kms_ctx_feed(kms_ctx, bin);
+                    mongocrypt_binary_destroy(bin);
+                    if (!ok) {
+                        return;
                     }
                 }
             }
@@ -213,10 +205,6 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     uint8_t local_key[FUZZ_KEY_LEN];
     memset(local_key, 0xAB, FUZZ_KEY_LEN);
     mongocrypt_binary_t *key_bin = mongocrypt_binary_new_from_data(local_key, FUZZ_KEY_LEN);
-    if (!key_bin) {
-        mongocrypt_destroy(crypt);
-        return 0;
-    }
     mongocrypt_setopt_kms_provider_local(crypt, key_bin);
     mongocrypt_binary_destroy(key_bin);
 
@@ -234,10 +222,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         bson_t *kmip_doc = BCON_NEW("kmip", "{", "endpoint", "localhost:5696", "}");
         mongocrypt_binary_t *kmip_bin =
             mongocrypt_binary_new_from_data((uint8_t *)bson_get_data(kmip_doc), (uint32_t)kmip_doc->len);
-        if (kmip_bin) {
-            mongocrypt_setopt_kms_providers(crypt, kmip_bin);
-            mongocrypt_binary_destroy(kmip_bin);
-        }
+        mongocrypt_setopt_kms_providers(crypt, kmip_bin);
+        mongocrypt_binary_destroy(kmip_bin);
         bson_destroy(kmip_doc);
     }
 
@@ -278,10 +264,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         uint8_t key_id[16];
         memset(key_id, 0x61, sizeof(key_id)); /* matches "YWFhYWFhYWFhYWFhYWFhYQ==" */
         mongocrypt_binary_t *kid_bin = mongocrypt_binary_new_from_data(key_id, sizeof(key_id));
-        if (kid_bin) {
-            mongocrypt_ctx_setopt_key_id(ctx, kid_bin);
-            mongocrypt_binary_destroy(kid_bin);
-        }
+        mongocrypt_ctx_setopt_key_id(ctx, kid_bin);
+        mongocrypt_binary_destroy(kid_bin);
         mongocrypt_ctx_setopt_algorithm(ctx, "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic", -1);
         if (input_bin) {
             init_ok = mongocrypt_ctx_explicit_encrypt_init(ctx, input_bin);
@@ -299,10 +283,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         bson_t *kek = BCON_NEW("provider", "local");
         mongocrypt_binary_t *kek_bin =
             mongocrypt_binary_new_from_data((uint8_t *)bson_get_data(kek), (uint32_t)kek->len);
-        if (kek_bin) {
-            mongocrypt_ctx_setopt_key_encryption_key(ctx, kek_bin);
-            mongocrypt_binary_destroy(kek_bin);
-        }
+        mongocrypt_ctx_setopt_key_encryption_key(ctx, kek_bin);
+        mongocrypt_binary_destroy(kek_bin);
         bson_destroy(kek);
         init_ok = mongocrypt_ctx_datakey_init(ctx);
         break;
@@ -318,10 +300,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         uint8_t key_id[16];
         memset(key_id, 0x61, sizeof(key_id));
         mongocrypt_binary_t *kid_bin = mongocrypt_binary_new_from_data(key_id, sizeof(key_id));
-        if (kid_bin) {
-            mongocrypt_ctx_setopt_key_id(ctx, kid_bin);
-            mongocrypt_binary_destroy(kid_bin);
-        }
+        mongocrypt_ctx_setopt_key_id(ctx, kid_bin);
+        mongocrypt_binary_destroy(kid_bin);
         mongocrypt_ctx_setopt_query_type(ctx, MONGOCRYPT_QUERY_TYPE_RANGE_STR, -1);
         if (input_bin) {
             init_ok = mongocrypt_ctx_explicit_encrypt_expression_init(ctx, input_bin);
@@ -336,10 +316,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         bson_t *kek = BCON_NEW("provider", "aws", "region", "us-east-1", "key", "arn:aws:kms:us-east-1:0:key/fuzz");
         mongocrypt_binary_t *kek_bin =
             mongocrypt_binary_new_from_data((uint8_t *)bson_get_data(kek), (uint32_t)kek->len);
-        if (kek_bin) {
-            mongocrypt_ctx_setopt_key_encryption_key(ctx, kek_bin);
-            mongocrypt_binary_destroy(kek_bin);
-        }
+        mongocrypt_ctx_setopt_key_encryption_key(ctx, kek_bin);
+        mongocrypt_binary_destroy(kek_bin);
         bson_destroy(kek);
         init_ok = mongocrypt_ctx_datakey_init(ctx);
         break;
@@ -352,10 +330,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         bson_t *kek = BCON_NEW("provider", "kmip");
         mongocrypt_binary_t *kek_bin =
             mongocrypt_binary_new_from_data((uint8_t *)bson_get_data(kek), (uint32_t)kek->len);
-        if (kek_bin) {
-            mongocrypt_ctx_setopt_key_encryption_key(ctx, kek_bin);
-            mongocrypt_binary_destroy(kek_bin);
-        }
+        mongocrypt_ctx_setopt_key_encryption_key(ctx, kek_bin);
+        mongocrypt_binary_destroy(kek_bin);
         bson_destroy(kek);
         init_ok = mongocrypt_ctx_datakey_init(ctx);
         break;
