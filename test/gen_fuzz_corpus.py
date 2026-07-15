@@ -7,15 +7,15 @@ Each corpus file has the format:
 
 The optional extra bytes are consumed by drive_ctx() as it walks the state
 machine.  For NEED_MONGO_* states it reads a 2-byte LE length then that many
-bytes; for NEED_KMS it reads exactly bytes_needed bytes from the KMS context.
+bytes; for NEED_KMS it reads exactly bytes_needed bytes from the input.
 
 Op selectors (must match the enum in fuzz_mongocrypt.c):
   0  OP_ENCRYPT
   1  OP_DECRYPT
   2  OP_EXPLICIT_ENCRYPT
   3  OP_EXPLICIT_DECRYPT
-  4  OP_DATAKEY            (input_bin ignored; extra bytes unused unless
-  5  OP_REWRAP_MANY_DATAKEY  state machine needs feeding)
+  4  OP_DATAKEY            (input_bin ignored; extra bytes unused unless state machine needs feeding)
+  5  OP_REWRAP_MANY_DATAKEY  
   6  OP_EXPLICIT_ENCRYPT_EXPRESSION
   7  OP_DATAKEY_AWS        (extra bytes fed to KMS HTTP response parser)
   8  OP_DATAKEY_KMIP       (extra bytes fed to KMIP/TTLV response parser)
@@ -81,8 +81,8 @@ def build_entries() -> dict[str, bytes]:
 
     # -- OP_ENCRYPT (0) ------------------------------------------------------
     # mongocrypt_ctx_encrypt_init expects a command BSON doc.
-    for cmd, coll in [("find", "test"), ("aggregate", "test"), ("insert", "test")]:
-        name = f"op0_encrypt_{cmd}"
+    for cmd in ["find", "aggregate", "insert"]:
+        coll = "test"
         payload = bson(_bson_elem_string(cmd, coll))
         entries[name] = bytes([0]) + payload
         # With extra bytes to drive state machine transitions.
