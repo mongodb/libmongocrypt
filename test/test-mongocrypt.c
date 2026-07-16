@@ -906,6 +906,16 @@ static void _test_setopt_kms_providers(_mongocrypt_tester_t *tester) {
         ASSERT_FAILS(mongocrypt_setopt_kms_providers(crypt, more), crypt, "already set");
         mongocrypt_destroy(crypt);
     }
+
+    // Errors if followed by call to `mongocrypt_setopt_kms_providers` configuring "kmip".
+    // This is a regression test for: MONGOCRYPT-956
+    {
+        mongocrypt_binary_t *kms_providers = TEST_BSON("{'kmip' : {'endpoint' : 'localhost'}}");
+        mongocrypt_t *crypt = mongocrypt_new();
+        ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, kms_providers), crypt);
+        ASSERT_FAILS(mongocrypt_setopt_kms_providers(crypt, kms_providers), crypt, "already set");
+        mongocrypt_destroy(crypt);
+    }
 }
 
 static void test_tmp_bsonf(_mongocrypt_tester_t *tester) {
@@ -1044,7 +1054,7 @@ get_os_version_failed:
 
             continue; // No match found.
         }
-    found_match : {}
+    found_match: {}
 
         TEST_PRINTF("  begin %s\n", tester.test_names[i]);
         tester.test_fns[i](&tester);
