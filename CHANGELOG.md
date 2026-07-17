@@ -1,5 +1,10 @@
 # ChangeLog
 
+## 1.20.1
+
+## Changed
+- Bump downloaded libbson version from 2.3.0 to 2.3.3 to address configuration error with CMake 4.4.0.
+
 ## 1.20.0
 
 ### Added
