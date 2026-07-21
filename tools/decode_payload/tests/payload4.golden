@@ -1,0 +1,48 @@
+{
+  "name": "FLE2InsertUpdatePayload",
+  "dump": {
+    "d": {
+      "$binary": {
+        "base64": "i/pVQgh2a0d2mBmgneMjWaXULY9GltWENn4osA1ii2Q=",
+        "subType": "00"
+      }
+    },
+    "s": {
+      "$binary": {
+        "base64": "GHqnblPNqaqOvDEiLjhPEi6Gt9Y/tihIDVCZjpjHrxk=",
+        "subType": "00"
+      }
+    },
+    "c": {
+      "$binary": {
+        "base64": "MMRH1V+7hgaihhDEhR70GldDZgQ8CDNasgLlI3T2EPU=",
+        "subType": "00"
+      }
+    },
+    "p": {
+      "$binary": {
+        "base64": "jTUBRBH9aY1Az0XRsKZhJSeV9a3/RUwbROtpkVAFOlUnhaMmVoNLaGsIhWeW6DOZ46KwUWTHhm8sbHlNevBsnR1FPTXWPUHFAcREC6BSp44=",
+        "subType": "00"
+      }
+    },
+    "u": {
+      "$binary": {
+        "base64": "IuMjJw/sRnW/Iv6JMdvCMg==",
+        "subType": "04"
+      }
+    },
+    "t": 2,
+    "v": {
+      "$binary": {
+        "base64": "IuMjJw/sRnW/Iv6JMdvCMnuKUnAoATZAj+50R9EyQIlO9G2HAEjOvfPb6g7OWYgFs1ogqzjXxeZDlSN1GfjQW3+nBMA6+KlrYg==",
+        "subType": "00"
+      }
+    },
+    "e": {
+      "$binary": {
+        "base64": "OTxFECgSgD/PKSpuTxZx1vWmUY/E0XeZdG6Mk3Mmj9Q=",
+        "subType": "00"
+      }
+    }
+  }
+}
