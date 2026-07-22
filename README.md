@@ -1,6 +1,6 @@
 # libmongocrypt #
 
-The companion C library for client side encryption in drivers.
+The companion C library for driver support of [In-Use Encryption](https://www.mongodb.com/docs/manual/core/security-in-use-encryption/).
 
 This project uses [Semantic Versioning](https://semver.org/).
 
