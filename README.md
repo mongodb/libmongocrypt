@@ -24,25 +24,22 @@ See [The Integration Guide](integrating.md) to integrate with your driver.
 
 See [mongocrypt.h](src/mongocrypt.h) for the public API reference.
 
-## Building libmongocrypt ##
+## Installing libmongocrypt from source ##
 
-On Windows and macOS, libmongocrypt can use the platform's default encryption
-APIs as its encryption backend. On other systems, one will want to install the
-OpenSSL development libraries, which libmongocrypt will use as the default
-encryption backend.
+To build:
 
-Then build libmongocrypt:
-
-```
-git clone https://github.com/mongodb/libmongocrypt
-cd libmongocrypt
-mkdir cmake-build && cd cmake-build
-cmake ../
-make
+```bash
+cmake -D CMAKE_BUILD_TYPE=RelWithDebInfo -B cmake-build
+cmake --build cmake-build
 ```
 
-This builds libmongocrypt.dylib and test-libmongocrypt, in the cmake-build
-directory.
+To install:
+
+```bash
+cmake --install cmake-build
+```
+
+libmongocrypt performs crypto by default with platform crypto APIs on macOS/Windows and OpenSSL on other platforms. Configure with `DISABLE_NATIVE_CRYPTO=ON` to disable the crypto dependency and supply runtime crypto hooks.
 
 ## Installing libmongocrypt on macOS ##
 Install the latest release of libmongocrypt with the following.
@@ -51,34 +48,6 @@ brew install mongodb/brew/libmongocrypt
 ```
 
 To install the latest unstable development version of libmongocrypt, use `brew install mongodb/brew/libmongocrypt --HEAD`. Do not use the unstable version of libmongocrypt in a production environment.
-
-## Building libmongocrypt from source on macOS ##
-
-First install [Homebrew according to its own instructions](https://brew.sh/).
-
-Install the XCode Command Line Tools:
-```
-xcode-select --install
-```
-
-Then clone and build libmongocrypt:
-```
-git clone https://github.com/mongodb/libmongocrypt.git
-cd libmongocrypt
-cmake .
-cmake --build . --target install
-```
-
-Then, libmongocrypt can be used with pkg-config:
-```
-pkg-config libmongocrypt --libs --cflags
-```
-
-Or use cmake's `find_package`:
-```
-find_package (mongocrypt)
-# Then link against mongo::mongocrypt
-```
 
 ## Installing libmongocrypt on Windows ##
 A Windows DLL for x86_64 is available on the Github Releases page. See the [latest release](https://github.com/mongodb/libmongocrypt/releases/latest).
