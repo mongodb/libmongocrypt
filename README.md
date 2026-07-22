@@ -12,6 +12,10 @@ If you have encountered a bug, or would like to see a new feature in libmongocry
 - Navigate to [the MONGOCRYPT project](https://jira.mongodb.org/projects/MONGOCRYPT).
 - Click **Create Issue** - Please provide as much information as possible about the issue type and how to reproduce it.
 
+## Security Vulnerabilities ##
+
+If you’ve identified a security vulnerability in a driver or any other MongoDB project, please report it according to the [instructions here](https://www.mongodb.com/docs/manual/tutorial/create-a-vulnerability-report).
+
 ## Documentation ##
 See [The Integration Guide](integrating.md) to integrate with your driver.
 
