@@ -17,6 +17,9 @@ If you have encountered a bug, or would like to see a new feature in libmongocry
 If you’ve identified a security vulnerability in a driver or any other MongoDB project, please report it according to the [instructions here](https://www.mongodb.com/docs/manual/tutorial/create-a-vulnerability-report).
 
 ## Documentation ##
+
+The [Client-Side Encryption](https://github.com/mongodb/specifications/blob/master/source/client-side-encryption/client-side-encryption.md) driver specification.
+
 See [The Integration Guide](integrating.md) to integrate with your driver.
 
 See [mongocrypt.h](src/mongocrypt.h) for the public API reference.
