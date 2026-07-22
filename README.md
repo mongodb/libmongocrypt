@@ -227,9 +227,6 @@ See [The Integration Guide](integrating.md) to integrate with your driver.
 
 See [mongocrypt.h](src/mongocrypt.h) for the public API reference.
 
-## Python Releases ##
-Python releases and tags are signed using the MongoDB Python driver PGP key. Use `gpg` to verify the signature. The public key is available at https://pgp.mongodb.com/python-driver.pub.
-
 ## Testing ##
 `test-mongocrypt` mocks all I/O with files stored in the `test/data` and `test/example` directories. Run `test-mongocrypt` from the source directory:
 
@@ -242,3 +239,6 @@ libmongocrypt is continuously built and published on evergreen. Submit patch bui
 ## Releasing ##
 
 See [releasing](./doc/releasing.md).
+
+### Python Releases ###
+Python releases and tags are signed using the MongoDB Python driver PGP key. Use `gpg` to verify the signature. The public key is available at https://pgp.mongodb.com/python-driver.pub.
