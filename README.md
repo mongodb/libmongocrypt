@@ -37,7 +37,7 @@ libmongocrypt performs crypto by default with platform crypto APIs on macOS/Wind
 
 ## Installing libmongocrypt on macOS ##
 Install the latest release of libmongocrypt with the following.
-```
+```bash
 brew install mongodb/brew/libmongocrypt
 ```
 
@@ -70,19 +70,19 @@ Extrepo is available on Debian 11 and newer, as well as Ubuntu 22.04 and newer.
 
 First, install the extrepo package:
 
-```
+```bash
 sudo apt install extrepo
 ```
 
 If you would like to see the information about the repository, it can be viewed with the search command:
 
-```
+```bash
 extrepo search libmongocrypt
 ```
 
 In order to enable the repository, execute this command:
 
-```
+```bash
 sudo extrepo enable libmongocrypt-release
 ```
 
@@ -92,19 +92,19 @@ Once the repository is configured, continue with package installation.
 
 First, import the public key used to sign the package repositories:
 
-```
+```bash
 sudo sh -c 'curl -s --location https://pgp.mongodb.com/libmongocrypt.asc | gpg --dearmor >/etc/apt/trusted.gpg.d/libmongocrypt.gpg'
 ```
 
 Second, create a list entry for the repository.  For Ubuntu systems (be sure to change `<release>` to `jammy` or `noble` as appropriate to your system):
 
-```
+```bash
 echo "deb https://libmongocrypt.s3.amazonaws.com/apt/ubuntu <release>/libmongocrypt/<channel> universe" | sudo tee /etc/apt/sources.list.d/libmongocrypt.list
 ```
 
 For Debian systems (be sure to change `<release>` to `bullseye`, `bookworm`, or `trixie` as appropriate to your system):
 
-```
+```bash
 echo "deb https://libmongocrypt.s3.amazonaws.com/apt/debian <release>/libmongocrypt/<channel> main" | sudo tee /etc/apt/sources.list.d/libmongocrypt.list
 ```
 
@@ -112,7 +112,7 @@ echo "deb https://libmongocrypt.s3.amazonaws.com/apt/debian <release>/libmongocr
 
 Finally, update the package cache and install the libmongocrypt packages:
 
-```
+```bash
 sudo apt-get update
 sudo apt-get install -y libmongocrypt-dev
 ```
@@ -136,7 +136,7 @@ gpgkey=https://pgp.mongodb.com/libmongocrypt.asc
 
 Then install the libmongocrypt packages:
 
-```
+```bash
 sudo yum install -y libmongocrypt
 ```
 
@@ -155,7 +155,7 @@ gpgkey=https://pgp.mongodb.com/libmongocrypt.asc
 
 Then install the libmongocrypt packages:
 
-```
+```bash
 sudo yum install -y libmongocrypt
 ```
 
@@ -174,7 +174,7 @@ gpgkey=https://pgp.mongodb.com/libmongocrypt.asc
 
 Then install the libmongocrypt packages:
 
-```
+```bash
 sudo yum install -y libmongocrypt
 ```
 
@@ -193,7 +193,7 @@ gpgkey=https://pgp.mongodb.com/libmongocrypt.asc
 
 Then install the libmongocrypt packages:
 
-```
+```bash
 sudo yum install -y libmongocrypt
 ```
 
@@ -201,19 +201,19 @@ sudo yum install -y libmongocrypt
 
 First, import the public key used to sign the package repositories:
 
-```
+```bash
 sudo rpm --import https://pgp.mongodb.com/libmongocrypt.asc
 ```
 
 Second, add the repository (be sure to change `<release>` to `12` or `15`, as appropriate to your system):
 
-```
+```bash
 sudo zypper addrepo --gpgcheck "https://libmongocrypt.s3.amazonaws.com/zypper/suse/<release>/libmongocrypt/<channel>/x86_64" libmongocrypt
 ```
 
 Finally, install the libmongocrypt packages:
 
-```
+```bash
 sudo zypper -n install libmongocrypt
 ```
 
@@ -233,7 +233,7 @@ Python releases and tags are signed using the MongoDB Python driver PGP key. Use
 ## Testing ##
 `test-mongocrypt` mocks all I/O with files stored in the `test/data` and `test/example` directories. Run `test-mongocrypt` from the source directory:
 
-```
+```bash
 cd libmongocrypt
 ./cmake-build/test-mongocrypt
 ```
