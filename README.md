@@ -238,7 +238,6 @@ Python releases and tags are signed using the MongoDB Python driver PGP key. Use
 ```
 
 libmongocrypt is continuously built and published on evergreen. Submit patch builds to this evergreen project when making changes to test on supported platforms.
-The latest tarball containing libmongocrypt built on all supported variants is [published here](https://s3.amazonaws.com/mciuploads/libmongocrypt/all/master/latest/libmongocrypt-all.tar.gz).
 
 ## Releasing ##
 
