@@ -16,13 +16,7 @@ If you have encountered a bug, or would like to see a new feature in libmongocry
 
 If you’ve identified a security vulnerability in a driver or any other MongoDB project, please report it according to the [instructions here](https://www.mongodb.com/docs/manual/tutorial/create-a-vulnerability-report).
 
-## Documentation ##
-
-The [Client-Side Encryption](https://github.com/mongodb/specifications/blob/master/source/client-side-encryption/client-side-encryption.md) driver specification.
-
-See [The Integration Guide](integrating.md) to integrate with your driver.
-
-See [mongocrypt.h](src/mongocrypt.h) for the public API reference.
+# Installing #
 
 ## Installing libmongocrypt from source ##
 
@@ -53,25 +47,6 @@ To install the latest unstable development version of libmongocrypt, use `brew i
 A Windows DLL for x86_64 is available on the Github Releases page. See the [latest release](https://github.com/mongodb/libmongocrypt/releases/latest).
 
 Use `gpg` to verify the signature. The public key for `libmongocrypt` is available on https://pgp.mongodb.com/.
-
-## Python Releases ##
-Python releases and tags are signed using the MongoDB Python driver PGP key. Use `gpg` to verify the signature. The public key is available at https://pgp.mongodb.com/python-driver.pub.
-
-
-### Testing ###
-`test-mongocrypt` mocks all I/O with files stored in the `test/data` and `test/example` directories. Run `test-mongocrypt` from the source directory:
-
-```
-cd libmongocrypt
-./cmake-build/test-mongocrypt
-```
-
-libmongocrypt is continuously built and published on evergreen. Submit patch builds to this evergreen project when making changes to test on supported platforms.
-The latest tarball containing libmongocrypt built on all supported variants is [published here](https://s3.amazonaws.com/mciuploads/libmongocrypt/all/master/latest/libmongocrypt-all.tar.gz).
-
-### Releasing ###
-
-See [releasing](./doc/releasing.md).
 
 ## Installing libmongocrypt From Distribution Packages ##
 Distribution packages (i.e., .deb/.rpm) are built and published for several Linux distributions.  The installation of these packages for supported platforms is documented here.
@@ -241,3 +216,31 @@ Finally, install the libmongocrypt packages:
 ```
 sudo zypper -n install libmongocrypt
 ```
+
+# Development #
+
+## Documentation ##
+
+The [Client-Side Encryption](https://github.com/mongodb/specifications/blob/master/source/client-side-encryption/client-side-encryption.md) driver specification.
+
+See [The Integration Guide](integrating.md) to integrate with your driver.
+
+See [mongocrypt.h](src/mongocrypt.h) for the public API reference.
+
+## Python Releases ##
+Python releases and tags are signed using the MongoDB Python driver PGP key. Use `gpg` to verify the signature. The public key is available at https://pgp.mongodb.com/python-driver.pub.
+
+## Testing ##
+`test-mongocrypt` mocks all I/O with files stored in the `test/data` and `test/example` directories. Run `test-mongocrypt` from the source directory:
+
+```
+cd libmongocrypt
+./cmake-build/test-mongocrypt
+```
+
+libmongocrypt is continuously built and published on evergreen. Submit patch builds to this evergreen project when making changes to test on supported platforms.
+The latest tarball containing libmongocrypt built on all supported variants is [published here](https://s3.amazonaws.com/mciuploads/libmongocrypt/all/master/latest/libmongocrypt-all.tar.gz).
+
+## Releasing ##
+
+See [releasing](./doc/releasing.md).
