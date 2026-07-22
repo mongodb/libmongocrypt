@@ -69,13 +69,6 @@ cd libmongocrypt
 libmongocrypt is continuously built and published on evergreen. Submit patch builds to this evergreen project when making changes to test on supported platforms.
 The latest tarball containing libmongocrypt built on all supported variants is [published here](https://s3.amazonaws.com/mciuploads/libmongocrypt/all/master/latest/libmongocrypt-all.tar.gz).
 
-### Troubleshooting ###
-If OpenSSL is installed in a non-default directory, pass `-DOPENSSL_ROOT_DIR=/path/to/openssl` to the cmake command for libmongocrypt.
-
-If there are errors with cmake configuration, send the set of steps you performed to the maintainers of this project.
-
-If there are compilation or linker errors, run `make` again, setting `VERBOSE=1` in the environment or on the command line (which shows exact compile and link commands), and send the output to the maintainers of this project.
-
 ### Releasing ###
 
 See [releasing](./doc/releasing.md).
