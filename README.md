@@ -14,7 +14,7 @@ If you have encountered a bug, or would like to see a new feature in libmongocry
 
 ## Security Vulnerabilities ##
 
-If you’ve identified a security vulnerability in a driver or any other MongoDB project, please report it according to the [instructions here](https://www.mongodb.com/docs/manual/tutorial/create-a-vulnerability-report).
+If you’ve identified a security vulnerability, please report it according to the [instructions here](https://www.mongodb.com/docs/manual/tutorial/create-a-vulnerability-report).
 
 # Installing #
 
