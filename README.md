@@ -234,7 +234,6 @@ Python releases and tags are signed using the MongoDB Python driver PGP key. Use
 `test-mongocrypt` mocks all I/O with files stored in the `test/data` and `test/example` directories. Run `test-mongocrypt` from the source directory:
 
 ```bash
-cd libmongocrypt
 ./cmake-build/test-mongocrypt
 ```
 
