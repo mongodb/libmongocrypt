@@ -418,13 +418,26 @@ functions:
         filenames:
           - release-files-all-${tag_upload_location!|*revision}.tgz
   earthly:
+    - command: ec2.assume_role
+      type: setup
+      params:
+        role_arn: ${devprod_platforms_ecr_readonly_role_arn}
+    - command: shell.exec
+      type: setup
+      params:
+        shell: bash
+        include_expansions_in_env: *aws-params-env
+        script: |
+          # Authenticate to the DevProd Platforms ECR registry.
+          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 901841024863.dkr.ecr.us-east-1.amazonaws.com
     - command: shell.exec
       params:
         shell: bash
         working_dir: ${working_dir|libmongocrypt}
         script: |
-          # Authenticate to artifactory.
-          echo "${artifactory_password}" | docker login --password-stdin --username "${artifactory_username}" artifactory.corp.mongodb.com
+          # Signal to earthly.sh that ECR authentication was already performed above, so it
+          # does not also attempt the local-only AWS SSO profile login.
+          export CI=true
           bash ${workdir}/libmongocrypt/.evergreen/earthly.sh ${args}
 
   sbom:
@@ -448,14 +461,30 @@ functions:
       type: setup
       params:
         file: expansions.kondukto.yml
+    # NOTE: this assume_role runs *after* the kondukto_role_arn credentials above have already
+    # been consumed. It overwrites the shared AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY/AWS_SESSION_TOKEN
+    # expansions, so it must not run before the Kondukto secret retrieval.
+    - command: ec2.assume_role
+      type: setup
+      params:
+        role_arn: ${devprod_platforms_ecr_readonly_role_arn}
+    - command: subprocess.exec
+      type: setup
+      params:
+        binary: bash
+        include_expansions_in_env: *aws-params-env
+        args:
+          - -c
+          - |
+            set -o errexit
+            set -o pipefail
+            aws ecr get-login-password --region us-east-1 | podman login --username AWS --password-stdin 901841024863.dkr.ecr.us-east-1.amazonaws.com
     - command: subprocess.exec
       type: test
       params:
         binary: bash
         working_dir: libmongocrypt
         include_expansions_in_env:
-          - artifactory_password
-          - artifactory_username
           - branch_name
           - KONDUKTO_TOKEN
         args:
