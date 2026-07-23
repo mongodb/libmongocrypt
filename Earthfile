@@ -438,12 +438,12 @@ test-deb-packages-from-ppa:
     RUN ./test.out
 
 # `sign` uses Garasign to sign a file with the libmongocrypt key.
-# Requires prior authentication with Artifactory.
+# Requires prior authentication with the DevProd Platforms ECR registry (see .evergreen/earthly.sh).
 # See: https://docs.devprod.prod.corp.mongodb.com/release-tools-container-images/garasign/garasign_signing/.
 sign:
     ARG --required file_to_sign
     ARG --required output_file
-    FROM artifactory.corp.mongodb.com/release-tools-container-registry-local/garasign-gpg
+    FROM 901841024863.dkr.ecr.us-east-1.amazonaws.com/release-infrastructure/garasign-gpg
     WORKDIR /s
     COPY ${file_to_sign} /s/file
     RUN --secret garasign_username --secret garasign_password \
@@ -460,8 +460,9 @@ sign:
 #   An environment with the `silkbomb` command.
 #
 # See https://docs.devprod.prod.corp.mongodb.com/mms/python/src/sbom/silkbomb/ for documentation of silkbomb.
+# Requires prior authentication with the DevProd Platforms ECR registry (see .evergreen/earthly.sh).
 silkbomb:
-    FROM artifactory.corp.mongodb.com/release-tools-container-registry-public-local/silkbomb:2.0
+    FROM 901841024863.dkr.ecr.us-east-1.amazonaws.com/release-infrastructure/silkbomb:2.0
     # Alias the silkbomb executable to a simpler name:
     RUN ln -s /python/src/sbom/silkbomb/bin /usr/local/bin/silkbomb
 

@@ -93,6 +93,9 @@ Do the following when releasing:
    ```bash
    ./.evergreen/earthly.sh +sbom-generate-new-serial-number
    ```
+   This pulls the `silkbomb` image from the DevProd Platforms ECR registry. Requires AWS SSO access
+   to the `ECRScopedAccess-901841024863` profile (override with `DEVPROD_PLATFORMS_ECR_PROFILE`); run
+   `aws sso login --profile ECRScopedAccess-901841024863` first if not already logged in.
    Commit resulting `etc/cyclonedx.sbom.json` and push to `rx.y`.
 - Remove yourself from the [releases team](https://github.com/orgs/mongodb/teams/dbx-c-cxx-releases) on GitHub via [MANA](https://mana.corp.mongodb.com/resources/68029673d39aa9f7de6399f9).
 - If this is a new non-patch release (e.g. `x.y.0`):
@@ -130,6 +133,7 @@ Do the following when releasing:
      ```bash
      ./.evergreen/earthly.sh +sbom-generate-new-serial-number
      ```
+     Requires AWS SSO access to the `ECRScopedAccess-901841024863` profile (see note above).
      Commit resulting `etc/cyclonedx.sbom.json`.
 - Update the release on the [Jira releases page](https://jira.mongodb.org/projects/MONGOCRYPT/versions).
 - Record the release on [C/C++ Release Info](https://docs.google.com/spreadsheets/d/1yHfGmDnbA5-Qt8FX4tKWC5xk9AhzYZx1SKF4AD36ecY/edit?usp=sharing). This is done to leave commentary about the process.

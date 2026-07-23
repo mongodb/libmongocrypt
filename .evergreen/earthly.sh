@@ -46,4 +46,29 @@ fi
 
 chmod a+x "$exe_path"
 
+# Some targets (`+sign`, `+silkbomb`, and the SBOM targets built on it) pull images from the
+# DevProd Platforms ECR registry. In CI, the "earthly" Evergreen function authenticates to ECR
+# before invoking this script (see .evergreen/config.yml) and sets CI=true to signal that here.
+# Outside of CI, authenticate with a local AWS SSO profile so release engineers can run these
+# targets directly.
+if [[ -z "${CI:-}" ]]; then
+    needs_ecr_auth=
+    for arg in "$@"; do
+        case "$arg" in
+            +sign | +silkbomb | +sbom-generate | +sbom-generate-new-serial-number | +sbom-validate)
+                needs_ecr_auth=1
+                ;;
+        esac
+    done
+    if [[ -n "$needs_ecr_auth" ]]; then
+        command -v aws >/dev/null || {
+            echo "missing required program aws" 1>&2
+            exit 1
+        }
+        : "${DEVPROD_PLATFORMS_ECR_PROFILE:=ECRScopedAccess-901841024863}"
+        aws ecr get-login-password --region us-east-1 --profile "$DEVPROD_PLATFORMS_ECR_PROFILE" \
+            | docker login --username AWS --password-stdin 901841024863.dkr.ecr.us-east-1.amazonaws.com
+    fi
+fi
+
 "$exe_path" "$@"
