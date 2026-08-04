@@ -18,6 +18,7 @@ export_uv_tool_dirs() {
 }
 
 # Returns 0 if system uv supports the `uv python` subcommand (added in uv 0.3.0).
+# TODO(MONGOCRYPT-961) drop this workaround once macOS 11 is dropped (which has too-old uv)
 uv_supports_python() {
   command -v uv &>/dev/null || return 1
   uv python --help &>/dev/null || {
