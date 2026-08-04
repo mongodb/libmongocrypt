@@ -1,6 +1,6 @@
 # libmongocrypt #
 
-The companion C library for client side encryption in drivers.
+The companion C library for driver support of [In-Use Encryption](https://www.mongodb.com/docs/manual/core/security-in-use-encryption/).
 
 This project uses [Semantic Versioning](https://semver.org/).
 
@@ -12,97 +12,41 @@ If you have encountered a bug, or would like to see a new feature in libmongocry
 - Navigate to [the MONGOCRYPT project](https://jira.mongodb.org/projects/MONGOCRYPT).
 - Click **Create Issue** - Please provide as much information as possible about the issue type and how to reproduce it.
 
-## Documentation ##
-See [The Integration Guide](integrating.md) to integrate with your driver.
+## Security Vulnerabilities ##
 
-See [mongocrypt.h](src/mongocrypt.h) for the public API reference.
+If you’ve identified a security vulnerability, please report it according to the [instructions here](https://www.mongodb.com/docs/manual/tutorial/create-a-vulnerability-report).
 
-## Building libmongocrypt ##
+# Installing #
 
-On Windows and macOS, libmongocrypt can use the platform's default encryption
-APIs as its encryption backend. On other systems, one will want to install the
-OpenSSL development libraries, which libmongocrypt will use as the default
-encryption backend.
+## Installing libmongocrypt from source ##
 
-Then build libmongocrypt:
+To build:
 
-```
-git clone https://github.com/mongodb/libmongocrypt
-cd libmongocrypt
-mkdir cmake-build && cd cmake-build
-cmake ../
-make
+```bash
+cmake -D CMAKE_BUILD_TYPE=RelWithDebInfo -B cmake-build
+cmake --build cmake-build
 ```
 
-This builds libmongocrypt.dylib and test-libmongocrypt, in the cmake-build
-directory.
+To install:
+
+```bash
+cmake --install cmake-build
+```
+
+libmongocrypt performs crypto by default with platform crypto APIs on macOS/Windows and OpenSSL on other platforms. Configure with `DISABLE_NATIVE_CRYPTO=ON` to disable the crypto dependency and supply runtime crypto hooks.
 
 ## Installing libmongocrypt on macOS ##
 Install the latest release of libmongocrypt with the following.
-```
+```bash
 brew install mongodb/brew/libmongocrypt
 ```
 
 To install the latest unstable development version of libmongocrypt, use `brew install mongodb/brew/libmongocrypt --HEAD`. Do not use the unstable version of libmongocrypt in a production environment.
 
-## Building libmongocrypt from source on macOS ##
-
-First install [Homebrew according to its own instructions](https://brew.sh/).
-
-Install the XCode Command Line Tools:
-```
-xcode-select --install
-```
-
-Then clone and build libmongocrypt:
-```
-git clone https://github.com/mongodb/libmongocrypt.git
-cd libmongocrypt
-cmake .
-cmake --build . --target install
-```
-
-Then, libmongocrypt can be used with pkg-config:
-```
-pkg-config libmongocrypt --libs --cflags
-```
-
-Or use cmake's `find_package`:
-```
-find_package (mongocrypt)
-# Then link against mongo::mongocrypt
-```
-
 ## Installing libmongocrypt on Windows ##
 A Windows DLL for x86_64 is available on the Github Releases page. See the [latest release](https://github.com/mongodb/libmongocrypt/releases/latest).
 
 Use `gpg` to verify the signature. The public key for `libmongocrypt` is available on https://pgp.mongodb.com/.
-
-## Python Releases ##
-Python releases and tags are signed using the MongoDB Python driver PGP key. Use `gpg` to verify the signature. The public key is available at https://pgp.mongodb.com/python-driver.pub.
-
-
-### Testing ###
-`test-mongocrypt` mocks all I/O with files stored in the `test/data` and `test/example` directories. Run `test-mongocrypt` from the source directory:
-
-```
-cd libmongocrypt
-./cmake-build/test-mongocrypt
-```
-
-libmongocrypt is continuously built and published on evergreen. Submit patch builds to this evergreen project when making changes to test on supported platforms.
-The latest tarball containing libmongocrypt built on all supported variants is [published here](https://s3.amazonaws.com/mciuploads/libmongocrypt/all/master/latest/libmongocrypt-all.tar.gz).
-
-### Troubleshooting ###
-If OpenSSL is installed in a non-default directory, pass `-DOPENSSL_ROOT_DIR=/path/to/openssl` to the cmake command for libmongocrypt.
-
-If there are errors with cmake configuration, send the set of steps you performed to the maintainers of this project.
-
-If there are compilation or linker errors, run `make` again, setting `VERBOSE=1` in the environment or on the command line (which shows exact compile and link commands), and send the output to the maintainers of this project.
-
-### Releasing ###
-
-See [releasing](./doc/releasing.md).
 
 ## Installing libmongocrypt From Distribution Packages ##
 Distribution packages (i.e., .deb/.rpm) are built and published for several Linux distributions.  The installation of these packages for supported platforms is documented here.
@@ -126,19 +70,19 @@ Extrepo is available on Debian 11 and newer, as well as Ubuntu 22.04 and newer.
 
 First, install the extrepo package:
 
-```
+```bash
 sudo apt install extrepo
 ```
 
 If you would like to see the information about the repository, it can be viewed with the search command:
 
-```
+```bash
 extrepo search libmongocrypt
 ```
 
 In order to enable the repository, execute this command:
 
-```
+```bash
 sudo extrepo enable libmongocrypt-release
 ```
 
@@ -148,19 +92,19 @@ Once the repository is configured, continue with package installation.
 
 First, import the public key used to sign the package repositories:
 
-```
+```bash
 sudo sh -c 'curl -s --location https://pgp.mongodb.com/libmongocrypt.asc | gpg --dearmor >/etc/apt/trusted.gpg.d/libmongocrypt.gpg'
 ```
 
 Second, create a list entry for the repository.  For Ubuntu systems (be sure to change `<release>` to `jammy` or `noble` as appropriate to your system):
 
-```
+```bash
 echo "deb https://libmongocrypt.s3.amazonaws.com/apt/ubuntu <release>/libmongocrypt/<channel> universe" | sudo tee /etc/apt/sources.list.d/libmongocrypt.list
 ```
 
 For Debian systems (be sure to change `<release>` to `bullseye`, `bookworm`, or `trixie` as appropriate to your system):
 
-```
+```bash
 echo "deb https://libmongocrypt.s3.amazonaws.com/apt/debian <release>/libmongocrypt/<channel> main" | sudo tee /etc/apt/sources.list.d/libmongocrypt.list
 ```
 
@@ -168,7 +112,7 @@ echo "deb https://libmongocrypt.s3.amazonaws.com/apt/debian <release>/libmongocr
 
 Finally, update the package cache and install the libmongocrypt packages:
 
-```
+```bash
 sudo apt-get update
 sudo apt-get install -y libmongocrypt-dev
 ```
@@ -192,7 +136,7 @@ gpgkey=https://pgp.mongodb.com/libmongocrypt.asc
 
 Then install the libmongocrypt packages:
 
-```
+```bash
 sudo yum install -y libmongocrypt
 ```
 
@@ -211,7 +155,7 @@ gpgkey=https://pgp.mongodb.com/libmongocrypt.asc
 
 Then install the libmongocrypt packages:
 
-```
+```bash
 sudo yum install -y libmongocrypt
 ```
 
@@ -230,7 +174,7 @@ gpgkey=https://pgp.mongodb.com/libmongocrypt.asc
 
 Then install the libmongocrypt packages:
 
-```
+```bash
 sudo yum install -y libmongocrypt
 ```
 
@@ -249,7 +193,7 @@ gpgkey=https://pgp.mongodb.com/libmongocrypt.asc
 
 Then install the libmongocrypt packages:
 
-```
+```bash
 sudo yum install -y libmongocrypt
 ```
 
@@ -257,18 +201,44 @@ sudo yum install -y libmongocrypt
 
 First, import the public key used to sign the package repositories:
 
-```
+```bash
 sudo rpm --import https://pgp.mongodb.com/libmongocrypt.asc
 ```
 
 Second, add the repository (be sure to change `<release>` to `12` or `15`, as appropriate to your system):
 
-```
+```bash
 sudo zypper addrepo --gpgcheck "https://libmongocrypt.s3.amazonaws.com/zypper/suse/<release>/libmongocrypt/<channel>/x86_64" libmongocrypt
 ```
 
 Finally, install the libmongocrypt packages:
 
-```
+```bash
 sudo zypper -n install libmongocrypt
 ```
+
+# Development #
+
+## Documentation ##
+
+The [Client-Side Encryption](https://github.com/mongodb/specifications/blob/master/source/client-side-encryption/client-side-encryption.md) driver specification.
+
+See [The Integration Guide](integrating.md) to integrate with your driver.
+
+See [mongocrypt.h](src/mongocrypt.h) for the public API reference.
+
+## Testing ##
+`test-mongocrypt` mocks all I/O with files stored in the `test/data` and `test/example` directories. Run `test-mongocrypt` from the source directory:
+
+```bash
+./cmake-build/test-mongocrypt
+```
+
+libmongocrypt is continuously built and published on evergreen. Submit patch builds to this evergreen project when making changes to test on supported platforms.
+
+## Releasing ##
+
+See [releasing](./doc/releasing.md).
+
+### Python Releases ###
+Python releases and tags are signed using the MongoDB Python driver PGP key. Use `gpg` to verify the signature. The public key is available at https://pgp.mongodb.com/python-driver.pub.
