@@ -26,9 +26,19 @@ bash scripts/update-version.sh <new-version>
 ```
 
 This will set the version in `scripts/libmongocrypt-version.sh` and update `sbom.json` to reflect
-the new vendored version of `libmongocrypt`. This pulls the `silkbomb` image from the DevProd
-Platforms ECR registry, which requires AWS SSO access to the `ECRScopedAccess-901841024863`
-profile (override with `DEVPROD_PLATFORMS_ECR_PROFILE`).
+the new vendored version of `libmongocrypt`.
+
+This pulls the `silkbomb` image from the DevProd Platforms ECR registry. Authenticate to the ECR
+registry with the container launcher (`docker` or `podman`) before running the script:
+
+```bash
+aws sso login --profile ECRScopedAccess-901841024863
+
+# Authenticate "podman" or "docker"
+CONTAINER_LAUNCHER="podman"
+
+aws ecr get-login-password --region us-east-1 --profile ECRScopedAccess-901841024863 | $CONTAINER_LAUNCHER login --username AWS --password-stdin 901841024863.dkr.ecr.us-east-1.amazonaws.com
+```
 
 ## Building wheels
 
