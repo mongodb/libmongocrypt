@@ -253,9 +253,9 @@ functions:
         shell: bash
         script: |
           set -o errexit
-          # if [ "${is_patch}" = "true" ]; then
-          #   exit 0
-          # fi
+          if [ "${is_patch}" = "true" ]; then
+            exit 0
+          fi
 
           # set AWS credentials
           rm -rf ~/.aws
@@ -292,10 +292,10 @@ functions:
           set -o errexit
           set -o verbose
 
-          # if [ "${is_patch}" = "true" ]; then
-          #   echo "patch build, skipping packaging publication"
-          #   exit 0
-          # fi
+          if [ "${is_patch}" = "true" ]; then
+            echo "patch build, skipping packaging publication"
+            exit 0
+          fi
 
           # Get the current version of libmongocrypt.
           pkg_version="$(python etc/calc_release_version.py)"
