@@ -438,7 +438,7 @@ test-deb-packages-from-ppa:
     RUN ./test.out
 
 # `sign` uses Garasign to sign a file with the libmongocrypt key.
-# Requires prior authentication with the DevProd Platforms ECR registry (see .evergreen/earthly.sh).
+# Requires prior authentication with the DevProd Platforms ECR registry (see doc/releasing.md).
 # See: https://docs.devprod.prod.corp.mongodb.com/release-tools-container-images/garasign/garasign_signing/.
 sign:
     ARG --required file_to_sign
@@ -460,7 +460,7 @@ sign:
 #   An environment with the `silkbomb` command.
 #
 # See https://docs.devprod.prod.corp.mongodb.com/mms/python/src/sbom/silkbomb/ for documentation of silkbomb.
-# Requires prior authentication with the DevProd Platforms ECR registry (see .evergreen/earthly.sh).
+# Requires prior authentication with the DevProd Platforms ECR registry (see doc/releasing.md).
 silkbomb:
     FROM 901841024863.dkr.ecr.us-east-1.amazonaws.com/release-infrastructure/silkbomb:2.0
     # Alias the silkbomb executable to a simpler name:

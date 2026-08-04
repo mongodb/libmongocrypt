@@ -93,9 +93,15 @@ Do the following when releasing:
    ```bash
    ./.evergreen/earthly.sh +sbom-generate-new-serial-number
    ```
-   This pulls the `silkbomb` image from the DevProd Platforms ECR registry. Requires AWS SSO access
-   to the `ECRScopedAccess-901841024863` profile (override with `DEVPROD_PLATFORMS_ECR_PROFILE`); run
-   `aws sso login --profile ECRScopedAccess-901841024863` first if not already logged in.
+   This pulls the `silkbomb` image from the DevProd Platforms ECR registry. Authenticate to the ECR registry with the container launcher (`docker` or `podman`):
+   ```bash
+   aws sso login --profile ECRScopedAccess-901841024863
+
+   # Authenticate "podman" or "docker"
+   CONTAINER_LAUNCHER="podman"
+
+   aws ecr get-login-password --region us-east-1 --profile ECRScopedAccess-901841024863 | $CONTAINER_LAUNCHER login --username AWS --password-stdin 901841024863.dkr.ecr.us-east-1.amazonaws.com
+   ```
    Commit resulting `etc/cyclonedx.sbom.json` and push to `rx.y`.
 - Remove yourself from the [releases team](https://github.com/orgs/mongodb/teams/dbx-c-cxx-releases) on GitHub via [MANA](https://mana.corp.mongodb.com/resources/68029673d39aa9f7de6399f9).
 - If this is a new non-patch release (e.g. `x.y.0`):

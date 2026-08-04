@@ -435,9 +435,6 @@ functions:
         shell: bash
         working_dir: ${working_dir|libmongocrypt}
         script: |
-          # Signal to earthly.sh that ECR authentication was already performed above, so it
-          # does not also attempt the local-only AWS SSO profile login.
-          export CI=true
           bash ${workdir}/libmongocrypt/.evergreen/earthly.sh ${args}
 
   sbom:
