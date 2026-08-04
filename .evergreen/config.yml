@@ -428,6 +428,8 @@ functions:
         shell: bash
         include_expansions_in_env: *aws-params-env
         script: |
+          set -o errexit
+          set -o pipefail
           # Authenticate to the DevProd Platforms ECR registry.
           aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 901841024863.dkr.ecr.us-east-1.amazonaws.com
     - command: shell.exec
