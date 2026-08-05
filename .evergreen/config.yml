@@ -297,16 +297,6 @@ functions:
             exit 0
           fi
 
-          # Some venv-activate scripts are not nounset-clean
-          set +u
-
-          # Need requests and pycrypto for notary-client.py
-          python -m virtualenv venv
-          cd venv
-          . bin/activate
-          ./bin/pip install requests
-          ./bin/pip install pycrypto
-          cd ..
           # Get the current version of libmongocrypt.
           pkg_version="$(python etc/calc_release_version.py)"
           CURATOR_RELEASE=${curator_release|"e0b5f66fc89ec0acddcd40ea5f447a8300ded2b9"}
