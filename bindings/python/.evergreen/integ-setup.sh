@@ -37,6 +37,8 @@ PROJECT_DIRECTORY="$PROJECT_DIRECTORY"
 EOT
 
 # Get the secrets
+# Opt in to corporate Azure credentials (DRIVERS-3392)
+export FLE_AZURE_USE_CORPORATE=YES
 bash $DRIVERS_TOOLS/.evergreen/csfle/setup-secrets.sh
 # Start the csfle servers
 bash $DRIVERS_TOOLS/.evergreen/csfle/start-servers.sh
