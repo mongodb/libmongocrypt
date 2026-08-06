@@ -63,8 +63,6 @@ Key CMake configuration options (given `option=(default|alternatives...)`):
 
 ## Dependencies
 
-Dependencies are obtained in three different ways — most are fetched or vendored, so a network connection may be needed at configure time:
-
 - **libbson** (BSON support): *fetched* at configure time by `cmake/FetchMongoC.cmake`, which downloads the mongo-c-driver source archive at a pinned tag and builds libbson, statically linked into libmongocrypt by default. See comments in `cmake/FetchMongoC.cmake` to bump the pinned tag. Set `-D USE_SHARED_LIBBSON=ON` to instead link an installed libbson found via `find_package(bson)` (set `CMAKE_PREFIX_PATH`). 
 - **Intel DFP** (Decimal128 math; target `mongocrypt::intel_dfp`): built at configure time from a *vendored tarball* under `third-party/`. Enabled by `MONGOCRYPT_ENABLE_DECIMAL128` (default ON). Set `-D MONGOCRYPT_DFP_DIR=USE-SYSTEM` to instead use a system install.
 - **kms-message** (KMS request/response): a separate subproject under `kms-message/`, statically compiled into libmongocrypt. The MongoDB C Driver also vendors kms-message.
