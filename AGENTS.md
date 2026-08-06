@@ -4,7 +4,7 @@ This file provides guidance to AI coding agents working with code in this reposi
 
 ## What this is
 
-libmongocrypt is a C library that assists MongoDB drivers in implementing **In-Use Encryption**. The driver-facing behavior it helps support is defined by the Client-Side Encryption specification: <https://github.com/mongodb/specifications/blob/master/source/client-side-encryption/client-side-encryption.md>
+libmongocrypt is a C library that assists MongoDB drivers in implementing **In-Use Encryption**. The driver-facing behavior it helps support is defined by the Client-Side Encryption specification: <https://github.com/mongodb/specifications/blob/master/source/client-side-encryption/client-side-encryption.md>.
 
 ### Naming (from the spec)
 
