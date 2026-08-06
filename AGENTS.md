@@ -136,7 +136,7 @@ Tests are C files, not auto-discovered. Two steps are required:
 - mongocryptd / crypt_shared
     - Required for automatic encryption only (not used by explicit encryption, explicit decryption, or automatic decryption)
     - Interchangeable: both do query analysis for automatic encryption.
-        - mongocryptd is a process the Client Library talks to.
+        - mongocryptd is a daemon that libmongocrypt talks to via the Client Library over TCP using the same wire protocol as a MongoDB server.
         - crypt_shared is a library libmongocrypt loads and calls directly.
     - Only permitted for enterprise or Atlas. This makes automatic encryption an enterprise / Atlas feature.
 
