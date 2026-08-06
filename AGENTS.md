@@ -4,7 +4,7 @@ This file provides guidance to AI coding agents working with code in this reposi
 
 ## What this is
 
-libmongocrypt is a C library that assists MongoDB drivers in implementing **In-Use Encryption**. The driver-facing behavior it helps support is defined by the Client-Side Encryption specification: <https://github.com/mongodb/specifications/blob/master/source/client-side-encryption/client-side-encryption.md>.
+libmongocrypt is a C library that assists MongoDB Client Libraries in implementing **In-Use Encryption**. The Client Library behavior it helps support is defined by the Client-Side Encryption specification: <https://github.com/mongodb/specifications/blob/master/source/client-side-encryption/client-side-encryption.md>.
 
 ### Naming (from the spec)
 
@@ -123,9 +123,9 @@ Tests are C files, not auto-discovered. Two steps are required:
 
 ### Components
 
-- Driver
+- Client Library (E.g. pymongo, sometimes referred to as a Driver)
     - libmongocrypt acts as a **state machine** and does no I/O.
-    - libmongocrypt provides a C interface to drivers.
+    - libmongocrypt provides a C interface to the Client Library.
     - Most APIs pass and returns BSON, most structs are opaque, and global init is lazy.
     - See `integrating.md` and the public API in `src/mongocrypt.h`.
 - MongoDB server (mongod / mongos)
@@ -136,7 +136,7 @@ Tests are C files, not auto-discovered. Two steps are required:
 - mongocryptd / crypt_shared
     - Required for automatic encryption only (not used by explicit encryption, explicit decryption, or automatic decryption)
     - Interchangeable: both do query analysis for automatic encryption.
-        - mongocryptd is a process the driver talks to.
+        - mongocryptd is a process the Client Library talks to.
         - crypt_shared is a library libmongocrypt loads and calls directly.
     - Only permitted for enterprise or Atlas. This makes automatic encryption an enterprise / Atlas feature.
 
@@ -154,8 +154,8 @@ Uses C99. Contributions shall not use features from newer standards.
 
 ### Core objects & state machine
 
-- **`mongocrypt_t`** — the top-level handle; **thread-safe**, and expected to be owned by a driver's `MongoClient` / `ClientEncryption` object.
-- **`mongocrypt_ctx_t`** — a single operation (encrypt, decrypt, data-key creation, …); **not thread-safe**, and expected to handle one operation. The driver drives it as a state machine, performing the I/O the library requests at each state. See `integrating.md` for the state machine.
+- **`mongocrypt_t`** — the top-level handle; **thread-safe**, and expected to be owned by a Client Library's `MongoClient` / `ClientEncryption` object.
+- **`mongocrypt_ctx_t`** — a single operation (encrypt, decrypt, data-key creation, …); **not thread-safe**, and expected to handle one operation. The Client Library drives it as a state machine, performing the I/O the library requests at each state. See `integrating.md` for the state machine.
 - **`mongocrypt_binary_t`** is a non-owning view; `_destroy` frees the view, not the underlying data.
 
 ## Before Committing
