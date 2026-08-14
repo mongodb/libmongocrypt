@@ -1,6 +1,14 @@
 Changelog
 =========
 
+Changes in Version 1.18.2
+-------------------------
+
+- Bundle libmongocrypt 1.20.2 in release wheels.
+- The "textPreview" algorithm has been removed. Use "string" instead. The
+  "substringPreview", "suffixPreview", and "prefixPreview" query types have
+  likewise been replaced by "substring", "suffix", and "prefix".
+
 Changes in Version 1.18.1
 -------------------------
 

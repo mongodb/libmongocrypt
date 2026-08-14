@@ -188,7 +188,7 @@ class ExplicitEncryptOpts:
           - `is_expression` (boolean): True if this is an encryptExpression()
             context. Defaults to False.
           - `text_opts` (bytes): Options for explicit encryption
-            with the "textPreview" algorithm encoded as a BSON document.
+            with the "string" algorithm encoded as a BSON document.
 
         .. versionchanged:: 1.3
            Added the `query_type` and `contention_factor` parameters.

@@ -116,7 +116,7 @@ class ExplicitEncrypter:
           - `is_expression` (boolean): True if this is an encryptExpression()
             context. Defaults to False.
           - `text_opts` (bytes): Options for explicit encryption
-            with the "textPreview" algorithm encoded as a BSON document.
+            with the "string" algorithm encoded as a BSON document.
 
         :Returns:
           The encrypted BSON value.
