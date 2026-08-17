@@ -1038,7 +1038,7 @@ if sys.version_info >= (3, 8, 0):  # noqa: UP036
             )
             self.assertEqual(encrypted, expected)
 
-        async def test_textPreview_query(self):
+        async def test_textPreview_query_fails(self):
             key_path = "keys/ABCDEFAB123498761234123456789012-local-document.json"
             key_id = json_data(key_path)["_id"]
             encrypter = AsyncExplicitEncrypter(
@@ -1566,7 +1566,7 @@ class TestExplicitEncryption(unittest.TestCase):
         )
         self.assertEqual(encrypted, expected)
 
-    def test_textPreview_query(self):
+    def test_textPreview_query_fails(self):
         key_path = "keys/ABCDEFAB123498761234123456789012-local-document.json"
         key_id = json_data(key_path)["_id"]
         encrypter = ExplicitEncrypter(
