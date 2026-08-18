@@ -242,7 +242,58 @@ static void _test_encrypt_with_accesstoken(_mongocrypt_tester_t *tester) {
     mongocrypt_destroy(crypt);
 }
 
+// Test a CRLF in a key vault document's keyName. Regression test for MONGOCRYPT-960.
+static void _test_crlf_in_gcp_masterkey(_mongocrypt_tester_t *tester) {
+    mongocrypt_t *crypt;
+    mongocrypt_ctx_t *ctx;
+    mongocrypt_binary_t *uuid;
+    const char *uuid_data = "\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61\x61";
+
+    // A key vault document whose masterKey.keyName contains a CRLF.
+    // clang-format off
+    const char *key_doc = BSON_STR({
+        "status" : 1,
+        "_id" : {"$binary" : {"base64" : "YWFhYWFhYWFhYWFhYWFhYQ==", "subType" : "04"}},
+        "masterKey" : {
+            "provider" : "gcp",
+            "projectId" : "test",
+            "location" : "global",
+            "keyRing" : "test",
+            "keyName" : "test\r\nFOOBAR: injected"
+        },
+        "updateDate" : {"$date" : {"$numberLong" : "1557827033449"}},
+        "creationDate" : {"$date" : {"$numberLong" : "1557827033449"}},
+        "keyMaterial" : {
+            "$binary" : {
+                "base64" : "PwwOESbKs57YTJtGSCsuAJbv9VWRHjLdPdziUVxH0K9woZUka4SghSwJlw9n6TU/dYHFODvSa4p7bfKzS6U8kGFvOnd7LcPU63IkTek4qZEbGpTRwI5lMT4FFWdpYpUf",
+                "subType" : "00"
+            }
+        }
+    });
+    // clang-format on
+
+    crypt = mongocrypt_new();
+    ASSERT_OK(mongocrypt_setopt_kms_providers(crypt, TEST_BSON("{'gcp': {'accessToken': 'foobar'}}")), crypt);
+    ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
+    ctx = mongocrypt_ctx_new(crypt);
+    uuid = mongocrypt_binary_new_from_data((uint8_t *)uuid_data, UUID_LEN);
+    ASSERT_OK(mongocrypt_ctx_setopt_key_id(ctx, uuid), ctx);
+    ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_DETERMINISTIC_STR, -1), ctx);
+    ASSERT_OK(mongocrypt_ctx_explicit_encrypt_init(ctx, TEST_BSON("{'v': 1}")), ctx);
+
+    ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
+    /* Constructing the KMS request fails. No request is sent. */
+    ASSERT_FAILS(mongocrypt_ctx_mongo_feed(ctx, TEST_BSON_STR(key_doc)),
+                 ctx,
+                 "Invalid character in GCP KMS key identifier: keyName");
+
+    mongocrypt_binary_destroy(uuid);
+    mongocrypt_ctx_destroy(ctx);
+    mongocrypt_destroy(crypt);
+}
+
 void _mongocrypt_tester_install_gcp_auth(_mongocrypt_tester_t *tester) {
+    INSTALL_TEST(_test_crlf_in_gcp_masterkey);
     INSTALL_TEST(_test_createdatakey_with_credentials);
     INSTALL_TEST(_test_encrypt_with_credentials);
     INSTALL_TEST(_test_createdatakey_with_accesstoken);

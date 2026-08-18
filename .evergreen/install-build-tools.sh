@@ -17,6 +17,16 @@ export_uv_tool_dirs() {
   export PATH UV_TOOL_DIR UV_TOOL_BIN_DIR UV_PYTHON_INSTALL_DIR
 }
 
+# Returns 0 if system uv supports the `uv python` subcommand (added in uv 0.3.0).
+# TODO(MONGOCRYPT-961) drop this workaround once macOS 11 is dropped (which has too-old uv)
+uv_supports_python() {
+  command -v uv &>/dev/null || return 1
+  uv python --help &>/dev/null || {
+    echo "system-provided uv does not support \`uv python\`: $(uv --version 2>&1)" >&2
+    return 1
+  }
+}
+
 install_build_tools() {
   export_uv_tool_dirs || return
 
@@ -29,8 +39,8 @@ install_build_tools() {
     export UV_PYTHON="/opt/mongodbtoolchain/v4/bin/python3"
   fi
 
-  if ! command -v uv &>/dev/null; then
-    echo "missing system-provided uv binary: fallback to uv-installer.sh" >&2
+  if ! uv_supports_python; then
+    echo "missing or unusable system-provided uv binary: fallback to uv-installer.sh" >&2
     : "${EVG_DIR:="$(dirname "${BASH_SOURCE[0]}")"}" || return
     . "${EVG_DIR:?}/init.sh" || return
 

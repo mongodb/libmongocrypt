@@ -1,5 +1,10 @@
 # ChangeLog
 
+## 1.20.2
+
+### Changed
+- Add checks when creating GCP requests.
+
 ## 1.20.1
 
 ## Changed
