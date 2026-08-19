@@ -362,6 +362,119 @@ static void _test_encrypt_init(_mongocrypt_tester_t *tester) {
     mongocrypt_destroy(crypt);
 }
 
+/* Test that a db name containing a dot or an embedded NUL is rejected.
+ * A db name like "a.b" would otherwise produce the namespace "a.b.coll",
+ * retargeting the operation at database "a" and collection "b.coll".
+ * Regression test for MONGOCRYPT-977. */
+static void _test_encrypt_init_invalid_db_collection(_mongocrypt_tester_t *tester) {
+    mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+
+    {
+        /* Dot in db name. */
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+        ASSERT_FAILS(mongocrypt_ctx_encrypt_init(ctx, "a.b", -1, TEST_FILE("./test/example/cmd.json")),
+                     ctx,
+                     "invalid db");
+        mongocrypt_ctx_destroy(ctx);
+    }
+
+    {
+        /* Embedded NUL in db name. */
+        const char db[] = "a\0b";
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+        ASSERT_FAILS(mongocrypt_ctx_encrypt_init(ctx, db, 3, TEST_FILE("./test/example/cmd.json")), ctx, "invalid db");
+        mongocrypt_ctx_destroy(ctx);
+    }
+
+    {
+        /* A dot in a collection name is legal, and must keep working. */
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "test", -1, TEST_BSON("{'find': 'a.b'}")), ctx);
+        mongocrypt_ctx_destroy(ctx);
+    }
+
+    {
+        /* Embedded NUL in the collection name of the command. */
+        bson_t *cmd = bson_new();
+        BSON_ASSERT(bson_append_utf8(cmd, "find", -1, "a\0b", 3));
+        mongocrypt_binary_t *bin = mongocrypt_binary_new_from_data((uint8_t *)bson_get_data(cmd), cmd->len);
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+        ASSERT_FAILS(mongocrypt_ctx_encrypt_init(ctx, "test", -1, bin),
+                     ctx,
+                     "collection name must not contain an embedded null byte");
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_binary_destroy(bin);
+        bson_destroy(cmd);
+    }
+
+    {
+        /* Embedded NUL in the `bulkWrite` nsInfo namespace. */
+        bson_t *cmd = bson_new();
+        bson_array_builder_t *nsInfo;
+        bson_t ns0;
+        BSON_ASSERT(BSON_APPEND_INT32(cmd, "bulkWrite", 1));
+        BSON_ASSERT(BSON_APPEND_ARRAY_BUILDER_BEGIN(cmd, "nsInfo", &nsInfo));
+        BSON_ASSERT(bson_array_builder_append_document_begin(nsInfo, &ns0));
+        BSON_ASSERT(bson_append_utf8(&ns0, "ns", -1, "db.coll\0evil", 12));
+        BSON_ASSERT(bson_array_builder_append_document_end(nsInfo, &ns0));
+        BSON_ASSERT(bson_append_array_builder_end(cmd, nsInfo));
+        mongocrypt_binary_t *bin = mongocrypt_binary_new_from_data((uint8_t *)bson_get_data(cmd), cmd->len);
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+        ASSERT_FAILS(mongocrypt_ctx_encrypt_init(ctx, "test", -1, bin), ctx, "must not contain an embedded null byte");
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_binary_destroy(bin);
+        bson_destroy(cmd);
+    }
+
+    {
+        /* Embedded NUL in a $lookup 'from' collection name. */
+        bson_t *cmd = bson_new();
+        bson_array_builder_t *pipeline;
+        bson_t stage, lookup;
+        BSON_ASSERT(BSON_APPEND_UTF8(cmd, "aggregate", "coll"));
+        BSON_ASSERT(BSON_APPEND_ARRAY_BUILDER_BEGIN(cmd, "pipeline", &pipeline));
+        BSON_ASSERT(bson_array_builder_append_document_begin(pipeline, &stage));
+        BSON_ASSERT(BSON_APPEND_DOCUMENT_BEGIN(&stage, "$lookup", &lookup));
+        BSON_ASSERT(bson_append_utf8(&lookup, "from", -1, "a\0b", 3));
+        BSON_ASSERT(bson_append_document_end(&stage, &lookup));
+        BSON_ASSERT(bson_array_builder_append_document_end(pipeline, &stage));
+        BSON_ASSERT(bson_append_array_builder_end(cmd, pipeline));
+        mongocrypt_binary_t *bin = mongocrypt_binary_new_from_data((uint8_t *)bson_get_data(cmd), cmd->len);
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+        ASSERT_FAILS(mongocrypt_ctx_encrypt_init(ctx, "test", -1, bin),
+                     ctx,
+                     "'from' collection name must not contain an embedded null byte");
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_binary_destroy(bin);
+        bson_destroy(cmd);
+    }
+
+    {
+        /* Embedded NUL in a $unionWith 'coll' collection name. */
+        bson_t *cmd = bson_new();
+        bson_array_builder_t *pipeline;
+        bson_t stage, unionWith;
+        BSON_ASSERT(BSON_APPEND_UTF8(cmd, "aggregate", "coll"));
+        BSON_ASSERT(BSON_APPEND_ARRAY_BUILDER_BEGIN(cmd, "pipeline", &pipeline));
+        BSON_ASSERT(bson_array_builder_append_document_begin(pipeline, &stage));
+        BSON_ASSERT(BSON_APPEND_DOCUMENT_BEGIN(&stage, "$unionWith", &unionWith));
+        BSON_ASSERT(bson_append_utf8(&unionWith, "coll", -1, "a\0b", 3));
+        BSON_ASSERT(bson_append_document_end(&stage, &unionWith));
+        BSON_ASSERT(bson_array_builder_append_document_end(pipeline, &stage));
+        BSON_ASSERT(bson_append_array_builder_end(cmd, pipeline));
+        mongocrypt_binary_t *bin = mongocrypt_binary_new_from_data((uint8_t *)bson_get_data(cmd), cmd->len);
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+        ASSERT_FAILS(mongocrypt_ctx_encrypt_init(ctx, "test", -1, bin),
+                     ctx,
+                     "'coll' collection name must not contain an embedded null byte");
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_binary_destroy(bin);
+        bson_destroy(cmd);
+    }
+
+    mongocrypt_destroy(crypt);
+}
+
 static void _test_encrypt_need_collinfo(_mongocrypt_tester_t *tester) {
     mongocrypt_t *crypt;
     mongocrypt_ctx_t *ctx;
@@ -6830,6 +6943,7 @@ static void _test_qe_keyAltName_kms(_mongocrypt_tester_t *tester) {
 void _mongocrypt_tester_install_ctx_encrypt(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_explicit_encrypt_init);
     INSTALL_TEST(_test_encrypt_init);
+    INSTALL_TEST(_test_encrypt_init_invalid_db_collection);
     INSTALL_TEST(_test_encrypt_need_collinfo);
     INSTALL_TEST(_test_encrypt_need_markings);
     INSTALL_TEST(_test_encrypt_csfle_no_needs_markings);
