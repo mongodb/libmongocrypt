@@ -560,7 +560,7 @@ if ("cxx_std_20" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
 endif ()
 
 # Exclude example-state-machine since it requires native crypto.
-if (NOT MONGOCRYPT_CRYPTO STREQUAL none)
+if (BUILD_TESTING AND NOT MONGOCRYPT_CRYPTO STREQUAL none)
    # Define example-state-machine
    add_executable (example-state-machine test/example-state-machine.c)
    target_link_libraries (example-state-machine PRIVATE mongocrypt _mongocrypt::libbson_for_shared)
