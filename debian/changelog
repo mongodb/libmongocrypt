@@ -1,3 +1,9 @@
+libmongocrypt (1.13.2-1+deb13u1) UNRELEASED; urgency=medium
+
+  * Fix CVE-2026-81523: validate db and collection names
+
+ -- Roberto C. Sanchez <roberto@connexer.com>  Fri, 28 Aug 2026 16:47:47 -0400
+
 libmongocrypt (1.13.2-1) unstable; urgency=medium
 
   * New upstream release.
