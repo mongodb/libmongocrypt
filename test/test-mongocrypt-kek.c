@@ -96,6 +96,42 @@ static void test_mongocrypt_kek_parsing(_mongocrypt_tester_t *tester) {
     bson_destroy(&test_file);
 }
 
+/* A failed parse must leave the KEK exactly as it was. Committing the new
+ * provider tag before the provider-specific parse repopulates the union would
+ * leave the previous provider's pointers readable under the new tag, which
+ * _mongocrypt_kek_cleanup would then free as the wrong type. See
+ * MONGOCRYPT-964. */
+static void test_mongocrypt_kek_parse_failure_leaves_kek_intact(_mongocrypt_tester_t *tester) {
+    mongocrypt_status_t *const status = mongocrypt_status_new();
+    _mongocrypt_kek_t kek;
+
+    memset(&kek, 0, sizeof(_mongocrypt_kek_t));
+
+    ASSERT_OK_STATUS(_mongocrypt_kek_parse_owned(TMP_BSON("{'provider': 'gcp', 'projectId': 'project', "
+                                                          "'location': 'global', 'keyRing': 'ring', "
+                                                          "'keyName': 'name'}"),
+                                                 &kek,
+                                                 status),
+                     status);
+
+    /* An AWS definition missing the required 'region' aborts mid-parse, after
+     * the provider tag would have been switched. */
+    ASSERT_FAILS_STATUS(_mongocrypt_kek_parse_owned(TMP_BSON("{'provider': 'aws', 'key': 'cmk-string'}"), &kek, status),
+                        status,
+                        "expected UTF-8 region");
+
+    /* The KEK still describes the GCP key it was parsed from. */
+    ASSERT_CMPINT(kek.kms_provider, ==, MONGOCRYPT_KMS_PROVIDER_GCP);
+    ASSERT_STREQUAL(kek.kmsid, "gcp");
+    ASSERT_STREQUAL(kek.provider.gcp.key_ring, "ring");
+    ASSERT_STREQUAL(kek.provider.gcp.key_name, "name");
+
+    /* Cleanup frees the GCP fields, matching the tag. */
+    _mongocrypt_kek_cleanup(&kek);
+    mongocrypt_status_destroy(status);
+}
+
 void _mongocrypt_tester_install_kek(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(test_mongocrypt_kek_parsing);
+    INSTALL_TEST(test_mongocrypt_kek_parse_failure_leaves_kek_intact);
 }
