@@ -4,7 +4,7 @@ Changelog
 Changes in Version 1.19.0
 -------------------------
 
-- Bundle libmongocrypt 1.20.2 in release wheels.
+- Bundle libmongocrypt 1.20.3 in release wheels.
 - Renamed the ``text_opts`` parameter of ``ExplicitEncryptOpts`` and
   ``ExplicitEncrypter.encrypt`` to ``string_opts``, matching the "string"
   algorithm it configures. This is a breaking change.
