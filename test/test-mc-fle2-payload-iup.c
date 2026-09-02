@@ -182,8 +182,75 @@ static void test_FLE2InsertUpdatePayload_parse_errors(_mongocrypt_tester_t *test
     _mongocrypt_buffer_cleanup(&input_buf);
 }
 
+/* Builds a minimal parseable FLE2InsertUpdatePayload with a 'v' of `vlen` bytes.
+ * 'v' is a 16 byte user key UUID followed by (vlen - 16) bytes of ciphertext. */
+static void _make_iup_with_value_len(_mongocrypt_buffer_t *out, uint32_t vlen) {
+    BSON_ASSERT(vlen >= UUID_LEN);
+    uint8_t token[32] = {0};
+    uint8_t uuid[UUID_LEN];
+    uint8_t value[128];
+
+    memset(uuid, 0xAB, sizeof(uuid));
+    memset(value, 0x41, sizeof(value));
+    BSON_ASSERT(vlen <= sizeof(value));
+    memcpy(value, uuid, sizeof(uuid));
+
+    bson_t payload;
+    bson_init(&payload);
+    ASSERT(bson_append_binary(&payload, "d", -1, BSON_SUBTYPE_BINARY, token, sizeof(token)));
+    ASSERT(bson_append_binary(&payload, "s", -1, BSON_SUBTYPE_BINARY, token, sizeof(token)));
+    ASSERT(bson_append_binary(&payload, "c", -1, BSON_SUBTYPE_BINARY, token, sizeof(token)));
+    ASSERT(bson_append_binary(&payload, "p", -1, BSON_SUBTYPE_BINARY, token, sizeof(token)));
+    ASSERT(bson_append_binary(&payload, "u", -1, BSON_SUBTYPE_UUID, uuid, sizeof(uuid)));
+    ASSERT(bson_append_int32(&payload, "t", -1, (int32_t)BSON_TYPE_UTF8));
+    ASSERT(bson_append_binary(&payload, "v", -1, BSON_SUBTYPE_BINARY, value, vlen));
+    ASSERT(bson_append_binary(&payload, "e", -1, BSON_SUBTYPE_BINARY, token, sizeof(token)));
+
+    _mongocrypt_buffer_init_size(out, 1 + (uint32_t)payload.len);
+    out->data[0] = (uint8_t)MC_SUBTYPE_FLE2InsertUpdatePayload;
+    memcpy(out->data + 1, bson_get_data(&payload), payload.len);
+    bson_destroy(&payload);
+}
+
+/* A 'v' short enough that the plaintext length would be zero must be rejected
+ * with an error, not crash. */
+static void test_FLE2InsertUpdatePayload_decrypt_short_ciphertext(_mongocrypt_tester_t *tester) {
+    if (!_aes_ctr_is_supported_by_os) {
+        TEST_PRINTF("Common Crypto with no CTR support detected. Skipping.");
+        return;
+    }
+
+    mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+    _mongocrypt_buffer_t user_key;
+    _mongocrypt_buffer_init_size(&user_key, MONGOCRYPT_KEY_LEN);
+    memset(user_key.data, 0xCD, user_key.len);
+
+    /* FLE2AEAD is CTR + HMAC-SHA256: ciphertext must exceed IV (16) + HMAC (32). */
+    const uint32_t vlens[] = {UUID_LEN, UUID_LEN + 1, UUID_LEN + 47, UUID_LEN + 48};
+    for (size_t i = 0; i < sizeof(vlens) / sizeof(vlens[0]); i++) {
+        _mongocrypt_buffer_t input;
+        _make_iup_with_value_len(&input, vlens[i]);
+
+        mc_FLE2InsertUpdatePayload_t iup;
+        mc_FLE2InsertUpdatePayload_init(&iup);
+        mongocrypt_status_t *status = mongocrypt_status_new();
+        ASSERT_OK_STATUS(mc_FLE2InsertUpdatePayload_parse(&iup, &input, status), status);
+
+        const _mongocrypt_buffer_t *got = mc_FLE2InsertUpdatePayload_decrypt(crypt->crypto, &iup, &user_key, status);
+        ASSERT_FAILS_STATUS(got != NULL, status, "input ciphertext too small");
+
+        mc_FLE2InsertUpdatePayload_cleanup(&iup);
+        mongocrypt_status_destroy(status);
+        _mongocrypt_buffer_cleanup(&input);
+    }
+
+    _mongocrypt_buffer_cleanup(&user_key);
+    mongocrypt_destroy(crypt);
+}
+
 void _mongocrypt_tester_install_fle2_payload_iup(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(test_FLE2InsertUpdatePayload_parse);
     INSTALL_TEST(test_FLE2InsertUpdatePayload_decrypt);
     INSTALL_TEST(test_FLE2InsertUpdatePayload_parse_errors);
+    INSTALL_TEST(test_FLE2InsertUpdatePayload_decrypt_short_ciphertext);
 }
