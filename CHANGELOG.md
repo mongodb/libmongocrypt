@@ -1,5 +1,10 @@
 # ChangeLog
 
+## 1.20.4 [Unreleased]
+
+### Fixed
+- Reject undersized decryption payloads.
+
 ## 1.20.3
 
 ### Fixed
