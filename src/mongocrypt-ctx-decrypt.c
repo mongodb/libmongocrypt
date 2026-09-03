@@ -344,7 +344,7 @@ static bool _replace_FLE1Payload_with_plaintext(void *ctx,
 
     const _mongocrypt_value_encryption_algorithm_t *fle1alg = _mcFLE1Algorithm();
     plaintext.len = fle1alg->get_plaintext_len(ciphertext.data.len, status);
-    CHECK_AND_RETURN(plaintext.len != 0);
+    CHECK_AND_RETURN(mongocrypt_status_ok(status));
     plaintext.data = bson_malloc0(plaintext.len);
     BSON_ASSERT(plaintext.data);
 
