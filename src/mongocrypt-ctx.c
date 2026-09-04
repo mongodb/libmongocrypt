@@ -396,7 +396,7 @@ const char *mongocrypt_ctx_mongo_db(mongocrypt_ctx_t *ctx) {
         }
         return ctx->vtable.mongo_db_collinfo(ctx);
     }
-    case MONGOCRYPT_CTX_ERROR: return false;
+    case MONGOCRYPT_CTX_ERROR: return NULL;
     case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO:
     case MONGOCRYPT_CTX_NEED_MONGO_MARKINGS:
     case MONGOCRYPT_CTX_NEED_MONGO_KEYS:
