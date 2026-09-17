@@ -102,7 +102,7 @@ Second, create a list entry for the repository.  For Ubuntu systems (be sure to 
 echo "deb https://libmongocrypt.s3.amazonaws.com/apt/ubuntu <release>/libmongocrypt/<channel> universe" | sudo tee /etc/apt/sources.list.d/libmongocrypt.list
 ```
 
-For Debian systems (be sure to change `<release>` to `bullseye`, `bookworm`, or `trixie` as appropriate to your system):
+For Debian systems (be sure to change `<release>` to `bookworm`, or `trixie` as appropriate to your system):
 
 ```bash
 echo "deb https://libmongocrypt.s3.amazonaws.com/apt/debian <release>/libmongocrypt/<channel> main" | sudo tee /etc/apt/sources.list.d/libmongocrypt.list
