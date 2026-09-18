@@ -66,7 +66,7 @@ The repository containing the Debian and Ubuntu .deb packages can be configured 
 
 #### Repository configuration with extrepo ####
 
-Extrepo is available on Debian 11 and newer, as well as Ubuntu 22.04 and newer.
+Extrepo is available on Debian 13 and newer, as well as Ubuntu 22.04 and newer. Note that while extrepo in older Debian and Ubuntu releases may list the libmongocrypt PPA, the packages available for those older releases are most likely outdated and may contain security vulnerabilities.
 
 First, install the extrepo package:
 
