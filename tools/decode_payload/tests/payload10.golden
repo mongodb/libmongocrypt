@@ -1,0 +1,198 @@
+{
+  "name": "FLE2FindRangePayload",
+  "dump": {
+    "payload": {
+      "g": [
+        {
+          "d": {
+            "$binary": {
+              "base64": "p9HzvqPvsGYdpbEV/s/H8Hr3lGfskA3e6mcSloSoVP4=",
+              "subType": "00"
+            }
+          },
+          "s": {
+            "$binary": {
+              "base64": "l6qA9ev0PLTQ0Ue4D9ttg8VdEgTkmeG6rMWCC6PGv9M=",
+              "subType": "00"
+            }
+          },
+          "c": {
+            "$binary": {
+              "base64": "FAp92kX7YI+mD8PNYqm41Kd3P11+jOfwGIyrjlrQBE0=",
+              "subType": "00"
+            }
+          }
+        },
+        {
+          "d": {
+            "$binary": {
+              "base64": "lpFiajzOojYERTN1LCni1VGk+ZVax/J2Rg3dQeHpMy4=",
+              "subType": "00"
+            }
+          },
+          "s": {
+            "$binary": {
+              "base64": "Hg+pg50Hi5WwvYtLFYBPPkR+svnveDiUNLSdD725VUo=",
+              "subType": "00"
+            }
+          },
+          "c": {
+            "$binary": {
+              "base64": "KUhYSt4nvvUfbNgPJ2E79SciVZ0ZzbzoZ2nKr4ewNLs=",
+              "subType": "00"
+            }
+          }
+        },
+        {
+          "d": {
+            "$binary": {
+              "base64": "hKA3UeJ3sha8MRI3/e3LAVmIGxk9hqk5TH39CMMPEt8=",
+              "subType": "00"
+            }
+          },
+          "s": {
+            "$binary": {
+              "base64": "O5caRM9/ghnb+v1iiAJSMEWFEURCoJ+/krcDaFXpJA8=",
+              "subType": "00"
+            }
+          },
+          "c": {
+            "$binary": {
+              "base64": "PGHY4CG4AdLTLaTaAEeGZp/9Awz9uSYc5jnv+H+HDlU=",
+              "subType": "00"
+            }
+          }
+        },
+        {
+          "d": {
+            "$binary": {
+              "base64": "IVKf0tscgagkQPFCb6X9WEHVCnawMcQMMf+f9zwXyfw=",
+              "subType": "00"
+            }
+          },
+          "s": {
+            "$binary": {
+              "base64": "gTuG4UWJAFvEzr8uuVB5e2DUyvuL4Hvvu+nJ9RvP3bo=",
+              "subType": "00"
+            }
+          },
+          "c": {
+            "$binary": {
+              "base64": "MfZI0QJuIjEP+2h7hMyADl63DLtAWXwO7ku694tjjws=",
+              "subType": "00"
+            }
+          }
+        },
+        {
+          "d": {
+            "$binary": {
+              "base64": "Gj22/+aFr+8l9CLnrDZ5NhzCgz++msotwjPmSF9OM+g=",
+              "subType": "00"
+            }
+          },
+          "s": {
+            "$binary": {
+              "base64": "L1yonL//+MBjN0qC3AVLHvnBj5ZfjsM46k9FuRvvw48=",
+              "subType": "00"
+            }
+          },
+          "c": {
+            "$binary": {
+              "base64": "dNX6RhGC8vJwxV1H7e+s//vWfSgNhIkXAEPe869LvZc=",
+              "subType": "00"
+            }
+          }
+        },
+        {
+          "d": {
+            "$binary": {
+              "base64": "22eQA/+Tr2LpKsA9aLiJtSQonKp3hfCK6urD4YEXttM=",
+              "subType": "00"
+            }
+          },
+          "s": {
+            "$binary": {
+              "base64": "dP03rg0E4wfRAUdu6SaaQOZi4JxoX9bUAFENSuB38wQ=",
+              "subType": "00"
+            }
+          },
+          "c": {
+            "$binary": {
+              "base64": "fKnxQGZchtWB6NSJ44qlAet9sesYZFSeVqPn2iOcHCM=",
+              "subType": "00"
+            }
+          }
+        },
+        {
+          "d": {
+            "$binary": {
+              "base64": "JJu3lxW1WM/sEYBYrT0dELADJX0i3fOwVXTFpJVOQJg=",
+              "subType": "00"
+            }
+          },
+          "s": {
+            "$binary": {
+              "base64": "dqA8ucSV/T88EMQ5E/5mXC+C/DBB9ogEJGxUSV/Lg58=",
+              "subType": "00"
+            }
+          },
+          "c": {
+            "$binary": {
+              "base64": "3zhqKXElNWg9l3x3N3W77heSWp/LAPfkhWYIj30yyt8=",
+              "subType": "00"
+            }
+          }
+        },
+        {
+          "d": {
+            "$binary": {
+              "base64": "PLjGwQ+DBcHE6XSH+knrIFTqq1zCgbltUvFW7wQwib0=",
+              "subType": "00"
+            }
+          },
+          "s": {
+            "$binary": {
+              "base64": "5+P+U/djGYehkFiWnrRk6fHHfwmkx6i6Bw0FShZB+XQ=",
+              "subType": "00"
+            }
+          },
+          "c": {
+            "$binary": {
+              "base64": "XWtFDcISLi7VsX/AqpxWS2UwQpIAI+XssmIUHd1voTo=",
+              "subType": "00"
+            }
+          }
+        },
+        {
+          "d": {
+            "$binary": {
+              "base64": "wIOK9cW8F2lxGJ/V3NIGf2Uw6ikcnudkePjPcsNSaDM=",
+              "subType": "00"
+            }
+          },
+          "s": {
+            "$binary": {
+              "base64": "PgpORYCcoS+SKCMf2IC1b7sHYFG0LtmWJmTlogsl81Y=",
+              "subType": "00"
+            }
+          },
+          "c": {
+            "$binary": {
+              "base64": "Hn0BRhexKb8sTHVDfl+JTjgn7bnCt3FmzUOtkJz6REE=",
+              "subType": "00"
+            }
+          }
+        }
+      ],
+      "e": {
+        "$binary": {
+          "base64": "65pz95EthqQpfoHS9nWvdCh05AV+OokP7GUaI+7j8+w=",
+          "subType": "00"
+        }
+      },
+      "cm": 0
+    },
+    "payloadId": 1234,
+    "firstOperator": 1
+  }
+}
