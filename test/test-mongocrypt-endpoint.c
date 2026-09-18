@@ -66,6 +66,36 @@ static void _test_mongocrypt_endpoint(_mongocrypt_tester_t *tester) {
     ASSERT_STATUS_CONTAINS(status, "Invalid endpoint, expected dot separator in host, but got: malformed");
     _mongocrypt_endpoint_destroy(endpoint);
 
+    /* Test a colon in the path does not parse as a port. */
+    endpoint = _mongocrypt_endpoint_new("vault.example.com/path:8080", -1, NULL /* opts */, status);
+    BSON_ASSERT(endpoint);
+    ASSERT_STREQUAL(endpoint->host, "vault.example.com");
+    ASSERT_STREQUAL(endpoint->domain, "example.com");
+    BSON_ASSERT(!endpoint->port);
+    ASSERT_STREQUAL(endpoint->path, "path:8080");
+    ASSERT_STREQUAL(endpoint->host_and_port, "vault.example.com");
+    BSON_ASSERT(mongocrypt_status_ok(status));
+    _mongocrypt_endpoint_destroy(endpoint);
+
+    /* Test a colon in the query does not parse as a port. */
+    endpoint = _mongocrypt_endpoint_new("vault.example.com?query=a:b", -1, NULL /* opts */, status);
+    BSON_ASSERT(endpoint);
+    ASSERT_STREQUAL(endpoint->host, "vault.example.com");
+    BSON_ASSERT(!endpoint->port);
+    ASSERT_STREQUAL(endpoint->query, "query=a:b");
+    BSON_ASSERT(mongocrypt_status_ok(status));
+    _mongocrypt_endpoint_destroy(endpoint);
+
+    /* Test a port followed by a query, with no path. */
+    endpoint = _mongocrypt_endpoint_new("vault.example.com:443?query=value", -1, NULL /* opts */, status);
+    BSON_ASSERT(endpoint);
+    ASSERT_STREQUAL(endpoint->host, "vault.example.com");
+    ASSERT_STREQUAL(endpoint->port, "443");
+    ASSERT_STREQUAL(endpoint->query, "query=value");
+    ASSERT_STREQUAL(endpoint->host_and_port, "vault.example.com:443");
+    BSON_ASSERT(mongocrypt_status_ok(status));
+    _mongocrypt_endpoint_destroy(endpoint);
+
     /* A host without a dot separator is valid if the "allow_empty_subdomain"
      * option is true. */
     memset(&opts, 0, sizeof(opts));

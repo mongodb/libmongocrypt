@@ -92,14 +92,15 @@ _mongocrypt_endpoint_t *_mongocrypt_endpoint_new(const char *endpoint_raw,
     colon = strstr(pos, ":");
     qmark = strstr(pos, "?");
     slash = strstr(pos, "/");
-    if (colon) {
-        host_end = colon;
-    } else if (slash) {
+    /* The host ends at the first delimiter. A colon delimits a port only if it
+     * precedes the path and query: in "example.com/path:8080" the colon is part
+     * of the path, not a port separator. */
+    host_end = colon;
+    if (slash && (!host_end || slash < host_end)) {
         host_end = slash;
-    } else if (qmark) {
+    }
+    if (qmark && (!host_end || qmark < host_end)) {
         host_end = qmark;
-    } else {
-        host_end = NULL;
     }
 
     if (host_end) {
@@ -113,11 +114,11 @@ _mongocrypt_endpoint_t *_mongocrypt_endpoint_new(const char *endpoint_raw,
     }
 
     /* Parse optional port */
-    if (colon) {
+    if (colon && colon == host_end) {
         prev = colon + 1;
-        qmark = strstr(pos, "?");
-        slash = strstr(pos, "/");
-        if (slash) {
+        qmark = strstr(prev, "?");
+        slash = strstr(prev, "/");
+        if (slash && (!qmark || slash < qmark)) {
             endpoint->port = bson_strndup(prev, (size_t)(slash - prev));
         } else if (qmark) {
             BSON_ASSERT(qmark >= prev);
