@@ -1,5 +1,10 @@
 # ChangeLog
 
+## 1.21.0 [Unreleased]
+
+### Removed
+- Discontinue builds for EOL Debian releases (version 11, 10, and 9) and remove corresponding CI tasks.
+
 ## 1.20.4
 
 ### Fixed

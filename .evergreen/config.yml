@@ -844,8 +844,8 @@ tasks:
     # * The RHEL76-docker distro runs an old and unsupported version of Docker.
     # * (We require the --mount parameter)
     - ubuntu2204-large
-    - debian10
-    - debian11
+    - debian12
+    - debian13
     - amazon2
   commands:
     - func: fetch source
@@ -1118,20 +1118,6 @@ buildvariants:
   - name: publish-packages
     distros:
     - rhel70-small
-- name: debian11
-  display_name: "Debian 11"
-  run_on: debian11-large
-  expansions:
-    packager_distro: debian11
-    packager_arch: x86_64
-  tasks:
-  - build-and-test-and-upload
-  - build-and-test-shared-bson
-  - build-and-test-asan
-  - build-packages
-  - name: publish-packages
-    distros:
-    - ubuntu2004-small
 - name: debian13
   display_name: "Debian 13"
   run_on: debian13-m6i-xlarge
@@ -1152,34 +1138,6 @@ buildvariants:
     packager_arch: x86_64
   tasks:
   - build-and-test-and-upload
-  - build-packages
-  - name: publish-packages
-    distros:
-    - ubuntu2004-small
-- name: debian10
-  display_name: "Debian 10"
-  run_on: debian10-test
-  expansions:
-    packager_distro: debian10
-    packager_arch: x86_64
-  tasks:
-  - build-and-test-and-upload
-  - build-and-test-shared-bson
-  - build-and-test-asan
-  - build-packages
-  - name: publish-packages
-    distros:
-    - ubuntu2004-small
-- name: debian92
-  display_name: "Debian 9.2"
-  run_on: debian92-test
-  expansions:
-    packager_distro: debian92
-    packager_arch: x86_64
-  tasks:
-  - build-and-test-and-upload
-  - build-and-test-shared-bson
-  - build-and-test-asan
   - build-packages
   - name: publish-packages
     distros:
@@ -1515,21 +1473,6 @@ buildvariants:
     run_on: ubuntu2404-arm64-latest-large
   - name: upload-release
     depends_on: build-with-earthly
-
-- name: debian11-arm64-earthly
-  display_name: "Debian 11 arm64 (via Earthly)"
-  expansions:
-    packager_distro: debian11
-    packager_arch: arm64
-    earthly_env: deb11
-  tasks:
-  - name: build-deb-packages-with-earthly
-    # Use an arm64 distro to match the intended target architecture of .deb packages.
-    run_on: ubuntu2404-arm64-latest-large
-  - name: publish-deb-packages-with-earthly
-    # Use a distro suitable for running curator to publish .deb packages.
-    # Use 22.04 for Python 3.10 to avoid failure installing pycrypto.
-    run_on: ubuntu2204-latest-small
 
 - name: debian13-arm64-earthly
   display_name: "Debian 13 arm64 (via Earthly)"
