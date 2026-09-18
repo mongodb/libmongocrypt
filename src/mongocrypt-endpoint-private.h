@@ -57,4 +57,5 @@ _mongocrypt_endpoint_t *_mongocrypt_endpoint_new(const char *endpoint_raw,
  */
 void _mongocrypt_apply_default_port(char **endpoint_raw, char *port);
 
+
 #endif /* MONGOCRYPT_ENDPOINT_PRIVATE_H */
