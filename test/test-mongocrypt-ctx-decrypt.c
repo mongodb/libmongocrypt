@@ -46,6 +46,33 @@ static void _test_explicit_decrypt_init(_mongocrypt_tester_t *tester) {
     mongocrypt_destroy(crypt);
 }
 
+/* Regression test for MONGOCRYPT-966 */
+static void _test_explicit_decrypt_unknown_subtype(_mongocrypt_tester_t *tester) {
+    mongocrypt_t *const crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+
+    /* First byte 0x08 is not a known FLE blob subtype. */
+    {
+        mongocrypt_binary_t *const msg = TEST_BSON("{ 'v': { '$binary': { 'subType': '06', 'base64': "
+                                                   "'CKq7zA==' } } }");
+
+        mongocrypt_ctx_t *const ctx = mongocrypt_ctx_new(crypt);
+        ASSERT_FAILS(mongocrypt_ctx_explicit_decrypt_init(ctx, msg), ctx, "unsupported FLE blob subtype");
+        BSON_ASSERT(mongocrypt_ctx_state(ctx) == MONGOCRYPT_CTX_ERROR);
+        mongocrypt_ctx_destroy(ctx);
+    }
+
+    /* A zero-length payload has no FLE blob subtype at all. */
+    {
+        mongocrypt_binary_t *const msg = TEST_BSON("{ 'v': { '$binary': { 'subType': '06', 'base64': '' } } }");
+        mongocrypt_ctx_t *const ctx = mongocrypt_ctx_new(crypt);
+        ASSERT_FAILS(mongocrypt_ctx_explicit_decrypt_init(ctx, msg), ctx, "unsupported FLE blob subtype");
+        BSON_ASSERT(mongocrypt_ctx_state(ctx) == MONGOCRYPT_CTX_ERROR);
+        mongocrypt_ctx_destroy(ctx);
+    }
+
+    mongocrypt_destroy(crypt);
+}
+
 /* Test individual ctx states. */
 static void _test_decrypt_init(_mongocrypt_tester_t *tester) {
     mongocrypt_t *crypt;
@@ -1042,6 +1069,7 @@ static void _test_explicit_decrypt(_mongocrypt_tester_t *tester) {
 
 void _mongocrypt_tester_install_ctx_decrypt(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_explicit_decrypt_init);
+    INSTALL_TEST(_test_explicit_decrypt_unknown_subtype);
     INSTALL_TEST(_test_decrypt_init);
     INSTALL_TEST(_test_decrypt_need_keys);
     INSTALL_TEST(_test_decrypt_ready);
