@@ -36,7 +36,8 @@ createvirtualenv () {
 # the regex in param1 from it), ascending, dropping numbers below param2.
 # Portable: does not rely on GNU sort -V.
 _sort_paths_by_number() {
-    awk -F/ '{ key = $NF; sub(/^'"$1"'/, "", key); key += 0; if (key >= '"$2"') printf "%010d\t%s\n", key, $0 }' |
+    awk -F/ 'NF == 0 { next }
+        { key = $NF; sub(/^'"$1"'/, "", key); key += 0; if (key >= '"$2"') printf "%010d\t%s\n", key, $0 }' |
         sort |
         cut -f2-
 }
@@ -46,15 +47,27 @@ _sort_paths_by_number() {
 # in the directory name). On Linux, falls back to the latest MongoDB toolchain
 # interpreter when the Python toolchain is absent.
 find_pythons() {
-    local dirs=""
+    local dirs="" dir
     if [ "Windows_NT" = "${OS:-}" ]; then # Magic variable in cygwin
-        dirs=$(find C:/python -maxdepth 1 -type d -name "Python3[0-9]*" 2>/dev/null | _sort_paths_by_number "^Python" 39)
+        for dir in C:/python/Python3[0-9]*; do
+            [ -d "$dir" ] && dirs="$dirs $dir"
+        done
+        [ -n "$dirs" ] && dirs=$(printf '%s\n' $dirs | _sort_paths_by_number "^Python" 39)
     elif [ "$(uname -s)" = "Darwin" ]; then
-        dirs=$(find /Library/Frameworks/Python.framework/Versions -maxdepth 1 -type d -name "3.[0-9]*" 2>/dev/null | _sort_paths_by_number "^3\." 9)
+        for dir in /Library/Frameworks/Python.framework/Versions/3.[0-9]*; do
+            [ -d "$dir" ] && dirs="$dirs $dir"
+        done
+        [ -n "$dirs" ] && dirs=$(printf '%s\n' $dirs | _sort_paths_by_number "^3\." 9)
     else
-        dirs=$(find /opt/python -maxdepth 1 -type d -name "3.[0-9]*" 2>/dev/null | _sort_paths_by_number "^3\." 9)
+        for dir in /opt/python/3.[0-9]*; do
+            [ -d "$dir" ] && dirs="$dirs $dir"
+        done
+        [ -n "$dirs" ] && dirs=$(printf '%s\n' $dirs | _sort_paths_by_number "^3\." 9)
         if [ -z "$dirs" ]; then
-            dirs=$(find /opt/mongodbtoolchain -maxdepth 1 -type d -name "v[0-9]*" 2>/dev/null | _sort_paths_by_number "^v" 0 | tail -1)
+            for dir in /opt/mongodbtoolchain/v[0-9]*; do
+                [ -d "$dir" ] && dirs="$dirs $dir"
+            done
+            [ -n "$dirs" ] && dirs=$(printf '%s\n' $dirs | _sort_paths_by_number "^v" 0 | tail -1)
         fi
     fi
     for dir in $dirs; do
