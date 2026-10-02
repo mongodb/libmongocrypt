@@ -5,42 +5,36 @@
 set -o xtrace   # Write all commands first to stderr
 set -o errexit  # Exit the script with error if any of the commands fail
 
-# For createvirtualenv and find_python3
+# For createvirtualenv and find_pythons
 . .evergreen/utils.sh
-
-BASE_PYTHON=$(find_python3)
 
 # MONGOCRYPT_DIR is set by libmongocrypt/.evergreen/config.yml
 MONGOCRYPT_DIR="$MONGOCRYPT_DIR"
 git clone https://github.com/mongodb-labs/drivers-evergreen-tools.git
 
+# Discover the toolchain pythons to test against.
+PYTHONS=($(find_pythons))
+if [ ${#PYTHONS[@]} -eq 0 ]; then
+    echo "No Python interpreters found to test with!"
+    exit 1
+fi
+echo "Testing with pythons: ${PYTHONS[*]}"
+
+# Use the latest for the mongodl.py invocation.
+BASE_PYTHON=$(find_pythons | tail -1)
+
 if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
     PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/nocrypto/bin/mongocrypt.dll
     PYMONGOCRYPT_LIB_CRYPTO=$(cygpath -m ${MONGOCRYPT_DIR}/bin/mongocrypt.dll)
     export PYMONGOCRYPT_LIB=$(cygpath -m $PYMONGOCRYPT_LIB)
-    PYTHONS=("C:/python/Python39/python.exe"
-             "C:/python/Python310/python.exe"
-             "C:/python/Python311/python.exe"
-             "C:/python/Python312/python.exe"
-             "C:/python/Python313/python.exe"
-             "C:/python/Python314/python.exe")
     export CRYPT_SHARED_PATH=../crypt_shared/bin/mongo_crypt_v1.dll
-    C:/python/Python310/python.exe drivers-evergreen-tools/.evergreen/mongodl.py --component crypt_shared \
+    "$BASE_PYTHON" drivers-evergreen-tools/.evergreen/mongodl.py --component crypt_shared \
       --version latest --out ../crypt_shared/
 elif [ "Darwin" = "$(uname -s)" ]; then
     export PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/nocrypto/lib/libmongocrypt.dylib
     PYMONGOCRYPT_LIB_CRYPTO=${MONGOCRYPT_DIR}/lib/libmongocrypt.dylib
-    PYTHONS=(
-          "/Library/Frameworks/Python.framework/Versions/3.9/bin/python3"
-          "/Library/Frameworks/Python.framework/Versions/3.10/bin/python3"
-          "/Library/Frameworks/Python.framework/Versions/3.11/bin/python3"
-          "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3"
-          "/Library/Frameworks/Python.framework/Versions/3.13/bin/python3"
-          "/Library/Frameworks/Python.framework/Versions/3.14/bin/python3"
-          )
-
     export CRYPT_SHARED_PATH="../crypt_shared/lib/mongo_crypt_v1.dylib"
-    python3 drivers-evergreen-tools/.evergreen/mongodl.py --component crypt_shared \
+    "$BASE_PYTHON" drivers-evergreen-tools/.evergreen/mongodl.py --component crypt_shared \
       --version latest --out ../crypt_shared/
 else
     if [ -e "${MONGOCRYPT_DIR}/lib64/" ]; then
@@ -52,22 +46,7 @@ else
     fi
 
     export CRYPT_SHARED_PATH="../crypt_shared/lib/mongo_crypt_v1.so"
-    MACHINE=$(uname -m)
-    if [ $MACHINE == "aarch64" ]; then
-        PYTHONS=("/opt/mongodbtoolchain/v3/bin/python3"
-          "/opt/mongodbtoolchain/v4/bin/python3"
-        )
-    else
-        PYTHONS=(
-          "/opt/python/3.9/bin/python3"
-          "/opt/python/3.10/bin/python3"
-          "/opt/python/3.11/bin/python3"
-          "/opt/python/3.12/bin/python3"
-          "/opt/python/3.13/bin/python3"
-          "/opt/python/3.14/bin/python3"
-        )
-    fi
-    /opt/mongodbtoolchain/v3/bin/python3 drivers-evergreen-tools/.evergreen/mongodl.py --component \
+    "$BASE_PYTHON" drivers-evergreen-tools/.evergreen/mongodl.py --component \
       crypt_shared --version latest --out ../crypt_shared/
 fi
 

@@ -174,11 +174,21 @@ functions:
           ./libmongocrypt/.evergreen/clang-tidy.sh
 
   "test python":
-    - command: "shell.exec"
+    - command: ec2.assume_role
       params:
-        script: |-
-          export MONGOCRYPT_DIR="$(pwd)/all/${variant_name}"
-          cd ./libmongocrypt/bindings/python && ${test_env|} ./.evergreen/test.sh
+        role_arn: ${drivers_test_secrets_role}
+    - command: subprocess.exec
+      params:
+        binary: bash
+        include_expansions_in_env:
+          - AWS_SECRET_ACCESS_KEY
+          - AWS_ACCESS_KEY_ID
+          - AWS_SESSION_TOKEN
+        args:
+          - -c
+          - |
+            export MONGOCRYPT_DIR="$(pwd)/all/${variant_name}"
+            cd ./libmongocrypt/bindings/python && ${test_env|} ./.evergreen/test.sh
 
   "test python integ":
     - command: ec2.assume_role
@@ -213,9 +223,13 @@ functions:
       params:
         binary: bash
         working_dir: "${DRIVERS_TOOLS}"
+        include_expansions_in_env:
+          - AWS_SECRET_ACCESS_KEY
+          - AWS_ACCESS_KEY_ID
+          - AWS_SESSION_TOKEN
         env:
           TOPOLOGY: replica_set
-          MONGODB_VERSION: "8.0"
+          MONGODB_VERSION: "latest"
         args:
           - ${DRIVERS_TOOLS}/.evergreen/run-orchestration.sh
     - command: "subprocess.exec"
@@ -314,10 +328,14 @@ functions:
     - command: shell.exec
       params:
         shell: bash
-        script: |
+        script: |-
           set -ex
           cd ./libmongocrypt/bindings/python
-          PYTHON=${PYTHON} ./scripts/release.sh
+          if [ -z "${PYTHON3_BINARY|}" ]; then
+            echo "PYTHON3_BINARY is not set! Run the \"fetch drivers-evergreen-tools\" function first."
+            exit 1
+          fi
+          PYTHON="${PYTHON3_BINARY}" ./scripts/release.sh
 
   "upload python release":
     - command: archive.targz_pack
@@ -614,8 +632,8 @@ tasks:
   run_on: macos-14-arm64
   commands:
     - func: "fetch source"
+    - func: "fetch drivers-evergreen-tools" # Set PYTHON3_BINARY.
     - func: "build python release"
-      vars: { PYTHON: /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 }
     - func: "upload python release"
 
 - name: "release-python-linux"
@@ -624,8 +642,8 @@ tasks:
   exec_timeout_secs: 3600  # 60 minutes (manylinux task is slow).
   commands:
     - func: "fetch source"
+    - func: "fetch drivers-evergreen-tools" # Set PYTHON3_BINARY.
     - func: "build python release"
-      vars: { PYTHON: /opt/python/3.9/bin/python3 }
     - func: "upload python release"
 
 - name: "release-python-windows"
@@ -633,8 +651,8 @@ tasks:
   run_on: windows-64-vsMulti-small
   commands:
     - func: "fetch source"
+    - func: "fetch drivers-evergreen-tools" # Set PYTHON3_BINARY.
     - func: "build python release"
-      vars: { PYTHON: C:/python/Python39/python.exe }
     - func: "upload python release"
 
 - name: "release-python-combine"
