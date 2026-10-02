@@ -32,19 +32,29 @@ createvirtualenv () {
     python -m pip install --upgrade pip
 }
 
+# Sorts paths by the number in their final path component (after stripping
+# the regex in param1 from it), ascending, dropping numbers below param2.
+# Portable: does not rely on GNU sort -V.
+_sort_paths_by_number() {
+    awk -F/ '{ key = $NF; sub(/^'"$1"'/, "", key); key += 0; if (key >= '"$2"') printf "%010d\t%s\n", key, $0 }' |
+        sort |
+        cut -f2-
+}
+
 # Prints the Python interpreters in the standard numbered toolchain locations,
-# one per line, ascending by version. On Linux, falls back to the latest
-# MongoDB toolchain interpreter when the Python toolchain is absent.
+# one per line, ascending by version, Python 3.9+ only (per the version number
+# in the directory name). On Linux, falls back to the latest MongoDB toolchain
+# interpreter when the Python toolchain is absent.
 find_pythons() {
     local dirs=""
     if [ "Windows_NT" = "${OS:-}" ]; then # Magic variable in cygwin
-        dirs=$(find C:/python -maxdepth 1 -type d -name "Python[0-9]*" 2>/dev/null | sort -V)
+        dirs=$(find C:/python -maxdepth 1 -type d -name "Python3[0-9]*" 2>/dev/null | _sort_paths_by_number "^Python" 39)
     elif [ "$(uname -s)" = "Darwin" ]; then
-        dirs=$(find /Library/Frameworks/Python.framework/Versions -maxdepth 1 -type d -name "[0-9]*" 2>/dev/null | sort -V)
+        dirs=$(find /Library/Frameworks/Python.framework/Versions -maxdepth 1 -type d -name "3.[0-9]*" 2>/dev/null | _sort_paths_by_number "^3\." 9)
     else
-        dirs=$(find /opt/python -maxdepth 1 -type d -name "3.[0-9]*" 2>/dev/null | sort -V)
+        dirs=$(find /opt/python -maxdepth 1 -type d -name "3.[0-9]*" 2>/dev/null | _sort_paths_by_number "^3\." 9)
         if [ -z "$dirs" ]; then
-            dirs=$(find /opt/mongodbtoolchain -maxdepth 1 -type d -name "v[0-9]*" 2>/dev/null | sort -V | tail -1)
+            dirs=$(find /opt/mongodbtoolchain -maxdepth 1 -type d -name "v[0-9]*" 2>/dev/null | _sort_paths_by_number "^v" 0 | tail -1)
         fi
     fi
     for dir in $dirs; do
