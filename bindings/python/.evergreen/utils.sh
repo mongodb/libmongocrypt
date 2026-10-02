@@ -46,9 +46,10 @@ exit(0 if ok else 1)' 2>/dev/null || continue
 }
 
 # Prints the Python interpreters in the standard numbered toolchain locations,
-# one per line, ascending by version, Python 3.9+ only. On Linux, falls back
-# to the latest MongoDB toolchain interpreter when the Python toolchain is
-# absent.
+# one per line, ascending by version, Python 3.9+ only. Only plain version
+# directories are matched (e.g. 3.14, not 3.14-asan-ubsan or 3.14t). On Linux,
+# falls back to the latest MongoDB toolchain interpreter when the Python
+# toolchain is absent.
 find_pythons() {
     local dirs="" dir
     if [ "Windows_NT" = "${OS:-}" ]; then # Magic variable in cygwin
@@ -57,10 +58,12 @@ find_pythons() {
         done
     elif [ "$(uname -s)" = "Darwin" ]; then
         for dir in /Library/Frameworks/Python.framework/Versions/3.[0-9]*; do
+            case "${dir##*/}" in *[!\.0-9]*) continue ;; esac
             [ -d "$dir" ] && dirs="$dirs $dir/bin/python3"
         done
     else
         for dir in /opt/python/3.[0-9]*; do
+            case "${dir##*/}" in *[!\.0-9]*) continue ;; esac
             [ -d "$dir" ] && dirs="$dirs $dir/bin/python3"
         done
     fi
