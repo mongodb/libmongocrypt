@@ -78,7 +78,22 @@ else
       --version latest --out ../crypt_shared/
 fi
 
+# Only test with interpreters that actually exist on the host: distro images
+# may not provide every entry in PYTHONS (e.g. rhel80 dropped /opt/python).
+PYTHONS_RUN=()
 for PYTHON_BINARY in "${PYTHONS[@]}"; do
+    if [ -x "$PYTHON_BINARY" ]; then
+        PYTHONS_RUN+=("$PYTHON_BINARY")
+    else
+        echo "Skipping missing python interpreter: $PYTHON_BINARY"
+    fi
+done
+if [ ${#PYTHONS_RUN[@]} -eq 0 ]; then
+    echo "No PYTHONS entries found on host; falling back to BASE_PYTHON: $BASE_PYTHON"
+    PYTHONS_RUN=("$BASE_PYTHON")
+fi
+
+for PYTHON_BINARY in "${PYTHONS_RUN[@]}"; do
     echo "Running test with python: $PYTHON_BINARY"
     $PYTHON_BINARY -c 'import sys; print(sys.version)'
     git clean -dffx
