@@ -14,6 +14,13 @@ BASE_PYTHON=$(find_python3)
 MONGOCRYPT_DIR="$MONGOCRYPT_DIR"
 git clone https://github.com/mongodb-labs/drivers-evergreen-tools.git
 
+# mongodl.py requires boto3 (declared in drivers-evergreen-tools/.evergreen/pyproject.toml),
+# which is not installed in the plain host interpreter. Ensure uv is available and
+# run mongodl through the drivers-evergreen-tools project environment instead.
+. drivers-evergreen-tools/.evergreen/ensure-uv.sh
+ensure_uv || exit 1
+MONGODL=(uv run --project drivers-evergreen-tools/.evergreen mongodl)
+
 if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
     PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/nocrypto/bin/mongocrypt.dll
     PYMONGOCRYPT_LIB_CRYPTO=$(cygpath -m ${MONGOCRYPT_DIR}/bin/mongocrypt.dll)
@@ -25,7 +32,7 @@ if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
              "C:/python/Python313/python.exe"
              "C:/python/Python314/python.exe")
     export CRYPT_SHARED_PATH=../crypt_shared/bin/mongo_crypt_v1.dll
-    C:/python/Python310/python.exe drivers-evergreen-tools/.evergreen/mongodl.py --component crypt_shared \
+    "${MONGODL[@]}" --component crypt_shared \
       --version latest --out ../crypt_shared/
 elif [ "Darwin" = "$(uname -s)" ]; then
     export PYMONGOCRYPT_LIB=${MONGOCRYPT_DIR}/nocrypto/lib/libmongocrypt.dylib
@@ -40,7 +47,7 @@ elif [ "Darwin" = "$(uname -s)" ]; then
           )
 
     export CRYPT_SHARED_PATH="../crypt_shared/lib/mongo_crypt_v1.dylib"
-    python3 drivers-evergreen-tools/.evergreen/mongodl.py --component crypt_shared \
+    "${MONGODL[@]}" --component crypt_shared \
       --version latest --out ../crypt_shared/
 else
     if [ -e "${MONGOCRYPT_DIR}/lib64/" ]; then
@@ -67,8 +74,8 @@ else
           "/opt/python/3.14/bin/python3"
         )
     fi
-    /opt/mongodbtoolchain/v3/bin/python3 drivers-evergreen-tools/.evergreen/mongodl.py --component \
-      crypt_shared --version latest --out ../crypt_shared/
+    "${MONGODL[@]}" --component crypt_shared \
+      --version latest --out ../crypt_shared/
 fi
 
 for PYTHON_BINARY in "${PYTHONS[@]}"; do
