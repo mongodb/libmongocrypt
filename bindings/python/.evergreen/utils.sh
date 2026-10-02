@@ -49,7 +49,7 @@ exit(0 if ok else 1)' 2>/dev/null || continue
 # one per line, ascending by version, Python 3.9+ only. Only plain version
 # directories are matched (e.g. 3.14, not 3.14-asan-ubsan or 3.14t). On Linux,
 # falls back to the latest MongoDB toolchain interpreter when the Python
-# toolchain is absent.
+# toolchain is absent, then to a system interpreter from PATH.
 find_pythons() {
     local dirs="" dir
     if [ "Windows_NT" = "${OS:-}" ]; then # Magic variable in cygwin
@@ -80,6 +80,17 @@ find_pythons() {
         for dir in /opt/mongodbtoolchain/v[0-9]*; do
             [ -d "$dir" ] && dirs="$dirs $dir/bin/python3"
         done
-        _probe_pythons "$dirs" | tail -1
+        results=$(_probe_pythons "$dirs")
+        if [ -n "$results" ]; then
+            printf '%s\n' "$results" | tail -1
+            return 0
+        fi
     fi
+    # Fall back to a system interpreter from PATH.
+    dirs=""
+    for dir in python3 python; do
+        dir=$(command -v "$dir" 2>/dev/null) || continue
+        dirs="$dirs $dir"
+    done
+    _probe_pythons "$dirs"
 }
