@@ -32,49 +32,51 @@ createvirtualenv () {
     python -m pip install --upgrade pip
 }
 
-# Sorts paths by the number in their final path component (after stripping
-# the regex in param1 from it), ascending, dropping numbers below param2.
-# Portable: does not rely on GNU sort -V.
-_sort_paths_by_number() {
-    awk -F/ 'NF == 0 { next }
-        { key = $NF; sub(/^'"$1"'/, "", key); key += 0; if (key >= '"$2"') printf "%010d\t%s\n", key, $0 }' |
-        sort |
-        cut -f2-
+# Prints each usable interpreter from the space-separated candidate list,
+# one per line, ascending by version. An interpreter is usable if it is
+# version 3.9 or later, a final release, and not free-threaded.
+_probe_pythons() {
+    for bin in $1; do
+        [ -x "$bin" ] || continue
+        "$bin" -c 'import sys
+ok = sys.version_info >= (3, 9) and sys.version_info.releaselevel == "final" and "free-threading" not in sys.version
+exit(0 if ok else 1)' 2>/dev/null || continue
+        printf '%s\t%s\n' "$("$bin" -c 'import sys; print("%04d" % (sys.version_info[0] * 1000 + sys.version_info[1]))')" "$bin"
+    done | sort | cut -f2-
 }
 
 # Prints the Python interpreters in the standard numbered toolchain locations,
-# one per line, ascending by version, Python 3.9+ only (per the version number
-# in the directory name). On Linux, falls back to the latest MongoDB toolchain
-# interpreter when the Python toolchain is absent.
+# one per line, ascending by version, Python 3.9+ only. On Linux, falls back
+# to the latest MongoDB toolchain interpreter when the Python toolchain is
+# absent.
 find_pythons() {
     local dirs="" dir
     if [ "Windows_NT" = "${OS:-}" ]; then # Magic variable in cygwin
         for dir in C:/python/Python3[0-9]*; do
-            [ -d "$dir" ] && dirs="$dirs $dir"
+            [ -d "$dir" ] && dirs="$dirs $dir/python.exe"
         done
-        [ -n "$dirs" ] && dirs=$(printf '%s\n' $dirs | _sort_paths_by_number "^Python" 39)
     elif [ "$(uname -s)" = "Darwin" ]; then
         for dir in /Library/Frameworks/Python.framework/Versions/3.[0-9]*; do
-            [ -d "$dir" ] && dirs="$dirs $dir"
+            [ -d "$dir" ] && dirs="$dirs $dir/bin/python3"
         done
-        [ -n "$dirs" ] && dirs=$(printf '%s\n' $dirs | _sort_paths_by_number "^3\." 9)
     else
         for dir in /opt/python/3.[0-9]*; do
-            [ -d "$dir" ] && dirs="$dirs $dir"
+            [ -d "$dir" ] && dirs="$dirs $dir/bin/python3"
         done
-        [ -n "$dirs" ] && dirs=$(printf '%s\n' $dirs | _sort_paths_by_number "^3\." 9)
-        if [ -z "$dirs" ]; then
-            for dir in /opt/mongodbtoolchain/v[0-9]*; do
-                [ -d "$dir" ] && dirs="$dirs $dir"
-            done
-            [ -n "$dirs" ] && dirs=$(printf '%s\n' $dirs | _sort_paths_by_number "^v" 0 | tail -1)
-        fi
     fi
-    for dir in $dirs; do
-        if [ "Windows_NT" = "${OS:-}" ]; then
-            echo "$dir/python.exe"
-        else
-            echo "$dir/bin/python3"
-        fi
-    done
+    local results
+    results=$(_probe_pythons "$dirs")
+    if [ -n "$results" ]; then
+        printf '%s\n' "$results"
+        return 0
+    fi
+    if [ "$(uname -s)" != "Darwin" ] && [ "Windows_NT" != "${OS:-}" ]; then
+        # No Python toolchain: fall back to the latest MongoDB toolchain
+        # interpreter.
+        dirs=""
+        for dir in /opt/mongodbtoolchain/v[0-9]*; do
+            [ -d "$dir" ] && dirs="$dirs $dir/bin/python3"
+        done
+        _probe_pythons "$dirs" | tail -1
+    fi
 }
