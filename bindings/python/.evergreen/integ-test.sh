@@ -3,21 +3,19 @@ set -eux
 
 pushd $(pwd)/libmongocrypt/bindings/python
 
-# For createvirtualenv and find_python3
+# For createvirtualenv and find_pythons
 . .evergreen/utils.sh
-
-BASE_PYTHON=$(find_python3)
 
 # MONGOCRYPT_DIR is set by libmongocrypt/.evergreen/config.yml
 MONGOCRYPT_DIR="$MONGOCRYPT_DIR"
 CRYPT_SHARED_DIR="$DRIVERS_TOOLS"
 MONGODB_BINARIES="$DRIVERS_TOOLS/mongodb/bin"
 
-MACHINE=$(uname -m)
-if [ $MACHINE == "aarch64" ]; then
-    PYTHON="/opt/mongodbtoolchain/v4/bin/python3"
-else
-    PYTHON="/opt/python/3.13/bin/python3"
+# Use the latest toolchain Python.
+PYTHON=$(find_pythons | tail -1)
+if [ -z "$PYTHON" ]; then
+    echo "No Python interpreter found!"
+    exit 1
 fi
 
 if [ -d "${MONGOCRYPT_DIR}/nocrypto/lib64" ]; then

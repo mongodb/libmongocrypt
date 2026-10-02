@@ -32,47 +32,66 @@ createvirtualenv () {
     python -m pip install --upgrade pip
 }
 
-# Usage:
-# PYTHON = find_python3
-find_python3() {
-    PYTHON=""
-    # Add a fallback system python3 if it is available and Python 3.9+.
-    if is_python_39 "$(command -v python3)"; then
-        PYTHON="$(command -v python3)"
-    fi
-    # Find a suitable toolchain version, if available.
-    if [ "$(uname -s)" = "Darwin" ]; then
-        PYTHON="/Library/Frameworks/Python.Framework/Versions/3.9/bin/python3"
-    elif [ "Windows_NT" = "${OS:-}" ]; then # Magic variable in cygwin
-        PYTHON="C:/python/Python39/python.exe"
-    else
-        # Prefer our own toolchain, fall back to mongodb toolchain if it has Python 3.9+.
-        if [ -f "/opt/python/3.9/bin/python3" ]; then
-            PYTHON="/opt/python/3.9/bin/python3"
-        elif is_python_39 "$(command -v /opt/mongodbtoolchain/v4/bin/python3)"; then
-            PYTHON="/opt/mongodbtoolchain/v4/bin/python3"
-        elif is_python_39 "$(command -v /opt/mongodbtoolchain/v3/bin/python3)"; then
-            PYTHON="/opt/mongodbtoolchain/v3/bin/python3"
-        fi
-    fi
-    if [ -z "$PYTHON" ]; then
-        echo "Cannot run pre-commit without python3.9+ installed!"
-        exit 1
-    fi
-    echo "$PYTHON"
+# Prints each usable interpreter from the space-separated candidate list,
+# one per line, ascending by version. An interpreter is usable if it is
+# version 3.9 or later, a final release, and not free-threaded.
+_probe_pythons() {
+    for bin in $1; do
+        [ -x "$bin" ] || continue
+        "$bin" -c 'import sys
+ok = sys.version_info >= (3, 9) and sys.version_info.releaselevel == "final" and "free-threading" not in sys.version
+exit(0 if ok else 1)' 2>/dev/null || continue
+        printf '%s\t%s\n' "$("$bin" -c 'import sys; print("%04d" % (sys.version_info[0] * 1000 + sys.version_info[1]))')" "$bin"
+    done | sort | cut -f2-
 }
 
-# Function that returns success if the provided Python binary is version 3.9 or later
-# Usage:
-# is_python_39 /path/to/python
-# * param1: Python binary
-is_python_39() {
-    if [ -z "$1" ]; then
-        return 1
-    elif $1 -c "import sys; exit(sys.version_info[:2] < (3, 9))"; then
-        # runs when sys.version_info[:2] >= (3, 9)
-        return 0
+# Prints the Python interpreters in the standard numbered toolchain locations,
+# one per line, ascending by version, Python 3.9+ only. Only plain version
+# directories are matched (e.g. 3.14, not 3.14-asan-ubsan, 3.14t, or on
+# Windows Python314t/Python314-arm64). On Linux, falls back to the latest
+# MongoDB toolchain interpreter when the Python toolchain is absent, then to
+# a system interpreter from PATH.
+find_pythons() {
+    local dirs="" dir
+    if [ "Windows_NT" = "${OS:-}" ]; then # Magic variable in cygwin
+        for dir in C:/python/Python3[0-9] C:/python/Python3[0-9][0-9]; do
+            [ -d "$dir" ] && dirs="$dirs $dir/python.exe"
+        done
+    elif [ "$(uname -s)" = "Darwin" ]; then
+        for dir in /Library/Frameworks/Python.framework/Versions/3.[0-9]*; do
+            case "${dir##*/}" in *[!\.0-9]*) continue ;; esac
+            [ -d "$dir" ] && dirs="$dirs $dir/bin/python3"
+        done
     else
-        return 1
+        for dir in /opt/python/3.[0-9]*; do
+            case "${dir##*/}" in *[!\.0-9]*) continue ;; esac
+            [ -d "$dir" ] && dirs="$dirs $dir/bin/python3"
+        done
     fi
+    local results
+    results=$(_probe_pythons "$dirs")
+    if [ -n "$results" ]; then
+        printf '%s\n' "$results"
+        return 0
+    fi
+    if [ "$(uname -s)" != "Darwin" ] && [ "Windows_NT" != "${OS:-}" ]; then
+        # No Python toolchain: fall back to the latest MongoDB toolchain
+        # interpreter.
+        dirs=""
+        for dir in /opt/mongodbtoolchain/v[0-9]*; do
+            [ -d "$dir" ] && dirs="$dirs $dir/bin/python3"
+        done
+        results=$(_probe_pythons "$dirs")
+        if [ -n "$results" ]; then
+            printf '%s\n' "$results" | tail -1
+            return 0
+        fi
+    fi
+    # Fall back to a system interpreter from PATH.
+    dirs=""
+    for dir in python3 python; do
+        dir=$(command -v "$dir" 2>/dev/null) || continue
+        dirs="$dirs $dir"
+    done
+    _probe_pythons "$dirs"
 }
