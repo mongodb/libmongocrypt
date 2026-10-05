@@ -768,26 +768,19 @@ static void _cleanup(mongocrypt_ctx_t *ctx) {
 
 /* Returns true if a subtype-6 payload's first byte names a recognized FLE blob
  * subtype. */
-static bool _is_fle_blob_subtype(uint8_t byte) {
+static bool _is_decryptable_fle_blob_subtype(uint8_t byte) {
     switch (byte) {
-    case MC_SUBTYPE_FLE1EncryptionPlaceholder:
     case MC_SUBTYPE_FLE1DeterministicEncryptedValue:
     case MC_SUBTYPE_FLE1RandomEncryptedValue:
-    case MC_SUBTYPE_FLE2EncryptionPlaceholder:
     case MC_SUBTYPE_FLE2InsertUpdatePayload:
-    case MC_SUBTYPE_FLE2FindEqualityPayload:
     case MC_SUBTYPE_FLE2UnindexedEncryptedValue:
     case MC_SUBTYPE_FLE2IndexedEqualityEncryptedValue:
     case MC_SUBTYPE_FLE2IndexedRangeEncryptedValue:
-    case MC_SUBTYPE_FLE2FindRangePayload:
     case MC_SUBTYPE_FLE2InsertUpdatePayloadV2:
-    case MC_SUBTYPE_FLE2FindEqualityPayloadV2:
-    case MC_SUBTYPE_FLE2FindRangePayloadV2:
     case MC_SUBTYPE_FLE2IndexedEqualityEncryptedValueV2:
     case MC_SUBTYPE_FLE2IndexedRangeEncryptedValueV2:
     case MC_SUBTYPE_FLE2UnindexedEncryptedValueV2:
-    case MC_SUBTYPE_FLE2IndexedTextEncryptedValue:
-    case MC_SUBTYPE_FLE2FindTextPayload: return true;
+    case MC_SUBTYPE_FLE2IndexedTextEncryptedValue: return true;
     default: return false;
     }
 }
@@ -834,7 +827,7 @@ bool mongocrypt_ctx_explicit_decrypt_init(mongocrypt_ctx_t *ctx, mongocrypt_bina
             CLIENT_ERR("unsupported FLE blob subtype: expected non-empty payload");
             return _mongocrypt_ctx_fail(ctx);
         }
-        if (!_is_fle_blob_subtype(binary[0])) {
+        if (!_is_decryptable_fle_blob_subtype(binary[0])) {
             CLIENT_ERR("unsupported FLE blob subtype: %hhu", binary[0]);
             return _mongocrypt_ctx_fail(ctx);
         }
