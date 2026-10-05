@@ -1004,9 +1004,8 @@ static void _test_setopt_for_explicit_encrypt(_mongocrypt_tester_t *tester) {
         /* Set key ID to get past the 'either key id or key alt name required'
          * error */
         ASSERT_KEY_ID_OK(uuid);
-        ASSERT_OK(mongocrypt_ctx_setopt_query_type(ctx, MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW_DEPRECATED_STR, -1),
-                  ctx);
-        ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_RANGE_STR, -1), ctx);
+        ASSERT_OK(mongocrypt_ctx_setopt_query_type(ctx, MONGOCRYPT_QUERY_TYPE_SUBSTRING_STR, -1), ctx);
+        ASSERT_OK(mongocrypt_ctx_setopt_algorithm(ctx, MONGOCRYPT_ALGORITHM_INDEXED_STR, -1), ctx);
         ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "substring query type requires string index type");
 
         REFRESH;
@@ -1050,19 +1049,31 @@ static void _test_setopt_for_explicit_encrypt(_mongocrypt_tester_t *tester) {
         ASSERT_EX_ENCRYPT_INIT_FAILS(bson, "suffix query type requires string index type");
     }
 
-    // "prefixPreview" and "suffixPreview" are accepted as deprecated aliases for "prefix" and "suffix".
+    // Can't use "prefixPreview", "suffixPreview", or "substringPreview" query types.
     {
         mongocrypt_destroy(crypt);
         crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
         REFRESH_CTX;
         ASSERT_KEY_ID_OK(uuid);
-        ASSERT_OK(mongocrypt_ctx_setopt_query_type(ctx, MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW_DEPRECATED_STR, -1), ctx);
+        ASSERT_FAILS(mongocrypt_ctx_setopt_query_type(ctx, MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW_DEPRECATED_STR, -1),
+                     ctx,
+                     "'prefixPreview' is deprecated");
 
         mongocrypt_destroy(crypt);
         crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
         REFRESH_CTX;
         ASSERT_KEY_ID_OK(uuid);
-        ASSERT_OK(mongocrypt_ctx_setopt_query_type(ctx, MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW_DEPRECATED_STR, -1), ctx);
+        ASSERT_FAILS(mongocrypt_ctx_setopt_query_type(ctx, MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW_DEPRECATED_STR, -1),
+                     ctx,
+                     "'suffixPreview' is deprecated");
+
+        mongocrypt_destroy(crypt);
+        crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+        REFRESH_CTX;
+        ASSERT_KEY_ID_OK(uuid);
+        ASSERT_FAILS(mongocrypt_ctx_setopt_query_type(ctx, MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW_DEPRECATED_STR, -1),
+                     ctx,
+                     "'substringPreview' is deprecated");
     }
 
     /* It is an error to set a string algorithm without setting text options */

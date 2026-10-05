@@ -33,8 +33,9 @@ static bool _parse_query_type_string(const char *queryType, supported_query_type
         *out = SUPPORTS_RANGE_QUERIES;
     } else if (mstr_eq_ignore_case(mstrv_lit(MONGOCRYPT_QUERY_TYPE_RANGEPREVIEW_DEPRECATED_STR), qtv)) {
         *out = SUPPORTS_RANGE_PREVIEW_DEPRECATED_QUERIES;
-    } else if (mstr_eq_ignore_case(mstrv_lit(MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW_DEPRECATED_STR), qtv)
-               || mstr_eq_ignore_case(mstrv_lit(MONGOCRYPT_QUERY_TYPE_SUBSTRING_STR), qtv)) {
+    } else if (mstr_eq_ignore_case(mstrv_lit(MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW_DEPRECATED_STR), qtv)) {
+        *out = SUPPORTS_SUBSTRING_PREVIEW_DEPRECATED_QUERIES;
+    } else if (mstr_eq_ignore_case(mstrv_lit(MONGOCRYPT_QUERY_TYPE_SUBSTRING_STR), qtv)) {
         *out = SUPPORTS_SUBSTRING_QUERIES;
     } else if (mstr_eq_ignore_case(mstrv_lit(MONGOCRYPT_QUERY_TYPE_SUFFIX_STR), qtv)) {
         *out = SUPPORTS_SUFFIX_QUERIES;
@@ -177,6 +178,28 @@ static bool _parse_field(mc_EncryptedFieldConfig_t *efc, bson_t *field, mongocry
                    "instead. 'range' is not compatible with 'rangePreview' and requires recreating the collection.",
                    field_path);
         return false;
+    }
+
+    // Error if the removed "prefixPreview", "suffixPreview", or "substringPreview" is included.
+    struct {
+        supported_query_type_flags flag;
+        const char *removed;
+        const char *replacement;
+    } removed_text_query_types[] = {
+        {SUPPORTS_PREFIX_PREVIEW_DEPRECATED_QUERIES, "prefixPreview", "prefix"},
+        {SUPPORTS_SUFFIX_PREVIEW_DEPRECATED_QUERIES, "suffixPreview", "suffix"},
+        {SUPPORTS_SUBSTRING_PREVIEW_DEPRECATED_QUERIES, "substringPreview", "substring"},
+    };
+
+    for (size_t i = 0; i < sizeof(removed_text_query_types) / sizeof(removed_text_query_types[0]); i++) {
+        if (query_types & removed_text_query_types[i].flag) {
+            CLIENT_ERR("Cannot use field '%s' with '%s' queries. '%s' is unsupported. Use '%s' instead.",
+                       field_path,
+                       removed_text_query_types[i].removed,
+                       removed_text_query_types[i].removed,
+                       removed_text_query_types[i].replacement);
+            return false;
+        }
     }
 
     /* Prepend a new mc_EncryptedField_t */
