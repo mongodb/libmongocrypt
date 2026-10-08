@@ -6,6 +6,13 @@
 - Discontinue builds for EOL Debian releases (version 11, 10, and 9) and remove corresponding CI tasks.
 - Remove support for the `prefixPreview`, `suffixPreview`, and `substringPreview` query types. Setting them with `mongocrypt_ctx_setopt_query_type` or using them in encryptedFields is now an error.
 
+## 1.20.5
+
+### Fixed
+- Fix possible abort parsing endpoints.
+- Reject more payloads that cannot be decrypted in explicit decryption.
+- Fix more degenerate cases of masterKey parsing.
+
 ## 1.20.4
 
 ### Fixed
