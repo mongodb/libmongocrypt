@@ -46,6 +46,38 @@ static void _test_explicit_decrypt_init(_mongocrypt_tester_t *tester) {
     mongocrypt_destroy(crypt);
 }
 
+/* Regression test for MONGOCRYPT-966 */
+static void _test_explicit_decrypt_unknown_subtype(_mongocrypt_tester_t *tester) {
+    mongocrypt_t *const crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+
+    const struct {
+        const char *desc;
+        const char *base64;
+    } cases[] = {
+        {"unrecognized subtype 0x08", "CKq7zA=="},
+        {"FLE1EncryptionPlaceholder (0x00)", "AA=="},
+        {"FLE2EncryptionPlaceholder (0x03)", "Aw=="},
+        {"FLE2FindEqualityPayload (0x05)", "BQ=="},
+        {"FLE2FindRangePayload (0x0a)", "Cg=="},
+        {"FLE2FindTextPayload (0x12)", "Eg=="},
+        {"zero-length payload", ""},
+    };
+
+    for (size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
+        mongocrypt_binary_t *const msg =
+            TEST_BSON("{ 'v': { '$binary': { 'subType': '06', 'base64': '%s' } } }", cases[i].base64);
+
+        mongocrypt_ctx_t *const ctx = mongocrypt_ctx_new(crypt);
+
+        ASSERT_FAILS(mongocrypt_ctx_explicit_decrypt_init(ctx, msg), ctx, "unsupported FLE blob subtype");
+        BSON_ASSERT(mongocrypt_ctx_state(ctx) == MONGOCRYPT_CTX_ERROR);
+
+        mongocrypt_ctx_destroy(ctx);
+    }
+
+    mongocrypt_destroy(crypt);
+}
+
 /* Test individual ctx states. */
 static void _test_decrypt_init(_mongocrypt_tester_t *tester) {
     mongocrypt_t *crypt;
@@ -788,28 +820,21 @@ typedef struct {
     mongocrypt_binary_t *msg;
     mongocrypt_binary_t *keys_to_feed[3]; // NULL terminated list.
     mongocrypt_binary_t *expect;
-    bool expect_ignored;
+    bool expect_error;
 } ed_testcase;
 
 static void ed_testcase_run(ed_testcase *tc) {
     printf("  explicit decrypt test: %s ... begin\n", tc->desc);
     mongocrypt_t *crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
     mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
-    ASSERT_OK(mongocrypt_ctx_explicit_decrypt_init(ctx, tc->msg), ctx);
 
-    if (tc->expect_ignored) {
-        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_READY);
-        {
-            mongocrypt_binary_t *got = mongocrypt_binary_new();
-            bool ret = mongocrypt_ctx_finalize(ctx, got);
-            ASSERT_OK(ret, ctx);
-            // Expect input is returned unchanged.
-            ASSERT_MONGOCRYPT_BINARY_EQUAL_BSON(tc->msg, got);
-            mongocrypt_binary_destroy(got);
-        }
+    if (tc->expect_error) {
+        ASSERT_FAILS(mongocrypt_ctx_explicit_decrypt_init(ctx, tc->msg), ctx, "unsupported FLE blob subtype");
+        ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_ERROR);
         goto cleanup;
     }
 
+    ASSERT_OK(mongocrypt_ctx_explicit_decrypt_init(ctx, tc->msg), ctx);
     ASSERT_STATE_EQUAL(mongocrypt_ctx_state(ctx), MONGOCRYPT_CTX_NEED_MONGO_KEYS);
     {
         for (size_t i = 0; i < sizeof(tc->keys_to_feed) / sizeof(tc->keys_to_feed[0]); i++) {
@@ -858,12 +883,12 @@ static void _test_explicit_decrypt(_mongocrypt_tester_t *tester) {
         ed_testcase_run(&tc);
     }
 
-    // FLE1EncryptionPlaceholder is ignored.
+    // FLE1EncryptionPlaceholder is recognized but not decryptable: explicit decryption must error.
     // Payload is returned by query analysis and consumed by libmongocrypt. Payload is not expected to be given to user.
     {
         ed_testcase tc = {.desc = "FLE1EncryptionPlaceholder",
                           .msg = TEST_FILE("./test/data/explicit-decrypt/FLE1EncryptionPlaceholder.json"),
-                          .expect_ignored = true};
+                          .expect_error = true};
         ed_testcase_run(&tc);
     }
 
@@ -878,12 +903,12 @@ static void _test_explicit_decrypt(_mongocrypt_tester_t *tester) {
         ed_testcase_run(&tc);
     }
 
-    // FLE2EncryptionPlaceholder is ignored.
+    // FLE2EncryptionPlaceholder is recognized but not decryptable: explicit decryption must error.
     // Payload is returned by query analysis and consumed by libmongocrypt. Payload is not expected to be given to user.
     {
         ed_testcase tc = {.desc = "FLE2EncryptionPlaceholder",
                           .msg = TEST_FILE("./test/data/explicit-decrypt/FLE2EncryptionPlaceholder.json"),
-                          .expect_ignored = true};
+                          .expect_error = true};
         ed_testcase_run(&tc);
     }
 
@@ -952,12 +977,12 @@ static void _test_explicit_decrypt(_mongocrypt_tester_t *tester) {
         ed_testcase_run(&tc);
     }
 
-    // FLE2FindEqualityPayload is ignored.
+    // FLE2FindEqualityPayload is recognized but not decryptable: explicit decryption must error.
     // Payload does not contain encrypted ciphertext (only lookup tokens).
     {
         ed_testcase tc = {.desc = "FLE2FindEqualityPayload",
                           .msg = TEST_FILE("./test/data/explicit-decrypt/FLE2FindEqualityPayload.json"),
-                          .expect_ignored = true};
+                          .expect_error = true};
         ed_testcase_run(&tc);
     }
 
@@ -1030,18 +1055,19 @@ static void _test_explicit_decrypt(_mongocrypt_tester_t *tester) {
         ed_testcase_run(&tc);
     }
 
-    // FLE2FindEqualityPayloadV2 is ignored.
+    // FLE2FindEqualityPayloadV2 is recognized but not decryptable: explicit decryption must error.
     // Payload does not contain encrypted ciphertext (only lookup tokens).
     {
         ed_testcase tc = {.desc = "FLE2FindEqualityPayloadV2",
                           .msg = TEST_FILE("./test/data/explicit-decrypt/FLE2FindEqualityPayloadV2.json"),
-                          .expect_ignored = true};
+                          .expect_error = true};
         ed_testcase_run(&tc);
     }
 }
 
 void _mongocrypt_tester_install_ctx_decrypt(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_explicit_decrypt_init);
+    INSTALL_TEST(_test_explicit_decrypt_unknown_subtype);
     INSTALL_TEST(_test_decrypt_init);
     INSTALL_TEST(_test_decrypt_need_keys);
     INSTALL_TEST(_test_decrypt_ready);

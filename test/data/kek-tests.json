@@ -15,7 +15,7 @@
             "keyName": "example keyName", 
             "provider": "azure"
         }, 
-        "expect": "invalid endpoint"
+        "expect": "Invalid character in endpoint"
     }, 
     {
         "input": {
@@ -47,7 +47,7 @@
             "key": "example arn", 
             "provider": "aws"
         }, 
-        "expect": "invalid endpoint"
+        "expect": "Invalid character in endpoint"
     }, 
     {
         "input": {
@@ -79,7 +79,7 @@
             "keyRing": "example keyRing", 
             "keyName": "example keyName"
         }, 
-        "expect": "invalid endpoint"
+        "expect": "Invalid character in endpoint"
     }, 
     {
         "input": {
