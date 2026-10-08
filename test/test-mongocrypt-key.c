@@ -182,6 +182,31 @@ static void test_mongocrypt_key_parsing(_mongocrypt_tester_t *tester) {
     bson_destroy(&key_bson);
 }
 
+/* Regression test for MONGOCRYPT-964. */
+static void test_mongocrypt_key_parsing_duplicate_master_key(_mongocrypt_tester_t *tester) {
+    bson_t key_bson = BSON_INITIALIZER;
+    mongocrypt_status_t *const status = mongocrypt_status_new();
+
+    /* Two identical masterKey fields. */
+    _recreate_and_reset(tester, &key_bson, status, "masterKey", NULL);
+    bson_concat(&key_bson, TMP_BSON("{'masterKey': { 'provider': 'local' }}"));
+    bson_concat(&key_bson, TMP_BSON("{'masterKey': { 'provider': 'local' }}"));
+    _parse_fails(&key_bson, status, "duplicate field 'masterKey'");
+
+    /* A GCP masterKey followed by an AWS masterKey missing 'region'. The
+     * aborted second parse leaves the GCP 'keyRing' string in the union slot
+     * shared with aws.endpoint, which cleanup then frees as an endpoint. */
+    _recreate_and_reset(tester, &key_bson, status, "masterKey", NULL);
+    bson_concat(&key_bson,
+                TMP_BSON("{'masterKey': { 'provider': 'gcp', 'projectId': 'project', 'location': "
+                         "'global', 'keyRing': 'ring', 'keyName': 'name' }}"));
+    bson_concat(&key_bson, TMP_BSON("{'masterKey': { 'provider': 'aws', 'key': 'cmk-string' }}"));
+    _parse_fails(&key_bson, status, "duplicate field 'masterKey'");
+
+    mongocrypt_status_destroy(status);
+    bson_destroy(&key_bson);
+}
+
 static void test_mongocrypt_key_alt_name_from_iter(_mongocrypt_tester_t *tester) {
     mongocrypt_status_t *status;
     bson_iter_t iter;
@@ -230,5 +255,6 @@ static void test_mongocrypt_key_alt_name_from_iter(_mongocrypt_tester_t *tester)
 
 void _mongocrypt_tester_install_key(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(test_mongocrypt_key_parsing);
+    INSTALL_TEST(test_mongocrypt_key_parsing_duplicate_master_key);
     INSTALL_TEST(test_mongocrypt_key_alt_name_from_iter);
 }
