@@ -1,0 +1,34 @@
+{
+  "name": "FLE2FindTextPayload",
+  "dump": {
+    "ts": {
+      "e": {
+        "d": {
+          "$binary": {
+            "base64": "KA7atBkHY9H0GD04P4gwdzhZw6dKExYQlOb9ROc5D+0=",
+            "subType": "00"
+          }
+        },
+        "s": {
+          "$binary": {
+            "base64": "w8iYDtEeY+wZkQS8mgiJMiyeuA0A7uC1FI3IP354rbc=",
+            "subType": "00"
+          }
+        },
+        "l": {
+          "$binary": {
+            "base64": "h3MyKiuebAiIbba8ZbRv/dZGUeiklACp5V/1vFUNRb8=",
+            "subType": "00"
+          }
+        }
+      }
+    },
+    "cm": 43,
+    "cf": true,
+    "df": false,
+    "ps": {
+      "ub": 20,
+      "lb": 2
+    }
+  }
+}
