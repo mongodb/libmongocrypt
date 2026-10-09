@@ -1,31 +1,31 @@
 {
   "components": [
     {
-      "bom-ref": "pkg:github/mongodb/libmongocrypt@1.20.4",
+      "bom-ref": "pkg:github/mongodb/libmongocrypt@1.20.5",
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://github.com/mongodb/libmongocrypt/archive/1.20.4.tar.gz"
+          "url": "https://github.com/mongodb/libmongocrypt/archive/1.20.5.tar.gz"
         },
         {
           "type": "website",
-          "url": "https://github.com/mongodb/libmongocrypt/tree/1.20.4"
+          "url": "https://github.com/mongodb/libmongocrypt/tree/1.20.5"
         }
       ],
       "group": "mongodb",
       "name": "libmongocrypt",
-      "purl": "pkg:github/mongodb/libmongocrypt@1.20.4",
+      "purl": "pkg:github/mongodb/libmongocrypt@1.20.5",
       "type": "library",
-      "version": "1.20.4"
+      "version": "1.20.5"
     }
   ],
   "dependencies": [
     {
-      "ref": "pkg:github/mongodb/libmongocrypt@1.20.4"
+      "ref": "pkg:github/mongodb/libmongocrypt@1.20.5"
     }
   ],
   "metadata": {
-    "timestamp": "2026-09-08T20:12:05.307426+00:00",
+    "timestamp": "2026-10-09T19:22:08.914756+00:00",
     "tools": [
       {
         "externalReferences": [

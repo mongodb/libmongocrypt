@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Changes in Version 1.20.0
+-------------------------
+
+- Bundle libmongocrypt 1.20.5 in release wheels.
+
 Changes in Version 1.19.0
 -------------------------
 
