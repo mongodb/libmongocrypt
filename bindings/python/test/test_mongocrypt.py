@@ -1064,8 +1064,9 @@ if sys.version_info >= (3, 8, 0):  # noqa: UP036
                 )
 
         async def test_deprecated_preview_query_types(self):
-            # The "*Preview" query types remain as aliases to the GA names.
-            # PYTHON-5959 drops them.
+            # The "*Preview" query types are deprecated aliases of the GA names.
+            # libmongocrypt rejects them (MONGOCRYPT-938); PYTHON-5959 drops
+            # them from the driver API.
             key_path = "keys/ABCDEFAB123498761234123456789012-local-document.json"
             key_id = json_data(key_path)["_id"]
             encrypter = AsyncExplicitEncrypter(
@@ -1076,25 +1077,21 @@ if sys.version_info >= (3, 8, 0):  # noqa: UP036
             )
             self.addCleanup(encrypter.close)
 
-            string_opts = bson_data("fle2-text-search/textopts.json")
-            value = bson.encode({"v": "foo"})
-
-            async def encrypt(query_type):
-                return await encrypter.encrypt(
-                    value,
-                    "string",
-                    key_id=key_id,
-                    query_type=query_type,
-                    contention_factor=0,
-                    string_opts=string_opts,
-                )
-
             for query_type in ["prefix", "suffix", "substring"]:
                 with self.subTest(query_type=query_type):
-                    self.assertEqual(
-                        await encrypt(f"{query_type}Preview"),
-                        await encrypt(query_type),
-                    )
+                    with self.assertRaisesRegex(
+                        MongoCryptError,
+                        f"Query type '{query_type}Preview' is deprecated, "
+                        f"please use '{query_type}'",
+                    ):
+                        await encrypter.encrypt(
+                            bson.encode({"v": "foo"}),
+                            "string",
+                            key_id=key_id,
+                            query_type=f"{query_type}Preview",
+                            contention_factor=0,
+                            string_opts=bson_data("fle2-text-search/textopts.json"),
+                        )
 
 
 class TestNeedKMSAzureCredentials(unittest.TestCase):
@@ -1591,8 +1588,9 @@ class TestExplicitEncryption(unittest.TestCase):
             )
 
     def test_deprecated_preview_query_types(self):
-        # The "*Preview" query types remain as aliases to the GA names.
-        # PYTHON-5959 drops them.
+        # The "*Preview" query types are deprecated aliases of the GA names.
+        # libmongocrypt rejects them (MONGOCRYPT-938); PYTHON-5959 drops
+        # them from the driver API.
         key_path = "keys/ABCDEFAB123498761234123456789012-local-document.json"
         key_id = json_data(key_path)["_id"]
         encrypter = ExplicitEncrypter(
@@ -1603,22 +1601,21 @@ class TestExplicitEncryption(unittest.TestCase):
         )
         self.addCleanup(encrypter.close)
 
-        string_opts = bson_data("fle2-text-search/textopts.json")
-        value = bson.encode({"v": "foo"})
-
-        def encrypt(query_type):
-            return encrypter.encrypt(
-                value,
-                "string",
-                key_id=key_id,
-                query_type=query_type,
-                contention_factor=0,
-                string_opts=string_opts,
-            )
-
         for query_type in ["prefix", "suffix", "substring"]:
             with self.subTest(query_type=query_type):
-                self.assertEqual(encrypt(f"{query_type}Preview"), encrypt(query_type))
+                with self.assertRaisesRegex(
+                    MongoCryptError,
+                    f"Query type '{query_type}Preview' is deprecated, "
+                    f"please use '{query_type}'",
+                ):
+                    encrypter.encrypt(
+                        bson.encode({"v": "foo"}),
+                        "string",
+                        key_id=key_id,
+                        query_type=f"{query_type}Preview",
+                        contention_factor=0,
+                        string_opts=bson_data("fle2-text-search/textopts.json"),
+                    )
 
 
 def read(filename, **kwargs):
