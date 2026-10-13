@@ -2,6 +2,9 @@
 
 ## 1.21.0 [Unreleased]
 
+### Changed
+- Bump downloaded libbson version from 2.3.3 to 2.5.6.
+
 ### Removed
 - Discontinue builds for EOL Debian releases (version 11, 10, and 9) and remove corresponding CI tasks.
 - Remove support for the `prefixPreview`, `suffixPreview`, and `substringPreview` query types. Setting them with `mongocrypt_ctx_setopt_query_type` or using them in encryptedFields is now an error.
