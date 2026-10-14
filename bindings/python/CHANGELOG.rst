@@ -1,6 +1,14 @@
 Changelog
 =========
 
+Changes in Version 1.21.0
+-------------------------
+
+- Bundle libmongocrypt 1.21.0 in release wheels.
+- Removed the deprecated "prefixPreview", "suffixPreview", and
+  "substringPreview" query types. Use "prefix", "suffix", and "substring"
+  instead.
+
 Changes in Version 1.20.0
 -------------------------
 
