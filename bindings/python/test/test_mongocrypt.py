@@ -1047,8 +1047,8 @@ class TestAsyncExplicitEncryption(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_deprecated_preview_query_types(self):
-        # The "*Preview" query types remain as aliases to the GA names.
-        # PYTHON-5959 drops them.
+        # The "*Preview" query types error instead of aliasing to the GA
+        # names. MONGOCRYPT-938 drops them.
         key_path = "keys/ABCDEFAB123498761234123456789012-local-document.json"
         key_id = json_data(key_path)["_id"]
         encrypter = AsyncExplicitEncrypter(
@@ -1074,10 +1074,12 @@ class TestAsyncExplicitEncryption(unittest.IsolatedAsyncioTestCase):
 
         for query_type in ["prefix", "suffix", "substring"]:
             with self.subTest(query_type=query_type):
-                self.assertEqual(
-                    await encrypt(f"{query_type}Preview"),
-                    await encrypt(query_type),
-                )
+                # Expect error attempting to use '*Preview'.
+                  with self.assertRaisesRegex(
+                      MongoCryptError,
+                      f"Query type '{query_type}Preview' is deprecated, please use '{query_type}'",
+                  ):
+                      await encrypt(f"{query_type}Preview")
 
 
 class TestNeedKMSAzureCredentials(unittest.TestCase):
@@ -1572,8 +1574,8 @@ class TestExplicitEncryption(unittest.TestCase):
             )
 
     def test_deprecated_preview_query_types(self):
-        # The "*Preview" query types remain as aliases to the GA names.
-        # PYTHON-5959 drops them.
+        # The "*Preview" query types error instead of aliasing to the GA
+        # names. MONGOCRYPT-938 drops them.
         key_path = "keys/ABCDEFAB123498761234123456789012-local-document.json"
         key_id = json_data(key_path)["_id"]
         encrypter = ExplicitEncrypter(
@@ -1599,7 +1601,12 @@ class TestExplicitEncryption(unittest.TestCase):
 
         for query_type in ["prefix", "suffix", "substring"]:
             with self.subTest(query_type=query_type):
-                self.assertEqual(encrypt(f"{query_type}Preview"), encrypt(query_type))
+                # Expect error attempting to use '*Preview'.
+                with self.assertRaisesRegex(
+                    MongoCryptError,
+                    f"Query type '{query_type}Preview' is deprecated, please use '{query_type}'",
+                ):
+                    encrypt(f"{query_type}Preview")
 
 
 def read(filename, **kwargs):
