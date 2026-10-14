@@ -104,7 +104,7 @@ Do the following when releasing:
    Commit resulting `etc/cyclonedx.sbom.json` and push to `rx.y`.
 - Remove yourself from the [releases team](https://github.com/orgs/mongodb/teams/dbx-c-cxx-releases) on GitHub via [MANA](https://mana.corp.mongodb.com/resources/68029673d39aa9f7de6399f9).
 - If this is a new non-patch release (e.g. `x.y.0`):
-   - File a DOCSP ticket to update the installation instructions on [Install libmongocrypt](https://www.mongodb.com/docs/manual/core/csfle/reference/libmongocrypt/). ([Example](https://jira.mongodb.org/browse/DOCSP-52575))
+   - If this version impacts [install instructions](https://www.mongodb.com/docs/manual/core/csfle/reference/libmongocrypt), file a DOCSP ticket. Example: [DOCSP-65181](https://jira.mongodb.org/browse/DOCSP-65181).
    - Create a new Snyk reference target. The following instructions use the example branch `rx.y`:
 
      Run `cmake` to ensure generated source files are present:
