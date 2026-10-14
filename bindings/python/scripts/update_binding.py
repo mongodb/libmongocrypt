@@ -16,22 +16,11 @@
 """
 
 import re
+from itertools import pairwise
 from pathlib import Path
 
 DROP_RE = re.compile(r"^\s*(#|MONGOCRYPT_EXPORT)")
 HERE = Path(__file__).absolute().parent
-
-
-# itertools.pairwise backport for Python 3.9 support.
-def pairwise(iterable):
-    # pairwise('ABCDEFG') → AB BC CD DE EF FG
-
-    iterator = iter(iterable)
-    a = next(iterator, None)
-
-    for b in iterator:
-        yield a, b
-        a = b
 
 
 def strip_file(content):
