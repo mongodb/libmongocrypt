@@ -4,6 +4,7 @@ Changelog
 Changes in Version 1.21.0
 -------------------------
 
+- Add support for Python 3.15.
 - Bundle libmongocrypt 1.21.0 in release wheels.
 - Removed the deprecated "prefixPreview", "suffixPreview", and
   "substringPreview" query types. Use "prefix", "suffix", and "substring"
