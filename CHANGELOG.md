@@ -1,6 +1,6 @@
 # ChangeLog
 
-## 1.21.0 [Unreleased]
+## 1.21.0
 
 ### Changed
 - Bump downloaded libbson version from 2.3.3 to 2.5.6.
