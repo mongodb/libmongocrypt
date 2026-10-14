@@ -1075,11 +1075,11 @@ class TestAsyncExplicitEncryption(unittest.IsolatedAsyncioTestCase):
         for query_type in ["prefix", "suffix", "substring"]:
             with self.subTest(query_type=query_type):
                 # Expect error attempting to use '*Preview'.
-                  with self.assertRaisesRegex(
-                      MongoCryptError,
-                      f"Query type '{query_type}Preview' is deprecated, please use '{query_type}'",
-                  ):
-                      await encrypt(f"{query_type}Preview")
+                with self.assertRaisesRegex(
+                    MongoCryptError,
+                    f"Query type '{query_type}Preview' is deprecated, please use '{query_type}'",
+                ):
+                    await encrypt(f"{query_type}Preview")
 
 
 class TestNeedKMSAzureCredentials(unittest.TestCase):
