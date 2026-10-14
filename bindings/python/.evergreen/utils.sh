@@ -34,19 +34,19 @@ createvirtualenv () {
 
 # Prints each usable interpreter from the space-separated candidate list,
 # one per line, ascending by version. An interpreter is usable if it is
-# version 3.9 or later, a final release, and not free-threaded.
+# version 3.11 or later, a final release, and not free-threaded.
 _probe_pythons() {
     for bin in $1; do
         [ -x "$bin" ] || continue
         "$bin" -c 'import sys
-ok = sys.version_info >= (3, 9) and sys.version_info.releaselevel == "final" and "free-threading" not in sys.version
+ok = sys.version_info >= (3, 11) and sys.version_info.releaselevel == "final" and "free-threading" not in sys.version
 exit(0 if ok else 1)' 2>/dev/null || continue
         printf '%s\t%s\n' "$("$bin" -c 'import sys; print("%04d" % (sys.version_info[0] * 1000 + sys.version_info[1]))')" "$bin"
     done | sort | cut -f2-
 }
 
 # Prints the Python interpreters in the standard numbered toolchain locations,
-# one per line, ascending by version, Python 3.9+ only. Only plain version
+# one per line, ascending by version, Python 3.11+ only. Only plain version
 # directories are matched (e.g. 3.14, not 3.14-asan-ubsan, 3.14t, or on
 # Windows Python314t/Python314-arm64). On Linux, falls back to the latest
 # MongoDB toolchain interpreter when the Python toolchain is absent, then to

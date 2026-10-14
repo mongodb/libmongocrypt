@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Changes in Version 1.21.0 (unreleased)
+--------------------------------------
+
+- Drop support for Python 3.9 and 3.10. Python >=3.11 is now required.
+
 Changes in Version 1.20.0
 -------------------------
 
