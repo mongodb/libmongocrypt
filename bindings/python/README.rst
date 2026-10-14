@@ -13,7 +13,7 @@ Python wrapper library for libmongocrypt that supports client side encryption
 in drivers. PyMongoCrypt uses `cffi <https://pypi.org/project/cffi/>`_ and
 `cryptography <https://pypi.org/project/cryptography/>`_.
 
-PyMongoCrypt supports Python 3.11+ and PyPy 3.11+.
+PyMongoCrypt supports Python 3.11+.
 
 Support / Feedback
 ==================
@@ -157,7 +157,7 @@ for encryption and decryption::
 Dependencies
 ============
 
-PyMongoCrypt supports Python 3.11+ and PyPy 3.11+.
+PyMongoCrypt supports Python 3.11+.
 
 PyMongoCrypt requires `cffi <https://pypi.org/project/cffi/>`_ and
 `cryptography <https://pypi.org/project/cryptography/>`_.
