@@ -18,6 +18,17 @@ if [ -z "$PYTHON" ]; then
     exit 1
 fi
 
+# pymongo (unreleased master) requires Python 3.11+. Some distros (e.g.
+# rhel82) only provide older interpreters, so provision one with uv.
+if ! "$PYTHON" -c 'import sys; sys.exit(sys.version_info < (3, 11))'; then
+    if ! command -v uv >/dev/null 2>&1; then
+        "$PYTHON" -m pip install --user uv
+    fi
+    uv python install 3.11
+    PYTHON=$(uv python find 3.11)
+    echo "Using uv-provisioned Python: $PYTHON"
+fi
+
 if [ -d "${MONGOCRYPT_DIR}/nocrypto/lib64" ]; then
     PYMONGOCRYPT_LIB="${MONGOCRYPT_DIR}/nocrypto/lib64/libmongocrypt.so"
 else
