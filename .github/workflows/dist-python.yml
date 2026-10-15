@@ -52,6 +52,11 @@ jobs:
           cache-dependency-path: 'bindings/python/pyproject.toml'
           allow-prereleases: true
 
+      - name: Validate pyproject.toml
+        run: |
+          pip install 'validate-pyproject[all]'
+          validate-pyproject pyproject.toml
+
       - name: Build and test dist files
         run: |
           export LIBMONGOCRYPT_VERSION=$(cat ./scripts/libmongocrypt-version.txt)
@@ -76,6 +81,14 @@ jobs:
         run: |
           find . -mindepth 2 -type f -exec mv {} . \;
           find . -type d -empty -delete
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+      - name: Check dist metadata
+        working-directory: .
+        run: |
+          pip install twine
+          twine check --strict *.whl *.tar.gz
       - uses: actions/upload-artifact@v5
         with:
           name: all-dist-${{ github.run_id }}
