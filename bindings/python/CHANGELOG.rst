@@ -3,6 +3,10 @@ Changelog
 
 Changes in Version 1.21.0
 -------------------------
+- same as Version 1.21.0
+
+Changes in Version 1.21.0
+-------------------------
 
 - Add support for Python 3.15.
 - Drop support for Python 3.9 and 3.10, and for PyPy. Python >=3.11 is now
