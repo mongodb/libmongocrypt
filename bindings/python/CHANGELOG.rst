@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Changes in Version 1.21.1
+-------------------------
+
+- same as Version 1.21.0
+
 Changes in Version 1.21.0
 -------------------------
 
