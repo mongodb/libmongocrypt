@@ -2624,62 +2624,6 @@ static void _test_encrypt_fle2_explicit(_mongocrypt_tester_t *tester) {
     }
 
     {
-        // "suffixPreview" is a deprecated alias for "suffix" and must produce identical output.
-        ee_testcase tc = {0};
-        tc.desc = "find suffixPreview";
-        tc.algorithm = MONGOCRYPT_ALGORITHM_STRING_STR;
-        tc.query_type = MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW_DEPRECATED_STR;
-        tc.contention_factor = OPT_I64(1);
-        tc.msg = TEST_BSON("{'v': 'abc'}");
-        tc.user_key_id = &keyABC_id;
-        tc.keys_to_feed[0] = keyABC;
-        tc.text_opts = TEST_BSON(RAW_STRING({
-            "caseSensitive" : true,
-            "diacriticSensitive" : true,
-            "suffix" : {"strMinQueryLength" : 1, "strMaxQueryLength" : 100}
-        }));
-        tc.expect = TEST_FILE("./test/data/fle2-explicit/find-suffix.json");
-        ee_testcase_run(&tc);
-    }
-
-    {
-        // "prefixPreview" is a deprecated alias for "prefix" and must produce identical output.
-        ee_testcase tc = {0};
-        tc.desc = "find prefixPreview";
-        tc.algorithm = MONGOCRYPT_ALGORITHM_STRING_STR;
-        tc.query_type = MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW_DEPRECATED_STR;
-        tc.contention_factor = OPT_I64(1);
-        tc.msg = TEST_BSON("{'v': 'abc'}");
-        tc.user_key_id = &keyABC_id;
-        tc.keys_to_feed[0] = keyABC;
-        tc.text_opts = TEST_BSON(RAW_STRING({
-            "caseSensitive" : true,
-            "diacriticSensitive" : true,
-            "prefix" : {"strMinQueryLength" : 1, "strMaxQueryLength" : 100}
-        }));
-        tc.expect = TEST_FILE("./test/data/fle2-explicit/find-prefix.json");
-        ee_testcase_run(&tc);
-    }
-
-    {
-        ee_testcase tc = {0};
-        tc.desc = "find substring";
-        tc.algorithm = MONGOCRYPT_ALGORITHM_STRING_STR;
-        tc.query_type = MONGOCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW_DEPRECATED_STR;
-        tc.contention_factor = OPT_I64(1);
-        tc.msg = TEST_BSON("{'v': 'abc'}");
-        tc.user_key_id = &keyABC_id;
-        tc.keys_to_feed[0] = keyABC;
-        tc.text_opts = TEST_BSON(RAW_STRING({
-            "caseSensitive" : true,
-            "diacriticSensitive" : true,
-            "substring" : {"strMaxLength" : 100, "strMinQueryLength" : 1, "strMaxQueryLength" : 100}
-        }));
-        tc.expect = TEST_FILE("./test/data/fle2-explicit/find-substring.json");
-        ee_testcase_run(&tc);
-    }
-
-    {
         ee_testcase tc = {0};
         tc.desc = "find substring";
         tc.algorithm = MONGOCRYPT_ALGORITHM_STRING_STR;
@@ -4543,9 +4487,9 @@ static void _test_rangePreview_fails(_mongocrypt_tester_t *tester) {
     bson_free(local_kek);
 }
 
-// `_test_prefixPreview_suffixPreview_succeeds` tests that "prefixPreview" and "suffixPreview" are accepted as
-// deprecated aliases for "prefix" and "suffix".
-static void _test_prefixPreview_suffixPreview_succeeds(_mongocrypt_tester_t *tester) {
+// `_test_prefixPreview_suffixPreview` tests that "prefixPreview", "suffixPreview", and "substringPreview" are rejected
+// as explicit encryption query types and in encryptedFields.
+static void _test_prefixPreview_suffixPreview(_mongocrypt_tester_t *tester) {
 #define TF(suffix) TEST_FILE("./test/data/fle2-insert-text-search-preview/" suffix)
 
     // local_kek is the KEK used to encrypt the keyMaterial in ./test/data/key-document-local.json
@@ -4554,31 +4498,35 @@ static void _test_prefixPreview_suffixPreview_succeeds(_mongocrypt_tester_t *tes
     mongocrypt_binary_t *kms_providers =
         TEST_BSON(BSON_STR({"local" : {"key" : {"$binary" : {"base64" : "%s", "subType" : "00"}}}}), local_kek);
 
-    // Test setting 'prefixPreview' as an explicit encryption queryType succeeds.
+    // Test setting 'prefixPreview' as an explicit encryption queryType results in error.
     {
         mongocrypt_t *crypt = mongocrypt_new();
         mongocrypt_setopt_kms_providers(crypt, kms_providers);
         ASSERT_OK(mongocrypt_init(crypt), crypt);
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
         ASSERT_OK(ctx, crypt);
-        ASSERT_OK(mongocrypt_ctx_setopt_query_type(ctx, MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW_DEPRECATED_STR, -1), ctx);
+        ASSERT_FAILS(mongocrypt_ctx_setopt_query_type(ctx, MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW_DEPRECATED_STR, -1),
+                     ctx,
+                     "Query type 'prefixPreview' is deprecated");
         mongocrypt_ctx_destroy(ctx);
         mongocrypt_destroy(crypt);
     }
 
-    // Test setting 'suffixPreview' as an explicit encryption queryType succeeds.
+    // Test setting 'suffixPreview' as an explicit encryption queryType results in error.
     {
         mongocrypt_t *crypt = mongocrypt_new();
         mongocrypt_setopt_kms_providers(crypt, kms_providers);
         ASSERT_OK(mongocrypt_init(crypt), crypt);
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
         ASSERT_OK(ctx, crypt);
-        ASSERT_OK(mongocrypt_ctx_setopt_query_type(ctx, MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW_DEPRECATED_STR, -1), ctx);
+        ASSERT_FAILS(mongocrypt_ctx_setopt_query_type(ctx, MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW_DEPRECATED_STR, -1),
+                     ctx,
+                     "Query type 'suffixPreview' is deprecated");
         mongocrypt_ctx_destroy(ctx);
         mongocrypt_destroy(crypt);
     }
 
-    // Test setting 'prefixPreview' from encryptedFields succeeds.
+    // Test setting 'prefixPreview' from encryptedFields results in error.
     {
         mongocrypt_t *crypt = mongocrypt_new();
         mongocrypt_setopt_kms_providers(crypt, kms_providers);
@@ -4587,12 +4535,14 @@ static void _test_prefixPreview_suffixPreview_succeeds(_mongocrypt_tester_t *tes
         ASSERT_OK(mongocrypt_init(crypt), crypt);
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
         ASSERT_OK(ctx, crypt);
-        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")), ctx);
+        ASSERT_FAILS(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")),
+                     ctx,
+                     "Cannot use field 'encrypted' with 'prefixPreview' queries");
         mongocrypt_ctx_destroy(ctx);
         mongocrypt_destroy(crypt);
     }
 
-    // Test setting 'suffixPreview' from encryptedFields succeeds.
+    // Test setting 'suffixPreview' from encryptedFields results in error.
     {
         mongocrypt_t *crypt = mongocrypt_new();
         mongocrypt_setopt_kms_providers(crypt, kms_providers);
@@ -4601,7 +4551,24 @@ static void _test_prefixPreview_suffixPreview_succeeds(_mongocrypt_tester_t *tes
         ASSERT_OK(mongocrypt_init(crypt), crypt);
         mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
         ASSERT_OK(ctx, crypt);
-        ASSERT_OK(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")), ctx);
+        ASSERT_FAILS(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")),
+                     ctx,
+                     "Cannot use field 'encrypted' with 'suffixPreview' queries");
+        mongocrypt_ctx_destroy(ctx);
+        mongocrypt_destroy(crypt);
+    }
+    // Test setting 'substringPreview' from encryptedFields results in error.
+    {
+        mongocrypt_t *crypt = mongocrypt_new();
+        mongocrypt_setopt_kms_providers(crypt, kms_providers);
+        ASSERT_OK(mongocrypt_setopt_encrypted_field_config_map(crypt, TF("encrypted-field-map-substringPreview.json")),
+                  crypt);
+        ASSERT_OK(mongocrypt_init(crypt), crypt);
+        mongocrypt_ctx_t *ctx = mongocrypt_ctx_new(crypt);
+        ASSERT_OK(ctx, crypt);
+        ASSERT_FAILS(mongocrypt_ctx_encrypt_init(ctx, "db", -1, TF("cmd.json")),
+                     ctx,
+                     "Cannot use field 'encrypted' with 'substringPreview' queries");
         mongocrypt_ctx_destroy(ctx);
         mongocrypt_destroy(crypt);
     }
@@ -7031,7 +6998,7 @@ void _mongocrypt_tester_install_ctx_encrypt(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_encrypt_fle2_insert_text_search_payload_with_str_encode_version);
     INSTALL_TEST(_test_bulkWrite);
     INSTALL_TEST(_test_rangePreview_fails);
-    INSTALL_TEST(_test_prefixPreview_suffixPreview_succeeds);
+    INSTALL_TEST(_test_prefixPreview_suffixPreview);
     INSTALL_TEST(_test_textPreview_fails);
     INSTALL_TEST(_test_no_trimFactor);
     INSTALL_TEST(_test_range_sends_cryptoParams);

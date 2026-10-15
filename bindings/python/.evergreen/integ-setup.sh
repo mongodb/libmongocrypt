@@ -29,6 +29,7 @@ EOT
 
 # Set up drivers-tools with a .env file.
 git clone https://github.com/mongodb-labs/drivers-evergreen-tools.git ${DRIVERS_TOOLS}
+
 cat <<EOT > ${DRIVERS_TOOLS}/.env
 DRIVERS_TOOLS="$DRIVERS_TOOLS"
 MONGO_ORCHESTRATION_HOME="$MONGO_ORCHESTRATION_HOME"
@@ -37,6 +38,8 @@ PROJECT_DIRECTORY="$PROJECT_DIRECTORY"
 EOT
 
 # Get the secrets
+# Opt in to corporate Azure credentials (DRIVERS-3392)
+export FLE_AZURE_USE_CORPORATE=YES
 bash $DRIVERS_TOOLS/.evergreen/csfle/setup-secrets.sh
 # Start the csfle servers
 bash $DRIVERS_TOOLS/.evergreen/csfle/start-servers.sh

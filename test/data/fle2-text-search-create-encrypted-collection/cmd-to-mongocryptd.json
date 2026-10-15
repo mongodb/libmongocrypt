@@ -6,7 +6,7 @@
             "path": "encrypted",
             "bsonType": "string",
             "queries": {
-               "queryType": "substringPreview",
+               "queryType": "substring",
                "contention": {
                      "$numberLong": "0"
                },
@@ -36,7 +36,7 @@
                         "path": "encrypted",
                         "bsonType": "string",
                         "queries": {
-                           "queryType": "substringPreview",
+                           "queryType": "substring",
                            "contention": {
                                  "$numberLong": "0"
                            },

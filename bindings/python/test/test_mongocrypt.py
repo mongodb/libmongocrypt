@@ -1025,7 +1025,7 @@ if sys.version_info >= (3, 8, 0):  # noqa: UP036
             )
             self.addCleanup(encrypter.close)
 
-            text_opts = bson_data("fle2-text-search/textopts.json")
+            string_opts = bson_data("fle2-text-search/textopts.json")
             expected = bson_data("fle2-text-search/encrypted-payload.json")
             value = bson.encode({"v": "foo"})
             encrypted = await encrypter.encrypt(
@@ -1034,9 +1034,67 @@ if sys.version_info >= (3, 8, 0):  # noqa: UP036
                 key_id=key_id,
                 query_type="suffix",
                 contention_factor=0,
-                text_opts=text_opts,
+                string_opts=string_opts,
             )
             self.assertEqual(encrypted, expected)
+
+        async def test_textPreview_query_fails(self):
+            key_path = "keys/ABCDEFAB123498761234123456789012-local-document.json"
+            key_id = json_data(key_path)["_id"]
+            encrypter = AsyncExplicitEncrypter(
+                MockAsyncCallback(
+                    key_docs=[bson_data(key_path)],
+                    kms_reply=http_data("kms-reply.txt"),
+                ),
+                self.mongo_crypt_opts(),
+            )
+            self.addCleanup(encrypter.close)
+
+            with self.assertRaisesRegex(
+                MongoCryptError,
+                "Algorithm 'textPreview' is deprecated, please use 'string'",
+            ):
+                await encrypter.encrypt(
+                    bson.encode({"v": "foo"}),
+                    "textPreview",
+                    key_id=key_id,
+                    query_type="suffix",
+                    contention_factor=0,
+                    string_opts=bson_data("fle2-text-search/textopts.json"),
+                )
+
+        async def test_deprecated_preview_query_types(self):
+            # The "*Preview" query types remain as aliases to the GA names.
+            # PYTHON-5959 drops them.
+            key_path = "keys/ABCDEFAB123498761234123456789012-local-document.json"
+            key_id = json_data(key_path)["_id"]
+            encrypter = AsyncExplicitEncrypter(
+                MockAsyncCallback(
+                    key_docs=[bson_data(key_path)], kms_reply=http_data("kms-reply.txt")
+                ),
+                self.mongo_crypt_opts(),
+            )
+            self.addCleanup(encrypter.close)
+
+            string_opts = bson_data("fle2-text-search/textopts.json")
+            value = bson.encode({"v": "foo"})
+
+            async def encrypt(query_type):
+                return await encrypter.encrypt(
+                    value,
+                    "string",
+                    key_id=key_id,
+                    query_type=query_type,
+                    contention_factor=0,
+                    string_opts=string_opts,
+                )
+
+            for query_type in ["prefix", "suffix", "substring"]:
+                with self.subTest(query_type=query_type):
+                    self.assertEqual(
+                        await encrypt(f"{query_type}Preview"),
+                        await encrypt(query_type),
+                    )
 
 
 class TestNeedKMSAzureCredentials(unittest.TestCase):
@@ -1495,7 +1553,7 @@ class TestExplicitEncryption(unittest.TestCase):
         )
         self.addCleanup(encrypter.close)
 
-        text_opts = bson_data("fle2-text-search/textopts.json")
+        string_opts = bson_data("fle2-text-search/textopts.json")
         expected = bson_data("fle2-text-search/encrypted-payload.json")
         value = bson.encode({"v": "foo"})
         encrypted = encrypter.encrypt(
@@ -1504,9 +1562,63 @@ class TestExplicitEncryption(unittest.TestCase):
             key_id=key_id,
             query_type="suffix",
             contention_factor=0,
-            text_opts=text_opts,
+            string_opts=string_opts,
         )
         self.assertEqual(encrypted, expected)
+
+    def test_textPreview_query_fails(self):
+        key_path = "keys/ABCDEFAB123498761234123456789012-local-document.json"
+        key_id = json_data(key_path)["_id"]
+        encrypter = ExplicitEncrypter(
+            MockCallback(
+                key_docs=[bson_data(key_path)], kms_reply=http_data("kms-reply.txt")
+            ),
+            self.mongo_crypt_opts(),
+        )
+        self.addCleanup(encrypter.close)
+
+        with self.assertRaisesRegex(
+            MongoCryptError,
+            "Algorithm 'textPreview' is deprecated, please use 'string'",
+        ):
+            encrypter.encrypt(
+                bson.encode({"v": "foo"}),
+                "textPreview",
+                key_id=key_id,
+                query_type="suffix",
+                contention_factor=0,
+                string_opts=bson_data("fle2-text-search/textopts.json"),
+            )
+
+    def test_deprecated_preview_query_types(self):
+        # The "*Preview" query types remain as aliases to the GA names.
+        # PYTHON-5959 drops them.
+        key_path = "keys/ABCDEFAB123498761234123456789012-local-document.json"
+        key_id = json_data(key_path)["_id"]
+        encrypter = ExplicitEncrypter(
+            MockCallback(
+                key_docs=[bson_data(key_path)], kms_reply=http_data("kms-reply.txt")
+            ),
+            self.mongo_crypt_opts(),
+        )
+        self.addCleanup(encrypter.close)
+
+        string_opts = bson_data("fle2-text-search/textopts.json")
+        value = bson.encode({"v": "foo"})
+
+        def encrypt(query_type):
+            return encrypter.encrypt(
+                value,
+                "string",
+                key_id=key_id,
+                query_type=query_type,
+                contention_factor=0,
+                string_opts=string_opts,
+            )
+
+        for query_type in ["prefix", "suffix", "substring"]:
+            with self.subTest(query_type=query_type):
+                self.assertEqual(encrypt(f"{query_type}Preview"), encrypt(query_type))
 
 
 def read(filename, **kwargs):

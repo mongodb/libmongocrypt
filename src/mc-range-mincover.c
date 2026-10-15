@@ -103,14 +103,14 @@ void mc_mincover_destroy(mc_mincover_t *mincover) {
                 CLIENT_ERR("Upper bound (%" FMT ") must be greater than or equal to the range minimum (%" FMT ")",     \
                            FormatArg((args).upperBound),                                                               \
                            FormatArg((args).min.value));                                                               \
-                return false;                                                                                          \
+                return NULL;                                                                                           \
             }                                                                                                          \
             if (!(args).includeUpperBound && !LessThan((args.min.value), (args.upperBound))) {                         \
                 CLIENT_ERR("Upper bound (%" FMT ") must be greater than the range minimum (%" FMT                      \
                            ") if upper bound is excluded from range",                                                  \
                            FormatArg((args).upperBound),                                                               \
                            FormatArg((args).min.value));                                                               \
-                return false;                                                                                          \
+                return NULL;                                                                                           \
             }                                                                                                          \
         }                                                                                                              \
         if ((args).max.set) {                                                                                          \
@@ -118,14 +118,14 @@ void mc_mincover_destroy(mc_mincover_t *mincover) {
                 CLIENT_ERR("Lower bound (%" FMT ") must be less than or equal to the range maximum (%" FMT ")",        \
                            FormatArg((args).lowerBound),                                                               \
                            FormatArg((args).max.value));                                                               \
-                return false;                                                                                          \
+                return NULL;                                                                                           \
             }                                                                                                          \
             if (!(args).includeLowerBound && !LessThan((args).lowerBound, (args).max.value)) {                         \
                 CLIENT_ERR("Lower bound (%" FMT ") must be less than the range maximum (%" FMT                         \
                            ") if lower bound is excluded from range",                                                  \
                            FormatArg((args).lowerBound),                                                               \
                            FormatArg((args).max.value));                                                               \
-                return false;                                                                                          \
+                return NULL;                                                                                           \
             }                                                                                                          \
         }                                                                                                              \
     } else                                                                                                             \

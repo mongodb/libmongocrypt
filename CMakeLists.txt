@@ -560,7 +560,7 @@ if ("cxx_std_20" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
 endif ()
 
 # Exclude example-state-machine since it requires native crypto.
-if (NOT MONGOCRYPT_CRYPTO STREQUAL none)
+if (BUILD_TESTING AND NOT MONGOCRYPT_CRYPTO STREQUAL none)
    # Define example-state-machine
    add_executable (example-state-machine test/example-state-machine.c)
    target_link_libraries (example-state-machine PRIVATE mongocrypt _mongocrypt::libbson_for_shared)
@@ -590,6 +590,31 @@ if (NOT MONGOCRYPT_CRYPTO STREQUAL none)
       target_include_directories (csfle PRIVATE ./kms-message/src)
       target_link_libraries (csfle PRIVATE _mongocrypt::mongoc)
    endif ()
+endif ()
+
+option (ENABLE_FUZZING "Build fuzzing targets. Requires a compiler supporting -fsanitize=fuzzer." OFF)
+if (ENABLE_FUZZING)
+   include (CheckCCompilerFlag)
+   set (CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
+   check_c_compiler_flag ("-fsanitize=fuzzer-no-link" COMPILER_SUPPORTS_FUZZER)
+   unset (CMAKE_TRY_COMPILE_TARGET_TYPE)
+   if (NOT COMPILER_SUPPORTS_FUZZER)
+      message (FATAL_ERROR
+         "ENABLE_FUZZING is ON but the compiler does not support -fsanitize=fuzzer. "
+      )
+   endif ()
+
+   add_executable (fuzz_mongocrypt EXCLUDE_FROM_ALL test/fuzz_mongocrypt.c)
+   target_include_directories (fuzz_mongocrypt PRIVATE ./src)
+   target_link_libraries (fuzz_mongocrypt PRIVATE mongocrypt_static _mongocrypt::libbson_for_static)
+   target_compile_options (fuzz_mongocrypt PRIVATE -fsanitize=fuzzer)
+   target_link_options (fuzz_mongocrypt PRIVATE -fsanitize=fuzzer)
+
+   add_executable (fuzz_kms EXCLUDE_FROM_ALL test/fuzz_kms.c)
+   target_include_directories (fuzz_kms PRIVATE ./src ./kms-message ./kms-message/src)
+   target_link_libraries (fuzz_kms PRIVATE mongocrypt_static kms_message_static _mongocrypt::libbson_for_static)
+   target_compile_options (fuzz_kms PRIVATE -fsanitize=fuzzer)
+   target_link_options (fuzz_kms PRIVATE -fsanitize=fuzzer)
 endif ()
 
 if (ENABLE_STATIC)

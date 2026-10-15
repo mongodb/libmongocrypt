@@ -2,7 +2,7 @@ include (FetchContent)
 
 # Set the tag that we will fetch.
 # When updating the version of libbson, also update the version in etc/purls.txt and .evergreen/prep_c_driver_source.sh
-set (MONGOC_FETCH_TAG_FOR_LIBBSON "2.3.3" CACHE STRING "The Git tag of mongo-c-driver that will be fetched to obtain libbson")
+set (MONGOC_FETCH_TAG_FOR_LIBBSON "2.5.6" CACHE STRING "The Git tag of mongo-c-driver that will be fetched to obtain libbson")
 
 # Add an option to disable patching if a patch command is unavailable.
 option (LIBBSON_PATCH_ENABLED "Whether to apply patches to the libbson library" ON)
@@ -15,11 +15,7 @@ include (Patch)
 make_patch_command (patch_command
     STRIP_COMPONENTS 1
     DIRECTORY "<SOURCE_DIR>"
-    DISABLED "${patch_disabled}"
-    PATCHES
-        ${PROJECT_SOURCE_DIR}/etc/libbson-remove-GCC-diagnostic-pragma.patch
-        ${PROJECT_SOURCE_DIR}/etc/mongo-common-test-harness.patch
-    )
+    DISABLED "${patch_disabled}")
 
 # Fetch the source archive for the requested tag from GitHub
 FetchContent_Declare (

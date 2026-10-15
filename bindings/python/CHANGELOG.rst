@@ -1,6 +1,23 @@
 Changelog
 =========
 
+Changes in Version 1.20.0
+-------------------------
+
+- Bundle libmongocrypt 1.20.5 in release wheels.
+
+Changes in Version 1.19.0
+-------------------------
+
+- Bundle libmongocrypt 1.20.4 in release wheels.
+- Renamed the ``text_opts`` parameter of ``ExplicitEncryptOpts`` and
+  ``ExplicitEncrypter.encrypt`` to ``string_opts``, matching the "string"
+  algorithm it configures. This is a breaking change.
+- The "textPreview" algorithm has been removed. Use "string" instead.
+- The "prefixPreview", "suffixPreview", and "substringPreview" query types are
+  now deprecated aliases of "prefix", "suffix", and "substring". Prefer the new
+  names, as a future release removes the aliases.
+
 Changes in Version 1.18.1
 -------------------------
 

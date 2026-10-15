@@ -25,9 +25,6 @@ common_cmake_args=(
     -D BUILD_TESTING="${BUILD_TESTING-TRUE}"
 )
 
-# Apply patches to fix compile on RHEL 6.2. TODO: try to remove once RHEL 6.2 is dropped (MONGOCRYPT-688).
-run_chdir "$mongoc_src_dir" git apply "$LIBMONGOCRYPT_DIR/etc/libbson-remove-GCC-diagnostic-pragma.patch"
-run_chdir "$mongoc_src_dir" git apply "$LIBMONGOCRYPT_DIR/etc/mongo-common-test-harness.patch"
 
 . "$(dirname "${BASH_SOURCE[0]}")/install-build-tools.sh"
 install_build_tools

@@ -431,6 +431,10 @@ bool mongocrypt_setopt_encrypted_field_config_map(mongocrypt_t *crypt, mongocryp
  * the path string is literal "$SYSTEM", then libmongocrypt will defer to the
  * system's library resolution mechanism to find the crypt_shared library.
  *
+ * @warning Use of "$SYSTEM" will search system directories for the
+ * mongo_crypt_v1.(dll,so,dylib) following the search behavior of LoadLibrary
+ * on Windows and dlopen on Unix. Ensure secure deployment of the library.
+ *
  * @note If no crypt_shared dynamic library is found in any of the directories
  * specified by the search paths loaded here, @ref mongocrypt_init() will still
  * succeed and continue to operate without crypt_shared.
@@ -687,7 +691,8 @@ bool mongocrypt_ctx_setopt_algorithm(mongocrypt_ctx_t *ctx, const char *algorith
 /// String constant for setopt_algorithm "Indexed" explicit encryption
 /// String constant for setopt_algorithm "Unindexed" explicit encryption
 // DEPRECATED: support "RangePreview" has been removed in favor of "range".
-/// NOTE: "textPreview" is experimental only and may be removed in a future non-major release.
+/// DEPRECATED: "textPreview" has been removed. Use "string".
+// String constant for setopt_algorithm "string" explicit encryption.
 
 /**
  * Identify the AWS KMS master key to use for creating a data key.
@@ -1485,9 +1490,8 @@ bool mongocrypt_ctx_setopt_query_type(mongocrypt_ctx_t *ctx, const char *query_t
 bool mongocrypt_ctx_setopt_algorithm_range(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *opts);
 
 /**
- * Set options for explicit encryption with the "textPreview" algorithm.
+ * Set options for explicit encryption with the "string" algorithm.
  *
- * NOTE: "textPreview" is experimental only and may be removed in a future non-major release.
  * @p opts is a BSON document of the form:
  * {
  *   "caseSensitive": bool,
@@ -1508,6 +1512,8 @@ bool mongocrypt_ctx_setopt_algorithm_range(mongocrypt_ctx_t *ctx, mongocrypt_bin
  * }
  *
  * "prefix" and "suffix" can both be set.
+ *
+ * NOTE: Driver public APIs should use the name "string" rather than "text" to refer to options.
  */
 bool mongocrypt_ctx_setopt_algorithm_text(mongocrypt_ctx_t *ctx, mongocrypt_binary_t *opts);
 
@@ -1522,9 +1528,9 @@ bool mongocrypt_setopt_key_expiration(mongocrypt_t *crypt, uint64_t cache_expira
 
 /// String constants for setopt_query_type
 // DEPRECATED: Support "rangePreview" has been removed in favor of "range".
-/// NOTE: "substringPreview" is experimental and may be removed in a future non-major release.
-/// NOTE: "suffixPreview" is experimental and may be removed in a future non-major release.
-/// NOTE: "prefixPreview" is experimental and may be removed in a future non-major release.
+/// DEPRECATED: Support for "substringPreview" has been removed in favor of "substring"
+/// DEPRECATED: Support for "suffixPreview" has been removed in favor of "suffix"
+/// DEPRECATED: Support for "prefixPreview" has been removed in favor of "prefix"
 
 """
 )

@@ -57,7 +57,7 @@
                         "path": "textField1",
                         "bsonType": "string",
                         "queries": {
-                            "queryType": "substringPreview",
+                            "queryType": "substring",
                             "contention": {
                                 "$numberLong": "0"
                             },

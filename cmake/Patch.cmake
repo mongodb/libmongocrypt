@@ -14,7 +14,7 @@ find_program(PATCH_EXECUTABLE patch)
 ]]
 function(make_patch_command out)
     cmake_parse_arguments(PARSE_ARGV 1 patch "" "DIRECTORY;STRIP_COMPONENTS;DISABLED" "PATCHES")
-    if(patch_DISABLED)
+    if(patch_DISABLED OR NOT patch_PATCHES)
         # Use a placeholder "no-op" patch command.
         set(cmd "${CMAKE_COMMAND}" "-E" "true")
     elseif(GIT_EXECUTABLE)

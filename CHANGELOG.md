@@ -1,5 +1,14 @@
 # ChangeLog
 
+## 1.21.0
+
+### Changed
+- Bump downloaded libbson version from 2.3.3 to 2.5.6.
+
+### Removed
+- Discontinue builds for EOL Debian releases (version 11, 10, and 9) and remove corresponding CI tasks.
+- Remove support for the `prefixPreview`, `suffixPreview`, and `substringPreview` query types. Setting them with `mongocrypt_ctx_setopt_query_type` or using them in encryptedFields is now an error.
+
 ## 1.20.5
 
 ### Fixed
@@ -15,7 +24,8 @@
 ## 1.20.3
 
 ### Fixed
-- Validate database and collection name arguments against "." and NUL bytes
+- Validate database and collection name arguments against "." and NUL bytes.
+
 ## 1.20.2
 
 ### Changed
@@ -23,13 +33,16 @@
 
 ## 1.20.1
 
-## Changed
+### Changed
 - Bump downloaded libbson version from 2.3.0 to 2.3.3 to address configuration error with CMake 4.4.0.
 
 ## 1.20.0
 
 ### Added
 - Stable support for substring queries.
+
+### Removed
+- RHEL 6.2 builds. Use the `linux-x86_64-glibc_2_7-nocrypto` build instead as it has an equivalent glibc requirement.
 
 ## 1.19.2
 

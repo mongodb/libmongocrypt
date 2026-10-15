@@ -1606,7 +1606,7 @@ bool mongocrypt_setopt_key_expiration(mongocrypt_t *crypt, uint64_t cache_expira
 /// DEPRECATED: Support for "suffixPreview" has been removed in favor of "suffix"
 #define MONGOCRYPT_QUERY_TYPE_SUFFIXPREVIEW_DEPRECATED_STR "suffixPreview"
 #define MONGOCRYPT_QUERY_TYPE_SUFFIX_STR "suffix"
-/// DEPRECATED: Support for "prefixPreview" has been removed in favor of "suffix"
+/// DEPRECATED: Support for "prefixPreview" has been removed in favor of "prefix"
 #define MONGOCRYPT_QUERY_TYPE_PREFIXPREVIEW_DEPRECATED_STR "prefixPreview"
 #define MONGOCRYPT_QUERY_TYPE_PREFIX_STR "prefix"
 
