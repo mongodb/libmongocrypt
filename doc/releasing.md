@@ -74,7 +74,6 @@ Do the following when releasing:
    - Pushing the branch ref and the tag ref in the same command eliminates the possibility of a race condition in Evergreen (for building resources based on the presence of a release tag)
    - Note that in the future (e.g., if we move to a PR-based workflow for releases, or if we simply want to take better advantage of advanced Evergreen features), it is possible to use Evergreen's "Trigger Versions With Git Tags" feature by updating both `config.yml` and the project's settings in Evergreen
 - Ensure the version on Evergreen with the tagged commit is scheduled. This may require clicking "Force Repotracker Run" in [project settings](https://spruce.corp.mongodb.com/project/libmongocrypt-release/settings/general). The following tasks must pass to complete the release:
-   - `upload-all`
    - All `upload-release` tasks.
    - All `publish-packages` tasks.
       - If the `publish-packages` tasks fail with an error like `[curator] 2024/01/02 13:56:17 [p=emergency]: problem submitting repobuilder job: 404 (Not Found)`, this suggests the published path does not yet exist. Barque (the Linux package publishing service) has protection to avoid unintentional publishes. File a DEVPROD ticket ([example](https://jira.mongodb.org/browse/DEVPROD-15320)) and assign to the team called Release Infrastructure to request the path be created. Then re-run the failing `publish-packages` task. Ask in the slack channel `#ask-devprod-release-tools` for further help with `Barque` or `curator`.
@@ -105,7 +104,7 @@ Do the following when releasing:
    Commit resulting `etc/cyclonedx.sbom.json` and push to `rx.y`.
 - Remove yourself from the [releases team](https://github.com/orgs/mongodb/teams/dbx-c-cxx-releases) on GitHub via [MANA](https://mana.corp.mongodb.com/resources/68029673d39aa9f7de6399f9).
 - If this is a new non-patch release (e.g. `x.y.0`):
-   - File a DOCSP ticket to update the installation instructions on [Install libmongocrypt](https://www.mongodb.com/docs/manual/core/csfle/reference/libmongocrypt/). ([Example](https://jira.mongodb.org/browse/DOCSP-52575))
+   - If this version impacts [install instructions](https://www.mongodb.com/docs/manual/core/csfle/reference/libmongocrypt), file a DOCSP ticket. Example: [DOCSP-65181](https://jira.mongodb.org/browse/DOCSP-65181).
    - Create a new Snyk reference target. The following instructions use the example branch `rx.y`:
 
      Run `cmake` to ensure generated source files are present:
