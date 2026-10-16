@@ -21,8 +21,12 @@ ensure_uv || exit 1
 # Discover the toolchain pythons to test against.
 PYTHONS=($(find_pythons))
 if [ ${#PYTHONS[@]} -eq 0 ]; then
-    echo "No Python interpreters found to test with!"
-    exit 1
+    # No Python 3.11+ interpreter exists on this distro (e.g. rhel-82-arm64's
+    # toolchain tops out at 3.10): provision one with uv. ensure_uv has
+    # already run above.
+    uv python install 3.11
+    PYTHONS=($(uv python find 3.11))
+    echo "Provisioned Python 3.11 with uv: ${PYTHONS[*]}"
 fi
 echo "Testing with pythons: ${PYTHONS[*]}"
 
