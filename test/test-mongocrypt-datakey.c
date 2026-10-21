@@ -256,8 +256,8 @@ static void _test_datakey_kms_per_ctx_credentials_not_requested(_mongocrypt_test
     crypt = mongocrypt_new();
     mongocrypt_setopt_use_need_kms_credentials_state(crypt);
     ASSERT_OK(mongocrypt_setopt_kms_providers(crypt,
-                                              TEST_BSON("{'aws': {}, 'azure': {'tenantId': '', 'clientId': "
-                                                        "'', 'clientSecret': '' }}")),
+                                              TEST_BSON("{'aws': {}, 'azure': {'tenantId': 'placeholder-tenantId', "
+                                                        "'clientId': '', 'clientSecret': '' }}")),
               crypt);
     ASSERT_OK(_mongocrypt_init_for_test(crypt), crypt);
     ctx = mongocrypt_ctx_new(crypt);
@@ -727,6 +727,27 @@ static void _test_create_data_key(_mongocrypt_tester_t *tester) {
     _test_create_data_key_with_provider(tester, MONGOCRYPT_KMS_PROVIDER_LOCAL, true /* with_alt_name */);
 }
 
+// Test a double quote in masterKey.key. The key identifier is interpolated into the JSON body of the AWS
+// Encrypt request. Regression test for MONGOCRYPT-968.
+static void _test_quote_in_aws_masterkey(_mongocrypt_tester_t *tester) {
+    mongocrypt_t *const crypt = _mongocrypt_tester_mongocrypt(TESTER_MONGOCRYPT_DEFAULT);
+    mongocrypt_ctx_t *const ctx = mongocrypt_ctx_new(crypt);
+
+    ASSERT_OK(mongocrypt_ctx_setopt_key_encryption_key(
+                  ctx,
+                  TEST_BSON_STR(BSON_STR({
+                      "provider" : "aws",
+                      "region" : "us-east-1",
+                      "key" : "arn\", \"EncryptionContext\" : {\"a\" : \"b\"}, \"KeyId\" : \"attacker-key"
+                  }))),
+              ctx);
+    /* Constructing the KMS request fails. No request is sent. */
+    ASSERT_FAILS(mongocrypt_ctx_datakey_init(ctx), ctx, "Invalid character in AWS KMS key identifier");
+
+    mongocrypt_ctx_destroy(ctx);
+    mongocrypt_destroy(crypt);
+}
+
 void _mongocrypt_tester_install_data_key(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_random_generator);
     INSTALL_TEST(_test_create_data_key);
@@ -736,4 +757,5 @@ void _mongocrypt_tester_install_data_key(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(_test_datakey_kms_per_ctx_credentials_not_requested);
     INSTALL_TEST(_test_datakey_kms_per_ctx_credentials_local);
     INSTALL_TEST(_test_create_datakey_with_retry);
+    INSTALL_TEST(_test_quote_in_aws_masterkey);
 }

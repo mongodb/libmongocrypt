@@ -35,6 +35,7 @@
 #include <sys/stat.h>
 #include <time.h>
 #include "kms_message/kms_azure_request.h"
+#include "kms_message/kms_gcp_request.h"
 #include "kms_message/kms_b64.h"
 #include "hexlify.h"
 #include "kms_request_str.h"
@@ -1202,6 +1203,484 @@ test_request_newlines (void)
    }
 }
 
+/* MONGOCRYPT-963: CR/LF in strings interpolated into an HTTP request must not
+ * reach the wire, where they would forge headers, terminate the header
+ * section, or pipeline an entire second request. */
+
+#define INJECTED "a\r\nX-Injected: injected"
+
+#define COUNTOF(_arr) (sizeof (_arr) / sizeof ((_arr)[0]))
+
+/* Asserts the request was rejected. If a future change escapes rather than
+ * rejects, at minimum no header may have been forged. */
+static void
+assert_injection_rejected (kms_request_t *req, const char *label)
+{
+   char *req_str = kms_request_to_string (req);
+
+   if (req_str) {
+      TEST_PRINTF ("injected into %s, got request:\n%s\n", label, req_str);
+      ASSERT (NULL == strstr (req_str, "X-Injected"));
+      free (req_str);
+      TEST_PRINTF ("injected into %s: expected an error, got none\n", label);
+      ASSERT (false);
+   }
+   ASSERT (kms_request_get_error (req));
+}
+
+static kms_request_opt_t *
+opt_new_for_provider (kms_request_provider_t provider)
+{
+   kms_request_opt_t *opt = kms_request_opt_new ();
+   ASSERT (opt);
+   ASSERT (kms_request_opt_set_provider (opt, provider));
+   return opt;
+}
+
+static void
+test_azure_request_crlf_injection (void)
+{
+   uint8_t data[] = {0x01, 0x02, 0x03, 0x04};
+   size_t i;
+
+   struct {
+      const char *label;
+      const char *host;
+      const char *access_token;
+      const char *key_name;
+      const char *key_version;
+   } wrapkey_cases[] = {
+      {"host", INJECTED, "token", "key-name", "key-version"},
+      {"access_token", "host", INJECTED, "key-name", "key-version"},
+   };
+
+   struct {
+      const char *label;
+      const char *host;
+      const char *tenant_id;
+   } oauth_cases[] = {
+      {"host", INJECTED, "tenant-id"},
+   };
+
+   for (i = 0; i < COUNTOF (wrapkey_cases); i++) {
+      kms_request_opt_t *opt =
+         opt_new_for_provider (KMS_REQUEST_PROVIDER_AZURE);
+      kms_request_t *req =
+         kms_azure_request_wrapkey_new (wrapkey_cases[i].host,
+                                        wrapkey_cases[i].access_token,
+                                        wrapkey_cases[i].key_name,
+                                        wrapkey_cases[i].key_version,
+                                        data,
+                                        sizeof (data),
+                                        opt);
+      assert_injection_rejected (req, wrapkey_cases[i].label);
+      kms_request_destroy (req);
+      kms_request_opt_destroy (opt);
+   }
+
+   for (i = 0; i < COUNTOF (oauth_cases); i++) {
+      kms_request_opt_t *opt =
+         opt_new_for_provider (KMS_REQUEST_PROVIDER_AZURE);
+      kms_request_t *req =
+         kms_azure_request_oauth_new (oauth_cases[i].host,
+                                      "scope",
+                                      oauth_cases[i].tenant_id,
+                                      "client-id",
+                                      "client-secret",
+                                      opt);
+      assert_injection_rejected (req, oauth_cases[i].label);
+      kms_request_destroy (req);
+      kms_request_opt_destroy (opt);
+   }
+}
+
+/* MONGOCRYPT-963: Azure key identifiers are formatted into the request path.
+ * A metacharacter can rewrite the request target without any CR/LF. */
+static void
+test_azure_request_path_injection (void)
+{
+   uint8_t data[] = {0x01, 0x02, 0x03, 0x04};
+   size_t i, j;
+
+   const char *injections[] = {
+      "kn?api-version=7.0&x=", /* hijacks the query, downgrading api-version */
+      "../../../keys/attacker-key", /* addresses a different key */
+      "kn/kv/wrapkey?api-version=7.1&x=", /* adds path segments */
+      "kn kv",                           /* ends the request target */
+      "kn#fragment",
+      "kn%2Fkv", /* already-encoded input is not accepted either */
+   };
+
+   /* keyName and keyVersion are both path segments. */
+   for (i = 0; i < COUNTOF (injections); i++) {
+      for (j = 0; j < 2; j++) {
+         kms_request_opt_t *opt =
+            opt_new_for_provider (KMS_REQUEST_PROVIDER_AZURE);
+         kms_request_t *req = kms_azure_request_wrapkey_new (
+            "host",
+            "token",
+            j == 0 ? injections[i] : "key-name",
+            j == 0 ? "key-version" : injections[i],
+            data,
+            sizeof (data),
+            opt);
+         ASSERT (NULL == kms_request_to_string (req));
+         ASSERT_REQUEST_ERROR (
+            req,
+            j == 0 ? "Invalid character in Azure KMS identifier: keyName"
+                   : "Invalid character in Azure KMS identifier: keyVersion");
+         kms_request_destroy (req);
+         kms_request_opt_destroy (opt);
+      }
+
+      /* tenantId is a path segment of the OAuth request. */
+      kms_request_opt_t *opt =
+         opt_new_for_provider (KMS_REQUEST_PROVIDER_AZURE);
+      kms_request_t *req = kms_azure_request_oauth_new (
+         "host", "scope", injections[i], "client-id", "client-secret", opt);
+      ASSERT (NULL == kms_request_to_string (req));
+      ASSERT_REQUEST_ERROR (req,
+                            "Invalid character in Azure KMS identifier: tenantId");
+      kms_request_destroy (req);
+      kms_request_opt_destroy (opt);
+   }
+
+   /* A GUID tenant ID, a hex key version, and an absent key version are
+    * accepted. */
+   {
+      kms_request_opt_t *opt =
+         opt_new_for_provider (KMS_REQUEST_PROVIDER_AZURE);
+      kms_request_t *req = kms_azure_request_wrapkey_new (
+         "host",
+         "token",
+         "my-key-name",
+         "9f8e7d6c5b4a39281706f5e4d3c2b1a0",
+         data,
+         sizeof (data),
+         opt);
+      ASSERT_REQUEST_OK (req);
+      char *req_str = kms_request_to_string (req);
+      ASSERT (req_str);
+      ASSERT (strstr (req_str,
+                      "POST /keys/my-key-name/9f8e7d6c5b4a39281706f5e4d3c2b1a0"
+                      "/wrapkey?api-version=7.1 HTTP/1.1"));
+      free (req_str);
+      kms_request_destroy (req);
+
+      req = kms_azure_request_wrapkey_new (
+         "host", "token", "my-key-name", NULL, data, sizeof (data), opt);
+      ASSERT_REQUEST_OK (req);
+      req_str = kms_request_to_string (req);
+      ASSERT (req_str);
+      ASSERT (strstr (req_str, "POST /keys/my-key-name//wrapkey"));
+      free (req_str);
+      kms_request_destroy (req);
+
+      req = kms_azure_request_oauth_new ("host",
+                                         "scope",
+                                         "contoso.onmicrosoft.com",
+                                         "client-id",
+                                         "client-secret",
+                                         opt);
+      ASSERT_REQUEST_OK (req);
+      req_str = kms_request_to_string (req);
+      ASSERT (req_str);
+      ASSERT (strstr (req_str,
+                      "POST /contoso.onmicrosoft.com/oauth2/v2.0/token"));
+      free (req_str);
+      kms_request_destroy (req);
+      kms_request_opt_destroy (opt);
+   }
+}
+
+/* An Azure key identifier must contain an alphanumeric character, so a value of only
+ * dots cannot form a dot-segment in the request path. An empty key version is
+ * treated as absent. */
+static void
+test_azure_request_dot_segment (void)
+{
+   uint8_t data[] = {0x01, 0x02, 0x03, 0x04};
+   const char *values[] = {"..", ".", ""};
+   size_t i;
+
+   /* keyName is a path segment of the wrapkey request. */
+   for (i = 0; i < COUNTOF (values); i++) {
+      kms_request_opt_t *opt = opt_new_for_provider (KMS_REQUEST_PROVIDER_AZURE);
+      kms_request_t *req = kms_azure_request_wrapkey_new ("host",
+                                                          "token",
+                                                          values[i],
+                                                          "9f8e7d6c5b4a39281706f5e4d3c2b1a0",
+                                                          data,
+                                                          sizeof (data),
+                                                          opt);
+      ASSERT (NULL == kms_request_to_string (req));
+      ASSERT_REQUEST_ERROR (req, "Invalid Azure KMS identifier: keyName");
+      kms_request_destroy (req);
+      kms_request_opt_destroy (opt);
+   }
+
+   /* keyVersion is a path segment of the wrapkey request. An empty value is
+    * treated like an absent one, which adds no segment to validate. */
+   {
+      const char *dot_values[] = {"..", "."};
+
+      for (i = 0; i < COUNTOF (dot_values); i++) {
+         kms_request_opt_t *opt =
+            opt_new_for_provider (KMS_REQUEST_PROVIDER_AZURE);
+         kms_request_t *req = kms_azure_request_wrapkey_new (
+            "host", "token", "key-name", dot_values[i], data, sizeof (data), opt);
+         ASSERT (NULL == kms_request_to_string (req));
+         ASSERT_REQUEST_ERROR (req, "Invalid Azure KMS identifier: keyVersion");
+         kms_request_destroy (req);
+         kms_request_opt_destroy (opt);
+      }
+
+      kms_request_opt_t *opt =
+         opt_new_for_provider (KMS_REQUEST_PROVIDER_AZURE);
+      kms_request_t *req = kms_azure_request_wrapkey_new (
+         "host", "token", "key-name", "", data, sizeof (data), opt);
+      ASSERT_REQUEST_OK (req);
+      char *req_str = kms_request_to_string (req);
+      ASSERT (req_str);
+      ASSERT (strstr (req_str, "POST /keys/key-name//wrapkey"));
+      free (req_str);
+      kms_request_destroy (req);
+      kms_request_opt_destroy (opt);
+   }
+
+   /* tenantId is a path segment of the OAuth request. */
+   for (i = 0; i < COUNTOF (values); i++) {
+      kms_request_opt_t *opt = opt_new_for_provider (KMS_REQUEST_PROVIDER_AZURE);
+      kms_request_t *req =
+         kms_azure_request_oauth_new ("host", "scope", values[i], "client-id", "client-secret", opt);
+      ASSERT (NULL == kms_request_to_string (req));
+      ASSERT_REQUEST_ERROR (req, "Invalid Azure KMS identifier: tenantId");
+      kms_request_destroy (req);
+      kms_request_opt_destroy (opt);
+   }
+}
+
+/* The GCP key identifier fields are validated by _check_key_identifier and
+ * covered by MONGOCRYPT-960. Only the header fields are checked here. */
+static void
+test_gcp_request_crlf_injection (void)
+{
+   uint8_t data[] = {0x01, 0x02, 0x03, 0x04};
+   size_t i;
+
+   struct {
+      const char *label;
+      const char *host;
+      const char *access_token;
+      const char *project_id;
+      const char *location;
+      const char *key_ring_name;
+      const char *key_name;
+      const char *key_version;
+   } cases[] = {
+      {"host", INJECTED, "token", "project", "location", "ring", "key", "1"},
+      {"access_token", "host", INJECTED, "project", "location", "ring", "key", "1"},
+   };
+
+   for (i = 0; i < COUNTOF (cases); i++) {
+      kms_request_opt_t *opt = opt_new_for_provider (KMS_REQUEST_PROVIDER_GCP);
+      kms_request_t *req = kms_gcp_request_encrypt_new (cases[i].host,
+                                                        cases[i].access_token,
+                                                        cases[i].project_id,
+                                                        cases[i].location,
+                                                        cases[i].key_ring_name,
+                                                        cases[i].key_name,
+                                                        cases[i].key_version,
+                                                        data,
+                                                        sizeof (data),
+                                                        opt);
+      assert_injection_rejected (req, cases[i].label);
+      kms_request_destroy (req);
+      kms_request_opt_destroy (opt);
+   }
+}
+
+/* A GCP key identifier must contain an alphanumeric character, so a value of only
+ * dots cannot form a dot-segment in the request path. An empty key version is
+ * treated as absent. */
+static void
+test_gcp_request_dot_segment (void)
+{
+   uint8_t data[] = {0x01, 0x02, 0x03, 0x04};
+   const char *values[] = {"..", ".", ""};
+   size_t i;
+
+   for (i = 0; i < COUNTOF (values); i++) {
+      kms_request_opt_t *opt = opt_new_for_provider (KMS_REQUEST_PROVIDER_GCP);
+      kms_request_t *req = kms_gcp_request_encrypt_new ("host",
+                                                        "token",
+                                                        "project",
+                                                        "location",
+                                                        values[i],
+                                                        "key",
+                                                        "1",
+                                                        data,
+                                                        sizeof (data),
+                                                        opt);
+      ASSERT (NULL == kms_request_to_string (req));
+      ASSERT_REQUEST_ERROR (req, "Invalid GCP KMS key identifier: keyRing");
+      kms_request_destroy (req);
+      kms_request_opt_destroy (opt);
+   }
+
+   {
+      kms_request_opt_t *opt = opt_new_for_provider (KMS_REQUEST_PROVIDER_GCP);
+      kms_request_t *req = kms_gcp_request_encrypt_new ("host",
+                                                        "token",
+                                                        "project",
+                                                        "location",
+                                                        "ring",
+                                                        "key",
+                                                        "",
+                                                        data,
+                                                        sizeof (data),
+                                                        opt);
+      ASSERT_REQUEST_OK (req);
+      char *req_str = kms_request_to_string (req);
+      ASSERT (req_str);
+      ASSERT (strstr (req_str, "/keyRings/ring/cryptoKeys/key:encrypt"));
+      free (req_str);
+      kms_request_destroy (req);
+      kms_request_opt_destroy (opt);
+   }
+}
+
+/* libmongocrypt adds the AWS session token and Host header itself, and the
+ * access key id, region, and service reach the wire in the SigV4 Authorization
+ * and derived Host headers. */
+static void
+test_aws_request_crlf_injection (void)
+{
+   kms_request_t *req;
+
+   req = kms_request_new ("POST", "/", NULL);
+   ASSERT (!kms_request_add_header_field (req, "Host", INJECTED));
+   ASSERT_REQUEST_ERROR (req, "HTTP header value contains invalid characters");
+   kms_request_destroy (req);
+
+   req = kms_request_new ("POST", "/", NULL);
+   ASSERT (!kms_request_add_header_field (req, INJECTED, "value"));
+   ASSERT_REQUEST_ERROR (req, "HTTP header name contains invalid characters");
+   kms_request_destroy (req);
+
+   req = kms_request_new ("POST", "/", NULL);
+   ASSERT (!kms_request_set_access_key_id (req, INJECTED));
+   ASSERT_REQUEST_ERROR (req, "HTTP access key id contains invalid characters");
+   kms_request_destroy (req);
+
+   req = kms_request_new ("POST", "/", NULL);
+   ASSERT (!kms_request_set_region (req, INJECTED));
+   ASSERT_REQUEST_ERROR (req, "HTTP region contains invalid characters");
+   kms_request_destroy (req);
+
+   req = kms_request_new ("POST", "/", NULL);
+   ASSERT (!kms_request_set_service (req, INJECTED));
+   ASSERT_REQUEST_ERROR (req, "HTTP service contains invalid characters");
+   kms_request_destroy (req);
+
+   /* The request line. */
+   req = kms_request_new (INJECTED, "/", NULL);
+   ASSERT_REQUEST_ERROR (req, "HTTP method contains invalid characters");
+   kms_request_destroy (req);
+
+   req = kms_request_new ("", "/", NULL);
+   ASSERT_REQUEST_ERROR (req, "HTTP method must not be empty");
+   kms_request_destroy (req);
+
+   req = kms_request_new ("POST", "/" INJECTED, NULL);
+   ASSERT_REQUEST_ERROR (req, "HTTP path contains invalid characters");
+   kms_request_destroy (req);
+}
+
+/* A CRLF in a header value is permitted only as a line fold: the continuation
+ * line must begin with a space or horizontal tab. Folding is deprecated by RFC
+ * 7230 section 3.2.4, but the AWS SigV4 suite exercises it
+ * (get-header-value-multiline). */
+/* MONGOCRYPT-968: the AWS key identifier is interpolated into the JSON body of the
+ * Encrypt request. A double quote ends the JSON string and adds request members,
+ * which are then covered by the SigV4 signature. */
+static void
+test_aws_encrypt_key_id_injection (void)
+{
+   uint8_t data[] = {0x01, 0x02, 0x03, 0x04};
+   const char *injections[] = {
+      "x\", \"EncryptionContext\": {\"a\":\"b\"}, \"KeyId\": \"attacker-key",
+      "x\\",
+      "x\ny",
+   };
+
+   for (size_t i = 0; i < COUNTOF (injections); i++) {
+      kms_request_opt_t *opt = kms_request_opt_new ();
+      ASSERT (opt);
+      kms_request_t *req =
+         kms_encrypt_request_new (data, sizeof (data), injections[i], opt);
+      ASSERT (NULL == kms_request_to_string (req));
+      ASSERT_REQUEST_ERROR (req, "Invalid character in AWS KMS key identifier");
+      kms_request_destroy (req);
+      kms_request_opt_destroy (opt);
+   }
+
+   /* A key ID, an ARN, and an alias are accepted. */
+   const char *valid[] = {
+      "1234abcd-12ab-34cd-56ef-1234567890ab",
+      "arn:aws:kms:us-east-1:123456789012:key/1234abcd-12ab-34cd-56ef-1234567890ab",
+      "alias/ExampleAlias",
+   };
+
+   for (size_t i = 0; i < COUNTOF (valid); i++) {
+      kms_request_opt_t *opt = kms_request_opt_new ();
+      ASSERT (opt);
+      kms_request_t *req =
+         kms_encrypt_request_new (data, sizeof (data), valid[i], opt);
+      ASSERT_REQUEST_OK (req);
+      ASSERT (kms_request_set_region (req, "us-east-1"));
+      ASSERT (kms_request_set_service (req, "kms"));
+      char *req_str = kms_request_to_string (req);
+      ASSERT (req_str);
+      ASSERT (strstr (req_str, valid[i]));
+      free (req_str);
+      kms_request_destroy (req);
+      kms_request_opt_destroy (opt);
+   }
+}
+
+static void
+test_header_field_value_folding (void)
+{
+   kms_request_t *req;
+   char *req_str;
+
+   /* A valid fold is preserved. */
+   req = kms_request_new ("POST", "/", NULL);
+   ASSERT (kms_request_add_header_field (req, "My-Header", "value1"));
+   ASSERT (kms_request_append_header_field_value (req, "\r\n", 2));
+   ASSERT (kms_request_append_header_field_value (req, "  value2", 8));
+   ASSERT (kms_request_set_region (req, "region"));
+   ASSERT (kms_request_set_service (req, "service"));
+   req_str = kms_request_to_string (req);
+   ASSERT_REQUEST_OK (req);
+   ASSERT (req_str);
+   ASSERT (strstr (req_str, "My-Header:value1\r\n  value2\r\n"));
+   free (req_str);
+   kms_request_destroy (req);
+
+   /* A fold whose continuation line forges a header is rejected. */
+   req = kms_request_new ("POST", "/", NULL);
+   ASSERT (kms_request_add_header_field (req, "My-Header", "value1"));
+   ASSERT (kms_request_append_header_field_value (
+      req, INJECTED, strlen (INJECTED)));
+   ASSERT (kms_request_set_region (req, "region"));
+   ASSERT (kms_request_set_service (req, "service"));
+   ASSERT (NULL == kms_request_to_string (req));
+   ASSERT_REQUEST_ERROR (req, "HTTP header value contains invalid characters");
+   kms_request_destroy (req);
+}
+
 #define RUN_TEST(_func)                                          \
    do {                                                          \
       if (!selector || 0 == kms_strcasecmp (#_func, selector)) { \
@@ -1231,6 +1710,29 @@ extern void kms_kmip_response_parser_reuse_test (void);
 extern void kms_kmip_response_parser_excess_test (void);
 extern void kms_kmip_response_parser_notenough_test (void);
 extern void kms_response_parser_response_too_big_test (void);
+
+/* Regression test for MONGOCRYPT-965. */
+static void
+kms_gcp_oauth_invalid_scope_test (void)
+{
+   kms_request_opt_t* const opt = kms_request_opt_new ();
+   kms_request_opt_set_provider (opt, KMS_REQUEST_PROVIDER_GCP);
+
+   /* The private key is unused: the request fails before it is signed. */
+   kms_request_t* const request = kms_gcp_request_oauth_new (
+      "oauth2.googleapis.com",
+      "test@example.com",
+      "https://oauth2.googleapis.com/token",
+      "https://www.example.com\", \"sub\": \"victim@example.com/auth/cloudkms",
+      NULL /* private_key_data */,
+      0 /* private_key_len */,
+      opt);
+   ASSERT_CONTAINS (kms_request_get_error (request),
+                    "Invalid character in GCP OAuth request: scope");
+
+   kms_request_destroy (request);
+   kms_request_opt_destroy (opt);
+}
 
 int
 main (int argc, char *argv[])
@@ -1299,7 +1801,16 @@ main (int argc, char *argv[])
    RUN_TEST (kms_kmip_response_parser_notenough_test);
    RUN_TEST (kms_response_parser_response_too_big_test);
    RUN_TEST (test_request_newlines);
+   RUN_TEST (test_azure_request_crlf_injection);
+   RUN_TEST (test_azure_request_path_injection);
+   RUN_TEST (test_azure_request_dot_segment);
+   RUN_TEST (test_gcp_request_crlf_injection);
+   RUN_TEST (test_gcp_request_dot_segment);
+   RUN_TEST (test_aws_request_crlf_injection);
+   RUN_TEST (test_aws_encrypt_key_id_injection);
+   RUN_TEST (test_header_field_value_folding);
    RUN_TEST (test_kms_util);
+   RUN_TEST (kms_gcp_oauth_invalid_scope_test);
 
 
    if (!ran_tests) {
