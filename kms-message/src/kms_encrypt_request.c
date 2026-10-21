@@ -20,6 +20,33 @@
 #include "kms_message/kms_b64.h"
 #include "kms_request_str.h"
 
+#define KMS_PRINTABLE_ASCII_START ' '
+#define KMS_PRINTABLE_ASCII_END '~'
+
+/* _key_id_chars_are_valid returns true if `key_id` is safe to interpolate into the JSON body of the AWS
+ * Encrypt request. Reject non-printable ASCII, double quotes, and backslashes: those end the JSON string
+ * and let the caller add request members of their own, which are then signed with the SigV4 signature.
+ *
+ * A key identifier may be a key ID, an ARN, or an alias, none of which contain those characters.
+ *
+ * `key_id` is not included in the error message: it is untrusted, and the error may be logged.
+ *
+ * This duplicates _oauth_field_chars_are_valid in kms_gcp_request.c. */
+static bool
+_key_id_chars_are_valid (kms_request_t *req, const char *key_id)
+{
+   for (const char *i = key_id; *i != '\0'; i++) {
+      const unsigned char uc = (unsigned char) *i;
+
+      if (uc < KMS_PRINTABLE_ASCII_START || uc > KMS_PRINTABLE_ASCII_END ||
+          uc == '"' || uc == '\\') {
+         KMS_ERROR (req, "Invalid character in AWS KMS key identifier");
+         return false;
+      }
+   }
+   return true;
+}
+
 kms_request_t *
 kms_encrypt_request_new (const uint8_t *plaintext,
                          size_t plaintext_length,
@@ -33,6 +60,10 @@ kms_encrypt_request_new (const uint8_t *plaintext,
 
    request = kms_request_new ("POST", "/", opt);
    if (kms_request_get_error (request)) {
+      goto done;
+   }
+
+   if (!_key_id_chars_are_valid (request, key_id)) {
       goto done;
    }
 

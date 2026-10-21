@@ -547,7 +547,7 @@ mongocrypt_t *_mongocrypt_tester_mongocrypt(tester_mongocrypt_flags flags) {
     kms_providers = BCON_NEW("azure",
                              "{",
                              "tenantId",
-                             "",
+                             "placeholder-tenantId",
                              "clientId",
                              "",
                              "clientSecret",

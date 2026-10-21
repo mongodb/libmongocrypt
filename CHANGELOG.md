@@ -1,5 +1,10 @@
 # ChangeLog
 
+## 1.21.1 [Unreleased]
+
+### Fixed
+- Validate inputs before interpolating them into a KMS HTTP request.
+
 ## 1.21.0
 
 ### Changed

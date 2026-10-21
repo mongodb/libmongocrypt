@@ -20,11 +20,30 @@
 #include "kms_message_private.h"
 #include "kms_request_opt_private.h"
 
-#include <ctype.h>
-
 /* Set a default expiration of 5 minutes for JSON Web Tokens (GCP allows up to
  * one hour) */
 #define JWT_EXPIRATION_SECS 5 * 60
+
+#define KMS_PRINTABLE_ASCII_START ' '
+#define KMS_PRINTABLE_ASCII_END '~'
+
+/* _oauth_field_chars_are_valid returns true if `value` is safe to interpolate into the JWT claim set of the
+ * GCP OAuth request. Reject non-printable ASCII, double quotes, and backslashes.
+ *
+ * `value` is not included in the error message: it is untrusted, and the error may be logged. */
+static bool
+_oauth_field_chars_are_valid(kms_request_t *req, const char *name, const char *value)
+{
+   for (const char *i = value; *i != '\0'; i++) {
+      const unsigned char uc = (unsigned char)*i;
+
+      if (uc < KMS_PRINTABLE_ASCII_START || uc > KMS_PRINTABLE_ASCII_END || uc == '"' || uc == '\\') {
+         KMS_ERROR(req, "Invalid character in GCP OAuth request: %s", name);
+         return false;
+      }
+   }
+   return true;
+}
 
 kms_request_t *
 kms_gcp_request_oauth_new (const char *host,
@@ -54,6 +73,11 @@ kms_gcp_request_oauth_new (const char *host,
    }
 
    if (kms_request_get_error (req)) {
+      goto done;
+   }
+
+   if (!(_oauth_field_chars_are_valid(req, "email", email) && _oauth_field_chars_are_valid(req, "audience", audience) &&
+         _oauth_field_chars_are_valid(req, "scope", scope))) {
       goto done;
    }
 
@@ -163,18 +187,31 @@ done:
  * - location is a Cloud location name (e.g. "global", "us-east1").
  * - keyVersion is a positive integer.
  *
+ * Each identifier must also contain an alphanumeric character. No valid identifier lacks one, and
+ * this keeps a value of only dots from forming a dot-segment ("..") in the request path.
+ *
  * `value` is not included in the error message: it is untrusted, and the error may be logged. */
 static bool
 _check_key_identifier (kms_request_t *req, const char *name, const char *value)
 {
    const char *c;
+   bool has_alnum = false;
 
    for (c = value; *c != '\0'; c++) {
-      if (!isalnum ((unsigned char) *c) && *c != '-' && *c != '.' && *c != '_' &&
-          *c != '~') {
+      if (!((*c >= 'a' && *c <= 'z') || (*c >= 'A' && *c <= 'Z') ||
+            (*c >= '0' && *c <= '9') || *c == '-' || *c == '.' || *c == '_' ||
+            *c == '~')) {
          KMS_ERROR (req, "Invalid character in GCP KMS key identifier: %s", name);
          return false;
       }
+      if ((*c >= 'a' && *c <= 'z') || (*c >= 'A' && *c <= 'Z') ||
+          (*c >= '0' && *c <= '9')) {
+         has_alnum = true;
+      }
+   }
+   if (!has_alnum) {
+      KMS_ERROR (req, "Invalid GCP KMS key identifier: %s", name);
+      return false;
    }
    return true;
 }
@@ -222,15 +259,22 @@ _encrypt_decrypt_common (const char *encrypt_decrypt,
       goto done;
    }
 
-   if (kms_request_get_error (req)) {
-      goto done;
-   }
-
+   /* Check the key identifiers before checking req for an error. The
+    * identifiers are formatted into the request path above, so an invalid
+    * identifier may have already failed the generic request line validation in
+    * kms_request_new. Report the more specific error naming the field. */
    if (!_check_key_identifier (req, "projectId", project_id) ||
        !_check_key_identifier (req, "location", location) ||
        !_check_key_identifier (req, "keyRing", key_ring_name) ||
        !_check_key_identifier (req, "keyName", key_name) ||
-       (key_version && !_check_key_identifier (req, "keyVersion", key_version))) {
+       /* An empty key version is treated the same as an absent one: it is
+        * omitted from the path above, so there is nothing to validate. */
+       (key_version && *key_version &&
+        !_check_key_identifier (req, "keyVersion", key_version))) {
+      goto done;
+   }
+
+   if (kms_request_get_error (req)) {
       goto done;
    }
 

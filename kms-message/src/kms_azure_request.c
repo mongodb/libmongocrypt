@@ -21,6 +21,53 @@
 #include "kms_request_opt_private.h"
 #include "kms_request_str.h"
 
+#include <ctype.h>
+
+/* _check_path_segment returns true if `value` is safe to use as a URL path
+ * segment.
+ *
+ * Key identifiers may originate from key vault documents or caller-supplied
+ * options. They are formatted into the request path, so an unescaped '/', '?',
+ * '#', space, or CR/LF would rewrite the request target or inject header lines
+ * into the request. A '/' or ".." can address a different key, still
+ * authenticated with the caller's access token.
+ *
+ * Only the RFC 3986 unreserved characters are permitted. This is a superset of
+ * what Azure itself accepts, so it does not reject an identifier that would
+ * otherwise work:
+ * - A key name must match `[a-zA-Z0-9-]{1,127}`. See
+ *   https://learn.microsoft.com/en-us/azure/key-vault/general/about-keys-secrets-certificates#objects-identifiers-and-versioning
+ * - A key version is a 32 character hex string.
+ * - A tenant ID is a GUID, or a domain name (e.g. "contoso.onmicrosoft.com").
+ *
+ * Each identifier must also contain an alphanumeric character. No valid
+ * identifier lacks one, and this keeps a value of only dots from forming a
+ * dot-segment ("..") in the request path.
+ *
+ * `value` is not included in the error message: it is untrusted, and the error
+ * may be logged. */
+static bool
+_check_path_segment (kms_request_t *req, const char *name, const char *value)
+{
+   bool has_alnum = false;
+
+   for (const char* c = value; *c != '\0'; c++) {
+      if (!((*c >= '0' && *c <= '9') || (*c >= 'a' && *c <= 'z') || (*c >= 'A' && *c <= 'Z')) && *c != '-' && *c != '.' &&
+          *c != '_' && *c != '~') {
+         KMS_ERROR (req, "Invalid character in Azure KMS identifier: %s", name);
+         return false;
+      }
+      if ((*c >= '0' && *c <= '9') || (*c >= 'a' && *c <= 'z') || (*c >= 'A' && *c <= 'Z')) {
+         has_alnum = true;
+      }
+   }
+   if (!has_alnum) {
+      KMS_ERROR (req, "Invalid Azure KMS identifier: %s", name);
+      return false;
+   }
+   return true;
+}
+
 /*
  * Request has the following form:
  * 
@@ -62,6 +109,14 @@ kms_azure_request_oauth_new (const char *host,
 
    if (opt->provider != KMS_REQUEST_PROVIDER_AZURE) {
       KMS_ERROR (req, "Expected KMS request with provider type: Azure");
+      goto done;
+   }
+
+   /* Check the path segments before checking req for an error. tenant_id is
+    * formatted into the request path above, so an invalid value may have
+    * already failed the generic request line validation in kms_request_new.
+    * Report the more specific error naming the field. */
+   if (!_check_path_segment (req, "tenantId", tenant_id)) {
       goto done;
    }
 
@@ -120,6 +175,16 @@ _wrap_unwrap_common (const char *wrap_unwrap,
 
    if (opt->provider != KMS_REQUEST_PROVIDER_AZURE) {
       KMS_ERROR (req, "Expected KMS request with provider type: Azure");
+      goto done;
+   }
+
+   /* Check the path segments before checking req for an error. See the
+    * comment in kms_azure_request_oauth_new. */
+   if (!_check_path_segment (req, "keyName", key_name) ||
+       /* An empty key version is treated the same as an absent one: both
+        * produce the same request path. */
+       (key_version && *key_version &&
+        !_check_path_segment (req, "keyVersion", key_version))) {
       goto done;
    }
 
