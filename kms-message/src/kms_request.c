@@ -64,6 +64,83 @@ check_and_prohibit_kmip (kms_request_t *req)
    return true;
 }
 
+/* Callers interpolate externally supplied strings (key names, hosts, access
+ * tokens) into requests. Validate that they cannot alter the structure of the
+ * resulting HTTP message: a CR or LF forges an additional header, terminates
+ * the header section, or pipelines an entire second request, and a space in the
+ * request line changes the request target. */
+
+/* Checks the method of the "METHOD path?query HTTP/1.1" request line. */
+static bool
+check_method (kms_request_t *request, const char *method)
+{
+   if (!*method) {
+      KMS_ERROR (request, "HTTP method must not be empty");
+      return false;
+   }
+   if (strpbrk (method, " \r\n")) {
+      KMS_ERROR (request, "HTTP method contains invalid characters");
+      return false;
+   }
+   return true;
+}
+
+/* Checks the request target (path and query) of the request line.
+ *
+ * A space is prohibited because it ends the request target, except for AWS: the
+ * SigV4 conformance suite requires a literal space in the path to be sent
+ * verbatim and signed as %20 (normalize-path/get-space). AWS request targets in
+ * libmongocrypt are fixed strings, not interpolated from external input. */
+static bool
+check_request_target (kms_request_t *request,
+                      const char *what,
+                      const char *str)
+{
+   const char *prohibited =
+      request->provider == KMS_REQUEST_PROVIDER_AWS ? "\r\n" : " \r\n";
+
+   if (strpbrk (str, prohibited)) {
+      KMS_ERROR (request, "HTTP %s contains invalid characters", what);
+      return false;
+   }
+   return true;
+}
+
+/* Checks a header name, or a header value that is not permitted to fold. */
+static bool
+check_header_value (kms_request_t *request, const char *what, const char *str)
+{
+   if (strpbrk (str, "\r\n")) {
+      KMS_ERROR (request, "HTTP %s contains invalid characters", what);
+      return false;
+   }
+   return true;
+}
+
+/* Checks an already stored header value.
+ *
+ * A CRLF is permitted only as a line fold: the continuation line must begin
+ * with a space or horizontal tab. Line folding is deprecated by RFC 7230
+ * section 3.2.4, but is still accepted here because the AWS SigV4 test suite
+ * exercises it (get-header-value-multiline) by way of
+ * kms_request_append_header_field_value, which is the only API able to produce
+ * a folded value. */
+static bool
+check_stored_header_value (kms_request_t *request,
+                           const kms_request_str_t *value)
+{
+   const char *p = value->str;
+
+   while ((p = strpbrk (p, "\r\n"))) {
+      if (p[0] != '\r' || p[1] != '\n' || (p[2] != ' ' && p[2] != '\t')) {
+         KMS_ERROR (request, "HTTP header value contains invalid characters");
+         return false;
+      }
+      p += 2;
+   }
+   return true;
+}
+
 kms_request_t *
 kms_request_new (const char *method,
                  const char *path_and_query,
@@ -112,6 +189,18 @@ kms_request_new (const char *method,
    request->method = kms_request_str_new_from_chars (method, -1);
    request->header_fields = kms_kv_list_new ();
    request->auto_content_length = true;
+
+   /* Validate once all members are initialized, so the request remains safe to
+    * destroy. */
+   if (request->failed) {
+      return request;
+   }
+   if (!check_method (request, method)) {
+      return request;
+   }
+   if (!check_request_target (request, "path", path_and_query)) {
+      return request;
+   }
 
    /* For AWS KMS requests, add a X-Amz-Date header. */
    if (request->provider == KMS_REQUEST_PROVIDER_AWS &&
@@ -214,6 +303,11 @@ kms_request_set_region (kms_request_t *request, const char *region)
    if (!check_and_prohibit_kmip (request)) {
       return false;
    }
+   /* region and service reach the wire in the SigV4 Authorization header's
+    * credential scope, and in the Host header derived by finalize(). */
+   if (!check_header_value (request, "region", region)) {
+      return false;
+   }
    kms_request_str_set_chars (request->region, region, -1);
    return true;
 }
@@ -224,6 +318,9 @@ kms_request_set_service (kms_request_t *request, const char *service)
    if (!check_and_prohibit_kmip (request)) {
       return false;
    }
+   if (!check_header_value (request, "service", service)) {
+      return false;
+   }
    kms_request_str_set_chars (request->service, service, -1);
    return true;
 }
@@ -232,6 +329,10 @@ bool
 kms_request_set_access_key_id (kms_request_t *request, const char *akid)
 {
    if (!check_and_prohibit_kmip (request)) {
+      return false;
+   }
+   /* access_key_id reaches the wire in the SigV4 Authorization header. */
+   if (!check_header_value (request, "access key id", akid)) {
       return false;
    }
    kms_request_str_set_chars (request->access_key_id, akid, -1);
@@ -258,6 +359,15 @@ kms_request_add_header_field (kms_request_t *request,
    CHECK_FAILED;
 
    if (!check_and_prohibit_kmip (request)) {
+      return false;
+   }
+
+   /* This API cannot produce a folded value, so CR and LF are prohibited
+    * outright. Use kms_request_append_header_field_value to fold. */
+   if (!check_header_value (request, "header name", field_name)) {
+      return false;
+   }
+   if (!check_header_value (request, "header value", value)) {
       return false;
    }
 
@@ -466,6 +576,23 @@ finalize (kms_request_t *request)
       kms_kv_list_add (lst, k, v);
       kms_request_str_destroy (k);
       kms_request_str_destroy (v);
+   }
+
+   /* Every serializing entry point funnels through here, so validate the
+    * assembled request as a backstop: the setters above and
+    * kms_request_append_header_field_value can all reach the wire. */
+   if (!check_method (request, request->method->str) ||
+       !check_request_target (request, "path", request->path->str) ||
+       !check_request_target (request, "query", request->query->str)) {
+      return false;
+   }
+   for (size_t i = 0; i < lst->len; i++) {
+      if (!check_header_value (request, "header name", lst->kvs[i].key->str)) {
+         return false;
+      }
+      if (!check_stored_header_value (request, lst->kvs[i].value)) {
+         return false;
+      }
    }
 
    return true;
