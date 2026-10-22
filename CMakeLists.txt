@@ -592,29 +592,38 @@ if (BUILD_TESTING AND NOT MONGOCRYPT_CRYPTO STREQUAL none)
    endif ()
 endif ()
 
-option (ENABLE_FUZZING "Build fuzzing targets. Requires a compiler supporting -fsanitize=fuzzer." OFF)
+option (ENABLE_FUZZING "Build fuzzing targets. Requires a compiler supporting -fsanitize=fuzzer, or LIB_FUZZING_ENGINE." OFF)
+set (LIB_FUZZING_ENGINE "" CACHE STRING
+   "Fuzzing engine link flags/libraries (e.g. from OSS-Fuzz). If empty, libFuzzer (-fsanitize=fuzzer) is used.")
 if (ENABLE_FUZZING)
-   include (CheckCCompilerFlag)
-   set (CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
-   check_c_compiler_flag ("-fsanitize=fuzzer-no-link" COMPILER_SUPPORTS_FUZZER)
-   unset (CMAKE_TRY_COMPILE_TARGET_TYPE)
-   if (NOT COMPILER_SUPPORTS_FUZZER)
-      message (FATAL_ERROR
-         "ENABLE_FUZZING is ON but the compiler does not support -fsanitize=fuzzer. "
-      )
+   if (LIB_FUZZING_ENGINE STREQUAL "")
+      include (CheckCCompilerFlag)
+      set (CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
+      check_c_compiler_flag ("-fsanitize=fuzzer-no-link" COMPILER_SUPPORTS_FUZZER)
+      unset (CMAKE_TRY_COMPILE_TARGET_TYPE)
+      if (NOT COMPILER_SUPPORTS_FUZZER)
+         message (FATAL_ERROR
+            "ENABLE_FUZZING is ON but the compiler does not support -fsanitize=fuzzer. "
+            "Set LIB_FUZZING_ENGINE to use another fuzzing engine."
+         )
+      endif ()
+      set (_fuzz_engine_args -fsanitize=fuzzer)
+      set (_fuzz_compile_args -fsanitize=fuzzer)
+   else ()
+      # The engine provides main() (e.g. honggfuzz, AFL); do not force libFuzzer.
+      separate_arguments (_fuzz_engine_args UNIX_COMMAND "${LIB_FUZZING_ENGINE}")
+      set (_fuzz_compile_args "")
    endif ()
 
    add_executable (fuzz_mongocrypt EXCLUDE_FROM_ALL test/fuzz_mongocrypt.c)
    target_include_directories (fuzz_mongocrypt PRIVATE ./src)
-   target_link_libraries (fuzz_mongocrypt PRIVATE mongocrypt_static _mongocrypt::libbson_for_static)
-   target_compile_options (fuzz_mongocrypt PRIVATE -fsanitize=fuzzer)
-   target_link_options (fuzz_mongocrypt PRIVATE -fsanitize=fuzzer)
+   target_link_libraries (fuzz_mongocrypt PRIVATE mongocrypt_static _mongocrypt::libbson_for_static ${_fuzz_engine_args})
+   target_compile_options (fuzz_mongocrypt PRIVATE ${_fuzz_compile_args})
 
    add_executable (fuzz_kms EXCLUDE_FROM_ALL test/fuzz_kms.c)
    target_include_directories (fuzz_kms PRIVATE ./src ./kms-message ./kms-message/src)
-   target_link_libraries (fuzz_kms PRIVATE mongocrypt_static kms_message_static _mongocrypt::libbson_for_static)
-   target_compile_options (fuzz_kms PRIVATE -fsanitize=fuzzer)
-   target_link_options (fuzz_kms PRIVATE -fsanitize=fuzzer)
+   target_link_libraries (fuzz_kms PRIVATE mongocrypt_static kms_message_static _mongocrypt::libbson_for_static ${_fuzz_engine_args})
+   target_compile_options (fuzz_kms PRIVATE ${_fuzz_compile_args})
 endif ()
 
 if (ENABLE_STATIC)
