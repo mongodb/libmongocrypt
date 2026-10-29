@@ -7,6 +7,13 @@ if ! have_command pkg-config; then
     exit 0
 fi
 
+# The dynamic linker searches DYLD_LIBRARY_PATH on macOS and LD_LIBRARY_PATH elsewhere.
+if test "$OS_NAME" = "macos"; then
+    lib_path_name=DYLD_LIBRARY_PATH
+else
+    lib_path_name=LD_LIBRARY_PATH
+fi
+
 : "${CFLAGS:=}"
 
 pkgconfig_tests_root=$LIBMONGOCRYPT_DIR/_build/pkgconfig_tests
@@ -89,7 +96,7 @@ gcc $(pkg-config --cflags libmongocrypt bson2-static) \
     $CFLAGS \
     $(pkg-config --libs libmongocrypt)
 run_chdir "$LIBMONGOCRYPT_DIR" \
-    env LD_LIBRARY_PATH="$mongocrypt_install_dir/lib:$mongocrypt_install_dir/lib64" \
+    env "$lib_path_name=$mongocrypt_install_dir/lib:$mongocrypt_install_dir/lib64" \
     "$pkgconfig_tests_root/example-state-machine"
 echo "Build example-state-machine, dynamic linking against libmongocrypt ... done"
 
@@ -99,7 +106,7 @@ gcc $(pkg-config --cflags libmongocrypt) \
     "$LIBMONGOCRYPT_DIR/test/example-no-bson.c" \
     $CFLAGS \
     $(pkg-config --libs libmongocrypt)
-env LD_LIBRARY_PATH="$mongocrypt_install_dir/lib:$mongocrypt_install_dir/lib64" \
+env "$lib_path_name=$mongocrypt_install_dir/lib:$mongocrypt_install_dir/lib64" \
     "$pkgconfig_tests_root/example-no-bson"
 echo "Build example-no-bson, dynamic linking against libmongocrypt ... done"
 
@@ -123,7 +130,7 @@ gcc $(pkg-config --cflags libmongocrypt-static bson2-static) \
     $CFLAGS \
     $(pkg-config --libs libmongocrypt-static)
 run_chdir "$LIBMONGOCRYPT_DIR" \
-    env LD_LIBRARY_PATH="$libbson_install_dir/lib:/$libbson_install_dir/lib64" \
+    env "$lib_path_name=$libbson_install_dir/lib:$libbson_install_dir/lib64" \
     "$pkgconfig_tests_root/example-state-machine"
 echo "Build example-state-machine, static linking against libmongocrypt ..."
 
@@ -133,7 +140,7 @@ gcc $(pkg-config --cflags libmongocrypt-static) \
     "$LIBMONGOCRYPT_DIR/test/example-no-bson.c" \
     $CFLAGS \
     $(pkg-config --libs libmongocrypt-static)
-env LD_LIBRARY_PATH="$libbson_install_dir/lib:/$libbson_install_dir/lib64" \
+env "$lib_path_name=$libbson_install_dir/lib:$libbson_install_dir/lib64" \
     "$pkgconfig_tests_root/example-no-bson"
 echo "Build example-no-bson, static linking against libmongocrypt ... done"
 
@@ -144,7 +151,7 @@ gcc $(pkg-config --cflags libmongocrypt bson2-static) \
     $CFLAGS \
     $(pkg-config --libs libmongocrypt)
 run_chdir "$LIBMONGOCRYPT_DIR" \
-    env LD_LIBRARY_PATH="$mongocrypt_install_dir/lib:$mongocrypt_install_dir/lib64:$libbson_install_dir/lib:$libbson_install_dir/lib64" \
+    env "$lib_path_name=$mongocrypt_install_dir/lib:$mongocrypt_install_dir/lib64:$libbson_install_dir/lib:$libbson_install_dir/lib64" \
     "$pkgconfig_tests_root/example-state-machine"
 echo "Build example-state-machine, dynamic linking against libmongocrypt ... done"
 
@@ -154,7 +161,7 @@ gcc $(pkg-config --cflags libmongocrypt) \
     "$LIBMONGOCRYPT_DIR/test/example-no-bson.c" \
     $CFLAGS \
     $(pkg-config --libs libmongocrypt)
-env LD_LIBRARY_PATH="$mongocrypt_install_dir/lib:$mongocrypt_install_dir/lib64:$libbson_install_dir/lib:$libbson_install_dir/lib64" \
+env "$lib_path_name=$mongocrypt_install_dir/lib:$mongocrypt_install_dir/lib64:$libbson_install_dir/lib:$libbson_install_dir/lib64" \
     "$pkgconfig_tests_root/example-no-bson"
 echo "Build example-no-bson, dynamic linking against libmongocrypt ... done"
 
