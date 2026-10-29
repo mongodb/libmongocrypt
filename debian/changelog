@@ -8,6 +8,8 @@ libmongocrypt (1.13.2-1+deb13u2) UNRELEASED; urgency=medium
     endpoint
   * Fix CVE-2026-106434: unrecognized payload acceptance in explicit decryption
   * Fix CVE-2026-106433: heap corruption via duplicate masterKey fields
+  * Fix CVE-2026-114655: KMS request injection via unsanitized key vault and
+    provider values
 
  -- Roberto C. Sanchez <roberto@connexer.com>  Thu, 29 Oct 2026 16:49:46 -0400
 
