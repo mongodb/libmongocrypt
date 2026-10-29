@@ -1441,9 +1441,13 @@ buildvariants:
   display_name: macOS 15 arm64 (Apple LLVM)
   run_on: macos-15-arm64
   expansions:
+    # Pin MACOSX_DEPLOYMENT_TARGET so the minimum supported macOS does not
+    # depend on the build host. scripts/release.sh does the same for the
+    # Python wheels.
     compile_env: >-
       CMAKE_OSX_ARCHITECTURES="arm64;x86_64"
       CMAKE=/opt/homebrew/bin/cmake
+      MACOSX_DEPLOYMENT_TARGET=11.0
     release_os_arch: macos-universal
   tasks:
   - build-and-test-and-upload
