@@ -1,5 +1,10 @@
 # ChangeLog
 
+## 1.21.2 [Unreleased]
+
+### Removed
+- Discontinue builds for Amazon Linux 1 and remove corresponding CI tasks.
+
 ## 1.21.1
 
 ### Fixed
