@@ -21,9 +21,28 @@ sys.path[0:0] = [""]
 import base64
 from test import unittest
 
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import ec, rsa
+
 from pymongocrypt.binary import MongoCryptBinaryIn
 from pymongocrypt.binding import ffi, lib
 from pymongocrypt.crypto import sign_rsaes_pkcs1_v1_5
+from pymongocrypt.errors import MongoCryptError
+
+GCP_SIGNATURE_CAPACITY = 256
+
+
+def _der(private_key):
+    """Serialize a private key to unencrypted PKCS#8 DER to match GCP configs."""
+    return private_key.private_bytes(
+        encoding=serialization.Encoding.DER,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.NoEncryption(),
+    )
+
+
+def _rsa_der(bits):
+    return _der(rsa.generate_private_key(public_exponent=65537, key_size=bits))
 
 
 class TestCrypto(unittest.TestCase):
@@ -41,6 +60,60 @@ class TestCrypto(unittest.TestCase):
 
             self.assertTrue(retval)
             self.assertEqual(output.to_bytes(), base64.b64decode(ciphertext_b64))
+
+
+class TestSignRsaesPkcs1V15KeyValidation(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        # RSA keygen is slow, so generate each oversized/undersized key once.
+        cls.rsa3072_der = _rsa_der(3072)
+        cls.rsa4096_der = _rsa_der(4096)
+        cls.rsa1024_der = _rsa_der(1024)
+        cls.ec_der = _der(ec.generate_private_key(ec.SECP256R1()))
+
+    def _call_hook(self, key_der, backing):
+        status = lib.mongocrypt_status_new()
+        try:
+            with MongoCryptBinaryIn(backing) as out, MongoCryptBinaryIn(
+                key_der
+            ) as key, MongoCryptBinaryIn(b"data to sign") as val:
+                out.bin.len = GCP_SIGNATURE_CAPACITY
+                ok = sign_rsaes_pkcs1_v1_5(ffi.NULL, key.bin, val.bin, out.bin, status)
+            msg_ptr = lib.mongocrypt_status_message(status, ffi.NULL)
+            msg = ffi.string(msg_ptr).decode() if msg_ptr != ffi.NULL else ""
+            return bool(ok), msg
+        finally:
+            lib.mongocrypt_status_destroy(status)
+
+    def test_rejects_oversized_rsa_4096_key(self):
+        backing = bytearray(512)
+        ok, msg = self._call_hook(self.rsa4096_der, backing)
+        self.assertFalse(ok)
+        self.assertIn("2048-bit RSA key", msg)
+        self.assertTrue(
+            all(byte == 0 for byte in backing[GCP_SIGNATURE_CAPACITY:]),
+            "nothing may be written past the advertised 256-byte capacity",
+        )
+
+    def test_rejects_oversized_rsa_3072_key(self):
+        backing = bytearray(512)
+        ok, msg = self._call_hook(self.rsa3072_der, backing)
+        self.assertFalse(ok)
+        self.assertIn("2048-bit RSA key", msg)
+        self.assertTrue(
+            all(byte == 0 for byte in backing[GCP_SIGNATURE_CAPACITY:]),
+            "nothing may be written past the advertised 256-byte capacity",
+        )
+
+    def test_rejects_undersized_rsa_1024_key(self):
+        ok, msg = self._call_hook(self.rsa1024_der, bytearray(GCP_SIGNATURE_CAPACITY))
+        self.assertFalse(ok)
+        self.assertIn("2048-bit RSA key", msg)
+
+    def test_rejects_non_rsa_key(self):
+        ok, msg = self._call_hook(self.ec_der, bytearray(GCP_SIGNATURE_CAPACITY))
+        self.assertFalse(ok)
+        self.assertIn("must be an RSA key", msg)
 
 
 if __name__ == "__main__":

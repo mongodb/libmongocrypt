@@ -19,6 +19,7 @@ import traceback
 
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.hashes import SHA256, SHA512, Hash
 from cryptography.hazmat.primitives.hmac import HMAC
@@ -27,6 +28,10 @@ from cryptography.hazmat.primitives.serialization import load_der_private_key
 from pymongocrypt.binary import _to_bytes, _write_bytes
 from pymongocrypt.binding import ffi, lib
 from pymongocrypt.compat import str_to_bytes
+from pymongocrypt.errors import MongoCryptError
+
+# kms-message sizes the JWT signature buffer for a 2048-bit key only
+_RSAES_PKCS1_V1_5_KEY_BITS = 2048
 
 
 def _callback_error_handler(exception, exc_value, tb):
@@ -166,6 +171,15 @@ def sign_rsaes_pkcs1_v1_5(ctx, key, input, output, status):
     rsa_private_key = load_der_private_key(
         _to_bytes(key), password=None, backend=default_backend()
     )
+    if not isinstance(rsa_private_key, RSAPrivateKey):
+        raise MongoCryptError(
+            f"private key must be an RSA key, got {type(rsa_private_key).__name__}"
+        )
+    if rsa_private_key.key_size != _RSAES_PKCS1_V1_5_KEY_BITS:
+        raise MongoCryptError(
+            f"private key must be a {_RSAES_PKCS1_V1_5_KEY_BITS}-bit RSA key, "
+            f"got {rsa_private_key.key_size}-bit"
+        )
     signature = rsa_private_key.sign(
         _to_bytes(input), padding=padding.PKCS1v15(), algorithm=SHA256()
     )

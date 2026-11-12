@@ -31,9 +31,15 @@ def _write_bytes(mongocrypt_binary, data):
     buf = mongocrypt_binary.data
     if buf == ffi.NULL:
         raise MongoCryptError("mongocrypt_binary_t.data returned NULL")
+    data_size = len(data)
+    capacity = mongocrypt_binary.len
+    if data_size > capacity:
+        raise MongoCryptError(
+            f"cannot write {data_size} bytes to a mongocrypt_binary_t of size {capacity}"
+        )
 
-    ffi.memmove(buf, data, len(data))
-    mongocrypt_binary.len = len(data)
+    ffi.memmove(buf, data, data_size)
+    mongocrypt_binary.len = data_size
 
 
 class _MongoCryptBinary:
