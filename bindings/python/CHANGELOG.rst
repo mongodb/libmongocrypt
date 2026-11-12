@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Changes in Version 1.21.3
+-------------------------
+
+- Bundle libmongocrypt 1.21.1 in release wheels.
+- Fixed a sizing bug with GCP KMS keys. All GCP KMS private keys are now required to be 2048-bit RSA.
+
 Changes in Version 1.21.2
 -------------------------
 
@@ -38,7 +44,6 @@ Changes in Version 1.19.0
 - The "prefixPreview", "suffixPreview", and "substringPreview" query types are
   now deprecated aliases of "prefix", "suffix", and "substring". Prefer the new
   names, as a future release removes the aliases.
-- Fixed a sizing bug with GCP KMS keys. All GCP KMS private keys are now required to be 2048-bit RSA.
 
 Changes in Version 1.18.1
 -------------------------
