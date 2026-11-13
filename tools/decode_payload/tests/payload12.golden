@@ -1,0 +1,24 @@
+{
+  "name": "FLE2FindEqualityPayloadV2",
+  "dump": {
+    "d": {
+      "$binary": {
+        "base64": "8aZlxTN0T8U8gu9FLIBJwa9mlqsYjbL2sn+9IHGAK6M=",
+        "subType": "00"
+      }
+    },
+    "s": {
+      "$binary": {
+        "base64": "otUY5p3SqoJ18u8W9tkc1G52ZdbDmUVzzgtCnCZAMZk=",
+        "subType": "00"
+      }
+    },
+    "l": {
+      "$binary": {
+        "base64": "pJtKPW4+o9B7gAynNLL26jtlB4+hq5TXResijcYet8U=",
+        "subType": "00"
+      }
+    },
+    "cm": 0
+  }
+}

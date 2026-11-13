@@ -1,0 +1,34 @@
+{
+    "find": "test",
+    "filter": {
+        "value": 123456
+    },
+    "encryptionInformation": {
+        "type": 1,
+        "schema": {
+            "test.test": {
+                "escCollection": "enxcol_.test.esc",
+                "ecocCollection": "enxcol_.test.ecoc",
+                "fields": [
+                    {
+                        "keyId": {
+                            "$binary": {
+                                "base64": "EjRWeBI0mHYSNBI0VniQEg==",
+                                "subType": "04"
+                            }
+                        },
+                        "path": "value",
+                        "bsonType": "int",
+                        "queries": {
+                            "queryType": "equality",
+                            "contention": {
+                                "$numberLong": "0"
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    "$db": "test"
+}
