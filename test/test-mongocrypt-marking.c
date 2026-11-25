@@ -192,6 +192,59 @@ static void test_mongocrypt_marking_parse(_mongocrypt_tester_t *tester) {
  * MinCoverInterfaceTest in the server code:
  * https://github.com/mongodb/mongo/blob/a4a3eba2a0e0a839ca6213491361269b42e12761/src/mongo/crypto/fle_crypto_test.cpp#L2585
  */
+
+static void test_mongocrypt_marking_parse_duplicate_fields(_mongocrypt_tester_t *tester) {
+    _mongocrypt_buffer_t marking_buf;
+    _mongocrypt_marking_t marking;
+    bson_t *marking_bson;
+
+    /* Two identical 'ka' fields. */
+    marking_bson = bson_new();
+    BSON_APPEND_INT32(marking_bson, "a", 1);
+    BSON_APPEND_UTF8(marking_bson, "v", "abc");
+    BSON_APPEND_UTF8(marking_bson, "ka", "alt1");
+    BSON_APPEND_UTF8(marking_bson, "ka", "alt2");
+    _make_marking(marking_bson, &marking_buf);
+    _parse_fails(&marking_buf, "duplicate field 'ka'", &marking);
+    _mongocrypt_buffer_cleanup(&marking_buf);
+    _mongocrypt_marking_cleanup(&marking);
+    bson_destroy(marking_bson);
+
+    /* Two identical 'ki' fields. */
+    marking_bson = bson_new();
+    BSON_APPEND_INT32(marking_bson, "a", 1);
+    BSON_APPEND_UTF8(marking_bson, "v", "abc");
+    BSON_APPEND_BINARY(marking_bson, "ki", BSON_SUBTYPE_UUID, (TEST_BIN(16))->data, 16);
+    BSON_APPEND_BINARY(marking_bson, "ki", BSON_SUBTYPE_UUID, (TEST_BIN(16))->data, 16);
+    _make_marking(marking_bson, &marking_buf);
+    _parse_fails(&marking_buf, "duplicate field 'ki'", &marking);
+    _mongocrypt_buffer_cleanup(&marking_buf);
+    _mongocrypt_marking_cleanup(&marking);
+    bson_destroy(marking_bson);
+
+    /* Two identical 'v' fields. */
+    marking_bson = bson_new();
+    BSON_APPEND_INT32(marking_bson, "a", 1);
+    BSON_APPEND_UTF8(marking_bson, "v", "abc");
+    BSON_APPEND_UTF8(marking_bson, "v", "def");
+    _make_marking(marking_bson, &marking_buf);
+    _parse_fails(&marking_buf, "duplicate field 'v'", &marking);
+    _mongocrypt_buffer_cleanup(&marking_buf);
+    _mongocrypt_marking_cleanup(&marking);
+    bson_destroy(marking_bson);
+
+    /* Two identical 'a' fields. */
+    marking_bson = bson_new();
+    BSON_APPEND_INT32(marking_bson, "a", 1);
+    BSON_APPEND_UTF8(marking_bson, "v", "abc");
+    BSON_APPEND_INT32(marking_bson, "a", 1);
+    _make_marking(marking_bson, &marking_buf);
+    _parse_fails(&marking_buf, "duplicate field 'a'", &marking);
+    _mongocrypt_buffer_cleanup(&marking_buf);
+    _mongocrypt_marking_cleanup(&marking);
+    bson_destroy(marking_bson);
+}
+
 static void test_mc_get_mincover_from_FLE2RangeFindSpec(_mongocrypt_tester_t *tester) {
     typedef struct {
         const char *description; // May be NULL.
@@ -2105,6 +2158,7 @@ static void test_ciphertext_len_steps_fle2_text_search(_mongocrypt_tester_t *tes
 
 void _mongocrypt_tester_install_marking(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(test_mongocrypt_marking_parse);
+    INSTALL_TEST(test_mongocrypt_marking_parse_duplicate_fields);
     INSTALL_TEST(test_mc_get_mincover_from_FLE2RangeFindSpec);
     INSTALL_TEST(test_mc_marking_to_ciphertext_fle2_range);
     INSTALL_TEST(test_mc_marking_to_ciphertext_fle2_text_search);

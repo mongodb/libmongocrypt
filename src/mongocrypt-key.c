@@ -129,7 +129,7 @@ bool _mongocrypt_key_alt_name_from_iter(const bson_iter_t *iter_in,
 bool _mongocrypt_key_parse_owned(const bson_t *bson, _mongocrypt_key_doc_t *out, mongocrypt_status_t *status) {
     bson_iter_t iter = {0};
     bool has_id = false, has_key_material = false, has_status = false, has_creation_date = false,
-         has_update_date = false, has_master_key = false;
+         has_update_date = false, has_master_key = false, has_key_alt_names = false, has_version = false;
 
     BSON_ASSERT_PARAM(bson);
     BSON_ASSERT_PARAM(out);
@@ -151,6 +151,10 @@ bool _mongocrypt_key_parse_owned(const bson_t *bson, _mongocrypt_key_doc_t *out,
             return false;
         }
         if (0 == strcmp("_id", field)) {
+            if (has_id) {
+                CLIENT_ERR("duplicate field '_id' in key document");
+                return false;
+            }
             has_id = true;
             if (!_mongocrypt_buffer_copy_from_uuid_iter(&out->id, &iter)) {
                 CLIENT_ERR("invalid key, '_id' is not a UUID");
@@ -161,6 +165,11 @@ bool _mongocrypt_key_parse_owned(const bson_t *bson, _mongocrypt_key_doc_t *out,
 
         /* keyAltNames (optional) */
         if (0 == strcmp("keyAltNames", field)) {
+            if (has_key_alt_names) {
+                CLIENT_ERR("duplicate field 'keyAltNames' in key document");
+                return false;
+            }
+            has_key_alt_names = true;
             if (!_mongocrypt_key_alt_name_from_iter(&iter, &out->key_alt_names, status)) {
                 return false;
             }
@@ -168,6 +177,10 @@ bool _mongocrypt_key_parse_owned(const bson_t *bson, _mongocrypt_key_doc_t *out,
         }
 
         if (0 == strcmp("keyMaterial", field)) {
+            if (has_key_material) {
+                CLIENT_ERR("duplicate field 'keyMaterial' in key document");
+                return false;
+            }
             has_key_material = true;
             if (!_mongocrypt_buffer_copy_from_binary_iter(&out->key_material, &iter)) {
                 CLIENT_ERR("invalid 'keyMaterial', expected binary");
@@ -193,6 +206,11 @@ bool _mongocrypt_key_parse_owned(const bson_t *bson, _mongocrypt_key_doc_t *out,
         }
 
         if (0 == strcmp("version", field)) {
+            if (has_version) {
+                CLIENT_ERR("duplicate field 'version' in key document");
+                return false;
+            }
+            has_version = true;
             if (!BSON_ITER_HOLDS_INT(&iter)) {
                 CLIENT_ERR("invalid 'version', expect int");
                 return false;
@@ -205,12 +223,20 @@ bool _mongocrypt_key_parse_owned(const bson_t *bson, _mongocrypt_key_doc_t *out,
         }
 
         if (0 == strcmp("status", field)) {
+            if (has_status) {
+                CLIENT_ERR("duplicate field 'status' in key document");
+                return false;
+            }
             /* Don't need status. Check that it's present and ignore it. */
             has_status = true;
             continue;
         }
 
         if (0 == strcmp("creationDate", field)) {
+            if (has_creation_date) {
+                CLIENT_ERR("duplicate field 'creationDate' in key document");
+                return false;
+            }
             has_creation_date = true;
 
             if (!BSON_ITER_HOLDS_DATE_TIME(&iter)) {
@@ -223,6 +249,10 @@ bool _mongocrypt_key_parse_owned(const bson_t *bson, _mongocrypt_key_doc_t *out,
         }
 
         if (0 == strcmp("updateDate", field)) {
+            if (has_update_date) {
+                CLIENT_ERR("duplicate field 'updateDate' in key document");
+                return false;
+            }
             has_update_date = true;
 
             if (!BSON_ITER_HOLDS_DATE_TIME(&iter)) {

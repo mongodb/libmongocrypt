@@ -207,6 +207,51 @@ static void test_mongocrypt_key_parsing_duplicate_master_key(_mongocrypt_tester_
     bson_destroy(&key_bson);
 }
 
+/* Regression test for MONGOCRYPT-990. Error when parsing duplicate fields. */
+static void test_mongocrypt_key_parsing_duplicate_fields(_mongocrypt_tester_t *tester) {
+    bson_t key_bson = BSON_INITIALIZER;
+    mongocrypt_status_t *const status = mongocrypt_status_new();
+    mongocrypt_binary_t *uuid = TEST_BIN(16);
+
+    _recreate_and_reset(tester, &key_bson, status, "_id", NULL);
+    BSON_APPEND_BINARY(&key_bson, "_id", BSON_SUBTYPE_UUID, uuid->data, uuid->len);
+    BSON_APPEND_BINARY(&key_bson, "_id", BSON_SUBTYPE_UUID, uuid->data, uuid->len);
+    _parse_fails(&key_bson, status, "duplicate field '_id'");
+
+    _recreate_and_reset(tester, &key_bson, status, "keyMaterial", NULL);
+    BSON_APPEND_BINARY(&key_bson, "keyMaterial", BSON_SUBTYPE_BINARY, uuid->data, uuid->len);
+    BSON_APPEND_BINARY(&key_bson, "keyMaterial", BSON_SUBTYPE_BINARY, uuid->data, uuid->len);
+    _parse_fails(&key_bson, status, "duplicate field 'keyMaterial'");
+
+    _recreate_and_reset(tester, &key_bson, status, "keyAltNames", NULL);
+    bson_concat(&key_bson, TMP_BSON("{'keyAltNames': ['a']}"));
+    bson_concat(&key_bson, TMP_BSON("{'keyAltNames': ['b']}"));
+    _parse_fails(&key_bson, status, "duplicate field 'keyAltNames'");
+
+    _recreate_and_reset(tester, &key_bson, status, "version", NULL);
+    BSON_APPEND_INT32(&key_bson, "version", 0);
+    BSON_APPEND_INT32(&key_bson, "version", 0);
+    _parse_fails(&key_bson, status, "duplicate field 'version'");
+
+    _recreate_and_reset(tester, &key_bson, status, "status", NULL);
+    BSON_APPEND_INT32(&key_bson, "status", 0);
+    BSON_APPEND_INT32(&key_bson, "status", 0);
+    _parse_fails(&key_bson, status, "duplicate field 'status'");
+
+    _recreate_and_reset(tester, &key_bson, status, "creationDate", NULL);
+    BSON_APPEND_DATE_TIME(&key_bson, "creationDate", 123);
+    BSON_APPEND_DATE_TIME(&key_bson, "creationDate", 123);
+    _parse_fails(&key_bson, status, "duplicate field 'creationDate'");
+
+    _recreate_and_reset(tester, &key_bson, status, "updateDate", NULL);
+    BSON_APPEND_DATE_TIME(&key_bson, "updateDate", 123);
+    BSON_APPEND_DATE_TIME(&key_bson, "updateDate", 123);
+    _parse_fails(&key_bson, status, "duplicate field 'updateDate'");
+
+    mongocrypt_status_destroy(status);
+    bson_destroy(&key_bson);
+}
+
 static void test_mongocrypt_key_alt_name_from_iter(_mongocrypt_tester_t *tester) {
     mongocrypt_status_t *status;
     bson_iter_t iter;
@@ -256,5 +301,6 @@ static void test_mongocrypt_key_alt_name_from_iter(_mongocrypt_tester_t *tester)
 void _mongocrypt_tester_install_key(_mongocrypt_tester_t *tester) {
     INSTALL_TEST(test_mongocrypt_key_parsing);
     INSTALL_TEST(test_mongocrypt_key_parsing_duplicate_master_key);
+    INSTALL_TEST(test_mongocrypt_key_parsing_duplicate_fields);
     INSTALL_TEST(test_mongocrypt_key_alt_name_from_iter);
 }

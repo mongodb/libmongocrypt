@@ -65,6 +65,10 @@ _mongocrypt_marking_parse_fle1_placeholder(const bson_t *in, _mongocrypt_marking
         field = bson_iter_key(&iter);
         BSON_ASSERT(field);
         if (0 == strcmp("ki", field)) {
+            if (has_ki) {
+                CLIENT_ERR("duplicate field 'ki' in marking");
+                return false;
+            }
             has_ki = true;
             if (!_mongocrypt_buffer_from_uuid_iter(&out->u.fle1.key_id, &iter)) {
                 CLIENT_ERR("key id must be a UUID");
@@ -74,6 +78,10 @@ _mongocrypt_marking_parse_fle1_placeholder(const bson_t *in, _mongocrypt_marking
         }
 
         if (0 == strcmp("ka", field)) {
+            if (has_ka) {
+                CLIENT_ERR("duplicate field 'ka' in marking");
+                return false;
+            }
             has_ka = true;
             /* Some bson_value types are not allowed to be key alt names */
             const bson_value_t *value;
@@ -92,6 +100,10 @@ _mongocrypt_marking_parse_fle1_placeholder(const bson_t *in, _mongocrypt_marking
         }
 
         if (0 == strcmp("v", field)) {
+            if (has_v) {
+                CLIENT_ERR("duplicate field 'v' in marking");
+                return false;
+            }
             has_v = true;
             memcpy(&out->u.fle1.v_iter, &iter, sizeof(bson_iter_t));
             continue;
@@ -100,6 +112,10 @@ _mongocrypt_marking_parse_fle1_placeholder(const bson_t *in, _mongocrypt_marking
         if (0 == strcmp("a", field)) {
             int32_t algorithm;
 
+            if (has_a) {
+                CLIENT_ERR("duplicate field 'a' in marking");
+                return false;
+            }
             has_a = true;
             if (!BSON_ITER_HOLDS_INT32(&iter)) {
                 CLIENT_ERR("invalid marking, 'a' must be an int32");
