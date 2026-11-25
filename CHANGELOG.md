@@ -1,9 +1,14 @@
 # ChangeLog
 
-## 1.21.2 [Unreleased]
+## 1.22.0 [Unreleased]
 
 ### Removed
 - Discontinue builds for Amazon Linux 1 and remove corresponding CI tasks.
+
+## 1.21.2
+
+### Fixed
+- Reject duplicate fields when parsing key vault documents and FLE1 placeholders.
 
 ## 1.21.1
 
