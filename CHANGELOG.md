@@ -1,6 +1,6 @@
 # ChangeLog
 
-## 1.21.2 [Unreleased]
+## 1.21.2
 
 ### Fixed
 - Reject duplicate fields when parsing key vault documents and FLE1 placeholders.
